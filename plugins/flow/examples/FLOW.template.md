@@ -63,6 +63,18 @@ Free text: conventions the commands must respect when writing/reviewing code
 
 <!-- e.g.: DDD (Domain/Application/Infrastructure); no #[AsMessageHandler]; etc. -->
 
+## notes
+Per-command extra guidance. When a command runs, it MUST follow the entry matching its command
+plus the `all` entry, as **mandatory additional instructions for that step**, on top of the
+command's built-in logic. Use the logical command id (`feat:design`, `bug:fix`, `work:watch`),
+regardless of how your harness spells the invocation. Keep each note short and specific (a
+reminder, not a second manual). Empty = no extra guidance.
+
+- `all:`             # applies to every command
+- `feat:design:`     # add only the commands you want to extend; any command id works
+- `bug:fix:`
+- `work:watch:`
+
 ## domain_memory
 Domain knowledge via the `domain-memory` MCP (https://github.com/mashware/domain-memory).
 
