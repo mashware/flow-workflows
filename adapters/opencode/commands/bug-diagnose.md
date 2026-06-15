@@ -1,80 +1,80 @@
 ---
-description: Reproduce el fallo y delimita exactamente qué está roto
+description: Reproduce the failure and pinpoint exactly what is broken
 ---
 
 # `/bug-diagnose`
 
-Fase de diagnóstico: aislar **qué** está fallando antes de buscar **por qué**.
+Diagnosis phase: isolate **what** is failing before looking for **why**.
 
 ## 1. Pre-flight
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step indicates. On `domain_memory`: if enabled but the MCP fails or takes more than 2 s, continue without that context — don't block or notify the user.
 
-- Carga `meta.json`. Si `type` no es `bug`, niégate.
-- Si `size` es `XS`, sugiere saltar a `/bug-fix` y termina.
-- Lee `01-context.md`.
+- Load `meta.json`. If `type` is not `bug`, refuse.
+- If `size` is `XS`, suggest skipping to `/bug-fix` and stop.
+- Read `01-context.md`.
 
-## 2. Consulta domain-memory enfocada
+## 2. Focused domain-memory query
 
-Si `domain_memory.enabled`, llama a `mcp__domain-memory__search_knowledge` con consultas sobre el **componente sospechoso** (handler, worker, endpoint, módulo). Suele haber postmortems previos del mismo área que ahorran horas: la misma causa puede haber aparecido bajo otro síntoma.
+If `domain_memory.enabled`, call `mcp__domain-memory__search_knowledge` with queries about the **suspected component** (handler, worker, endpoint, module). Prior postmortems in the same area often exist and can save hours — the same root cause may have appeared under a different symptom.
 
-Ejemplos:
-- Cola de fallos → `"DLX <handler-name>"`, `"retry policy worker"`.
-- Endpoint → `"endpoint <ruta>"`, `"validation <DTO>"`.
-- Frontend → `"<componente>"`, `"<flow-name>"`.
+Examples:
+- Failed queue → `"DLX <handler-name>"`, `"retry policy worker"`.
+- Endpoint → `"endpoint <path>"`, `"validation <DTO>"`.
+- Frontend → `"<component>"`, `"<flow-name>"`.
 
-2-3 consultas en paralelo. Tiempo de espera máximo 2s; si falla, sigue. Hallazgos relevantes al artefacto bajo "Conocimiento de dominio previo".
+2-3 queries in parallel. Max wait 2 s; continue if it fails. Record relevant findings in the artifact under "Prior domain knowledge".
 
-## 3. Trabajo
+## 3. Work
 
-Objetivo: producir un caso reproducible mínimo y delimitar componentes afectados.
+Goal: produce a minimal reproducible case and delimit the affected components.
 
-Pasos:
+Steps:
 
-1. **Si es cola de fallos / mensajería**: invoca el subagente que tu proyecto tenga para analizar mensajes muertos, si existe; si no, inspecciona el payload y las cabeceras del mensaje para localizar el handler, historial de reintentos y causa inicial.
-2. **Si es API/HTTP**: identifica el endpoint, recoge curl o petición reproducible, verifica la respuesta esperada frente a la real.
-3. **Si es frontend**: identifica componente, ruta, pasos para reproducir, herramientas del navegador (consola, red).
-4. **Si es worker/consumer**: identifica el tipo de trabajo, mensaje de origen, registros del supervisor (usa el comando `quality.test_one` o equivalente de observabilidad de FLOW.md para filtrar por tipo de worker).
-5. **Si es BD**: consulta problemática, plan de ejecución (`EXPLAIN`), datos de entrada que disparan el fallo.
+1. **If it's a failed queue / messaging**: invoke the subagent your project has for analyzing dead-letter messages if one exists; if not, inspect the message payload and headers to locate the handler, retry history, and initial cause.
+2. **If it's API/HTTP**: identify the endpoint, capture a reproducible curl or request, verify expected vs actual response.
+3. **If it's frontend**: identify the component, route, reproduction steps, browser devtools (console, network).
+4. **If it's a worker/consumer**: identify the job type, source message, supervisor logs (use `quality.test_one` or the equivalent observability command from FLOW.md filtered by worker type).
+5. **If it's DB**: identify the problematic query, execution plan (`EXPLAIN`), input data that triggers the failure.
 
-Usa un subagente de propósito general para localizar el código relevante. Pasa un prompt autocontenido con el síntoma y las pistas iniciales.
+Use a general-purpose subagent to locate the relevant code. Pass a self-contained prompt with the symptom and initial clues.
 
 ## 4. Output
 
 `.claude/work/<TICKET>/02-diagnose.md`:
 
 ```markdown
-# Diagnóstico {TICKET}
+# Diagnosis {TICKET}
 
-## Conocimiento de dominio previo
-<hallazgos del search_knowledge enfocado, o "sin hallazgos">
+## Prior domain knowledge
+<findings from the focused search_knowledge, or "no findings">
 
-## Reproducción mínima
-<pasos numerados que reproducen el fallo>
+## Minimal reproduction
+<numbered steps that reproduce the failure>
 
-## Comportamiento esperado vs real
-- Esperado:
-- Real:
+## Expected vs actual behavior
+- Expected:
+- Actual:
 
-## Componentes implicados
-- Archivos sospechosos: (sin afirmar todavía la causa)
-- Servicios: backend / worker / frontend / BD
+## Implicated components
+- Suspected files: (not asserting the cause yet)
+- Services: backend / worker / frontend / DB
 
-## Datos del fallo
-- Stack trace / registro:
-- Petición / payload:
-- Datos de entrada que lo disparan:
+## Failure data
+- Stack trace / log:
+- Request / payload:
+- Input data that triggers it:
 
-## Hipótesis iniciales
+## Initial hypotheses
 1. …
 2. …
 ```
 
-## 5. ¿El tamaño sigue siendo correcto?
+## 5. Is the size still correct?
 
-Si el diagnóstico revela que el fallo es trivial (un null check, una errata) y se clasificó como M/L por desconocimiento, propón reclasificar a XS/S. A la inversa: si lo que parecía XS ha resultado afectar a varios componentes, sube el tamaño. Confirma con el usuario antes de cambiar `meta.json.size`.
+If the diagnosis reveals the failure is trivial (a null check, a typo) and it was classified as M/L out of uncertainty, propose reclassifying to XS/S. Conversely: if what appeared to be XS turns out to affect multiple components, raise the size. Confirm with the user before changing `meta.json.size`.
 
-## 6. Cierre
+## 6. Wrap-up
 
-- Actualiza `meta.json`: `phase = "diagnose"`, añade a `phases_done`.
-- Sugiere siguiente: `/bug-investigate` (M/L) o `/bug-fix` (S si la causa es evidente).
+- Update `meta.json`: `phase = "diagnose"`, add to `phases_done`.
+- Suggest next step: `/bug-investigate` (M/L) or `/bug-fix` (S if the cause is evident).

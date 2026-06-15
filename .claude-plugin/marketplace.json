@@ -8,7 +8,7 @@
     {
       "name": "flow",
       "source": "./plugins/flow",
-      "description": "Flujos guiados feat/bug (start→ship), vigilancia post-deploy y code-review multiagente, agnósticos de stack. Cada repo se configura con un FLOW.md en su raíz."
+      "description": "Guided feat/bug workflows (start→ship), post-deploy monitoring and multi-agent code review, stack-agnostic. Each repo is configured with a FLOW.md at its root."
     }
   ]
 }

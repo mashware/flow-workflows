@@ -1,92 +1,92 @@
 ---
-description: Cierra un work sin shipear (feature descartada, fallo que no era fallo, etc.)
+description: Close a work without shipping (discarded feature, non-issue, etc.)
 ---
 
 # `/work:abandon`
 
-**Paso 0**: lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+**Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes more than 2s, continue without that context — do not block or notify the user.
 
-Cierre limpio para trabajos que no van a llegar a la rama base. Casos típicos:
+Clean closure for works that will not reach the base branch. Typical cases:
 
-- Una feature se descarta tras el `brainstorm` o `design` (no aporta, alcance no justifica esfuerzo).
-- Un fallo resulta no serlo (comportamiento esperado, problema externo, configuración del usuario).
-- Un work se sustituye por otro ticket que lo absorbe.
+- A feature is discarded after `brainstorm` or `design` (no value, scope does not justify effort).
+- A bug turns out not to be one (expected behavior, external problem, user misconfiguration).
+- A work is replaced by another ticket that absorbs it.
 
 ## 1. Pre-flight
 
-- Localiza el `meta.json` activo: busca por rama actual; si no, pide al usuario el ticket.
-- Si `phase` ya es `done`, no se abandona: avisa y termina (los trabajos terminados se archivan, no se abandonan).
-- Lee `meta.json` y los artefactos existentes para saber qué se hizo.
+- Locate the active `meta.json`: search by current branch; if not found, ask the user for the ticket.
+- If `phase` is already `done`, do not abandon: notify and stop (finished works are archived, not abandoned).
+- Read `meta.json` and the existing artifacts to understand what was done.
 
-## 2. Justificación
+## 2. Reason
 
-Pregunta al usuario el motivo con `AskUserQuestion`. Opciones típicas:
+Ask the user for the reason with `AskUserQuestion`. Typical options:
 
-- **Feature descartada** (no aporta valor suficiente).
-- **No era un fallo** (comportamiento esperado o problema externo).
-- **Absorbido por otro ticket** (se hace en otro ticket).
-- **Bloqueado externamente** (depende de algo fuera de nuestro control).
-- **Otra** (el usuario explica).
+- **Discarded feature** (not enough value).
+- **Not actually a bug** (expected behavior or external problem).
+- **Absorbed by another ticket** (will be done in a different ticket).
+- **Externally blocked** (depends on something outside our control).
+- **Other** (user explains).
 
-Anota la justificación en una sola línea — va al artefacto.
+Record the reason in a single line — it goes into the artifact.
 
-## 3. Captura mínima
+## 3. Minimal capture
 
-Escribe `.claude/work/<TICKET>/99-abandoned.md`:
+Write `.claude/work/<TICKET>/99-abandoned.md`:
 
 ```markdown
-# Abandonado <TICKET>
+# Abandoned <TICKET>
 
-## Motivo
-<una línea>
+## Reason
+<one line>
 
-## Estado al abandonar
-- Fase alcanzada: <phase>
-- Fases completadas: <phases_done>
-- Rama: <branch>
-- Commits en la rama: <git log --oneline <base>..HEAD | wc -l>
-- ¿Hay código sin fusionar?: sí / no
+## State at abandonment
+- Phase reached: <phase>
+- Completed phases: <phases_done>
+- Branch: <branch>
+- Commits on branch: <git log --oneline <base>..HEAD | wc -l>
+- Is there unmerged code?: yes / no
 
-## Qué se aprendió (si aplica)
-<bullets cortos sobre conclusiones del análisis, si las hubo>
+## What was learned (if applicable)
+<short bullets on analysis conclusions, if any>
 
-## Acciones derivadas (si aplica)
-- Ticket nuevo a abrir:
-- Cambios a revertir:
-- Rama a borrar: sí / no
+## Follow-up actions (if applicable)
+- New ticket to open:
+- Changes to revert:
+- Branch to delete: yes / no
 ```
 
-La `<base>` se lee de `git.default_base` de FLOW.md; si está vacía, usa `origin/main` o `origin/master` según la rama base real del repo.
+`<base>` is read from `git.default_base` in FLOW.md; if empty, use `origin/main` or `origin/master` according to the repo's real base branch.
 
-## 4. Conocimiento de dominio (oferta condicional)
+## 4. Domain knowledge (conditional offer)
 
-**Solo si `domain_memory.enabled` es `true` en FLOW.md y el análisis dejó hallazgos no obvios** (por qué algo del dominio funciona como funciona, restricciones legales, integraciones con comportamiento sorpresivo): pregunta al usuario si quiere invocar `Skill save-knowledge`. Silencio por defecto — abandonar no significa que no se aprendió, pero la mayoría de las veces no hay nada que valga la pena guardar. Si `domain_memory.enabled` es `false` o está ausente, salta este paso sin avisar.
+**Only if `domain_memory.enabled` is `true` in FLOW.md and the analysis left non-obvious findings** (why something in the domain works the way it does, legal constraints, integrations with surprising behavior): ask the user whether to invoke `Skill save-knowledge`. Silence by default — abandoning does not mean nothing was learned, but most of the time there is nothing worth saving. If `domain_memory.enabled` is `false` or absent, skip this step silently.
 
-## 5. Estado del git
+## 5. Git state
 
-Pregunta al usuario qué hacer con la rama:
+Ask the user what to do with the branch:
 
-- **Borrarla localmente** (si no hay nada que conservar): `git checkout <base> && git branch -D <rama>`. **Solo si el usuario confirma** — destructivo.
-- **Dejarla** (por si vuelve el tema): no se toca.
-- **Enviarla al remoto como referencia** (raro pero válido si hay análisis valioso).
+- **Delete it locally** (if there is nothing worth keeping): `git checkout <base> && git branch -D <branch>`. **Only if the user confirms** — this is destructive.
+- **Leave it** (in case the topic comes back): do nothing.
+- **Push it to the remote as a reference** (rare but valid if there is valuable analysis).
 
-No tomes la decisión solo — pregunta.
+Do not decide alone — ask.
 
-## 6. Cierre
+## 6. Close
 
-- Actualiza `meta.json`:
+- Update `meta.json`:
   - `phase = "abandoned"`.
-  - `phases_done` no se toca (refleja lo que sí se hizo).
-  - `notes` += motivo del abandono.
-  - `updated_at` actualizado.
-- Mueve la carpeta a `.claude/work/_archive/<TICKET>/` para que no aparezca en `/work:status` como pendiente.
-- Resume al usuario: ticket abandonado, motivo, qué se hizo con la rama.
+  - `phases_done` is not touched (it reflects what was actually done).
+  - `notes` += abandonment reason.
+  - `updated_at` updated.
+- Move the folder to `.claude/work/_archive/<TICKET>/` so it does not appear in `/work:status` as pending.
+- Report to the user: ticket abandoned, reason, what was done with the branch.
 
-## Recuperación
+## Recovery
 
-Si el tema reaparece, el usuario puede:
-1. Mover la carpeta de vuelta: `mv .claude/work/_archive/<TICKET> .claude/work/<TICKET>`.
-2. Cambiar `phase` a la fase desde la que retoma.
-3. Crear rama de nuevo si la borró.
+If the topic resurfaces, the user can:
+1. Move the folder back: `mv .claude/work/_archive/<TICKET> .claude/work/<TICKET>`.
+2. Change `phase` to the phase from which they resume.
+3. Recreate the branch if it was deleted.
 
-No hay comando dedicado para esto — es manual a propósito (no debería ser un caso frecuente).
+There is no dedicated command for this — it is intentionally manual (this should not happen often).

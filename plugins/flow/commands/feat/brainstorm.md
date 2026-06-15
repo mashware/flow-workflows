@@ -1,55 +1,55 @@
 ---
-description: Genera opciones, ángulos y riesgos para la feature antes de diseñar
+description: Generate options, angles, and risks for the feature before designing
 ---
 
 # `/feat:brainstorm`
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user.
 
-Fase de exploración. **No escribe código.** Solo abre el espacio de opciones para que el diseño no parta de la primera idea.
+Exploration phase. **No code is written.** Only opens the option space so that design does not start from the first idea.
 
 ## 1. Pre-flight
 
-- Localiza el `meta.json` activo: busca primero por la rama actual (`git branch --show-current`), si no, pregunta el ticket.
-- Si `meta.json.phase` no es `context`, avisa y pregunta si seguir igualmente.
-- Si `size` es `XS` o `S`, sugiere saltar a `/feat:design` o `/feat:build` directamente y termina (a menos que el usuario insista).
-- Lee `01-context.md`.
+- Locate the active `meta.json`: search first by current branch (`git branch --show-current`), otherwise ask the user for the ticket.
+- If `meta.json.phase` is not `context`, warn and ask whether to continue anyway.
+- If `size` is `XS` or `S`, suggest jumping to `/feat:design` or `/feat:build` directly and stop (unless the user insists).
+- Read `01-context.md`.
 
-## 2. Consulta domain-memory enfocada
+## 2. Focused domain-memory query
 
-Si `domain_memory.enabled` es `true` en `FLOW.md`: antes de generar opciones, llama a `mcp__domain-memory__search_knowledge` con queries enfocadas en el **concepto/patrón** que cubre la feature, no en el título genérico (eso ya se consultó en `/feat:start`). Ejemplos según el área:
+If `domain_memory.enabled` is `true` in `FLOW.md`: before generating options, call `mcp__domain-memory__search_knowledge` with queries focused on the **concept/pattern** the feature covers, not the generic title (that was already queried in `/feat:start`). Examples by area:
 
-- Si la feature toca seguimiento → `"tracking deduplication"`, `"hash collision"`.
-- Si toca pagos → `"trial expiration"`, `"plan downgrade flow"`.
-- Si toca integraciones externas → `"attachment handler"`, `"tax rules integration"`.
+- If the feature touches tracking → `"tracking deduplication"`, `"hash collision"`.
+- If it touches payments → `"trial expiration"`, `"plan downgrade flow"`.
+- If it touches external integrations → `"attachment handler"`, `"tax rules integration"`.
 
-Lanza 2-3 queries en paralelo. Timeout 2s; si falla, sigue sin contexto y no avises al usuario. Anota los hits relevantes en `02-brainstorm.md` bajo "Conocimiento de dominio adicional" (no repitas lo ya en `01-context.md`). Si `domain_memory.enabled` es `false` o vacío, salta sin avisar.
+Launch 2-3 queries in parallel. Timeout 2 s; if it fails, continue without context and do not notify the user. Record relevant hits in `02-brainstorm.md` under "Additional domain knowledge" (do not repeat what is already in `01-context.md`). If `domain_memory.enabled` is `false` or empty, skip without notifying.
 
-## 3. Trabajo
+## 3. Work
 
-### 3.0 ¿Panel multiagente o agente único?
+### 3.0 Multi-agent panel or single agent?
 
-- Si `meta.json.size` es **M o L**: ofrece el **panel de enfoques en paralelo** con `AskUserQuestion` ("¿Generar las opciones con un panel multiagente en paralelo? Más caro en tokens, menos sesgo de una sola línea de pensamiento."). Si acepta → §3.A. Si declina → §3.B.
-- Si es **S** (o el usuario declinó): §3.B directamente. No se ofrece panel en XS/S — el coste no compensa.
+- If `meta.json.size` is **M or L**: offer the **parallel-approach panel** with `AskUserQuestion` ("Generate options with a parallel multi-agent panel? Higher token cost, less single-line-of-thought bias."). If accepted → §3.A. If declined → §3.B.
+- If **S** (or the user declined): §3.B directly. The panel is not offered for XS/S — the cost does not justify it.
 
-### 3.A Panel de enfoques (Workflow paralelo)
+### 3.A Approach panel (parallel Workflow)
 
-Llama a la herramienta `Workflow`. Cada agente genera **un** enfoque desde un ángulo distinto (en paralelo, sin verse entre ellos → diversidad real), y un agente final los sintetiza y rankea. Script base:
+Call the `Workflow` tool. Each agent generates **one** approach from a different angle (in parallel, without seeing each other → real diversity), and a final agent synthesizes and ranks them. Base script:
 
 ```js
 export const meta = {
   name: 'brainstorm-panel',
-  description: 'Panel de enfoques en paralelo para una feature + síntesis',
-  phases: [{ title: 'Enfoques' }, { title: 'Síntesis' }],
+  description: 'Parallel approach panel for a feature + synthesis',
+  phases: [{ title: 'Approaches' }, { title: 'Synthesis' }],
 }
 const TICKET = args.ticket
-const LENTES = [
-  { k: 'minimo',        p: 'el enfoque MÁS pequeño que resuelve el caso de uso declarado, nada más (MVP estricto)' },
-  { k: 'reutilizacion', p: 'el enfoque que MÁS reutiliza piezas ya existentes en el módulo afectado o vecinos' },
-  { k: 'operacion',     p: 'el enfoque más sólido en producción (observabilidad, fallo de integración externa, datos a escala)' },
-  { k: 'replanteo',     p: 'cuestiona la premisa: ¿y si el problema se resuelve sin construir lo que se pide, o en otro sitio?' },
+const LENSES = [
+  { k: 'minimum',    p: 'the SMALLEST approach that solves the declared use case, nothing more (strict MVP)' },
+  { k: 'reuse',      p: 'the approach that MOST reuses existing pieces in the affected module or neighbors' },
+  { k: 'operations', p: 'the most production-solid approach (observability, external integration failure, data at scale)' },
+  { k: 'reframe',    p: 'challenge the premise: what if the problem is solved without building what is requested, or elsewhere?' },
 ]
-const OPCION = {
+const OPTION = {
   type: 'object',
   properties: {
     nombre: { type: 'string' }, queEs: { type: 'string' },
@@ -57,70 +57,70 @@ const OPCION = {
   },
   required: ['nombre', 'queEs', 'modulos', 'riesgo', 'porQueMala'],
 }
-const enfoques = await parallel(LENTES.map(l => () =>
+const approaches = await parallel(LENSES.map(l => () =>
   agent(
-    `Propón UN enfoque para resolver el ticket ${TICKET} (ver convenciones del proyecto en FLOW.md), desde esta lente: ${l.p}. ` +
-    `Lee .claude/work/${TICKET}/01-context.md para el contexto. No escribas código. Sé concreto sobre módulos y capas reales del proyecto.`,
-    { label: `enfoque:${l.k}`, phase: 'Enfoques', schema: OPCION, model: 'sonnet' }
+    `Propose ONE approach to solve ticket ${TICKET} (see project conventions in FLOW.md), from this lens: ${l.p}. ` +
+    `Read .claude/work/${TICKET}/01-context.md for context. Do not write code. Be specific about real project modules and layers.`,
+    { label: `approach:${l.k}`, phase: 'Approaches', schema: OPTION, model: 'sonnet' }
   )))
-const sintesis = await agent(
-  `Eres el sintetizador. Te paso ${LENTES.length} enfoques para ${TICKET}:\n${JSON.stringify(enfoques.filter(Boolean), null, 2)}\n` +
-  `Lee .claude/work/${TICKET}/01-context.md. Rankea de mejor a peor para ESTE caso (encaje en el proyecto + simplicidad, no genérico), ` +
-  `y da una recomendación inicial con 2-3 líneas de justificación. Output markdown.`,
-  { label: 'sintesis', phase: 'Síntesis', model: 'opus' })
-return { enfoques: enfoques.filter(Boolean), sintesis }
+const synthesis = await agent(
+  `You are the synthesizer. Here are ${LENSES.length} approaches for ${TICKET}:\n${JSON.stringify(approaches.filter(Boolean), null, 2)}\n` +
+  `Read .claude/work/${TICKET}/01-context.md. Rank from best to worst for THIS case (project fit + simplicity, not generic), ` +
+  `and give an initial recommendation with 2-3 lines of justification. Output markdown.`,
+  { label: 'synthesis', phase: 'Synthesis', model: 'opus' })
+return { approaches: approaches.filter(Boolean), synthesis }
 ```
 
-Pásale `args: { ticket: "<TICKET>" }`. Con el resultado, rellena §4 (cada enfoque → una "Opción", la síntesis → "Recomendación inicial"). Si un enfoque vino `null` (agente caído), simplemente no lo incluyas.
+Pass `args: { ticket: "<TICKET>" }`. With the result, fill §4 (each approach → one "Option", synthesis → "Initial recommendation"). If an approach came back `null` (agent down), simply omit it.
 
-### 3.B Agente único (caso por defecto)
+### 3.B Single agent (default case)
 
-Lanza un subagente `general-purpose` con este encargo (breve, autocontenido):
+Launch a `general-purpose` subagent with this brief (short, self-contained):
 
-> Genera 3-5 enfoques distintos para resolver `<título>` siguiendo las convenciones del proyecto (ver `FLOW.md` y `.claude/work/<TICKET>/01-context.md`). Para cada enfoque: una frase de qué es, módulos/capas afectados, principal riesgo, y por qué podría ser mala idea. No escribas código. Reporta en markdown bajo 400 palabras.
+> Generate 3-5 distinct approaches to solve `<title>` following the project conventions (see `FLOW.md` and `.claude/work/<TICKET>/01-context.md`). For each approach: a one-sentence description of what it is, modules/layers affected, main risk, and why it could be a bad idea. Do not write code. Report in markdown, under 400 words.
 
-Si la feature toca dominio sensible (pagos, autenticación, seguimiento), lanza **en paralelo** un segundo subagente `general-purpose` con foco en "qué puede salir mal" para ese dominio.
+If the feature touches a sensitive domain (payments, authentication, tracking), launch **in parallel** a second `general-purpose` subagent focused on "what can go wrong" for that domain.
 
 ## 4. Output
 
-Crea `.claude/work/<TICKET>/02-brainstorm.md`:
+Create `.claude/work/<TICKET>/02-brainstorm.md`:
 
 ```markdown
 # Brainstorm <TICKET>
 
-## Conocimiento de dominio adicional
-<hits del search_knowledge enfocado, o "sin hallazgos">
+## Additional domain knowledge
+<hits from the focused search_knowledge, or "no findings">
 
-## Opciones consideradas
-### Opción A: <nombre>
-- Qué es:
-- Módulos/capas afectados:
-- Riesgo principal:
-- Por qué podría ser mala idea:
+## Options considered
+### Option A: <name>
+- What it is:
+- Modules/layers affected:
+- Main risk:
+- Why it could be a bad idea:
 
-### Opción B: …
-### Opción C: …
+### Option B: …
+### Option C: …
 
-## Riesgos transversales
+## Cross-cutting risks
 <bullets>
 
-## Recomendación inicial
-<una opción, con justificación de 2-3 líneas>
+## Initial recommendation
+<one option, with 2-3 lines of justification>
 ```
 
-## 5. Dudas emergentes
+## 5. Emerging questions
 
-Mirar opciones suele revelar preguntas nuevas que `/feat:start` no detectó (p.ej. "¿esto solo aplica a planes pagados?", "¿qué pasa si el usuario ya tiene N de esto?"). Si han aparecido, **pregúntalas al usuario antes de cerrar** con `AskUserQuestion`. Anota las respuestas al final de `02-brainstorm.md` bajo "Decisiones aclaradas en /feat:brainstorm".
+Reviewing options often surfaces new questions that `/feat:start` did not catch (e.g. "does this only apply to paid plans?", "what happens if the user already has N of these?"). If they appeared, **ask the user before closing** with `AskUserQuestion`. Record the answers at the end of `02-brainstorm.md` under "Decisions clarified in /feat:brainstorm".
 
-## 6. ¿El tamaño sigue siendo correcto?
+## 6. Is the size still correct?
 
-Tras ver las opciones, evalúa si `meta.json.size` sigue cuadrando con el alcance real:
+After reviewing the options, assess whether `meta.json.size` still matches the real scope:
 
-- Si el brainstorm sugiere que la feature es mucho más simple/compleja de lo asumido, **propón al usuario reclasificar** (`AskUserQuestion`) con la nueva estimación y una línea justificando.
-- Si confirma, actualiza `meta.json.size` y anota el cambio en `meta.json.notes` (`"size: M→S tras brainstorm — opción elegida no requiere migración"`).
-- Si dice que mantiene el tamaño, sigue.
+- If the brainstorm suggests the feature is much simpler or more complex than assumed, **propose reclassifying** to the user (`AskUserQuestion`) with the new estimate and a one-line justification.
+- If confirmed, update `meta.json.size` and note the change in `meta.json.notes` (`"size: M→S after brainstorm — chosen option does not require migration"`).
+- If the user keeps the size, continue.
 
-## 7. Cierre
+## 7. Close
 
-- Actualiza `meta.json`: `phase = "brainstorm"`, añade a `phases_done`, actualiza `updated_at`.
-- Muestra al usuario las opciones y pídele que elija (o que pida ajustes) **antes** de pasar a `/feat:design`. Si elige una, anótala en `meta.json.notes`.
+- Update `meta.json`: `phase = "brainstorm"`, add to `phases_done`, update `updated_at`.
+- Show the user the options and ask them to choose (or request adjustments) **before** moving to `/feat:design`. If they choose one, record it in `meta.json.notes`.

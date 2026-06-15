@@ -1,56 +1,56 @@
 # `/bug-start $ARGUMENTS`
 
-Inicia una incidencia. `$ARGUMENTS` es el ticket (formato `tracker.prefix` de FLOW.md; vacío = libre). Si vacío, pídelo y termina.
+Start a bug. `$ARGUMENTS` is the ticket (format `tracker.prefix` from FLOW.md; empty = free-form). If empty, ask for it and stop.
 
 ## 0. Pre-flight
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-- Verifica que estás en el repo correcto.
-- Si `.claude/work/$ARGUMENTS/meta.json` existe, sugiere `/work-resume`.
+- Verify you're in the correct repo.
+- If `.claude/work/$ARGUMENTS/meta.json` exists, suggest `/work-resume`.
 
-## 1. Recopila contexto
+## 1. Gather context
 
-En paralelo:
+In parallel:
 
-1. **Tracker**: léelo con `tracker.view_cmd` de FLOW.md (sustituye `{TICKET}` por `$ARGUMENTS`). Si `tool:none` o falta la clave, pídele al usuario el síntoma, severidad y entorno.
-2. **domain-memory** (si `domain_memory.enabled`): `search_knowledge` con palabras clave del síntoma. Importante para detectar si ya hubo postmortems del mismo área.
-3. **Observabilidad** si el incidente está reciente: si tienes pistas (servicio, traza, registro), considera usar las herramientas MCP de `observability.platform` de FLOW.md. Si no, no fuerces.
-4. **Git**: comprueba rama limpia y commit base.
+1. **Tracker**: read it using `tracker.view_cmd` from FLOW.md (substitute `{TICKET}` with `$ARGUMENTS`). If `tool:none` or the key is missing, ask the user for the symptom, severity, and environment.
+2. **domain-memory** (if `domain_memory.enabled`): `search_knowledge` with keywords from the symptom. Important for detecting whether there have been previous postmortems in the same area.
+3. **Observability** if the incident is recent: if you have clues (service, trace, log), consider using the `observability.platform` MCP tools from FLOW.md. If not, don't force it.
+4. **Git**: check for a clean branch and the base commit.
 
-## 2. Clasifica el tamaño
+## 2. Classify size
 
-| Tamaño | Criterio                                                  | Fases sugeridas                              |
-|--------|-----------------------------------------------------------|----------------------------------------------|
-| XS     | Arreglo obvio (typo, condición invertida, comprobación de nulo) | start → fix → review → ship            |
-| S      | Síntoma claro, causa razonablemente acotada               | start → diagnose → fix → review → validate → ship |
-| M      | Síntoma claro pero causa no evidente, posible regresión   | start → diagnose → investigate → fix → validate → review → postmortem |
-| L      | Incidente crítico, multi-componente, producción afectada  | flujo completo + postmortem obligatorio       |
+| Size | Criteria                                                  | Suggested phases                              |
+|------|-----------------------------------------------------------|-----------------------------------------------|
+| XS   | Obvious fix (typo, inverted condition, null check)        | start → fix → review → ship                   |
+| S    | Clear symptom, reasonably bounded cause                   | start → diagnose → fix → review → validate → ship |
+| M    | Clear symptom but non-obvious cause, possible regression  | start → diagnose → investigate → fix → validate → review → postmortem |
+| L    | Critical incident, multi-component, production affected   | full flow + mandatory postmortem               |
 
-## 3. Rama
+## 3. Branch
 
-Mismas dos reglas innegociables que en `/feat-start` §5 (romperlas ya causó un despliegue accidental):
+Same two non-negotiable rules as in `/feat-start` §5 (breaking them already caused an accidental deployment):
 
-1. **Base explícita**, nunca implícita desde donde estés. Si estás en la rama de otra tarea, heredarías sus commits.
-2. **Sin heredar upstream**: con `branch.autoSetupMerge=true`, crear desde `git.default_base` de FLOW.md sin `--no-track` deja el upstream en esa base y un push puede acabar en ella.
+1. **Explicit base**, never implicit from where you are. If you're on another task's branch, you'd inherit its commits.
+2. **No inherited upstream**: with `branch.autoSetupMerge=true`, creating from `git.default_base` from FLOW.md without `--no-track` leaves the upstream on that base and a push can end up there.
 
 ```bash
-git rev-parse --abbrev-ref HEAD && git status --porcelain   # dónde estoy / árbol limpio
+git rev-parse --abbrev-ref HEAD && git status --porcelain   # where am I / clean tree
 git fetch origin
-git switch --create $ARGUMENTS-fix-slug --no-track <git.default_base>   # base independiente; --no-track obligatorio
+git switch --create $ARGUMENTS-fix-slug --no-track <git.default_base>   # independent base; --no-track mandatory
 ```
 
-Si la rama actual no es la base principal, pregunta la base al usuario (`git.default_base` recomendado, o apilada sobre la actual en modo tren → anótalo como `stacked_on`). Crea solo si el usuario lo confirma. Primer push siempre `git push -u origin HEAD` (en `ship`), jamás a la base principal.
+If the current branch is not the main base, ask the user for the base (`git.default_base` recommended, or stacked on the current one in train mode → note it as `stacked_on`). Create only if the user confirms. First push always `git push -u origin HEAD` (in `ship`), never to the main base.
 
-## 4. Escribe artefactos
+## 4. Write artifacts
 
 `.claude/work/$ARGUMENTS/meta.json`:
 ```json
 {
   "ticket": "$ARGUMENTS",
   "type": "bug",
-  "title": "<síntoma del tracker>",
-  "branch": "<rama creada en §3>",
+  "title": "<symptom from the tracker>",
+  "branch": "<branch created in §3>",
   "stacked_on": null,
   "size": "<XS|S|M|L>",
   "phase": "context",
@@ -63,28 +63,28 @@ Si la rama actual no es la base principal, pregunta la base al usuario (`git.def
 
 `.claude/work/$ARGUMENTS/01-context.md`:
 ```markdown
-# Contexto incidencia {TICKET}
+# Context bug {TICKET}
 
-## Síntoma reportado
-<lo que dice el reporter>
+## Reported symptom
+<what the reporter said>
 
-## Datos del tracker
-- Severidad / prioridad:
-- Entorno afectado:
+## Tracker data
+- Severity / priority:
+- Affected environment:
 - Reporter:
-- Fecha primer aviso:
+- Date first reported:
 
-## Conocimiento previo (domain-memory)
-<hallazgos o "sin hallazgos">
+## Prior knowledge (domain-memory)
+<findings or "no findings">
 
-## Pistas iniciales
-- Stack trace / registro conocido:
-- Traza de observabilidad (si la hay):
-- Workers en cola de fallos (si aplica):
+## Initial clues
+- Known stack trace / log:
+- Observability trace (if any):
+- Workers in failure queue (if applicable):
 
-## Tamaño estimado: <XS|S|M|L>
+## Estimated size: <XS|S|M|L>
 ```
 
-## 5. Cierre
+## 5. Close
 
-Resume y sugiere siguiente comando según tamaño (`/bug-fix` para XS, `/bug-diagnose` en el resto). No avanza solo.
+Summarize and suggest the next command based on size (`/bug-fix` for XS, `/bug-diagnose` for the rest). Don't advance automatically.

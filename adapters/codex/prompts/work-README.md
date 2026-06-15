@@ -1,40 +1,40 @@
 # `/work-README`
 
-Muestra la guía del sistema de flujos `/feat-*` y `/bug-*` para este adaptador de Codex.
+Shows the guide for the `/feat-*` and `/bug-*` workflow system for this Codex adapter.
 
 ---
 
-# Sistema de flujos `/feat-*` y `/bug-*`
+# `/feat-*` and `/bug-*` workflow system
 
-Este sistema **orquesta** los subagentes y skills que ya existen en el proyecto (no los reemplaza). Su trabajo es persistir contexto entre fases, evitar que cada paso empiece de cero, y forzar un final con code-review.
+This system **orchestrates** the subagents and skills that already exist in the project (it doesn't replace them). Its job is to persist context between phases, prevent each step from starting from scratch, and enforce a code-reviewed ending.
 
-## Configuración por repo: `FLOW.md`
+## Per-repo configuration: `FLOW.md`
 
-Coloca un fichero `FLOW.md` en la raíz del repo para adaptar el plugin a tus convenciones. Define el tracker de tickets, las convenciones de rama y MR/PR, los comandos de calidad, las convenciones de código, el MCP de domain-memory y el perfil de observabilidad. Todos los comandos leen este fichero en su paso 0.
+Place a `FLOW.md` file at the repo root to adapt the plugin to your conventions. It defines the ticket tracker, branch and MR/PR conventions, quality commands, code conventions, the domain-memory MCP, and the observability profile. All commands read this file in their step 0.
 
-Puedes partir de la plantilla en `../../plugins/flow/examples/FLOW.template.md`.
+You can start from the template at `../../plugins/flow/examples/FLOW.template.md`.
 
-Si el fichero no existe o una clave está vacía, cada comando autodescubre el valor o usa el comportamiento por defecto descrito en su sección correspondiente.
+If the file doesn't exist or a key is empty, each command auto-discovers the value or uses the default behavior described in its corresponding section.
 
-## Principios
+## Principles
 
-- **Una carpeta por ticket**: `.claude/work/{TICKET}/` contiene `meta.json` y los artefactos en markdown.
-- **Artefactos numerados**: cada fase escribe un `NN-fase.md` que el siguiente paso lee.
-- **`meta.json` es la fuente de verdad** del estado (fase actual, tamaño, rama). Sin él, los comandos se niegan a continuar.
-- **Tamaño manda**: en `/feat-start` y `/bug-start` se clasifica XS/S/M/L y se sugiere saltar fases en cambios pequeños.
-- **Rama con base explícita y sin upstream a la base**: crear una rama ya provocó un despliegue accidental, así que `/feat-start` §5 y `/bug-start` §3 imponen dos reglas.
-- **El MR/PR comunica funcionalidad, no implementación**: el título y la descripción parten del **Brief** del artefacto correspondiente, no del diseño técnico.
-- **Previsualización del MR/PR obligatoria antes de crear**: en `/feat-ship` y `/bug-ship`, antes de invocar la creación, se imprime al usuario el bloque completo y se pide confirmación.
-- **Los commits son opt-in del usuario**: durante `/feat-build` y `/bug-fix`, el agente **no hace `git commit` por su cuenta**.
-- **Code review obligatorio**: no se hace `/feat-ship` ni se cierra `/bug-postmortem` sin pasar por `/*-review`.
+- **One folder per ticket**: `.claude/work/{TICKET}/` contains `meta.json` and the markdown artifacts.
+- **Numbered artifacts**: each phase writes a `NN-phase.md` that the next step reads.
+- **`meta.json` is the source of truth** for state (current phase, size, branch). Without it, commands refuse to continue.
+- **Size drives the flow**: in `/feat-start` and `/bug-start` the work is classified XS/S/M/L and phases are suggested to skip for small changes.
+- **Branch with explicit base and no upstream to the base**: creating a branch already caused an accidental deployment, so `/feat-start` §5 and `/bug-start` §3 enforce two rules.
+- **MR/PR communicates functionality, not implementation**: the title and description come from the **Brief** of the corresponding artifact, not from the technical design.
+- **Mandatory MR/PR preview before creating**: in `/feat-ship` and `/bug-ship`, before invoking creation, the full block is printed to the user and confirmation is requested.
+- **Commits are user opt-in**: during `/feat-build` and `/bug-fix`, the agent **does not `git commit` on its own**.
+- **Mandatory code review**: `/feat-ship` cannot proceed and `/bug-postmortem` cannot close without passing through `/*-review`.
 
-## Esquema de `meta.json`
+## `meta.json` schema
 
 ```json
 {
   "ticket": "{PREFIX}XXXXX",
   "type": "feat" | "bug",
-  "title": "Texto del tracker o descripción corta",
+  "title": "Tracker text or short description",
   "branch": "{PREFIX}XXXXX-slug",
   "size": "XS" | "S" | "M" | "L",
   "phase": "context" | "brainstorm" | "design" | "plan" | "build" | "review" | "validate" | "ship" | "diagnose" | "investigate" | "fix" | "postmortem" | "done" | "abandoned",
@@ -42,37 +42,37 @@ Si el fichero no existe o una clave está vacía, cada comando autodescubre el v
   "mrs": [...],
   "started_at": "2026-05-11T10:00:00Z",
   "updated_at": "2026-05-11T11:30:00Z",
-  "notes": "campo libre"
+  "notes": "free field"
 }
 ```
 
-## Atajos por tamaño
+## Shortcuts by size
 
-| Tamaño | Features                                                          | Bugs                                               |
-|--------|-------------------------------------------------------------------|----------------------------------------------------|
-| XS     | start → build → review → ship                                     | start → fix → review → ship                        |
-| S      | start → design (resumido) → build → review → validate → ship      | start → diagnose → fix → review → validate → ship  |
-| M      | start → brainstorm → design → **plan** → build → review → validate → ship | flujo completo                           |
-| L      | flujo completo (incluye **plan**)                                 | flujo completo                                     |
+| Size | Features                                                          | Bugs                                               |
+|------|-------------------------------------------------------------------|----------------------------------------------------|
+| XS   | start → build → review → ship                                     | start → fix → review → ship                        |
+| S    | start → design (short) → build → review → validate → ship         | start → diagnose → fix → review → validate → ship  |
+| M    | start → brainstorm → design → **plan** → build → review → validate → ship | full flow                               |
+| L    | full flow (includes **plan**)                                     | full flow                                          |
 
-## Flujo `/feat-*` completo
+## Full `/feat-*` flow
 
 `/feat-start {TICKET}` → `/feat-brainstorm` → `/feat-design` → `/feat-plan` → `/feat-build` → `/feat-review` → `/feat-validate` → `/feat-ship`
 
-## Flujo `/bug-*` completo
+## Full `/bug-*` flow
 
 `/bug-start {TICKET}` → `/bug-diagnose` → `/bug-investigate` → `/bug-fix` → `/bug-validate` → `/bug-review` → `/bug-postmortem` → `/bug-ship`
 
-## Comandos transversales
+## Cross-cutting commands
 
-- `/work-status` — muestra todos los trabajos en `.claude/work/`, fase actual y divergencia con git.
-- `/work-resume` — detecta la rama actual, abre `meta.json`, recapitula y sugiere siguiente paso.
-- `/work-watch {TICKET} [30m]` — vigilancia post-despliegue: observa la plataforma de observabilidad acotado al cambio, comparando contra línea base, y avisa si hay regresión. En Codex, hace UN ciclo y termina; el estado vive en `monitor.md`. Para repetirlo, usa cron del SO + `codex exec "/work-watch {TICKET}"` o las Automations de la app de Codex.
-- `/work-abandon` — cierra un work sin enviar (feature descartada, fallo que no era fallo, etc.).
+- `/work-status` — shows all work items in `.claude/work/`, current phase and divergence with git.
+- `/work-resume` — detects the current branch, opens `meta.json`, recaps, and suggests the next step.
+- `/work-watch {TICKET} [30m]` — post-deployment monitoring: observes the observability platform scoped to the change, comparing against a baseline, and alerts on regressions. In Codex, runs ONE cycle and exits; state lives in `monitor.md`. To repeat it, use OS cron + `codex exec "/work-watch {TICKET}"` or the Codex app Automations.
+- `/work-abandon` — closes a work item without shipping (discarded feature, false bug, etc.).
 
-## Reglas de oro
+## Golden rules
 
-1. **Nunca saltes `review`.** Si la fase anterior no está en `phases_done`, el comando se niega.
-2. **Si editas código fuera del flujo**, `/work-status` te avisa de la divergencia.
-3. **Los artefactos son editables a mano**. Si reescribes `03-design.md`, el siguiente paso lo respetará.
-4. **`domain-memory` es opcional pero recomendado** al cerrar features grandes o postmortems (requiere `domain_memory.enabled: true` en FLOW.md).
+1. **Never skip `review`.** If the previous phase is not in `phases_done`, the command refuses.
+2. **If you edit code outside the workflow**, `/work-status` will flag the divergence.
+3. **Artifacts are hand-editable**. If you rewrite `03-design.md`, the next step will respect it.
+4. **`domain-memory` is optional but recommended** when closing large features or postmortems (requires `domain_memory.enabled: true` in FLOW.md).

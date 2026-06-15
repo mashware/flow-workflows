@@ -1,40 +1,40 @@
-# Adaptador flow para Gemini CLI
+# flow adapter for Gemini CLI
 
-Este adaptador lleva los 22 comandos del plugin `flow` (`/feat:*`, `/bug:*`, `/work:*`, `/save-knowledge`) al formato de **Gemini CLI**.
+This adapter brings the 22 commands of the `flow` plugin (`/feat:*`, `/bug:*`, `/work:*`, `/save-knowledge`) to the **Gemini CLI** format.
 
-Los comandos son un adaptador de formato, no una reimplementación: la lógica y la prosa son idénticas al plugin original. Lo que cambia es el fichero de destino y la traducción de las primitivas específicas de Claude Code. Consulta `PRIMITIVES.md` para el detalle completo.
+The commands are a format adapter, not a reimplementation: the logic and prose are identical to the original plugin. What changes is the target file format and the translation of Claude Code-specific primitives. See `PRIMITIVES.md` for full details.
 
 ---
 
-## Requisitos previos
+## Prerequisites
 
-- [Gemini CLI](https://github.com/google-gemini/gemini-cli) instalado y autenticado.
-- Node.js 18+ (para el servidor MCP `domain-memory`, si lo usas).
-- Un fichero `FLOW.md` en la raíz del repo que quieres trabajar. Parte de la plantilla en:
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) installed and authenticated.
+- Node.js 18+ (for the `domain-memory` MCP server, if you use it).
+- A `FLOW.md` file at the root of the repo you want to work on. Start from the template at:
   `../../plugins/flow/examples/FLOW.template.md`
 
 ---
 
-## Instalación
+## Installation
 
-### 1. Copia los comandos
+### 1. Copy the commands
 
-**Instalación global** (disponible en cualquier repo):
+**Global installation** (available in any repo):
 ```bash
 cp -r commands/* ~/.gemini/commands/
 ```
 
-**Instalación local** (solo para el repo actual):
+**Local installation** (current repo only):
 ```bash
 mkdir -p .gemini/commands
 cp -r commands/* .gemini/commands/
 ```
 
-Gemini CLI carga comandos de ambas ubicaciones. Los locales tienen precedencia sobre los globales.
+Gemini CLI loads commands from both locations. Local commands take precedence over global ones.
 
-Tras la copia, la estructura queda así:
+After copying, the structure looks like this:
 ```
-~/.gemini/commands/          (o .gemini/commands/ en el repo)
+~/.gemini/commands/          (or .gemini/commands/ in the repo)
 ├── feat/
 │   ├── start.toml          → /feat:start
 │   ├── brainstorm.toml     → /feat:brainstorm
@@ -62,16 +62,16 @@ Tras la copia, la estructura queda así:
 └── save-knowledge.toml     → /save-knowledge
 ```
 
-### 2. Configura el servidor MCP domain-memory
+### 2. Configure the domain-memory MCP server
 
-Fusiona el bloque de `settings.snippet.json` en tu `~/.gemini/settings.json`:
+Merge the block from `settings.snippet.json` into your `~/.gemini/settings.json`:
 
 ```bash
-# Si settings.json no existe aún:
+# If settings.json does not exist yet:
 cp settings.snippet.json ~/.gemini/settings.json
 
-# Si ya existe, fusiona manualmente el bloque "mcpServers":
-# Abre ~/.gemini/settings.json y añade dentro de "mcpServers":
+# If it already exists, manually merge the "mcpServers" block:
+# Open ~/.gemini/settings.json and add inside "mcpServers":
 #   "domain-memory": {
 #     "command": "npx",
 #     "args": ["-y", "@mashware/domain-memory@latest"],
@@ -79,62 +79,62 @@ cp settings.snippet.json ~/.gemini/settings.json
 #   }
 ```
 
-Si no quieres usar `domain-memory`, puedes omitir este paso. Los comandos comprueban `domain_memory.enabled` en `FLOW.md` y degradan sin avisar si el MCP no está disponible.
+If you do not want to use `domain-memory`, you can skip this step. The commands check `domain_memory.enabled` in `FLOW.md` and degrade silently if the MCP is not available.
 
-### 3. Crea FLOW.md en el repo
+### 3. Create FLOW.md in the repo
 
-Todos los comandos leen `FLOW.md` en la raíz del repo en su paso 0. Sin él, cada comando usa comportamiento por defecto o autodescubre lo que puede.
+All commands read `FLOW.md` at the repo root in their step 0. Without it, each command uses default behavior or auto-discovers what it can.
 
-Copia y rellena la plantilla:
+Copy and fill in the template:
 ```bash
 cp ../../plugins/flow/examples/FLOW.template.md ./FLOW.md
 ```
 
-Campos clave que rellenar: `tracker`, `git.default_base`, `git.branch_pattern`, `git.request_term`, `git.cli`, `quality.*`, `conventions`, `agents.*`, `domain_memory.enabled`.
+Key fields to fill in: `tracker`, `git.default_base`, `git.branch_pattern`, `git.request_term`, `git.cli`, `quality.*`, `conventions`, `agents.*`, `domain_memory.enabled`.
 
 ---
 
-## Subagentes (opcional pero recomendado para M/L)
+## Sub-agents (optional but recommended for M/L)
 
-Los comandos delegan trabajo en subagentes usando `@nombre`, donde `nombre` viene del mapa `agents.<rol>` de FLOW.md. Para que funcione el fan-out paralelo en `/feat:brainstorm`, `/bug:investigate` y las verificaciones adversariales de los review, declara los subagentes en `.gemini/agents/`:
+The commands delegate work to sub-agents using `@name`, where `name` comes from the `agents.<role>` map in FLOW.md. For parallel fan-out to work in `/feat:brainstorm`, `/bug:investigate`, and adversarial checks in reviews, declare the sub-agents in `.gemini/agents/`:
 
 ```
 .gemini/agents/
-├── architecture.md    # agente de diseño de arquitectura
-├── persistence.md     # agente de Doctrine / ORM / DB
-├── api.md             # agente de endpoints HTTP
-├── testing.md         # agente de tests
-├── security.md        # agente de seguridad
-├── performance.md     # agente de rendimiento / N+1
-└── review.md          # agente de code review del proyecto
+├── architecture.md    # architecture design agent
+├── persistence.md     # Doctrine / ORM / DB agent
+├── api.md             # HTTP endpoint agent
+├── testing.md         # testing agent
+├── security.md        # security agent
+├── performance.md     # performance / N+1 agent
+└── review.md          # project code review agent
 ```
 
-Consulta `PRIMITIVES.md` para el formato exacto del frontmatter de cada fichero.
+See `PRIMITIVES.md` for the exact frontmatter format for each file.
 
-Sin subagentes declarados, los comandos ejecutan las tareas secuencialmente en el mismo contexto. El resultado es funcionalmente equivalente para features pequeñas (XS/S).
+Without declared sub-agents, the commands run tasks sequentially in the same context. The result is functionally equivalent for small features (XS/S).
 
 ---
 
-## Vigilancia post-despliegue (`/work:watch`)
+## Post-deploy monitoring (`/work:watch`)
 
-`/work:watch` no se autopilota en Gemini CLI (no hay `ScheduleWakeup` en sesión). El comando hace un ciclo de vigilancia y termina. Para repetirlo automáticamente:
+`/work:watch` does not self-pilot in Gemini CLI (there is no `ScheduleWakeup` in session). The command runs one monitoring cycle and exits. To repeat it automatically:
 
 ```bash
-# Ejemplo: vigilar TICKET cada 5 minutos durante 30 minutos
+# Example: watch TICKET every 5 minutes for 30 minutes
 */5 * * * * gemini -p "/work:watch TICKET 30m" >> ~/.gemini/watch-TICKET.log 2>&1
 ```
 
-El estado entre ciclos (superficie vigilada, línea base, plan aprobado) se persiste en `.claude/work/TICKET/monitor.md`. Cada ciclo lee ese fichero para no repetir el descubrimiento inicial.
+State between cycles (monitored surface, baseline, approved plan) is persisted in `.claude/work/TICKET/monitor.md`. Each cycle reads that file to avoid repeating the initial discovery.
 
 ---
 
-## Uso rápido
+## Quick start
 
 ```
-# Arranca una feature
+# Start a feature
 /feat:start PROJ-12345
 
-# Flujo completo para una feature M
+# Full flow for an M feature
 /feat:start PROJ-12345
 /feat:brainstorm
 /feat:design
@@ -144,7 +144,7 @@ El estado entre ciclos (superficie vigilada, línea base, plan aprobado) se pers
 /feat:validate
 /feat:ship
 
-# Flujo de incidencia S
+# S incident flow
 /bug:start PROJ-99999
 /bug:diagnose
 /bug:fix
@@ -152,17 +152,17 @@ El estado entre ciclos (superficie vigilada, línea base, plan aprobado) se pers
 /bug:review
 /bug:ship
 
-# Estado de todos los trabajos abiertos
+# Status of all open work
 /work:status
 
-# Retomar trabajo tras un parón
+# Resume work after a break
 /work:resume
 ```
 
 ---
 
-## Más información
+## More information
 
-- `PRIMITIVES.md` — tabla de traducción completa y qué se recortó.
-- `../../plugins/flow/examples/FLOW.template.md` — plantilla de FLOW.md.
-- `../../plugins/flow/commands/work/README.md` — guía completa del sistema de flujos.
+- `PRIMITIVES.md` — full translation table and what was trimmed.
+- `../../plugins/flow/examples/FLOW.template.md` — FLOW.md template.
+- `../../plugins/flow/commands/work/README.md` — complete guide to the flow system.

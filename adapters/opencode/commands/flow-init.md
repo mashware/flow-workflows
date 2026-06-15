@@ -1,34 +1,34 @@
 ---
-description: Asistente que genera el FLOW.md de este repo (autodetecta lo que puede, pregunta lo mínimo)
+description: Assistant that generates the FLOW.md for this repo (auto-detects what it can, asks for the minimum)
 ---
 
 # flow-init
 
-Crea (o actualiza) el `FLOW.md` en la raíz del repo. Es la configuración que leen el resto de
-comandos. Objetivo: que el usuario conteste lo **mínimo** — todo lo deducible del repo se
-autodetecta y solo se confirma. La estructura y nombres de clave de `FLOW.md` están en el README
-del adaptador (sección de configuración).
+Creates (or updates) `FLOW.md` at the repo root. This is the configuration read by all other
+commands. Goal: minimise what the user has to answer — everything that can be inferred from the
+repo is auto-detected and only confirmed. The structure and key names of `FLOW.md` are in the
+adapter README (configuration section).
 
-## 1. Si ya existe `FLOW.md`
-Muéstralo y pregunta al usuario (en texto): **actualizar** (re-detecta y re-pregunta) o **cancelar**. No lo sobreescribas sin confirmación.
+## 1. If `FLOW.md` already exists
+Show it and ask the user (in text): **update** (re-detect and re-ask) or **cancel**. Do not overwrite without confirmation.
 
-## 2. Autodetección (NO preguntes lo deducible)
-Ejecuta y deduce; muestra lo hallado para confirmar/corregir:
-- **Host git y CLI** — de `git remote -v`: `github.com`→github/`gh`/PR; `gitlab.*`→gitlab/`glab`/MR; `bitbucket.org`→bitbucket/PR; `dev.azure.com`→azure/`az`/PR; Gitea/Forgejo→gitea/`tea`; dominio desconocido (self-hosted)→pregunta cuál y qué CLI. Comprueba CLI instalado: `command -v gh glab tea az`.
-- **Rama base** — `git symbolic-ref refs/remotes/origin/HEAD` → `origin/main` u `origin/master` (`git.default_base`).
-- **Comandos de calidad** — inspecciona el repo y propón lo que haya (vacío si no): `Makefile` (targets test/lint/stan/fmt/migrate), `package.json` scripts, `composer.json` (phpunit/phpstan/cs-fixer), pyproject/pytest/ruff/mypy, Cargo, go. Si hay migraciones de esquema, propón `quality.db_diff` y plantea `git.predeploy_gate`.
-- **domain-memory** — ¿está el MCP `domain-memory` disponible? Si sí, `domain_memory.enabled: true`.
+## 2. Auto-detection (do NOT ask for what can be inferred)
+Run and infer; show findings for confirmation or correction:
+- **Git host and CLI** — from `git remote -v`: `github.com`→github/`gh`/PR; `gitlab.*`→gitlab/`glab`/MR; `bitbucket.org`→bitbucket/PR; `dev.azure.com`→azure/`az`/PR; Gitea/Forgejo→gitea/`tea`; unknown domain (self-hosted)→ask which host and which CLI. Check installed CLI: `command -v gh glab tea az`.
+- **Base branch** — `git symbolic-ref refs/remotes/origin/HEAD` → `origin/main` or `origin/master` (`git.default_base`).
+- **Quality commands** — inspect the repo and suggest what is present (leave empty if none): `Makefile` (test/lint/stan/fmt/migrate targets), `package.json` scripts, `composer.json` (phpunit/phpstan/cs-fixer), pyproject/pytest/ruff/mypy, Cargo, go. If there are schema migrations, suggest `quality.db_diff` and propose `git.predeploy_gate`.
+- **domain-memory** — is the `domain-memory` MCP available? If yes, `domain_memory.enabled: true`.
 
-## 3. Preguntar solo lo no deducible (en texto, enumerando opciones; deja siempre "vacío → autodescubrir")
-- Prefijo de ticket (`tracker.prefix`) y cómo leerlo (`tracker.tool`: acli/gh/linear/none).
-- Asignee (`git.assignee`) y squash (`git.squash`).
-- Secciones del MR/PR (`git.request_sections`, o libre).
-- Freno de pre-deploy (`git.predeploy_gate`): ¿ejecutáis SQL a mano antes de desplegar? Si sí, propón `quality.db_diff`.
-- Agentes por rol (`agents.*`, `review.*`): opcional; explica que vacío usa el subagente general. Si tiene agentes propios (declarados en `agents/*.md` de opencode), recoge los nombres.
-- Observabilidad: por defecto **vacío = autodescubrir** en `work-watch`.
+## 3. Ask only for what cannot be inferred (in text, listing options; always leave "empty → auto-discover")
+- Ticket prefix (`tracker.prefix`) and how to read it (`tracker.tool`: acli/gh/linear/none).
+- Assignee (`git.assignee`) and squash (`git.squash`).
+- MR/PR sections (`git.request_sections`, or free-form).
+- Pre-deploy gate (`git.predeploy_gate`): do you run SQL manually before deploying? If yes, suggest `quality.db_diff`.
+- Agents by role (`agents.*`, `review.*`): optional; explain that an empty value uses the general sub-agent. If the repo has its own agents (declared in `agents/*.md` for opencode), collect their names.
+- Observability: default is **empty = auto-discover** in `work-watch`.
 
-## 4. Escribir `FLOW.md`
-Genera el fichero en la raíz con todas las secciones del contrato (tracker, git, quality, agents, review, conventions, domain_memory, observability), rellenando lo detectado/respondido y **dejando vacío** lo que el usuario no fije.
+## 4. Write `FLOW.md`
+Generate the file at the repo root with all contract sections (tracker, git, quality, agents, review, conventions, domain_memory, observability), filling in what was detected/answered and **leaving empty** what the user did not set.
 
-## 5. Cierre
-Resume qué quedó configurado y qué vacío (= autodescubrir). `FLOW.md` puede comitearse. Sugiere `/feat-start` o `/work-status`.
+## 5. Close
+Summarise what was configured and what was left empty (= auto-discover). `FLOW.md` can be committed. Suggest `/feat-start` or `/work-status`.

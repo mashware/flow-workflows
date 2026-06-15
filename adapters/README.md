@@ -1,46 +1,46 @@
-# adapters — los flujos `flow` en otros harnesses
+# adapters — `flow` workflows for other harnesses
 
-El plugin `flow` (en `../plugins/flow`) es para **Claude Code**. Estos adaptadores llevan los
-mismos flujos `feat`/`bug`/`work` a otros agentes de terminal, reescribiendo solo el
-**envoltorio** (formato de comandos, subagentes, MCP) — la **lógica y la prosa son las mismas**.
+The `flow` plugin (in `../plugins/flow`) is for **Claude Code**. These adapters bring the same
+`feat`/`bug`/`work` workflows to other terminal agents, rewriting only the **wrapper**
+(command format, subagents, MCP) — the **logic and prose are the same**.
 
-| Harness | Comandos | Subagentes | MCP | Autopilot watch |
+| Harness | Commands | Subagents | MCP | Autopilot watch |
 |---|---|---|---|---|
-| **opencode** | `commands/*.md` (`/feat-start`) | `agents/*.md` `mode:subagent`, `@nombre` | `opencode.json` | cron + `opencode run -p` |
-| **Gemini CLI** | `commands/**/*.toml` (`/feat:start`) | `.gemini/agents/*.md`, `@nombre` | `settings.json` `mcpServers` | cron + `gemini -p` |
-| **Codex CLI** | `prompts/*.md` (`/feat-start`) | `[agents.*]` en `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
+| **opencode** | `commands/*.md` (`/feat-start`) | `agents/*.md` `mode:subagent`, `@name` | `opencode.json` | cron + `opencode run -p` |
+| **Gemini CLI** | `commands/**/*.toml` (`/feat:start`) | `.gemini/agents/*.md`, `@name` | `settings.json` `mcpServers` | cron + `gemini -p` |
+| **Codex CLI** | `prompts/*.md` (`/feat-start`) | `[agents.*]` in `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
 
-## Instalar
+## Install
 
 ```bash
-./install.sh opencode      # o: gemini | codex
-./install.sh opencode project   # variante en el repo actual (donde aplique)
+./install.sh opencode      # or: gemini | codex
+./install.sh opencode project   # project-scoped variant (where applicable)
 ```
-El script **copia los comandos** (additivo, seguro) y te dice qué **fragmento de config**
-(MCP/subagentes) fusionar a mano en tu `opencode.json` / `settings.json` / `config.toml` —
-no toca tus configs automáticamente para no pisar lo que ya tengas.
+The script **copies the commands** (additive, safe) and tells you which **config fragment**
+(MCP/subagents) to merge manually into your `opencode.json` / `settings.json` / `config.toml` —
+it does not touch your configs automatically so it doesn't overwrite what you already have.
 
-Después: pon un **`FLOW.md`** en la raíz de tu repo (plantilla en
-`../plugins/flow/examples/FLOW.template.md`). Es lo que configura tracker, git, comandos de
-test, observabilidad y el mapa de subagentes para TU proyecto.
+After that: place a **`FLOW.md`** at the root of your repo (template at
+`../plugins/flow/examples/FLOW.template.md`). It configures the tracker, git, test commands,
+observability, and the subagent map for YOUR project.
 
-## Qué se porta y qué no (honesto)
+## What ports and what doesn't (honest)
 
-- **Se porta igual**: fases (start→ship, diagnose→postmortem), reglas, gates, `FLOW.md`, MCP
-  (`domain-memory`), Pre-deploy + hilo bloqueante, y los **subagentes** (review/investigate) —
-  los tres harnesses los soportan, solo cambia el formato de declaración.
-- **Se recorta** (ver el `PRIMITIVES.md` de cada adaptador):
-  - **`AskUserQuestion`**: ninguno tiene menú estructurado → queda como pregunta en texto.
-  - **Autopilot de `/work:watch`**: no hay re-despertar en-sesión → pasa a **cron del SO +
-    ejecución headless**. El comando hace UN ciclo y termina; el estado vive en `monitor.md`,
-    que cada ciclo re-lee. Funciona, pero el disparador es externo, no la propia sesión.
+- **Ports unchanged**: phases (start→ship, diagnose→postmortem), rules, gates, `FLOW.md`, MCP
+  (`domain-memory`), Pre-deploy + blocking thread, and **subagents** (review/investigate) —
+  all three harnesses support them; only the declaration format changes.
+- **Trimmed** (see each adapter's `PRIMITIVES.md`):
+  - **`AskUserQuestion`**: none of them have a structured menu UI → becomes a plain text question.
+  - **Autopilot for `/work:watch`**: no in-session re-wakeup → replaced by **OS cron +
+    headless execution**. The command runs ONE cycle and exits; state lives in `monitor.md`,
+    which each cycle re-reads. It works, but the trigger is external, not the session itself.
 
-## Aviso
+## Warning
 
-Estos adaptadores están generados **fieles al formato documentado de cada herramienta, pero
-sin probar dentro de ella** (no se pueden ejecutar desde aquí). Son una primera versión sólida;
-valídalos al usarlos y ajusta rutas si tu versión del harness difiere — especialmente en Codex,
-donde la ubicación de prompts cambia entre versiones (ver `codex/README.md`).
+These adapters were generated **faithfully following each tool's documented format, but without
+being run inside it** (they can't be executed from here). They are a solid first version;
+validate them when you use them and adjust paths if your harness version differs — especially
+in Codex, where the prompts location changes between versions (see `codex/README.md`).
 
-> Fuente única de la lógica: `../plugins/flow/commands/`. Si cambias un flujo allí, regenera el
-> adaptador afectado para no divergir.
+> Single source of truth for the logic: `../plugins/flow/commands/`. If you change a workflow
+> there, regenerate the affected adapter to keep them in sync.

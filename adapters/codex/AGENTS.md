@@ -1,72 +1,72 @@
-# AGENTS.md — guía de repo para Codex
+# AGENTS.md — repo guide for Codex
 
-Codex lee este fichero como guía de proyecto. Apunta a los recursos clave para entender las convenciones y flujos de trabajo.
+Codex reads this file as a project guide. It points to the key resources for understanding the conventions and workflows.
 
-## Guía de flujos de trabajo
+## Workflow guide
 
-Lee `FLOW.md` en la raíz del repo antes de hacer cualquier cosa. Contiene:
+Read `FLOW.md` at the repo root before doing anything. It contains:
 
-- **tracker**: cómo leer tickets (herramienta, comando, prefijo).
-- **git**: convenciones de rama, MR/PR, squash, assignee, rama base.
-- **quality**: comandos de estilo, análisis estático, tests, actualización de BD.
-- **conventions**: skills o skills de código que aplican a este proyecto.
-- **agents**: mapa de roles de subagentes (architecture, persistence, api, testing, security, performance, queues, frontend, frontend_test).
-- **review**: skill de revisión de código del proyecto.
-- **domain_memory**: si está habilitado, usa el MCP `domain-memory` en los pasos indicados.
-- **observability**: perfil de servicios, queries y umbrales para la vigilancia post-despliegue.
+- **tracker**: how to read tickets (tool, command, prefix).
+- **git**: branch conventions, MR/PR, squash, assignee, base branch.
+- **quality**: style commands, static analysis, tests, DB schema update.
+- **conventions**: code skills or coding standards that apply to this project.
+- **agents**: subagent role map (architecture, persistence, api, testing, security, performance, queues, frontend, frontend_test).
+- **review**: the project's code review skill.
+- **domain_memory**: if enabled, use the `domain-memory` MCP at the steps indicated.
+- **observability**: service profile, queries, and thresholds for post-deployment monitoring.
 
-Si `FLOW.md` no existe, cada comando del flujo autodescubre los valores o usa comportamiento por defecto.
+If `FLOW.md` doesn't exist, each workflow command auto-discovers values or uses default behavior.
 
-## Flujos disponibles
+## Available workflows
 
-Los flujos se invocan como prompts personalizados con el prefijo `/`:
+Workflows are invoked as custom prompts with the `/` prefix:
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `/feat-start {TICKET}` | Arranca una feature nueva |
-| `/feat-brainstorm` | Genera opciones y riesgos antes de diseñar |
-| `/feat-design` | Diseño técnico (sin código) |
-| `/feat-plan` | Trocea el trabajo en MRs/PRs independientes (M/L) |
-| `/feat-build` | Implementa la feature |
-| `/feat-review` | Code review multiagente obligatorio |
-| `/feat-validate` | Valida tests, casos límite e integridad |
-| `/feat-ship` | Commit, push, MR/PR y oferta de guardar conocimiento |
-| `/bug-start {TICKET}` | Arranca una incidencia |
-| `/bug-diagnose` | Reproduce el fallo y delimita qué está roto |
-| `/bug-investigate` | Encuentra la causa raíz |
-| `/bug-fix` | Aplica el arreglo mínimo |
-| `/bug-validate` | Test de regresión y verificación |
-| `/bug-review` | Code review del arreglo |
-| `/bug-postmortem` | Lecciones aprendidas (M/L) |
-| `/bug-ship` | Commit, push, MR/PR del arreglo |
-| `/work-status` | Panorámica de todos los trabajos abiertos |
-| `/work-resume` | Retoma el trabajo de la rama actual |
-| `/work-watch {TICKET} [duración]` | Vigilancia post-despliegue (un ciclo) |
-| `/work-abandon` | Cierra un work sin enviar |
-| `/save-knowledge` | Consolida hallazgos al almacén de domain-memory |
+| `/feat-start {TICKET}` | Start a new feature |
+| `/feat-brainstorm` | Generate options and risks before designing |
+| `/feat-design` | Technical design (no code) |
+| `/feat-plan` | Split work into independent MRs/PRs (M/L) |
+| `/feat-build` | Implement the feature |
+| `/feat-review` | Mandatory multi-agent code review |
+| `/feat-validate` | Validate tests, edge cases, and integrity |
+| `/feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
+| `/bug-start {TICKET}` | Start a bug |
+| `/bug-diagnose` | Reproduce the failure and delimit what is broken |
+| `/bug-investigate` | Find the root cause |
+| `/bug-fix` | Apply the minimal fix |
+| `/bug-validate` | Regression test and verification |
+| `/bug-review` | Code review of the fix |
+| `/bug-postmortem` | Lessons learned (M/L) |
+| `/bug-ship` | Commit, push, MR/PR of the fix |
+| `/work-status` | Overview of all open work |
+| `/work-resume` | Resume work on the current branch |
+| `/work-watch {TICKET} [duration]` | Post-deployment monitoring (one cycle) |
+| `/work-abandon` | Close a work without shipping |
+| `/save-knowledge` | Consolidate findings to the domain-memory store |
 
-## Estructura de artefactos
+## Artifact structure
 
-Cada trabajo vive en `.claude/work/{TICKET}/`:
+Each work item lives in `.claude/work/{TICKET}/`:
 
 ```
-meta.json              — estado del trabajo (fase, tamaño, rama)
-01-context.md          — contexto del ticket
-02-brainstorm.md       — opciones consideradas (feat)
-02-diagnose.md         — diagnóstico del fallo (bug)
-03-design.md           — diseño técnico
-03-investigation.md    — investigación causa raíz (bug)
-04-mr-plan.md          — plan de entrega (M/L)
-04-fix.md              — arreglo (bug)
-05-implementation.md   — bitácora de implementación
-05-validation.md       — validación del arreglo (bug)
-06-review.md           — resultados del code review
-07-validation.md       — validación de la feature
+meta.json              — work state (phase, size, branch)
+01-context.md          — ticket context
+02-brainstorm.md       — options considered (feat)
+02-diagnose.md         — failure diagnosis (bug)
+03-design.md           — technical design
+03-investigation.md    — root cause investigation (bug)
+04-mr-plan.md          — delivery plan (M/L)
+04-fix.md              — fix (bug)
+05-implementation.md   — implementation log
+05-validation.md       — fix validation (bug)
+06-review.md           — code review results
+07-validation.md       — feature validation
 99-postmortem.md       — postmortem (bug M/L)
-99-abandoned.md        — motivo de abandono
-monitor.md             — estado de vigilancia post-despliegue
+99-abandoned.md        — reason for abandonment
+monitor.md             — post-deployment monitoring state
 ```
 
-## Configuración de subagentes
+## Subagent configuration
 
-Los subagentes que usan los flujos se configuran en `~/.codex/config.toml` bajo `[agents.<nombre>]`. Los nombres de los agentes los define el usuario en el mapa `agents` de `FLOW.md`. Ver `config.snippet.toml` en este directorio para el formato y ejemplos comentados.
+The subagents used by the workflows are configured in `~/.codex/config.toml` under `[agents.<name>]`. The agent names are defined by the user in the `agents` map of `FLOW.md`. See `config.snippet.toml` in this directory for the format and commented examples.

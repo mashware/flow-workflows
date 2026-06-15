@@ -1,12 +1,12 @@
-# Adaptador de flujos `flow` para Codex CLI
+# `flow` workflow adapter for Codex CLI
 
-Lleva los flujos `/feat-*`, `/bug-*` y `/work-*` del plugin `flow` al formato de **Codex CLI** (OpenAI).
+Brings the `/feat-*`, `/bug-*`, and `/work-*` workflows from the `flow` plugin to the **Codex CLI** (OpenAI) format.
 
-## Contenido del adaptador
+## Adapter contents
 
 ```
 adapters/codex/
-├── prompts/              — 22 prompts personalizados (uno por comando del flujo)
+├── prompts/              — 22 custom prompts (one per workflow command)
 │   ├── feat-start.md
 │   ├── feat-brainstorm.md
 │   ├── feat-design.md
@@ -29,93 +29,93 @@ adapters/codex/
 │   ├── work-abandon.md
 │   ├── work-watch.md
 │   └── save-knowledge.md
-├── config.snippet.toml   — secciones para fusionar en ~/.codex/config.toml
-├── AGENTS.md             — guía de repo que Codex lee como contexto
-├── PRIMITIVES.md         — tabla de traducción de primitivas + recortes
-└── README.md             — este fichero
+├── config.snippet.toml   — sections to merge into ~/.codex/config.toml
+├── AGENTS.md             — repo guide that Codex reads as context
+├── PRIMITIVES.md         — primitive translation table + trimmed features
+└── README.md             — this file
 ```
 
-## Instalación
+## Installation
 
-### 1. Prompts personalizados
+### 1. Custom prompts
 
-> **Aviso sobre la ruta de prompts**: la ruta exacta donde Codex CLI busca los prompts personalizados **puede variar según la versión de Codex**. La ruta habitual en versiones recientes es `~/.codex/prompts/`, pero confírmala con `/help` dentro de Codex o consultando la documentación de tu versión antes de copiar.
+> **Note on prompts path**: the exact path where Codex CLI looks for custom prompts **may vary by Codex version**. The common path in recent versions is `~/.codex/prompts/`, but confirm it with `/help` inside Codex or by checking your version's documentation before copying.
 >
-> **Alternativa con skills**: si tu versión de Codex admite skills en `.agents/skills/` del repo (formato `$nombre`), copia los ficheros de `prompts/` a `.agents/skills/<nombre>/SKILL.md` dentro del repositorio. Los flujos funcionarán igual, invocados como `$feat-start`, `$bug-fix`, etc.
+> **Skills alternative**: if your version of Codex supports skills in `.agents/skills/` in the repo (format `$name`), copy the files from `prompts/` to `.agents/skills/<name>/SKILL.md` inside the repository. The workflows will work the same way, invoked as `$feat-start`, `$bug-fix`, etc.
 
-Copia los ficheros de `prompts/` a la ruta de prompts de Codex:
+Copy the files from `prompts/` to the Codex prompts path:
 
 ```bash
-# Ruta habitual (confirma con /help o la doc de tu versión):
+# Common path (confirm with /help or your version's docs):
 cp prompts/*.md ~/.codex/prompts/
 
-# Si la ruta es distinta, sustitúyela:
-cp prompts/*.md /ruta/que-indique-tu-version/de/codex/prompts/
+# If the path is different, replace it:
+cp prompts/*.md /path/indicated-by-your-version/of/codex/prompts/
 ```
 
-Los prompts se invocan con `/feat-start {TICKET}`, `/bug-diagnose`, `/work-status`, etc.
+Prompts are invoked with `/feat-start {TICKET}`, `/bug-diagnose`, `/work-status`, etc.
 
-### 2. Configuración de MCP y subagentes
+### 2. MCP and subagent configuration
 
-Fusiona el contenido de `config.snippet.toml` en tu `~/.codex/config.toml` existente:
+Merge the contents of `config.snippet.toml` into your existing `~/.codex/config.toml`:
 
 ```bash
-# Lee config.snippet.toml y copia las secciones que necesites a mano en tu config.toml
+# Read config.snippet.toml and copy the sections you need manually into your config.toml
 cat config.snippet.toml
 ```
 
-Ajusta los valores de `command` y `args` de `[mcp_servers.domain-memory]` con la instalación real de domain-memory en tu máquina.
+Adjust the `command` and `args` values in `[mcp_servers.domain-memory]` to match the actual domain-memory installation on your machine.
 
-Para los subagentes, define en `~/.codex/config.toml` las secciones `[agents.<nombre>]` que necesites, usando los nombres que pongas en el mapa `agents.*` de `FLOW.md`.
+For subagents, define the `[agents.<name>]` sections you need in `~/.codex/config.toml`, using the names you set in the `agents.*` map in `FLOW.md`.
 
-### 3. FLOW.md en el repo
+### 3. FLOW.md in the repo
 
-Cada repo que use estos flujos necesita un `FLOW.md` en su raíz. Sin él, los flujos funcionan con valores por defecto (autodescubrimiento), pero se recomienda tenerlo para convenciones específicas del proyecto.
+Every repo using these workflows needs a `FLOW.md` at its root. Without it, workflows run with default values (auto-discovery), but having it is recommended for project-specific conventions.
 
-Puedes partir de la plantilla:
+Start from the template:
 
 ```bash
 cp ../../plugins/flow/examples/FLOW.template.md FLOW.md
-# Edita FLOW.md con las convenciones de tu proyecto
+# Edit FLOW.md with your project's conventions
 ```
 
-### 4. AGENTS.md en el repo (opcional)
+### 4. AGENTS.md in the repo (optional)
 
-Copia o enlaza `AGENTS.md` a la raíz del repo para que Codex lo lea como guía de contexto:
+Copy or symlink `AGENTS.md` to the repo root so Codex reads it as a context guide:
 
 ```bash
-cp /ruta/a/adapters/codex/AGENTS.md /raiz/de/tu/repo/AGENTS.md
+cp /path/to/adapters/codex/AGENTS.md /root/of/your/repo/AGENTS.md
 ```
 
-## Uso rápido
+## Quick start
 
 ```
-# Arrancar una feature
+# Start a feature
 /feat-start PROJ-12345
 
-# Continuar donde lo dejaste
+# Resume where you left off
 /work-resume
 
-# Ver todos los trabajos abiertos
+# See all open work
 /work-status
 
-# Arrancar una incidencia
+# Start a bug
 /bug-start PROJ-99999
 
-# Vigilar tras un despliegue (un ciclo; configura cron para repetirlo)
+# Watch after a deployment (one cycle; set up cron to repeat)
 /work-watch PROJ-12345 30m
 ```
 
-## Dependencias
+## Dependencies
 
-- **Codex CLI** instalado y configurado con tu API key de OpenAI.
-- **domain-memory MCP** instalado si quieres usar `domain_memory.enabled: true` en FLOW.md. Proyecto: https://github.com/mashware/domain-memory
-- **CLI de git** configurado (`glab`, `gh`, u otro según `git.cli` en FLOW.md) para crear MRs/PRs desde terminal.
+- **Codex CLI** installed and configured with your OpenAI API key.
+- **domain-memory MCP** installed if you want `domain_memory.enabled: true` in FLOW.md. Project: https://github.com/mashware/domain-memory
+- **git CLI** configured (`glab`, `gh`, or other per `git.cli` in FLOW.md) to create MRs/PRs from the terminal.
 
-## Diferencias respecto al plugin original (Claude Code)
+## Differences from the original plugin (Claude Code)
 
-Ver `PRIMITIVES.md` para la tabla completa. Los puntos más importantes:
+See `PRIMITIVES.md` for the full table. The most important points:
 
-- **AskUserQuestion**: no hay UI estructurada → preguntas en texto normal.
-- **ScheduleWakeup** (autopilot de watch): no existe en Codex → `/work-watch` ejecuta un ciclo y termina; usa cron del SO o las Automations de la app de Codex para repetirlo.
-- **Workflow DSL**: la orquestación paralela se expresa en instrucciones de lenguaje natural al agente.
+- **AskUserQuestion**: no structured UI → questions become plain text.
+- **ScheduleWakeup** (watch autopilot): does not exist in Codex → `/work-watch` runs one cycle and exits; use OS cron or Codex app Automations to repeat it.
+- **Workflow DSL**: parallel orchestration is expressed as natural-language instructions to the agent.

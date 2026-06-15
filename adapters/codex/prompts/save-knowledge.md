@@ -1,27 +1,27 @@
 # `/save-knowledge`
 
-Consolida los hallazgos del staging de la rama actual al almacén de domain-memory.
+Consolidates the staged findings from the current branch into the domain-memory store.
 
-**Paso 0**: lee `FLOW.md` en la raíz del repo. Si `domain_memory.enabled` no es `true`, responde al usuario *"domain-memory no está habilitado en FLOW.md de este repo."* y termina sin hacer nada más.
+**Step 0**: read `FLOW.md` at the repo root. If `domain_memory.enabled` is not `true`, respond to the user with *"domain-memory is not enabled in this repo's FLOW.md."* and stop without doing anything else.
 
-El usuario pide consolidar al almacén el conocimiento aprendido en esta sesión (o en sesiones previas sobre la misma rama).
+The user is asking to consolidate into the store the knowledge learned in this session (or in previous sessions on the same branch).
 
-Ejecuta esta secuencia:
+Execute this sequence:
 
-1. **Lee el staging** de la rama actual con `read_staging`. Si está vacío y tampoco tienes hallazgos nuevos en el contexto de la sesión actual, dile al usuario *"No hay nada que consolidar en esta rama."* y termina.
+1. **Read the staging** for the current branch with `read_staging`. If it's empty and you also have no new findings in the current session's context, tell the user *"There is nothing to consolidate on this branch."* and stop.
 
-2. **Combina** los hallazgos del staging con los hallazgos relevantes que hayan aparecido en la sesión actual y aún no estén en el staging. Aplica la regla del "por qué vs qué": descarta lo que no sea conocimiento de dominio.
+2. **Combine** the staged findings with relevant findings that appeared in the current session and are not yet in the staging. Apply the "why vs what" rule: discard anything that is not domain knowledge.
 
-3. **Para cada hallazgo consolidado**:
-   - Llama a `search_knowledge` con el topic y los `file_paths` del hallazgo.
-   - Decide: crear entrada nueva, actualizar una existente, enriquecer con ángulo nuevo, o conflicto.
-   - Si hay conflicto, pregunta al usuario en caliente. No guardes hasta resolver.
-   - Si no hay conflicto, llama a `save_knowledge` con la decisión.
+3. **For each consolidated finding**:
+   - Call `search_knowledge` with the topic and the `file_paths` of the finding.
+   - Decide: create a new entry, update an existing one, enrich with a new angle, or conflict.
+   - If there's a conflict, ask the user in real time. Don't save until it's resolved.
+   - If no conflict, call `save_knowledge` with the decision.
 
-4. **Resume al usuario** lo que has hecho en formato breve: *"Creadas: N. Actualizadas: M. Archivadas: K. Conflictos resueltos: J."*.
+4. **Summarize for the user** what you did in brief format: *"Created: N. Updated: M. Archived: K. Conflicts resolved: J."*
 
-5. **Limpia el staging** de la rama tras consolidar correctamente.
+5. **Clear the staging** for the branch after consolidating successfully.
 
-Si cualquier llamada al MCP falla, informa al usuario del fallo concreto (este flujo sí es explícito, los fallos son visibles).
+If any MCP call fails, inform the user of the specific failure (this workflow is explicit, failures are visible).
 
-El MCP domain-memory es un proyecto genérico (https://github.com/mashware/domain-memory). Consulta `.domain-memory/instructions.md` en el repo para el detalle completo del comportamiento si existe.
+The domain-memory MCP is a generic project (https://github.com/mashware/domain-memory). Consult `.domain-memory/instructions.md` in the repo for the full behavior details if it exists.

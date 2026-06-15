@@ -1,66 +1,66 @@
 ---
-description: Asistente que genera el FLOW.md de este repo (autodetecta lo que puede, pregunta lo mínimo)
+description: Assistant that generates the FLOW.md for this repo (auto-detects what it can, asks the minimum)
 ---
 
 # `/flow:init`
 
-Crea (o actualiza) el `FLOW.md` en la raíz del repo. Es la configuración que leen el resto de
-comandos `/flow:*`. El objetivo: que el usuario conteste lo **mínimo** — todo lo deducible del
-repo se autodetecta y solo se confirma.
+Creates (or updates) `FLOW.md` at the repo root. This is the configuration read by all other
+`/flow:*` commands. The goal: the user answers the **minimum** — everything that can be inferred
+from the repo is auto-detected and only confirmed.
 
-Referencia del contrato y los nombres de clave: `examples/FLOW.template.md` del plugin. No
-inventes claves que no estén ahí.
+Contract reference and key names: `examples/FLOW.template.md` from the plugin. Do not
+invent keys that are not there.
 
-## 1. Si ya existe `FLOW.md`
+## 1. If `FLOW.md` already exists
 
-Si hay un `FLOW.md` en la raíz, muéstralo y pregunta: **actualizar** (re-detecta y re-pregunta,
-conservando lo que el usuario no quiera cambiar), o **cancelar**. No lo sobreescribas sin
-confirmación.
+If there is a `FLOW.md` at the root, show it and ask: **update** (re-detect and re-ask,
+preserving what the user does not want to change), or **cancel**. Do not overwrite without
+confirmation.
 
-## 2. Autodetección (NO preguntes lo que puedas deducir)
+## 2. Auto-detection (do NOT ask about what you can infer)
 
-Ejecuta y deduce; muestra lo encontrado para que el usuario lo confirme o corrija:
+Run and deduce; show what was found so the user can confirm or correct:
 
-- **Host git y CLI** — de `git remote -v`:
+- **Git host and CLI** — from `git remote -v`:
   - `github.com` → host `github`, cli `gh`, request_term `PR`.
   - `gitlab.*` → `gitlab`, `glab`, `MR`.
   - `bitbucket.org` → `bitbucket`, request_term `PR`.
   - `dev.azure.com`/`visualstudio.com` → `azure`, cli `az`, `PR`.
-  - dominio de Gitea/Forgejo conocido → `gitea`, cli `tea`.
-  - dominio desconocido (self-hosted) → pregunta cuál es (GitLab/Gitea/otro) y qué CLI usa.
-  - Comprueba qué CLI está instalado de verdad: `command -v gh glab tea az`.
-- **Rama base** — `git symbolic-ref refs/remotes/origin/HEAD` (o `git remote show origin`): `origin/main` u `origin/master` → `git.default_base`.
-- **Comandos de calidad** — inspecciona el repo y propón lo que encuentres (vacío si no hay):
-  - `Makefile` → grep de targets `test`, `lint`, `phpstan`/`stan`, `cs-fixer`/`fmt`, `database`/`migrate`.
+  - Known Gitea/Forgejo domain → `gitea`, cli `tea`.
+  - Unknown domain (self-hosted) → ask which one (GitLab/Gitea/other) and which CLI it uses.
+  - Check which CLI is actually installed: `command -v gh glab tea az`.
+- **Base branch** — `git symbolic-ref refs/remotes/origin/HEAD` (or `git remote show origin`): `origin/main` or `origin/master` → `git.default_base`.
+- **Quality commands** — inspect the repo and propose what you find (leave empty if nothing found):
+  - `Makefile` → grep targets `test`, `lint`, `phpstan`/`stan`, `cs-fixer`/`fmt`, `database`/`migrate`.
   - `package.json` → `scripts` (test, lint, build, typecheck).
-  - `composer.json` → scripts; presencia de phpunit/phpstan/php-cs-fixer.
+  - `composer.json` → scripts; presence of phpunit/phpstan/php-cs-fixer.
   - `pyproject.toml`/`tox.ini` → pytest/ruff/mypy; `Cargo.toml` → `cargo test/clippy`; `go.mod` → `go test ./...`.
-  - Si hay migraciones de esquema (Doctrine, Alembic, Rails, Prisma…), propón `quality.db_diff` y plantea `git.predeploy_gate`.
-- **domain-memory** — ¿está el MCP `domain-memory` disponible en esta sesión? Si sí, `domain_memory.enabled: true`; si no, déjalo vacío.
+  - If schema migrations exist (Doctrine, Alembic, Rails, Prisma…), propose `quality.db_diff` and raise `git.predeploy_gate`.
+- **domain-memory** — is the `domain-memory` MCP available in this session? If yes, `domain_memory.enabled: true`; if not, leave it empty.
 
-## 3. Preguntar solo lo no deducible
+## 3. Ask only what cannot be inferred
 
-Para cada punto, usa `AskUserQuestion` con opciones y un valor recomendado; deja siempre la vía
-"dejar vacío → autodescubrir / sin esto". Pregunta:
+For each point, use `AskUserQuestion` with options and a recommended value; always leave the path
+"leave empty → auto-discover / skip this". Ask about:
 
-- **Prefijo de ticket** (`tracker.prefix`, ej. `PROJ-`, o ninguno) y **cómo leer un ticket** (`tracker.tool`: acli/gh/linear/none).
-- **Asignee** del MR/PR (`git.assignee`, o ninguno) y **squash** (`git.squash`).
-- **Secciones** del MR/PR (`git.request_sections`, o libre).
-- **Freno de pre-deploy** (`git.predeploy_gate`): ¿ejecutáis SQL a mano en el servidor antes de desplegar? Si sí y detectaste un comando de diff de esquema, propón `quality.db_diff`.
-- **Agentes por rol** (`agents.*` y `quality.review_skill`/`reviewers`): opcional. Explica que se pueden dejar vacíos (se usa `general-purpose`) y rellenar luego. Si el usuario tiene agentes propios, recoge los nombres.
-- **Observabilidad** (`observability`): por defecto **vacío = autodescubrir** en `/flow:work:watch`. Solo recoge perfil si el usuario lo da hecho.
+- **Ticket prefix** (`tracker.prefix`, e.g., `PROJ-`, or none) and **how to read a ticket** (`tracker.tool`: acli/gh/linear/none).
+- **MR/PR assignee** (`git.assignee`, or none) and **squash** (`git.squash`).
+- **MR/PR sections** (`git.request_sections`, or free-form).
+- **Pre-deploy gate** (`git.predeploy_gate`): do you run schema SQL manually on the server before deploying? If yes and you detected a schema diff command, propose `quality.db_diff`.
+- **Agents by role** (`agents.*` and `quality.review_skill`/`reviewers`): optional. Explain that they can be left empty (`general-purpose` is used) and filled in later. If the user has custom agents, collect the names.
+- **Observability** (`observability`): default is **empty = auto-discover** in `/flow:work:watch`. Only collect a profile if the user provides one ready to go.
 
-Lo autodetectado en §2 se muestra como valor por defecto; el usuario solo corrige lo que no encaje.
+What was auto-detected in §2 is shown as the default value; the user only corrects what does not fit.
 
-## 4. Escribir `FLOW.md`
+## 4. Write `FLOW.md`
 
-Genera el fichero en la raíz del repo con la **misma estructura de secciones** que
+Generate the file at the repo root with the **same section structure** as
 `examples/FLOW.template.md` (tracker, git, quality, agents, review, conventions, domain_memory,
-observability), rellenando lo detectado/respondido y **dejando vacías** las claves que el usuario
-no quiera fijar (cada comando ya degrada con elegancia ante una clave vacía).
+observability), filling in what was detected/answered and **leaving empty** the keys the user
+does not want to fix (each command already degrades gracefully on an empty key).
 
-## 5. Cierre
+## 5. Close
 
-Resume en pantalla: qué quedó configurado y qué quedó **vacío (= autodescubrir)**. Recuerda que
-`FLOW.md` puede comitearse (es config de equipo, no secretos). Sugiere el siguiente paso:
-`/flow:feat:start` o `/flow:work:status`.
+Summarize on screen: what was configured and what was left **empty (= auto-discover)**. Remind
+the user that `FLOW.md` can be committed (it is team config, not secrets). Suggest the next step:
+`/flow:feat:start` or `/flow:work:status`.

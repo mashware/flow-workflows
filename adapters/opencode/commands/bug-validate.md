@@ -1,56 +1,56 @@
 ---
-description: Test de regresión y verificación de que el fallo no vuelve
+description: Regression test and verification that the failure does not recur
 ---
 
 # `/bug-validate`
 
-Valida que el arreglo funciona y que el fallo no vuelve.
+Validate that the fix works and that the failure does not come back.
 
 ## 1. Pre-flight
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step indicates. On `domain_memory`: if enabled but the MCP fails or takes more than 2 s, continue without that context — don't block or notify the user.
 
-- Carga `meta.json`. Exige `fix` en `phases_done`.
-- Si `size` es `XS`, sugiere saltar a `/bug-review` salvo que el usuario insista.
+- Load `meta.json`. Require `fix` in `phases_done`.
+- If `size` is `XS`, suggest skipping to `/bug-review` unless the user insists.
 
-## 2. Trabajo
+## 2. Work
 
-**Test de regresión obligatorio**: lanza el subagente de `agents.testing` de FLOW.md (si está vacío, un subagente de propósito general con el rol de escribir tests) con el encargo:
+**Mandatory regression test**: launch the `agents.testing` subagent from FLOW.md (if empty, a general-purpose subagent with the role of writing tests) with the task:
 
-> Escribe un test que falle **antes** del arreglo y pase **después**. Lee `.claude/work/<TICKET>/02-diagnose.md` (reproducción mínima), `04-fix.md` (qué se cambió). Sigue las convenciones de `FLOW.md` (sección `conventions`). Reporta el path del test añadido.
+> Write a test that **fails before** the fix and **passes after**. Read `.claude/work/<TICKET>/02-diagnose.md` (minimal reproduction), `04-fix.md` (what changed). Follow the conventions from `FLOW.md` (section `conventions`). Report the path of the added test.
 
-Después:
-1. Lanza solo ese test con `quality.test_one` de FLOW.md; debe pasar.
-2. Lanza la suite completa con `quality.test` para descartar regresiones colaterales (en segundo plano si tarda).
-3. Si tocaste BD: comprueba que el esquema no tiene diferencias inesperadas (usa `quality.db_update` o equivalente de FLOW.md si está definido).
-4. Si tocaste seguridad o autenticación: lanza en paralelo el subagente de `agents.security` de FLOW.md sobre los archivos del arreglo; si está vacío, usa un subagente de propósito general con rol de seguridad en el prompt.
+Then:
+1. Run only that test with `quality.test_one` from FLOW.md; it must pass.
+2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if it takes long).
+3. If you touched the DB: verify the schema has no unexpected differences (use `quality.db_update` or its FLOW.md equivalent if defined).
+4. If you touched security or authentication: launch the `agents.security` subagent from FLOW.md in parallel on the fix files; if empty, use a general-purpose subagent with a security role in the prompt.
 
-## 3. Áreas adyacentes
+## 3. Adjacent areas
 
-De `03-investigation.md` puede haber "áreas con riesgo similar". No las arregles aquí, pero comprueba que **al menos no tienen el mismo síntoma activo** (búsqueda rápida del patrón roto).
+`03-investigation.md` may list "areas with similar risk". Don't fix them here, but verify that **at least they don't have the same active symptom** (quick search for the broken pattern).
 
 ## 4. Output
 
 `.claude/work/<TICKET>/05-validation.md`:
 
 ```markdown
-# Validación {TICKET}
+# Validation {TICKET}
 
-## Test de regresión
+## Regression test
 - Path: `tests/...`
-- Falla antes del arreglo: ✅
-- Pasa después del arreglo: ✅
+- Fails before the fix: ✅
+- Passes after the fix: ✅
 
-## Suite completa
+## Full suite
 - `<quality.test>`: ✅ / ❌ (X failures)
 - `<quality.static_analysis>`: ✅ / ❌
 
-## Áreas adyacentes
-- Búsquedas hechas:
-- Otras incidencias detectadas: <listar para abrir tickets aparte, NO arreglar aquí>
+## Adjacent areas
+- Searches performed:
+- Other issues detected: <list to open separate tickets, NOT fix here>
 ```
 
-## 5. Cierre
+## 5. Wrap-up
 
-- Si test en rojo o regresiones: `phase` se queda en `fix`. El usuario itera.
-- Si verde: `phase = "validate"`, añade a `phases_done`. Sugiere `/bug-review`.
+- If test is red or regressions found: `phase` stays at `fix`. The user iterates.
+- If green: `phase = "validate"`, add to `phases_done`. Suggest `/bug-review`.

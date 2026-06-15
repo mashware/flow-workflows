@@ -1,180 +1,180 @@
 # `/feat-design`
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-Fase de diseño técnico. **Sigue sin escribir código de producción.** El output es un plan que el siguiente paso ejecuta.
+Technical design phase. **Still no production code.** The output is a plan the next step executes.
 
 ## 1. Pre-flight
 
-- Carga `meta.json` por rama actual. Si no existe, pide al usuario que arranque con `/feat-start`.
-- Lee `01-context.md` y (si existe) `02-brainstorm.md`.
-- Si `size` es `XS`, sugiere saltar a `/feat-build` y termina salvo que el usuario insista.
+- Load `meta.json` by current branch. If it doesn't exist, ask the user to start with `/feat-start`.
+- Read `01-context.md` and (if it exists) `02-brainstorm.md`.
+- If `size` is `XS`, suggest jumping to `/feat-build` and stop unless the user insists.
 
-## 2. Consulta domain-memory enfocada
+## 2. Focused domain-memory query
 
-Si `domain_memory.enabled` es `true` en `FLOW.md`: antes de inventariar el código, llama a `mcp__domain-memory__search_knowledge` con queries orientadas al **módulo afectado** e **integraciones** que va a tocar el diseño. Esto suele descubrir decisiones de dominio invisibles desde el código (restricciones legales, supuestos de la integración, motivos de un acoplamiento histórico).
+If `domain_memory.enabled` is `true` in `FLOW.md`: before inventorying the code, call `mcp__domain-memory__search_knowledge` with queries aimed at the **affected module** and **integrations** the design will touch. This often uncovers domain decisions invisible from the code (legal constraints, integration assumptions, reasons for historical coupling).
 
-Lanza 2-4 queries en paralelo. Tiempo de espera máximo 2s; si falla, sigue. Hits relevantes van al inicio del diseño bajo "Contexto de dominio adicional" (§4 template). Si `domain_memory.enabled` es `false` o vacío, salta sin avisar.
+Run 2-4 queries in parallel. Maximum wait time 2s; if it fails, continue. Relevant hits go at the start of the design under "Additional domain context" (§4 template). If `domain_memory.enabled` is `false` or empty, skip without comment.
 
-## 3. Inventario previo (reutilizar antes de crear)
+## 3. Pre-inventory (reuse before creating)
 
-**Antes** de lanzar los subagentes de diseño, identifica qué de lo que la feature necesita **ya existe** en el código o en la base de datos. Lanza un subagente de exploración con un encargo del tipo:
+**Before** launching the design subagents, identify what the feature needs that **already exists** in the code or database. Launch an exploration subagent with an assignment like:
 
-> Para la feature `<título>` (ver `.claude/work/<TICKET>/01-context.md`), busca en el repo qué piezas relacionadas ya existen y podrían reutilizarse: entidades de dominio, value objects, repositorios, servicios, eventos, columnas o tablas, comandos/queries CQRS, y endpoints similares. No propongas diseño — solo lista lo encontrado con una línea cada uno y su ubicación. Si la feature menciona conceptos como `<concepto1>`, `<concepto2>`, busca específicamente esos.
+> For the feature `<title>` (see `.claude/work/<TICKET>/01-context.md`), search the repo for related pieces that already exist and could be reused: domain entities, value objects, repositories, services, events, columns or tables, CQRS commands/queries, and similar endpoints. Don't propose a design — only list what you find with one line each and its location. If the feature mentions concepts like `<concept1>`, `<concept2>`, search specifically for those.
 
-Guarda el resultado al inicio de `03-design.md` bajo "## Lo que ya existe" (ver §3). Los subagentes de diseño leen esa sección y solo proponen nuevo cuando no encuentran nada equivalente; si proponen duplicar a sabiendas, lo justifican.
+Save the result at the start of `03-design.md` under "## What already exists" (see §3). The design subagents read that section and only propose new things when they find no equivalent; if they knowingly propose duplication, they justify it.
 
-## 4. Trabajo
+## 4. Work
 
-Carga primero los skills relevantes según el proyecto (ver `FLOW.md` sección `conventions`).
+First load the relevant skills per the project (see `FLOW.md` section `conventions`).
 
-Lanza en **paralelo** los subagentes que correspondan según la feature y el tipo de proyecto:
+Launch in **parallel** the subagents that apply based on the feature and project type:
 
-- **Siempre**: agente `agents.architecture` (o subagente general si está vacío) con el encargo de proponer: módulo donde vive, entidades/value objects nuevos o modificados, commands/queries CQRS (si aplica), eventos, repositorios.
-- **Si toca DB**: agente `agents.persistence` (o subagente general si está vacío) con el encargo de proponer mappings, migraciones necesarias, índices, y gestor de entidades apropiado.
-- **Si toca API/HTTP**: agente `agents.api` (o subagente general si está vacío) con el encargo de definir endpoint, DTO, ruta, seguridad y formato de respuesta (solo planeamiento, no implementación).
-- **Si toca rendimiento crítico o rutas calientes**: agente `agents.performance` (o subagente general si está vacío) para que prevea riesgos N+1 o de carga.
-- **Si toca seguridad (autenticación, pagos, datos sensibles)**: agente `agents.security` (o subagente general si está vacío) con el encargo de listar amenazas y mitigaciones del diseño propuesto.
+- **Always**: agent `agents.architecture` (or general subagent if empty) assigned to propose: module where it lives, new or modified entities/value objects, CQRS commands/queries (if applicable), events, repositories.
+- **If it touches DB**: agent `agents.persistence` (or general subagent if empty) assigned to propose mappings, necessary migrations, indexes, and appropriate entity manager.
+- **If it touches API/HTTP**: agent `agents.api` (or general subagent if empty) assigned to define endpoint, DTO, route, security, and response format (planning only, no implementation).
+- **If it touches critical performance or hot paths**: agent `agents.performance` (or general subagent if empty) to anticipate N+1 or load risks.
+- **If it touches security (authentication, payments, sensitive data)**: agent `agents.security` (or general subagent if empty) assigned to list threats and mitigations of the proposed design.
 
-Para cada área, usa el agente definido en `agents.<rol>` de `FLOW.md`; si ese campo está vacío, usa un subagente general con el rol en el prompt.
+For each area, use the agent defined in `agents.<role>` from `FLOW.md`; if that field is empty, use a general subagent with the role in the prompt.
 
-Cada subagente recibe `01-context.md`, `02-brainstorm.md` (si existe) y la sección "Lo que ya existe" en su prompt. Instrucciones explícitas en el encargo:
+Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists), and the "What already exists" section in their prompt. Explicit instructions in the assignment:
 
-- **Antes de proponer una entidad/columna/repositorio/servicio nuevo, comprobar si algo del inventario sirve.** Si se duplica a sabiendas, justificar en la tabla de decisiones.
-- **No añadir mecanismos defensivos "por si acaso".** Cada validación, guard, reintento, cerrojo, mecanismo de respaldo o caché propuesto debe ir acompañado del escenario **real y presente** que lo exige (con evidencia: un hallazgo de `domain-memory`, un archivo, un patrón de tráfico conocido). Si el escenario es hipotético o el sistema actual ya lo impide, **no se propone**. Resolver lo que pide el ticket hoy, no problemas futuros (YAGNI).
+- **Before proposing a new entity/column/repository/service, check whether something from the inventory will do.** If duplicating knowingly, justify it in the decisions table.
+- **Do not add defensive mechanisms "just in case".** Every proposed validation, guard, retry, lock, fallback mechanism, or cache must be accompanied by the **real and present** scenario that requires it (with evidence: a `domain-memory` finding, a file, a known traffic pattern). If the scenario is hypothetical or the current system already prevents it, **don't propose it**. Solve what the ticket asks for today, not future problems (YAGNI).
 
 ## 5. Output
 
-Consolida los outputs en `.claude/work/<TICKET>/03-design.md`:
+Consolidate the outputs into `.claude/work/<TICKET>/03-design.md`:
 
 ```markdown
-# Diseño <TICKET>
+# Design <TICKET>
 
-## Contexto de dominio adicional
-<hits del search_knowledge enfocado de §2, o "sin hallazgos">
+## Additional domain context
+<hits from the focused search_knowledge in §2, or "no findings">
 
-## Lo que ya existe (inventario)
-<lista de piezas reutilizables localizadas en §3, o "no hay nada equivalente">
+## What already exists (inventory)
+<list of reusable pieces found in §3, or "nothing equivalent">
 
-## Resumen ejecutivo
-<3-5 bullets de la solución elegida>
+## Executive summary
+<3-5 bullets of the chosen solution>
 
-## Módulos/capas afectados
-- <módulo/capa> — <qué cambia>
+## Affected modules/layers
+- <module/layer> — <what changes>
 
-## Modelo de datos
-- Entidades nuevas / modificadas: <para cada nueva, indica "no se encontró equivalente" o "duplicado a sabiendas porque...">
-- Migraciones:
-- Índices:
+## Data model
+- New / modified entities: <for each new one, indicate "no equivalent found" or "duplicated knowingly because...">
+- Migrations:
+- Indexes:
 
-## CQRS / Comandos y Consultas (si aplica)
+## CQRS / Commands and Queries (if applicable)
 - Commands:
 - Queries:
 - Handlers:
-- Eventos publicados:
+- Published events:
 
-## API / HTTP (si aplica)
+## API / HTTP (if applicable)
 - Endpoint:
 - DTO:
-- Seguridad:
+- Security:
 
-## Riesgos identificados
-- Rendimiento:
-- Seguridad:
-- Compatibilidad:
-- Migraciones en caliente:
+## Identified risks
+- Performance:
+- Security:
+- Compatibility:
+- Live migrations:
 
-## Contratos externos
-<Si este cambio toca una superficie consumida desde fuera (otro repo, otro módulo, cliente desplegado, worker, migración referenciada por nombre, métrica/panel, evento de dominio, ruta HTTP), declara aquí **cada contrato como literal**, no en prosa. Si no hay superficie externa, escribe "ninguno" y pasa de largo.>
+## External contracts
+<If this change touches a surface consumed from outside (another repo, another module, a deployed client, a worker, a migration referenced by name, a metric/dashboard, a domain event, an HTTP route), declare each contract here as a **literal**, not prose. If there's no external surface, write "none" and move on.>
 
-### Contrato N: <descripción corta>
-- **Tipo**: HTTP response body | header | route | evento de dominio | columna DB | métrica | otro.
-- **Shape literal** (formato copiable, no descripción):
+### Contract N: <short description>
+- **Type**: HTTP response body | header | route | domain event | DB column | metric | other.
+- **Literal shape** (copy-pasteable format, not a description):
   ```json
   {"error":{"code":"quota_exceeded","message":"...","details":{"upgrade_url":"https://..."}}}
   ```
-- **Consumer conocido**: <nombre del consumer + ruta donde lee este contrato, si se sabe>
-- **Desviación de patrón**: <si este contrato NO sigue cómo lo hacen otros controllers/eventos/etc. similares del repo, ANUNCIARLO aquí explícitamente>.
+- **Known consumer**: <consumer name + path where it reads this contract, if known>
+- **Pattern deviation**: <if this contract does NOT follow how other similar controllers/events/etc. in the repo do it, ANNOUNCE it here explicitly>.
 
-## Mecanismos defensivos y su justificación
-<Una fila por cada validación, guard, reintento, cerrojo, mecanismo de respaldo, caché, idempotencia, cola o indicador que el diseño introduce. Si no puedes nombrar un escenario REAL y PRESENTE que lo justifique, la pieza sobra — quítala del diseño.>
+## Defensive mechanisms and their justification
+<One row per validation, guard, retry, lock, fallback mechanism, cache, idempotency, queue, or flag the design introduces. If you cannot name a REAL and PRESENT scenario that justifies it, the piece is unnecessary — remove it from the design.>
 
-| Mecanismo | Escenario real que lo justifica (con evidencia) | ¿Necesario ahora? |
-|-----------|--------------------------------------------------|-------------------|
+| Mechanism | Real scenario that justifies it (with evidence) | Needed now? |
+|-----------|--------------------------------------------------|-------------|
 
-## Plan de implementación (orden)
+## Implementation plan (order)
 1. …
 2. …
 
-## Tests previstos
+## Planned tests
 - Unit:
 - Integration:
 - Functional:
 
-## Decisiones (ADR-light)
-| Decisión | Alternativa descartada | Por qué |
+## Decisions (ADR-light)
+| Decision | Discarded alternative | Why |
 
-## Cuestionamientos del diseño
-<lo rellena §5 con la tabla del challenger>
+## Design challenges
+<filled by §5 with the challenger table>
 ```
 
-## 6. Cuestionamiento del diseño (challenger)
+## 6. Design challenge (challenger)
 
-Antes de cerrar, **desafía el diseño** lanzando un subagente general con este encargo (autocontenido):
+Before closing, **challenge the design** by launching a general subagent with this assignment (self-contained):
 
-> Eres el revisor crítico del diseño en `.claude/work/<TICKET>/03-design.md`. **No propongas implementación.** Cuestiona el plan desde 4 ángulos. El **primero es el más importante** y busca lo contrario que los demás — busca lo que SOBRA.
+> You are the critical design reviewer for `.claude/work/<TICKET>/03-design.md`. **Do not propose an implementation.** Challenge the plan from 4 angles. The **first is the most important** and looks for the opposite of the others — it looks for what is UNNECESSARY.
 >
-> 1. **Encaje y necesidad (ángulo dominante — busca lo que sobra)**: revisa cada mecanismo defensivo del diseño (validación, guard, reintento, cerrojo, mecanismo de respaldo, caché, idempotencia, cola, indicador). Para cada uno pregunta:
->    - **¿Puede ese escenario ocurrir realmente en este proyecto?** No lo asumas — verifícalo: consulta `mcp__domain-memory__search_knowledge` y mira el código relevante. Si el sistema ya impide ese escenario, la protección **sobra** → hallazgo "esto sobra".
->    - **¿Se necesita ahora, para lo que pide el ticket (YAGNI)?** Si resuelve un problema futuro hipotético en vez del de hoy → hallazgo "esto sobra, es YAGNI".
->    - Sé concreto en el porqué.
-> 2. **Supuestos frágiles** (busca lo que falta): ¿qué creencias del diseño podrían no cumplirse? Confirma que el fallo es posible en el proyecto — no inventes fragilidades teóricas.
-> 3. **Simplificación**: ¿hay forma más simple de lograr lo mismo? ¿alguna pieza es redundante con "Lo que ya existe"?
-> 4. **Operación en producción**: reversión, observabilidad, migraciones en caliente, efectos cruzados con workers/cachés/colas. Solo lo que aplique de verdad a este cambio.
+> 1. **Fit and necessity (dominant angle — look for what's unnecessary)**: review each defensive mechanism in the design (validation, guard, retry, lock, fallback, cache, idempotency, queue, flag). For each one ask:
+>    - **Can that scenario actually happen in this project?** Don't assume — verify: query `mcp__domain-memory__search_knowledge` and look at the relevant code. If the system already prevents that scenario, the protection is **unnecessary** → finding "this is unnecessary".
+>    - **Is it needed now, for what the ticket asks (YAGNI)?** If it solves a hypothetical future problem instead of today's → finding "this is unnecessary, it's YAGNI".
+>    - Be specific about why.
+> 2. **Fragile assumptions** (look for what's missing): what beliefs in the design might not hold? Confirm the failure is possible in the project — don't invent theoretical fragilities.
+> 3. **Simplification**: is there a simpler way to achieve the same thing? Is any piece redundant with "What already exists"?
+> 4. **Production operation**: rollback, observability, live migrations, cross-effects with workers/caches/queues. Only what genuinely applies to this change.
 >
-> Output: tabla markdown `| Ángulo | Hallazgo | Tipo (sobra/falta) | Severidad |` con severidades `alta`/`media`/`baja`. Bajo 500 palabras. No inventes problemas para llenar — si un ángulo no tiene hallazgos, di "sin hallazgos".
+> Output: markdown table `| Angle | Finding | Type (unnecessary/missing) | Severity |` with severities `high`/`medium`/`low`. Under 500 words. Don't invent problems to fill space — if an angle has no findings, say "no findings".
 
-Si la feature toca **dominio sensible** (pagos, autenticación, datos personales, contadores de uso/seguimiento), lanza **en paralelo** un segundo subagente general con foco específico en el dominio.
+If the feature touches **sensitive domain** (payments, authentication, personal data, usage/tracking counters), launch **in parallel** a second general subagent focused specifically on that domain.
 
-Consolida los hallazgos al final de `03-design.md` bajo:
+Consolidate findings at the end of `03-design.md` under:
 
 ```markdown
-## Cuestionamientos del diseño
+## Design challenges
 
-| Ángulo | Hallazgo | Tipo | Severidad | Respuesta |
-|--------|----------|------|-----------|-----------|
+| Angle | Finding | Type | Severity | Response |
+|-------|---------|------|----------|----------|
 ```
 
-**Si hay severidad `alta` sin respuesta**: muestra los hallazgos al usuario y pregunta. Las opciones dependen del tipo:
+**If there are `high`-severity findings without a response**: show the findings to the user and ask. The options depend on the type:
 
-- Si el hallazgo es **"sobra"**: **Recortar** (quita la pieza del diseño — opción por defecto), o **Mantener y justificar** (rellena "Respuesta" con el escenario real — si no puedes nombrarlo, es que sobra).
-- Si el hallazgo es **"falta"**: **Reabrir brainstorm/design** para incorporarlo, o **Asumir y documentar** (rellena "Respuesta" con la asunción consciente).
+- If the finding is **"unnecessary"**: **Cut** (remove the piece from the design — default option), or **Keep and justify** (fill "Response" with the real scenario — if you can't name one, it's unnecessary).
+- If the finding is **"missing"**: **Reopen brainstorm/design** to incorporate it, or **Assume and document** (fill "Response" with the conscious assumption).
 
-No avances al cierre con severidades altas sin respuesta. Las medias y bajas son informativas.
+Do not advance to close with high-severity findings without a response. Medium and low are informational.
 
-## 7. ¿El tamaño sigue siendo correcto?
+## 7. Is the size still right?
 
-Si lo que sale en `03-design.md` no encaja con `meta.json.size`:
+If what comes out of `03-design.md` doesn't fit `meta.json.size`:
 
-- Propón al usuario reclasificar.
-- Si confirma, actualiza `meta.json.size` y anota en `meta.json.notes`.
-- **Consecuencias**: pasar de M a L activa el flujo completo. Pasar de M a S elimina `/feat-plan` de la ruta. Avisa explícitamente del cambio de flujo al usuario.
+- Propose reclassifying to the user.
+- If confirmed, update `meta.json.size` and note in `meta.json.notes`.
+- **Consequences**: going from M to L activates the full flow. Going from M to S removes `/feat-plan` from the path. Explicitly warn the user of the flow change.
 
-## 8. Staging de hallazgos de dominio
+## 8. Domain knowledge staging
 
-Si `domain_memory.enabled` es `true` en `FLOW.md`: revisa la tabla de decisiones (ADR-light) y los cuestionamientos para detectar **decisiones de dominio no obvias** — cosas que un futuro lector del repo no podría deducir leyendo solo el código.
+If `domain_memory.enabled` is `true` in `FLOW.md`: review the decisions table (ADR-light) and challenges to detect **non-obvious domain decisions** — things a future reader of the repo could not deduce from reading only the code.
 
-**Silencio por defecto**: si no hay nada no obvio, no preguntes. Si hay 1+ hallazgos con señal clara:
+**Silence by default**: if there's nothing non-obvious, don't ask. If there are 1+ findings with a clear signal:
 
-- Llama a `mcp__domain-memory__stage_finding` con el hallazgo y el contexto. Una llamada por hallazgo.
-- Avisa al usuario brevemente: "Stageado X hallazgo(s) de dominio para consolidar en `/feat-ship`".
+- Call `mcp__domain-memory__stage_finding` with the finding and context. One call per finding.
+- Briefly notify the user: "Staged X domain finding(s) to consolidate in `/feat-ship`".
 
-No invoques `save_knowledge` aquí — el guardado final está en `/feat-ship`. Si `domain_memory.enabled` es `false` o vacío, salta sin avisar.
+Do not call `save_knowledge` here — the final save is in `/feat-ship`. If `domain_memory.enabled` is `false` or empty, skip without comment.
 
-## 9. Cierre
+## 9. Close
 
-- Actualiza `meta.json`: `phase = "design"`, añade a `phases_done`.
-- Pide al usuario que revise el diseño. Si pide cambios, edítalos en el artefacto antes de avanzar.
-- Siguiente paso según tamaño:
-  - **XS / S**: sugiere `/feat-build` (1 sola MR/PR, no hay que planificar troceo).
-  - **M / L**: sugiere `/feat-plan` para decidir cómo trocear el trabajo en MRs/PRs fusionables de forma independiente antes de implementar.
+- Update `meta.json`: `phase = "design"`, add to `phases_done`.
+- Ask the user to review the design. If they request changes, edit them in the artifact before advancing.
+- Next step based on size:
+  - **XS / S**: suggest `/feat-build` (1 single MR/PR, no need to plan splitting).
+  - **M / L**: suggest `/feat-plan` to decide how to split the work into independently mergeable MRs/PRs before implementing.

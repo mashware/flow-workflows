@@ -1,50 +1,50 @@
-# flow — flujos de desarrollo guiados (agnóstico de stack)
+# flow — guided development workflows (stack-agnostic)
 
-Flujos `feat`/`bug`/`work` con un esqueleto común (`start → … → ship`,
-`diagnose → … → postmortem`, vigilancia post-deploy) y los mismos patrones (loop-until-done en
-review, cuarentena de input no confiable, verificación adversarial, puerta humana antes del
-MR/PR), **sin nada pegado a un repo concreto**. Cada repositorio se configura con un `FLOW.md`.
+`feat`/`bug`/`work` flows with a shared skeleton (`start → … → ship`,
+`diagnose → … → postmortem`, post-deploy monitoring) and consistent patterns (loop-until-done in
+review, quarantine of untrusted input, adversarial verification, human gate before MR/PR),
+**with nothing tied to a specific repo**. Each repository is configured with a `FLOW.md`.
 
-## Configuración: `FLOW.md`
+## Configuration: `FLOW.md`
 
-Lo más fácil: ejecuta **`/flow:init`**, que autodetecta lo que puede del repo (host git, rama
-base, comandos de test, si hay migraciones, si `domain-memory` está activo) y escribe el
-`FLOW.md` preguntándote solo lo no deducible. A mano: copia `examples/FLOW.template.md` a la raíz
-del repo. Los comandos lo leen en su paso 0. Cubre:
+The easiest path: run **`/flow:init`**, which auto-detects what it can from the repo (git host,
+base branch, test commands, whether migrations exist, whether `domain-memory` is active) and
+writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
+`examples/FLOW.template.md` to the repo root. Commands read it in their step 0. It covers:
 
-- **tracker**: prefijo de ticket y cómo leerlo.
-- **git**: host y CLI (GitHub, GitLab, Bitbucket, Azure, Gitea, self-hosted…), término (MR/PR), base por defecto, patrón de rama, asignee, squash, secciones de la descripción, freno de pre-deploy.
-- **quality**: comandos de test/análisis/estilo/BD del repo (vacío = autodescubrir).
-- **agents** / **review**: mapa rol→agente y panel de code-review.
-- **conventions**: convenciones de código que los comandos deben respetar (texto libre).
-- **domain_memory**: si el MCP [`domain-memory`](https://github.com/mashware/domain-memory) está activo.
-- **observability**: perfil para `work:watch` (servicios, plataforma, detección de deploy, colas). Vacío = autodescubrir.
+- **tracker**: ticket prefix and how to read a ticket.
+- **git**: host and CLI (GitHub, GitLab, Bitbucket, Azure, Gitea, self-hosted…), term (MR/PR), default base, branch pattern, assignee, squash, description sections, pre-deploy gate.
+- **quality**: test/analysis/style/DB commands for the repo (empty = auto-discover).
+- **agents** / **review**: role→agent map and code-review panel.
+- **conventions**: code conventions the commands must respect (free text).
+- **domain_memory**: whether the [`domain-memory`](https://github.com/mashware/domain-memory) MCP is active.
+- **observability**: profile for `work:watch` (services, platform, deploy detection, queues). Empty = auto-discover.
 
-**Lo vacío o ausente degrada con elegancia**: cada comando dice qué hace si falta un dato
-(autodescubrir, usar default, o preguntarte). Un repo sin `FLOW.md` sigue funcionando, solo con
-más preguntas y autodescubrimiento.
+**Empty or absent keys degrade gracefully**: each command states what it does when a value is
+missing (auto-discover, use default, or ask you). A repo without `FLOW.md` still works, just
+with more questions and auto-discovery.
 
-## Instalar
+## Install
 
 ```
 /plugin marketplace add mashware/flow-workflows
 /plugin install flow@flow-plugins
 ```
-Comandos namespaced: `/flow:init`, `/flow:feat:start`, `/flow:bug:diagnose`, `/flow:work:watch`, etc.
-Conviven con cualquier otro plugin o comando local.
+Namespaced commands: `/flow:init`, `/flow:feat:start`, `/flow:bug:diagnose`, `/flow:work:watch`, etc.
+They coexist with any other plugin or local command.
 
-Probar sin instalar: `claude --plugin-dir <ruta>/flow-workflows/plugins/flow`.
+Try without installing: `claude --plugin-dir <path>/flow-workflows/plugins/flow`.
 
-## Qué NO trae (a propósito)
+## What it intentionally does NOT include
 
-Para ser agnóstico, `flow` **no empaqueta agentes ni el skill de review** (son específicos de
-lenguaje/proyecto). El review invoca el skill/agentes que declares en `FLOW.md` (`review.*`,
-`agents.*`), o el `code-review` built-in si no defines ninguno. Los agentes de refuerzo
-(rendimiento, colas, frontend…) se usan solo si tu proyecto los tiene; los comandos los
-referencian por rol, no por nombre propio.
+To stay stack-agnostic, `flow` **does not bundle agents or the review skill** (those are
+language/project-specific). Review invokes the skill/agents you declare in `FLOW.md`
+(`review.*`, `agents.*`), or the built-in `code-review` if you define none. Reinforcement
+agents (performance, queues, frontend…) are used only if your project has them; commands
+reference them by role, not by name.
 
-Sí trae el hook anti-push a `master`/`main` (`hooks/`) — es git genérico.
+It does include the anti-push-to-`master`/`main` hook (`hooks/`) — that's generic git.
 
-## Otros harnesses
+## Other harnesses
 
-Para opencode, Gemini CLI o Codex CLI, ver `../../adapters/`.
+For opencode, Gemini CLI, or Codex CLI, see `../../adapters/`.

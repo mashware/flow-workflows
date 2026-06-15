@@ -1,73 +1,73 @@
-# PRIMITIVES.md — Mapa de traducción de primitivas
+# PRIMITIVES.md — Primitive translation map
 
-Este documento explica cómo se tradujo cada primitiva específica de Claude Code al adaptador de opencode, y qué capacidades no tienen equivalente directo.
+This document explains how each Claude Code-specific primitive was translated to the opencode adapter, and which capabilities have no direct equivalent.
 
-## Tabla de traducción
+## Translation table
 
-| Primitiva Claude Code | Significado original | Traducción en opencode | Notas |
+| Claude Code primitive | Original meaning | opencode translation | Notes |
 |---|---|---|---|
-| `Agent <rol>` / subagente | Delega trabajo aislado en un subagente con herramientas propias | `@nombre` (invocar subagente declarado en `agents/<nombre>.md` con `mode: subagent`) | Ver sección "Cómo declarar subagentes" más abajo |
-| `AskUserQuestion` | Menú estructurado con opciones clickables | **Pregunta en texto al usuario y espera respuesta** | No existe UI estructurada en opencode — el agente escribe la pregunta con las opciones enumeradas y el usuario responde con texto |
-| `ScheduleWakeup` | Re-despiertar la sesión en N minutos (autopilot de watch) | **Cron del SO + `opencode run -p "<prompt>"`** | No existe reagendado en sesión; el comando `work-watch` ejecuta un ciclo y termina; el estado entre ciclos se guarda en `monitor.md`; el usuario configura el cron |
-| `Workflow` (orquestación paralela determinista) | Fan-out en paralelo con síntesis — varios agentes en paralelo sin verse entre ellos | **Varios subagentes `@nombre` lanzados en el mismo prompt** (opencode los puede ejecutar en paralelo si la herramienta lo soporta); si no, secuencial con consolidación manual | El agente principal sintetiza los resultados de todos los subagentes antes de continuar |
-| `Skill commit-commands:commit-push-pr` | Crear commit + push + MR/PR usando el skill de la herramienta | **Git manual + CLI de `git.cli` de `FLOW.md`** (p.ej. `glab mr create` o `gh pr create`) | Si hay un skill/comando equivalente en opencode, úsalo; si no, los pasos son explícitos en `/feat-ship` y `/bug-ship` |
-| `Skill <nombre>` (otros skills) | Invocar un flujo reutilizable de la herramienta | **Inline**: el contenido del skill se incorpora al prompt del comando que lo invocaba | Los skills de convenciones del proyecto se cargan leyendo los archivos referenciados en `FLOW.md` sección `conventions` |
-| `mcp__domain-memory__search_knowledge` | Consultar el MCP domain-memory | **Mismo nombre de tool**: `mcp__domain-memory__search_knowledge` | El servidor MCP se configura en `opencode.json` bajo `mcp.domain-memory` |
-| `mcp__domain-memory__stage_finding` | Stagear un hallazgo de dominio | **Mismo nombre**: `mcp__domain-memory__stage_finding` | Idem |
-| `mcp__domain-memory__read_staging` | Leer el staging de la rama actual | **Mismo nombre**: `mcp__domain-memory__read_staging` | Idem |
-| `mcp__domain-memory__save_knowledge` | Guardar en el almacén de domain-memory | **Mismo nombre**: `mcp__domain-memory__save_knowledge` | Idem |
-| `TaskCreate` (crear lista de tareas) | Trackear pasos de la implementación | **Lista en markdown en el artefacto** (`05-implementation.md`): los pasos se anotan como `- [ ] paso` y se marcan con `- [x]` al completar | opencode no tiene una herramienta TaskCreate nativa; la bitácora en el artefacto cumple la misma función |
+| `Agent <role>` / subagent | Delegates isolated work to a subagent with its own tools | `@name` (invoke a subagent declared in `agents/<name>.md` with `mode: subagent`) | See "How to declare subagents" below |
+| `AskUserQuestion` | Structured menu with clickable options | **Plain-text question to the user, wait for reply** | No structured UI exists in opencode — the agent writes the question with numbered options and the user replies in text |
+| `ScheduleWakeup` | Re-wake the session in N minutes (watch autopilot) | **OS cron + `opencode run -p "<prompt>"`** | No in-session rescheduling exists; `work-watch` runs one cycle and exits; state between cycles is saved in `monitor.md`; the user configures the cron |
+| `Workflow` (deterministic parallel orchestration) | Parallel fan-out with synthesis — multiple agents running in parallel without seeing each other | **Multiple `@name` subagents launched in the same prompt** (opencode may run them in parallel if the tool supports it); otherwise sequential with manual consolidation | The main agent synthesizes results from all subagents before continuing |
+| `Skill commit-commands:commit-push-pr` | Create commit + push + MR/PR using the tool's built-in skill | **Manual git + `git.cli` CLI from `FLOW.md`** (e.g. `glab mr create` or `gh pr create`) | If an equivalent skill/command exists in opencode, use it; otherwise the steps are explicit in `/feat-ship` and `/bug-ship` |
+| `Skill <name>` (other skills) | Invoke a reusable flow from the tool | **Inline**: the skill content is incorporated into the prompt of the command that used to invoke it | Project convention skills are loaded by reading the files referenced in `FLOW.md` under `conventions` |
+| `mcp__domain-memory__search_knowledge` | Query the domain-memory MCP | **Same tool name**: `mcp__domain-memory__search_knowledge` | The MCP server is configured in `opencode.json` under `mcp.domain-memory` |
+| `mcp__domain-memory__stage_finding` | Stage a domain finding | **Same name**: `mcp__domain-memory__stage_finding` | Idem |
+| `mcp__domain-memory__read_staging` | Read the current branch's staging area | **Same name**: `mcp__domain-memory__read_staging` | Idem |
+| `mcp__domain-memory__save_knowledge` | Save to the domain-memory store | **Same name**: `mcp__domain-memory__save_knowledge` | Idem |
+| `TaskCreate` (create task list) | Track implementation steps | **Markdown checklist in the artifact** (`05-implementation.md`): steps are noted as `- [ ] step` and marked `- [x]` when done | opencode has no native TaskCreate tool; the artifact log serves the same purpose |
 
-## Qué NO se porta 1:1
+## What does NOT port 1:1
 
 ### AskUserQuestion
-En Claude Code, `AskUserQuestion` muestra un menú estructurado con botones/opciones que el usuario puede pulsar. En opencode no existe esta UI — el agente escribe la pregunta con las opciones enumeradas en texto (p.ej. "Elige una opción: 1) Sí, adelante. 2) No, editar. 3) Cancelar.") y el usuario responde con el número o el texto de la opción.
+In Claude Code, `AskUserQuestion` shows a structured menu with buttons/options the user can click. opencode has no such UI — the agent writes the question with the options listed as text (e.g. "Choose an option: 1) Yes, go ahead. 2) No, edit. 3) Cancel.") and the user replies with the number or the option text.
 
-**Efecto práctico**: las confirmaciones y elecciones del usuario siguen siendo explícitas y obligatorias; solo cambia el mecanismo (texto vs UI estructurada).
+**Practical effect**: confirmations and user choices remain explicit and mandatory; only the mechanism changes (text vs structured UI).
 
-### Autopilot del watch (ScheduleWakeup)
-En Claude Code, `work:watch` usa `ScheduleWakeup` para reagendarse automáticamente dentro de la misma sesión: el agente duerme N minutos y se despierta solo, sin intervención del usuario.
+### Watch autopilot (ScheduleWakeup)
+In Claude Code, `work:watch` uses `ScheduleWakeup` to reschedule itself automatically within the same session: the agent sleeps N minutes and wakes up on its own, without user intervention.
 
-En opencode **no existe este mecanismo en sesión**. El equivalente es:
+In opencode **this mechanism does not exist in-session**. The equivalent is:
 
-1. **Un ciclo por ejecución**: `work-watch` ejecuta **un ciclo** de vigilancia (consulta señales, reporta, actualiza `monitor.md`) y termina.
-2. **Estado persistido**: todo lo necesario para el ciclo siguiente (plan, baseline, T0, T_fin, señales, estado acumulado) se guarda en `.claude/work/<TICKET>/monitor.md`.
-3. **Ciclos continuos vía cron**: el usuario configura un cron del SO o una tarea programada que ejecute `opencode run -p "/work-watch {TICKET}"` cada ~5 minutos. Ejemplo:
+1. **One cycle per run**: `work-watch` executes **one monitoring cycle** (queries signals, reports, updates `monitor.md`) and exits.
+2. **Persisted state**: everything needed for the next cycle (plan, baseline, T0, T_fin, signals, accumulated state) is saved in `.claude/work/<TICKET>/monitor.md`.
+3. **Continuous cycles via cron**: the user sets up an OS cron job or scheduled task that runs `opencode run -p "/work-watch {TICKET}"` every ~5 minutes. Example:
    ```bash
-   # Ejemplo crontab: vigilar PROJ-15421 cada 5 minutos
-   */5 * * * * cd /ruta/al/repo && opencode run -p "/work-watch PROJ-15421"
+   # Example crontab: monitor PROJ-15421 every 5 minutes
+   */5 * * * * cd /path/to/repo && opencode run -p "/work-watch PROJ-15421"
    ```
-4. **Re-entrada limpia**: al inicio de cada ciclo, `work-watch` detecta si `monitor.md` ya tiene el plan aprobado y salta directamente al §5 (ciclo) sin repetir el descubrimiento.
+4. **Clean re-entry**: at the start of each cycle, `work-watch` detects whether `monitor.md` already has an approved plan and jumps directly to §5 (cycle) without repeating discovery.
 
-**Efecto práctico**: la vigilancia continua requiere configuración explícita del cron por parte del usuario; en Claude Code era automática. La alternativa manual (`/loop 5m /work-watch {TICKET}` de Claude Code) tampoco existe en opencode — la opción más cercana es el cron.
+**Practical effect**: continuous monitoring requires explicit cron configuration by the user; in Claude Code it was automatic. The manual alternative (`/loop 5m /work-watch {TICKET}` from Claude Code) does not exist in opencode either — the closest option is the cron.
 
-## Cómo declarar subagentes en opencode
+## How to declare subagents in opencode
 
-Los comandos de este adaptador invocan subagentes con `@nombre`. Para que funcionen, el usuario debe declararlos en `agents/<nombre>.md` (en el directorio de opencode del proyecto o global).
+The commands in this adapter invoke subagents via `@name`. For them to work, the user must declare them in `agents/<name>.md` (in the project or global opencode directory).
 
-### Formato de un subagente
+### Subagent format
 
 ```markdown
 ---
-description: <Descripción breve del rol del subagente>
+description: <Brief description of the subagent's role>
 mode: subagent
-model: <modelo, p.ej. claude-sonnet-4-5>
+model: <model, e.g. claude-sonnet-4-5>
 temperature: 0.3
 ---
 
-<System prompt del subagente aquí>
+<Subagent system prompt here>
 ```
 
-### Dónde declarar subagentes
+### Where to declare subagents
 
-- **Proyecto**: `.opencode/agents/<nombre>.md`
-- **Global**: `~/.config/opencode/agents/<nombre>.md`
+- **Project**: `.opencode/agents/<name>.md`
+- **Global**: `~/.config/opencode/agents/<name>.md`
 
-### Qué nombres espera el adaptador
+### Names the adapter expects
 
-Los nombres de subagente no están en el adaptador — los define el usuario en `FLOW.md` bajo los campos `agents.*`. El adaptador los referencia como `@<agents.architecture>`, `@<agents.persistence>`, etc. Si un campo `agents.*` está vacío, el comando usa un subagente de propósito general con el rol descrito en el prompt.
+Subagent names are not defined in the adapter — the user defines them in `FLOW.md` under the `agents.*` fields. The adapter references them as `@<agents.architecture>`, `@<agents.persistence>`, etc. If an `agents.*` field is empty, the command uses a general-purpose subagent with the role described in the prompt.
 
-**Ejemplo de `FLOW.md`**:
+**Example `FLOW.md`**:
 ```yaml
 ## agents
 - architecture: ddd-symfony-architect
@@ -80,8 +80,8 @@ Los nombres de subagente no están en el adaptador — los define el usuario en 
 - queues: dlx-analyzer
 ```
 
-Con esto, `/feat-design` lanzará `@ddd-symfony-architect` para la arquitectura, `@doctrine-orm-specialist` para persistencia, etc.
+With this, `/feat-design` will launch `@ddd-symfony-architect` for architecture, `@doctrine-orm-specialist` for persistence, etc.
 
-## Degradación cuando un subagente no está disponible
+## Graceful degradation when a subagent is unavailable
 
-Si el subagente `@nombre` no existe en `agents/`, opencode lo reportará como error. Los comandos están escritos con degradación explícita: si el campo `agents.*` de `FLOW.md` está vacío, se usa un subagente de propósito general con el rol indicado en el prompt. Por tanto, el adaptador funciona sin ningún subagente declarado — simplemente pierde la especialización.
+If subagent `@name` does not exist in `agents/`, opencode will report an error. The commands are written with explicit degradation: if the `agents.*` field in `FLOW.md` is empty, a general-purpose subagent with the role described in the prompt is used instead. Therefore the adapter works with no declared subagents — it simply loses the specialization.

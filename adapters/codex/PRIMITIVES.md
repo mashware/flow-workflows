@@ -1,36 +1,36 @@
-# PRIMITIVES.md — tabla de traducción de primitivas
+# PRIMITIVES.md — primitive translation table
 
-Cómo se tradujo cada primitiva específica de Claude Code al adaptador de Codex CLI, y qué se recortó o simplificó.
+How each Claude Code-specific primitive was translated for the Codex CLI adapter, and what was trimmed or simplified.
 
-## Tabla de traducción
+## Translation table
 
-| Primitiva (Claude Code) | Significado | Traducción en Codex |
-|-------------------------|-------------|---------------------|
-| `Agent <rol>` / subagente | Delega trabajo aislado en un subagente | Subagente definido en `[agents.<nombre>]` de `~/.codex/config.toml`. El nombre del rol viene del mapa `agents.<rol>` de `FLOW.md`. Si el campo está vacío en FLOW.md, se usa un subagente general en el prompt. |
-| `AskUserQuestion` | Menú estructurado de opciones al usuario (UI integrada en Claude Code) | **Pregunta normal en texto**: el prompt indica al agente que haga la pregunta al usuario y espere su respuesta. No existe UI estructurada en Codex → se convierte en "pregunta al usuario y espera respuesta" en prosa. |
-| `ScheduleWakeup` (autopilot de watch) | Re-despertarse en N min dentro de la sesión actual | **No existe en Codex CLI**. Ver sección "Qué NO se porta 1:1" abajo. |
-| `Workflow` (orquestación paralela) | Fan-out determinista en paralelo + síntesis | Subagentes lanzados en paralelo (Codex admite múltiples subagentes simultáneos en la misma respuesta). La orquestación explícita con el DSL de `Workflow` se reemplaza por instrucciones al agente principal de lanzar N subagentes en paralelo y esperar sus resultados antes de sintetizar. |
-| `Skill commit-commands:commit-push-pr` | Crear commit + push + MR/PR | Secuencia manual: `git add`, `git commit`, `git push -u origin HEAD`, y el CLI de `git.cli` de FLOW.md (p.ej. `glab mr create` o `gh pr create`). El agente ejecuta los pasos directamente. |
-| `Skill <otros>` (save-knowledge, code-review, etc.) | Invocar un flujo reutilizable de Claude Code | Los skills se convierten en prompts propios del adaptador (p.ej. `/save-knowledge`) o se referencian por nombre si el proyecto los tiene configurados en Codex. |
-| `mcp__domain-memory__<tool>` | Llamar al MCP domain-memory | El **mismo servidor MCP** (mismo nombre de herramienta). Solo cambia la configuración: en Claude Code se referencia desde `.mcp.json`; en Codex se declara en `~/.codex/config.toml` bajo `[mcp_servers.domain-memory]`. Ver `config.snippet.toml`. |
-| `TaskCreate` / `TaskStop` | Trackear pasos con la UI de tareas de Claude Code | No existe en Codex. El agente mantiene el seguimiento de pasos a través de la bitácora en el artefacto markdown (`05-implementation.md`, `04-fix.md`) y reporta el progreso al usuario en texto. |
+| Primitive (Claude Code) | Meaning | Codex translation |
+|-------------------------|---------|-------------------|
+| `Agent <role>` / subagent | Delegates isolated work to a subagent | Subagent defined in `[agents.<name>]` of `~/.codex/config.toml`. The role name comes from the `agents.<role>` map in `FLOW.md`. If that field is empty in FLOW.md, a general subagent is used in the prompt. |
+| `AskUserQuestion` | Structured option menu to the user (built-in UI in Claude Code) | **Plain text question**: the prompt instructs the agent to ask the user and wait for a response. No structured UI in Codex → becomes "ask the user and wait for a response" in prose. |
+| `ScheduleWakeup` (watch autopilot) | Re-wake in N min within the current session | **Does not exist in Codex CLI**. See "What does NOT port 1:1" section below. |
+| `Workflow` (parallel orchestration) | Deterministic parallel fan-out + synthesis | Subagents launched in parallel (Codex supports multiple simultaneous subagents in the same response). Explicit orchestration with the `Workflow` DSL is replaced by instructions to the main agent to launch N subagents in parallel and wait for their results before synthesizing. |
+| `Skill commit-commands:commit-push-pr` | Create commit + push + MR/PR | Manual sequence: `git add`, `git commit`, `git push -u origin HEAD`, and the `git.cli` CLI from FLOW.md (e.g. `glab mr create` or `gh pr create`). The agent executes the steps directly. |
+| `Skill <others>` (save-knowledge, code-review, etc.) | Invoke a reusable Claude Code workflow | Skills become their own prompts in the adapter (e.g. `/save-knowledge`) or are referenced by name if the project has them configured in Codex. |
+| `mcp__domain-memory__<tool>` | Call the domain-memory MCP | The **same MCP server** (same tool name). Only the configuration changes: in Claude Code it's referenced from `.mcp.json`; in Codex it's declared in `~/.codex/config.toml` under `[mcp_servers.domain-memory]`. See `config.snippet.toml`. |
+| `TaskCreate` / `TaskStop` | Track steps with Claude Code's task UI | Does not exist in Codex. The agent tracks step progress through the markdown artifact log (`05-implementation.md`, `04-fix.md`) and reports progress to the user in text. |
 
-## Qué NO se porta 1:1
+## What does NOT port 1:1
 
 ### AskUserQuestion
-Claude Code tiene una herramienta `AskUserQuestion` que presenta opciones como botones en la UI. Codex no tiene esta primitiva — todas las preguntas al usuario se hacen como texto normal en la respuesta. El comportamiento es equivalente: el agente pregunta y espera la respuesta del usuario antes de continuar. Las opciones se enumeran en prosa (p.ej. "Opciones: (1) Sí, adelante. (2) No, falta algo. (3) Cancelar.").
+Claude Code has an `AskUserQuestion` tool that presents options as buttons in the UI. Codex does not have this primitive — all questions to the user are asked as plain text in the response. The behavior is equivalent: the agent asks and waits for the user's response before continuing. Options are listed in prose (e.g. "Options: (1) Yes, go ahead. (2) No, something's missing. (3) Cancel.").
 
-### ScheduleWakeup (autopilot de watch)
-La primitiva `ScheduleWakeup` de Claude Code permite que el agente se re-despierte automáticamente a los N minutos dentro de la misma sesión, creando un bucle autopilotado. **Codex CLI no tiene esta capacidad de sesión auto-reagendada**.
+### ScheduleWakeup (watch autopilot)
+The `ScheduleWakeup` primitive in Claude Code lets the agent automatically re-wake N minutes later within the same session, creating a self-piloted loop. **Codex CLI does not have this in-session auto-reschedule capability.**
 
-Solución adoptada en `/work-watch`:
-- El comando ejecuta **un solo ciclo** de vigilancia y termina.
-- El estado entre ciclos se persiste en `.claude/work/<TICKET>/monitor.md` (superficie vigilada, plan aprobado, queries concretas, valores de línea base, últimas lecturas).
-- Para vigilancia continua, el usuario configura un cron del SO + `codex exec "/work-watch {TICKET}"` con el intervalo deseado; o usa las Automations nativas de la app de Codex si está disponible.
-- En re-entradas (cuando `monitor.md` ya existe con el plan aprobado), el comando salta directamente al ciclo §5 sin repetir descubrimiento ni pedir confirmación de nuevo.
+Solution adopted in `/work-watch`:
+- The command runs **a single watch cycle** and exits.
+- State between cycles is persisted in `.claude/work/<TICKET>/monitor.md` (watched surface, approved plan, concrete queries, baseline values, last readings).
+- For continuous monitoring, the user sets up an OS cron job + `codex exec "/work-watch {TICKET}"` at the desired interval; or uses the native Codex app Automations if available.
+- On re-entry (when `monitor.md` already exists with the approved plan), the command skips directly to cycle §5 without repeating discovery or asking for confirmation again.
 
 ### Workflow DSL
-El DSL de `Workflow` de Claude Code permite definir fases, schemas estructurados por agente y orquestación determinista con tipado. En Codex, la orquestación paralela se expresa en lenguaje natural: el agente principal recibe instrucciones de lanzar N subagentes en paralelo con sus respectivos encargos y esperar sus resultados estructurados antes de sintetizar. El resultado práctico es equivalente aunque sin el tipado formal del DSL.
+Claude Code's `Workflow` DSL lets you define phases, per-agent structured schemas, and deterministic orchestration with typing. In Codex, parallel orchestration is expressed in natural language: the main agent receives instructions to launch N subagents in parallel with their respective assignments and wait for their structured results before synthesizing. The practical outcome is equivalent, though without the formal typing of the DSL.
 
 ### TaskCreate / TaskStop
-La UI de tareas de Claude Code no existe en Codex. El seguimiento de pasos se hace a través de los artefactos markdown del flujo (bitácora en `05-implementation.md`, `04-fix.md`) y de los reportes al usuario al final de cada paso.
+Claude Code's task UI does not exist in Codex. Step tracking is done through the workflow's markdown artifacts (implementation log in `05-implementation.md`, `04-fix.md`) and reports to the user at the end of each step.

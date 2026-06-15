@@ -1,81 +1,81 @@
 # FLOW.md
 
-Configuración del plugin `flow` para este repositorio. Los comandos `/flow:*` leen este
-fichero en su paso 0. Borra lo que no apliques; **lo vacío o ausente = autodescubrir o
-comportamiento por defecto** (cada comando dice qué hace si falta un dato).
+Configuration for the `flow` plugin for this repository. The `/flow:*` commands read this
+file in their step 0. Delete what does not apply; **empty or absent = auto-discover or
+default behavior** (each command states what it does when a value is missing).
 
-Colócalo en la raíz del repo (puede comitearse: es config de equipo, no secretos).
+Place it at the repo root (can be committed: it is team config, not secrets).
 
 ## tracker
-Cómo se identifican y leen los tickets.
+How tickets are identified and read.
 
-- `prefix:`            # p.ej. `PROJ-`. Vacío = sin prefijo / ticket de forma libre.
-- `tool:`             # `acli` (Jira) | `gh` (GitHub issues) | `linear` | `none` (manual). Vacío = none.
-- `view_cmd:`         # opcional, comando para ver un ticket. `{TICKET}` se sustituye. Ej: `acli jira workitem view {TICKET}`
+- `prefix:`            # e.g. `PROJ-`. Empty = no prefix / free-form ticket.
+- `tool:`             # `acli` (Jira) | `gh` (GitHub issues) | `linear` | `none` (manual). Empty = none.
+- `view_cmd:`         # optional, command to view a ticket. `{TICKET}` is substituted. e.g.: `acli jira workitem view {TICKET}`
 
 ## git
-Convenciones de rama y de Pull/Merge Request.
+Branch and Pull/Merge Request conventions.
 
-- `host:`             # `gitlab` | `github`. Decide la terminología y el CLI por defecto.
-- `cli:`              # `glab` | `gh`. Vacío = se deduce de `host`.
-- `request_term:`     # `MR` | `PR`. Cómo nombrar el request en los textos. Vacío = se deduce de `host`.
-- `default_base:`     # base de ramas nuevas, p.ej. `origin/master` u `origin/main`.
-- `branch_pattern:`   # p.ej. `{PREFIX}{TICKET}-{slug}`. `{slug}` en inglés, kebab-case.
-- `assignee:`         # usuario al que se asigna el MR/PR. Vacío = no asignar.
+- `host:`             # `gitlab` | `github`. Determines the terminology and default CLI.
+- `cli:`              # `glab` | `gh`. Empty = inferred from `host`.
+- `request_term:`     # `MR` | `PR`. How to name the request in text. Empty = inferred from `host`.
+- `default_base:`     # base for new branches, e.g. `origin/master` or `origin/main`.
+- `branch_pattern:`   # e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case.
+- `assignee:`         # user to assign the MR/PR to. Empty = do not assign.
 - `squash:`           # `true` | `false` (squash-before-merge).
-- `request_sections:` # secciones de la descripción del MR/PR, una por línea con `- `. Vacío = libre.
-- `predeploy_gate:`   # `true` si este repo ejecuta el SQL de esquema a mano en el servidor ANTES de desplegar y quiere frenar el MR/PR hasta hacerlo. Vacío/false = sin sección Pre-deploy ni hilo bloqueante.
+- `request_sections:` # MR/PR description sections, one per line with `- `. Empty = free-form.
+- `predeploy_gate:`   # `true` if this repo runs schema SQL manually on the server BEFORE deploying and wants to block the MR/PR until done. Empty/false = no Pre-deploy section or blocking thread.
 
 ## quality
-Comandos del repo para los quality gates. **Vacío = el comando autodescubre** (Makefile,
-scripts de npm/composer, etc.) y avisa de lo que use.
+Repo commands for quality gates. **Empty = the command auto-discovers** (Makefile,
+npm/composer scripts, etc.) and reports what it uses.
 
-- `test:`             # ej. `make test`
-- `test_one:`         # ej. `make test-filter filter={FILTER}` (`{FILTER}` se sustituye)
-- `static_analysis:`  # ej. `make phpstan-ci`
-- `style_fix:`        # ej. `make cs-fixer-changed`
-- `db_update:`        # ej. `make database-update` (vacío si no aplica)
-- `db_diff:`          # comando que muestra el SQL de esquema pendiente de aplicar, ej. `make database-compare` (para el SQL de pre-deploy)
-- `frontend_test:`    # ej. `make test-frontend` (vacío si no hay frontend)
-- `review_skill:`     # skill orquestador del panel de code-review en /flow:*:review. Vacío = no hay skill; mira `reviewers` abajo.
-- `reviewers:`        # si `review_skill` está vacío: lista de agentes que corren en paralelo como panel de review (uno por línea con `- `). Vacío y sin skill = solo el built-in `code-review`.
+- `test:`             # e.g. `make test`
+- `test_one:`         # e.g. `make test-filter filter={FILTER}` (`{FILTER}` is substituted)
+- `static_analysis:`  # e.g. `make phpstan-ci`
+- `style_fix:`        # e.g. `make cs-fixer-changed`
+- `db_update:`        # e.g. `make database-update` (empty if not applicable)
+- `db_diff:`          # command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL)
+- `frontend_test:`    # e.g. `make test-frontend` (empty if no frontend)
+- `review_skill:`     # orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below.
+- `reviewers:`        # if `review_skill` is empty: list of agents that run in parallel as a review panel (one per line with `- `). Empty with no skill = only the built-in `code-review`.
 
 ## agents
-Mapa rol→agente para los pasos que delegan en un especialista (`design`, `investigate`,
-`validate`, `plan`, `build`, `fix`, `watch`, y los refuerzos por área de `review`). Los agentes
-deben existir y ser descubribles en la máquina (`~/.claude/agents`, `.agents/agents` del repo, u
-otro plugin) — esto solo dice **cuál** invocar, no lo crea. **Rol vacío = el comando usa
-`Agent general-purpose` con el rol en el prompt, o se salta el paso si era opcional.**
+Role→agent map for steps that delegate to a specialist (`design`, `investigate`,
+`validate`, `plan`, `build`, `fix`, `watch`, and the area reinforcements in `review`). Agents
+must exist and be discoverable on the machine (`~/.claude/agents`, `.agents/agents` in the repo, or
+another plugin) — this only states **which** one to invoke, it does not create it. **Empty role = the command uses
+`Agent general-purpose` with the role in the prompt, or skips the step if it was optional.**
 
-- `architecture:`   # diseño/capas/arquitectura
-- `persistence:`    # BD/ORM/mappings/migraciones/consultas
-- `api:`            # endpoints/DTO/rutas/contratos HTTP
-- `performance:`    # N+1, índices, hot paths, carga
-- `queues:`         # colas, mensajes muertos, workers
-- `security:`       # amenazas, autenticación, datos sensibles
-- `frontend:`       # componentes/UI
-- `frontend_test:`  # tests de frontend
-- `testing:`        # tests de backend / cobertura
+- `architecture:`   # design/layers/architecture
+- `persistence:`    # DB/ORM/mappings/migrations/queries
+- `api:`            # endpoints/DTOs/routes/HTTP contracts
+- `performance:`    # N+1, indexes, hot paths, load
+- `queues:`         # queues, dead-letter, workers
+- `security:`       # threats, authentication, sensitive data
+- `frontend:`       # components/UI
+- `frontend_test:`  # frontend tests
+- `testing:`        # backend tests / coverage
 
 ## conventions
-Texto libre: convenciones que los comandos deben respetar al escribir/revisar código
-(capas, patrones, prohibiciones). Vacío = sin convenciones específicas.
+Free text: conventions the commands must respect when writing/reviewing code
+(layers, patterns, prohibitions). Empty = no specific conventions.
 
-<!-- ej.: DDD (Domain/Application/Infrastructure); no #[AsMessageHandler]; etc. -->
+<!-- e.g.: DDD (Domain/Application/Infrastructure); no #[AsMessageHandler]; etc. -->
 
 ## domain_memory
-Conocimiento de dominio vía el MCP `domain-memory` (https://github.com/mashware/domain-memory).
+Domain knowledge via the `domain-memory` MCP (https://github.com/mashware/domain-memory).
 
-- `enabled:`          # `true` si el MCP está instalado e iniciado. Vacío/false = los comandos
-                      # saltan los pasos de search/stage/save de dominio sin avisar.
+- `enabled:`          # `true` if the MCP is installed and running. Empty/false = commands
+                      # skip the domain search/stage/save steps silently.
 
 ## observability
-Perfil para `/flow:work:watch` (vigilancia post-deploy). **Vacío = el comando autodescubre
-todo** (servicios, dashboards, monitores) como hace su fase de descubrimiento.
+Profile for `/flow:work:watch` (post-deploy monitoring). **Empty = the command auto-discovers
+everything** (services, dashboards, monitors) in its discovery phase.
 
-- `platform:`         # `datadog` | otro. Vacío = autodescubrir.
-- `site:`             # ej. `app.datadoghq.com` (org/site).
-- `deploy_detect:`    # cómo identificar TU deploy. Texto libre. Ej: "merge→pipeline padre (glab por SHA)→bridge→pipeline hija→jobs de go-live".
-- `services:`         # uno por línea: `name | role(web|workers|...) | apm:<query> | logs:<filtro> | sql:<service> | deploy_job:<job>`
-- `queues:`           # ej. `rabbitmq, *_dlx por delta`
-- `notes:`            # baselines/umbrales medidos, flags de bajo tráfico, etc.
+- `platform:`         # `datadog` | other. Empty = auto-discover.
+- `site:`             # e.g. `app.datadoghq.com` (org/site).
+- `deploy_detect:`    # how to identify YOUR deploy. Free text. e.g.: "merge→parent pipeline (glab by SHA)→bridge→child pipeline→go-live jobs".
+- `services:`         # one per line: `name | role(web|workers|...) | apm:<query> | logs:<filter> | sql:<service> | deploy_job:<job>`
+- `queues:`           # e.g. `rabbitmq, *_dlx by delta`
+- `notes:`            # measured baselines/thresholds, low-traffic flags, etc.

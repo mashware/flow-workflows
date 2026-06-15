@@ -1,114 +1,114 @@
-# Adaptador flow → opencode
+# flow → opencode adapter
 
-Este directorio contiene el adaptador del plugin `flow` para [opencode](https://opencode.ai). Los 22 comandos del sistema de flujos `feat`/`bug`/`work` están convertidos al formato de opencode (markdown con frontmatter `description`).
+This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 22 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
 
-## Requisitos
+## Requirements
 
-- opencode instalado y configurado.
-- Un fichero `FLOW.md` en la raíz de cada repo donde quieras usar los flujos. Puedes partir de la plantilla:
+- opencode installed and configured.
+- A `FLOW.md` file at the root of each repo where you want to use the flows. You can start from the template:
   ```
   ../../plugins/flow/examples/FLOW.template.md
   ```
-  Un ejemplo relleno para un proyecto concreto está en:
+  A filled-in example for a specific project is at:
   ```
   ```
-  Si `FLOW.md` no existe, los comandos funcionan con comportamiento por defecto (autodescubren convenciones del repo).
+  If `FLOW.md` does not exist, the commands work with default behavior (they auto-discover repo conventions).
 
-## Instalación
+## Installation
 
-### Opción A: instalación global (disponible en todos los proyectos)
+### Option A: global installation (available in all projects)
 
-Copia los comandos al directorio global de opencode:
+Copy the commands to the opencode global directory:
 
 ```bash
 cp commands/*.md ~/.config/opencode/commands/
 ```
 
-Copia la configuración MCP al directorio global (o fusiona con el `opencode.json` existente):
+Copy the MCP configuration to the global directory (or merge it into your existing `opencode.json`):
 
 ```bash
-# Si no tienes opencode.json global todavía:
+# If you don't have a global opencode.json yet:
 cp opencode.json ~/.config/opencode/opencode.json
 
-# Si ya tienes uno, fusiona manualmente la sección "mcp":
-# Añade a ~/.config/opencode/opencode.json:
+# If you already have one, manually merge the "mcp" section:
+# Add to ~/.config/opencode/opencode.json:
 # "mcp": { "domain-memory": { "command": "npx", "args": ["-y", "domain-memory-mcp"] } }
 ```
 
-### Opción B: instalación por proyecto (solo en el repo actual)
+### Option B: per-project installation (current repo only)
 
-Copia los comandos al directorio de opencode del proyecto:
+Copy the commands to the project's opencode directory:
 
 ```bash
 mkdir -p .opencode/commands
-cp /ruta/a/adapters/opencode/commands/*.md .opencode/commands/
+cp /path/to/adapters/opencode/commands/*.md .opencode/commands/
 ```
 
-Copia o fusiona el `opencode.json` en la raíz del proyecto:
+Copy or merge the `opencode.json` into the project root:
 
 ```bash
-cp /ruta/a/adapters/opencode/opencode.json .opencode/opencode.json
-# o fusiona la sección "mcp" con el opencode.json existente
+cp /path/to/adapters/opencode/opencode.json .opencode/opencode.json
+# or merge the "mcp" section into the existing opencode.json
 ```
 
-## Comandos disponibles
+## Available commands
 
-Una vez instalados, invócalos con `/` en opencode:
+Once installed, invoke them with `/` in opencode:
 
-### Flujo de features
-| Comando | Descripción |
+### Feature flow
+| Command | Description |
 |---------|-------------|
-| `/feat-start <TICKET>` | Arranca una feature nueva |
-| `/feat-brainstorm` | Genera opciones y riesgos antes de diseñar |
-| `/feat-design` | Diseña la solución técnica |
-| `/feat-plan` | Trocea el trabajo en MRs/PRs independientes |
-| `/feat-build` | Implementa siguiendo el diseño aprobado |
-| `/feat-review` | Code review multiagente obligatorio |
-| `/feat-validate` | Valida tests, edge cases e integridad |
-| `/feat-ship` | Commit, push, MR/PR y oferta de guardar conocimiento |
+| `/feat-start <TICKET>` | Start a new feature |
+| `/feat-brainstorm` | Generate options and risks before designing |
+| `/feat-design` | Design the technical solution |
+| `/feat-plan` | Break the work into independent MRs/PRs |
+| `/feat-build` | Implement following the approved design |
+| `/feat-review` | Mandatory multi-agent code review |
+| `/feat-validate` | Validate tests, edge cases, and integrity |
+| `/feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
 
-### Flujo de incidencias
-| Comando | Descripción |
+### Bug flow
+| Command | Description |
 |---------|-------------|
-| `/bug-start <TICKET>` | Arranca el flujo de incidencia |
-| `/bug-diagnose` | Reproduce el fallo y delimita qué está roto |
-| `/bug-investigate` | Encuentra la causa raíz del fallo |
-| `/bug-fix` | Implementa el arreglo mínimo |
-| `/bug-validate` | Test de regresión y verificación |
-| `/bug-review` | Code review multiagente del arreglo |
-| `/bug-postmortem` | Lecciones aprendidas y oferta de guardar conocimiento |
-| `/bug-ship` | Commit, push, MR/PR del arreglo |
+| `/bug-start <TICKET>` | Start the bug flow |
+| `/bug-diagnose` | Reproduce the failure and scope what is broken |
+| `/bug-investigate` | Find the root cause of the failure |
+| `/bug-fix` | Implement the minimal fix |
+| `/bug-validate` | Regression test and verification |
+| `/bug-review` | Multi-agent code review of the fix |
+| `/bug-postmortem` | Lessons learned and offer to save knowledge |
+| `/bug-ship` | Commit, push, MR/PR of the fix |
 
-### Comandos transversales
-| Comando | Descripción |
+### Cross-cutting commands
+| Command | Description |
 |---------|-------------|
-| `/work-README` | Guía del sistema de flujos |
-| `/work-status` | Panorámica de todos los trabajos abiertos |
-| `/work-resume` | Retoma el trabajo de la rama actual |
-| `/work-abandon` | Cierra un work sin shipear |
-| `/work-watch <TICKET> [duración]` | Vigila la observabilidad tras un despliegue (un ciclo) |
-| `/save-knowledge` | Consolida hallazgos al almacén de domain-memory |
+| `/work-README` | Guide to the flow system |
+| `/work-status` | Overview of all open work items |
+| `/work-resume` | Resume work on the current branch |
+| `/work-abandon` | Close a work item without shipping |
+| `/work-watch <TICKET> [duration]` | Monitor observability after a deployment (one cycle) |
+| `/save-knowledge` | Consolidate findings into the domain-memory store |
 
-## Configuración de subagentes
+## Subagent configuration
 
-Los comandos invocan subagentes `@nombre` según los roles declarados en `FLOW.md` bajo `agents.*`. Si esos campos están vacíos, los comandos degradan a un subagente de propósito general.
+The commands invoke subagents via `@name` according to the roles declared in `FLOW.md` under `agents.*`. If those fields are empty, the commands fall back to a general-purpose subagent.
 
-Para sacar el máximo partido, declara los subagentes específicos de tu proyecto en `agents/<nombre>.md` (proyecto) o `~/.config/opencode/agents/<nombre>.md` (global). Ver `PRIMITIVES.md` para el formato exacto y la tabla de nombres que espera el adaptador.
+To get the most out of the system, declare project-specific subagents in `agents/<name>.md` (project) or `~/.config/opencode/agents/<name>.md` (global). See `PRIMITIVES.md` for the exact format and the table of names the adapter expects.
 
-## Vigilancia continua con work-watch
+## Continuous monitoring with work-watch
 
-El comando `/work-watch` ejecuta **un ciclo** y persiste el estado en `monitor.md`. Para vigilancia continua, configura un cron:
+The `/work-watch` command runs **one cycle** and persists state in `monitor.md`. For continuous monitoring, set up a cron job:
 
 ```bash
-# Ejemplo: vigilar cada 5 minutos (ajusta la ruta y el ticket)
-*/5 * * * * cd /ruta/al/repo && opencode run -p "/work-watch PROJ-XXXXX"
+# Example: monitor every 5 minutes (adjust the path and ticket)
+*/5 * * * * cd /path/to/repo && opencode run -p "/work-watch PROJ-XXXXX"
 ```
 
-Ver `PRIMITIVES.md` para más detalles sobre esta diferencia respecto al plugin original.
+See `PRIMITIVES.md` for more details on this difference from the original plugin.
 
-## Qué no se porta 1:1
+## What does not port 1:1
 
-Ver `PRIMITIVES.md` para el detalle completo. Resumen:
+See `PRIMITIVES.md` for the full breakdown. Summary:
 
-- `AskUserQuestion` → pregunta en texto; sin menú estructurado.
-- Autopilot de `watch` → cron del SO + `opencode run -p`; el estado entre ciclos vive en `monitor.md`.
+- `AskUserQuestion` → plain-text question; no structured menu.
+- `watch` autopilot → OS cron + `opencode run -p`; state between cycles lives in `monitor.md`.

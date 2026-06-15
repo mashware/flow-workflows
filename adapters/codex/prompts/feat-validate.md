@@ -1,62 +1,62 @@
 # `/feat-validate`
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-Verifica que la feature está terminada: cobertura de tests, casos límite, rendimiento, regresiones.
+Verifies the feature is complete: test coverage, edge cases, performance, regressions.
 
 ## 1. Pre-flight
 
-- Carga `meta.json`. Exige `review` en `phases_done`. Si no, manda a `/feat-review`.
-- Si `size` es `XS`, se puede saltar esta fase (avisa y sigue con `/feat-ship`).
+- Load `meta.json`. Require `review` in `phases_done`. If not, send to `/feat-review`.
+- If `size` is `XS`, this phase may be skipped (warn and continue with `/feat-ship`).
 
-## 2. Trabajo
+## 2. Work
 
-Lanza en **paralelo**:
+Launch in **parallel**:
 
-1. **Agente de tests**: usa el agente de `agents.testing` de `FLOW.md`; si está vacío, usa un subagente general con este rol. Encargo: "Revisa los cambios de la rama y completa la suite de tests donde falte cobertura. Foco: casos límite del `03-design.md`, caminos de error, validaciones de entrada, eventos de dominio emitidos. No reescribas tests que ya pasen. Lee `.claude/work/<TICKET>/03-design.md` y `05-implementation.md`. Respeta las convenciones de tests del proyecto (ver `FLOW.md` sección `conventions`)."
+1. **Testing agent**: use the `agents.testing` agent from `FLOW.md`; if empty, use a general subagent with this role. Assignment: "Review the branch changes and complete the test suite where coverage is missing. Focus: edge cases from `03-design.md`, error paths, input validation, emitted domain events. Do not rewrite tests that already pass. Read `.claude/work/<TICKET>/03-design.md` and `05-implementation.md`. Follow the project's test conventions (see `FLOW.md` section `conventions`)."
 
-2. **Agente de rendimiento** si la feature toca persistencia, repositorios, plantillas en rutas calientes o controladores con tráfico real: usa el agente de `agents.performance` de `FLOW.md`; si está vacío, usa un subagente general. Encargo: "Detecta N+1, índices faltantes, consultas no acotadas, flush en bucle, trabajo síncrono pesado que debería ir a cola. Reporta solo lo accionable."
+2. **Performance agent** if the feature touches persistence, repositories, templates on hot paths, or controllers with real traffic: use the `agents.performance` agent from `FLOW.md`; if empty, use a general subagent. Assignment: "Detect N+1, missing indexes, unbounded queries, flush in a loop, heavy synchronous work that should go to a queue. Report only actionable findings."
 
-3. **Suite completa**: lanza `quality.test` de `FLOW.md` en segundo plano; si está vacío, autodescubre el comando de tests del proyecto y avisa de lo que uses. Si hay cambios en frontend y `quality.frontend_test` está definido, lánzalo también.
+3. **Full suite**: run `quality.test` from `FLOW.md` in the background; if empty, auto-discover the project's test command and flag what you're using. If there are frontend changes and `quality.frontend_test` is defined, run it too.
 
-## 3. Casos límite manuales
+## 3. Manual edge cases
 
-Si la feature tiene interfaz de usuario o flujos críticos:
-- Si toca pagos: prueba con las tarjetas o credenciales de test que corresponda al proveedor (ver skill `stripe:test-cards` si usas Stripe).
-- Si toca workers/colas: asegúrate de que no se quedan trabajos en la cola de fallos. Si los hay y no son tuyos, no los toques aquí.
-- Si toca migraciones: ejecuta `quality.db_update` de `FLOW.md` (si está definido). Verifica que no hay diferencia de esquema inesperada.
+If the feature has a user interface or critical flows:
+- If it touches payments: test with the appropriate test cards or credentials for the provider (see the `stripe:test-cards` skill if using Stripe).
+- If it touches workers/queues: make sure no jobs are stuck in the failure queue. If there are and they're not yours, don't touch them here.
+- If it touches migrations: run `quality.db_update` from `FLOW.md` (if defined). Verify there's no unexpected schema difference.
 
 ## 4. Output
 
-Escribe `.claude/work/<TICKET>/07-validation.md`:
+Write `.claude/work/<TICKET>/07-validation.md`:
 
 ```markdown
-# Validación <TICKET>
+# Validation <TICKET>
 
-## Cobertura de tests
-- Unit añadidos: N (lista)
-- Integration añadidos: M
-- Functional añadidos: K
+## Test coverage
+- Unit tests added: N (list)
+- Integration tests added: M
+- Functional tests added: K
 
-## Resultado de suites
+## Suite results
 - `<quality.test>`: ✅ / ❌ (N tests, X failures)
 - `<quality.frontend_test>`: ✅ / ❌ / N-A
 - `<quality.static_analysis>`: ✅ / ❌
 
-## Rendimiento
-- Hallazgos del análisis: …
-- Riesgos abiertos: …
+## Performance
+- Analysis findings: …
+- Open risks: …
 
-## Casos límite verificados
+## Edge cases verified
 - [x] …
 - [ ] …
 
-## Regresiones
-- Áreas comprobadas: …
-- Sin regresiones detectadas / detectadas: …
+## Regressions
+- Areas checked: …
+- No regressions detected / Detected: …
 ```
 
-## 5. Cierre
+## 5. Close
 
-- Si quedan tests en rojo o regresiones, **no avances `phase`**. El usuario las resuelve y vuelve a `/feat-validate`.
-- Si todo verde: `phase = "validate"`, añade a `phases_done`. Sugiere `/feat-ship`.
+- If tests are red or regressions remain, **do not advance `phase`**. The user resolves them and returns to `/feat-validate`.
+- If all green: `phase = "validate"`, add to `phases_done`. Suggest `/feat-ship`.

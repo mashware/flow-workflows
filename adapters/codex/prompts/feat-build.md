@@ -1,204 +1,204 @@
 # `/feat-build`
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-Fase de implementación. Aquí sí se escribe código.
+Implementation phase. This is where code gets written.
 
 ## 1. Pre-flight
 
-- Carga `meta.json` por rama actual.
-- Para `size` M/L: exige que `03-design.md` **y** `04-mr-plan.md` existan. Si falta el plan, manda a `/feat-plan`. Si falta el diseño, manda a `/feat-design`.
-- Para `size` XS/S: permite arrancar sin diseño pero pide al usuario una nota de 2-3 líneas sobre qué va a hacer y guárdala como `03-design.md` mínimo. No hay plan de MRs/PRs (siempre 1 MR/PR).
-- Lee todos los artefactos previos.
-- **Si hay `meta.json.mrs` con más de una entrada**: identifica la primera MR/PR con `status: "pending"`. Esa es la MR/PR de esta iteración. Si todas están `merged`, avisa: feature terminada, no hay nada que construir. Marca la elegida como `in_progress` en `meta.json.mrs`.
+- Load `meta.json` by current branch.
+- For `size` M/L: require that both `03-design.md` **and** `04-mr-plan.md` exist. If the plan is missing, send to `/feat-plan`. If the design is missing, send to `/feat-design`.
+- For `size` XS/S: allow starting without a design but ask the user for a 2-3 line note on what they're going to do and save it as a minimal `03-design.md`. No MR/PR plan (always 1 MR/PR).
+- Read all previous artifacts.
+- **If `meta.json.mrs` has more than one entry**: identify the first MR/PR with `status: "pending"`. That's the MR/PR for this iteration. If all are `merged`, warn: feature is done, nothing left to build. Mark the selected one as `in_progress` in `meta.json.mrs`.
 
-## 2. Brief de negocio (antes de teclear)
+## 2. Business brief (before typing)
 
-**Antes de cargar skills, de crear tareas, de cualquier edición**, redacta un brief en lenguaje **de negocio** (no técnico) específico de **esta MR/PR concreta**:
+**Before loading skills, creating tasks, or any edit**, write a brief in **business language** (not technical) specific to **this particular MR/PR**:
 
 ```
-Brief MR/PR #N: <título>
+Brief MR/PR #N: <title>
 
-Tras esta MR/PR:
-- El usuario podrá <X>.
-- El sistema <hará Y / dejará de hacer Z>.
-- <métrica de éxito si aplica>.
+After this MR/PR:
+- The user will be able to <X>.
+- The system will <do Y / stop doing Z>.
+- <success metric if applicable>.
 
-Esta MR/PR NO incluye:
-- <pieza Y que pertenece a MR/PR #N+1>.
-- <funcionalidad relacionada que se decidió no hacer>.
-- <alcance tentador que queda fuera>.
+This MR/PR does NOT include:
+- <piece Y that belongs to MR/PR #N+1>.
+- <related functionality that was decided not to do>.
+- <tempting scope that stays out>.
 ```
 
-Reglas para redactarlo:
-- **Lenguaje de negocio**: di "el usuario podrá filtrar campañas por fecha", no "se crea el endpoint `GET /campaigns?from=...`".
-- **Específico de la MR/PR**: si la feature tiene 4 MRs/PRs, el brief habla solo de lo que esta aporta — no de la feature completa.
-- **El "NO incluye" es obligatorio**: aunque parezca redundante con el `04-mr-plan.md`, repetirlo aquí fija el alcance. Si no sabes qué poner, el plan está mal.
-- 3-5 bullets en cada lista. Más es ruido.
+Rules for writing it:
+- **Business language**: say "the user will be able to filter campaigns by date", not "creates the `GET /campaigns?from=...` endpoint".
+- **Specific to the MR/PR**: if the feature has 4 MRs/PRs, the brief covers only what this one delivers — not the full feature.
+- **The "does NOT include" is mandatory**: even if it seems redundant with `04-mr-plan.md`, repeating it here fixes the scope. If you don't know what to put, the plan is wrong.
+- 3-5 bullets in each list. More is noise.
 
-**Pregunta al usuario** si el brief refleja lo que espera:
-- **Sí, adelante** → empieza a construir.
-- **No, hay algo de más o de menos** → el usuario aclara, ajustas el brief y vuelves a preguntar. **No tocas código** hasta que el brief esté confirmado.
+**Ask the user** whether the brief reflects what they expect:
+- **Yes, go ahead** → start building.
+- **No, something is wrong or missing** → user clarifies, you adjust the brief and ask again. **Don't touch code** until the brief is confirmed.
 
-Guarda el brief al inicio de `05-implementation.md` bajo "## Brief MR/PR #N". Sirve como contrato para el resto del build: si surge la tentación de hacer algo que no está en el brief, vuelve a §2.4 antes de hacerlo.
+Save the brief at the start of `05-implementation.md` under "## Brief MR/PR #N". It serves as the contract for the rest of the build: if the temptation arises to do something not in the brief, return to §2.4 before doing it.
 
-## 2.0bis Copia los contratos del diseño (verbatim, no parafrasees)
+## 2.0bis Copy the contracts from the design (verbatim, don't paraphrase)
 
-**Antes de teclear código**, abre `03-design.md` y localiza la sección **"Contratos externos"**. Por **cada contrato** allí declarado (HTTP body, header, ruta, evento, columna, métrica), **cópialo literalmente** a `05-implementation.md` bajo:
+**Before typing code**, open `03-design.md` and locate the **"External contracts"** section. For **each contract** declared there (HTTP body, header, route, event, column, metric), **copy it literally** to `05-implementation.md` under:
 
 ```markdown
-## Contratos a respetar (copiados verbatim de 03-design.md §"Contratos externos")
+## Contracts to respect (copied verbatim from 03-design.md §"External contracts")
 
-### Contrato N: <descripción>
-- **Shape literal**:
-  <BLOQUE COPIADO TAL CUAL, sin re-escribir, sin parafrasear>
-- **Desviación de patrón** (si aplica): <copiado del diseño>
+### Contract N: <description>
+- **Literal shape**:
+  <BLOCK COPIED AS-IS, without re-writing or paraphrasing>
+- **Pattern deviation** (if applicable): <copied from the design>
 ```
 
-Reglas duras:
-- **Copia, no reescribas.** El objetivo es anclar tu atención.
-- **Si el diseño escribió el contrato en prosa**, reconviértelo a formato literal aquí mismo y avísalo al usuario.
-- **Si hay sección "Desviación de patrón"**: cópiala también.
-- **Si el diseño dice "ninguno"**, salta este paso y registra: "## Contratos a respetar — ninguno declarado en diseño".
+Hard rules:
+- **Copy, don't rewrite.** The goal is to anchor your attention.
+- **If the design wrote the contract in prose**, convert it to literal format here and flag it to the user.
+- **If there's a "Pattern deviation" section**: copy it too.
+- **If the design says "none"**, skip this step and record: "## Contracts to respect — none declared in design".
 
-Sin esta copia, no se pasa a §2.1.
+Without this copy, §2.1 cannot begin.
 
-## 2.1 Trabajo
+## 2.1 Work
 
-Carga los skills del proyecto (ver `FLOW.md` sección `conventions`).
+Load the project skills (see `FLOW.md` section `conventions`).
 
-**Si estás en un build multi-MR/PR**: limítate a lo que toca la MR/PR actual según `04-mr-plan.md`. Cualquier código que pertenezca a una MR/PR posterior es expansión de alcance; recórtalo o aíslalo tras indicador de funcionalidad / código muerto temporal según el plan.
+**If in a multi-MR/PR build**: limit yourself to what the current MR/PR touches per `04-mr-plan.md`. Any code that belongs to a later MR/PR is scope expansion; cut it or isolate it behind a feature flag / temporary dead code per the plan.
 
-Decide modo de ejecución:
+Decide execution mode:
 
-- **Hilo único (XS/S/M)**: implementas tú mismo, paso a paso, usando subagentes solo como consultores puntuales si te bloqueas: el agente de `agents.architecture` de `FLOW.md` para dudas de capa, y el de `agents.persistence` para dudas de consultas/mappings.
-- **Delegación parcial (M/L con piezas claras)**: usa subagentes para endpoints aislados, y el agente de `agents.testing` de `FLOW.md` en paralelo para preparar la suite. Pasa el `03-design.md` íntegro en el prompt para que no inventen.
+- **Single thread (XS/S/M)**: implement yourself, step by step, using subagents only as point consultants if blocked: the `agents.architecture` agent from `FLOW.md` for layer questions, and `agents.persistence` for query/mapping questions.
+- **Partial delegation (M/L with clear pieces)**: use subagents for isolated endpoints, and the `agents.testing` agent from `FLOW.md` in parallel to prepare the suite. Pass the entire `03-design.md` in the prompt so they don't invent.
 
-### 2.2 Confirmación de commits (opt-in del usuario)
+### 2.2 Commit confirmation (user opt-in)
 
-**Regla dura**: el agente **no hace `git commit` por su cuenta** durante `/feat-build`. Los commits son **opt-in del usuario** — sin confirmación explícita, los cambios se quedan en el árbol de trabajo.
+**Hard rule**: the agent **does not `git commit` on its own** during `/feat-build`. Commits are **user opt-in** — without explicit confirmation, changes stay in the working tree.
 
-**Tras completar cada paso**, el agente:
+**After completing each step**, the agent:
 
-1. Reporta al usuario un resumen del paso (≤ 5 líneas):
+1. Reports a step summary to the user (≤ 5 lines):
    ```
-   Paso N listo: <descripción>
-     Archivos: <lista corta>
-     Diff: +<añ> / -<borr> líneas
-     Validación sugerida: <p.ej. "lanza el comando de test unitario para Foo">
+   Step N done: <description>
+     Files: <short list>
+     Diff: +<added> / -<removed> lines
+     Suggested validation: <e.g. "run the unit test command for Foo">
    ```
-2. **No commitea**. Espera a que tú decidas:
-   - **"Commitea ahora"** o **"Vale, sigue"** → hace `git add <archivos del paso> && git commit -m "WIP <TICKET>: <paso>" --no-verify` y continúa.
-   - **"Espera, valido"** → se queda quieto. Tú validas a tu ritmo.
-   - **"Hay que cambiar X"** → ajusta. El commit del paso queda pendiente hasta que vuelvas a dar OK.
-   - **"Sigue sin commitear, agrupamos luego"** → arranca el paso siguiente sin commit.
+2. **Does not commit**. Waits for you to decide:
+   - **"Commit now"** or **"OK, continue"** → does `git add <step files> && git commit -m "WIP <TICKET>: <step>" --no-verify` and continues.
+   - **"Wait, I'll validate"** → stays put. You validate at your own pace.
+   - **"Change X"** → adjusts. The step's commit stays pending until you give the OK.
+   - **"Continue without committing, we'll group later"** → starts the next step without a commit.
 
-Reglas para cuando sí se commitea:
-- Un commit por paso. No agrupes varios pasos salvo que tú lo pidas explícitamente.
-- `--no-verify` está permitido **solo en commits WIP** (los ganchos lentos correrán en `/feat-review` y en el commit definitivo de `/feat-ship`).
-- Estos commits se aplastan al fusionar (si `git.squash` es `true`), así que no tienen que ser bonitos.
+Rules for when a commit does happen:
+- One commit per step. Don't group multiple steps unless you explicitly ask for it.
+- `--no-verify` is allowed **only on WIP commits** (slow hooks will run in `/feat-review` and in the final commit of `/feat-ship`).
+- These commits get squashed when merging (if `git.squash` is `true`), so they don't need to be clean.
 
-### 2.3 Termómetro de tamaño y corte en caliente
+### 2.3 Size gauge and mid-build cut
 
-**Tras cada paso completado** (haya commit o no), compara el tamaño real con la estimación de la MR/PR actual en `meta.json.mrs`:
+**After each completed step** (with or without a commit), compare the actual size against the current MR/PR estimate in `meta.json.mrs`:
 
 ```bash
-# Cambios commiteados sobre la rama base:
+# Changes committed on top of the base branch:
 git diff --shortstat <git.default_base>..HEAD
 git diff --name-only <git.default_base>..HEAD | wc -l
 
-# Cambios en árbol de trabajo (pendientes de commit):
+# Changes in the working tree (pending commit):
 git diff --shortstat HEAD
 git status --short | wc -l
 ```
 
-Suma ambos lados para obtener el tamaño real total.
+Add both sides to get the total actual size.
 
-Umbrales de aviso:
-- **Líneas reales > `lines_est * 1.5`**, o
-- **Archivos reales > `files_est + 2`**.
+Warning thresholds:
+- **Actual lines > `lines_est * 1.5`**, or
+- **Actual files > `files_est + 2`**.
 
-Si se supera cualquiera, **pausa** y pregunta al usuario (las opciones, en este orden):
+If either is exceeded, **pause** and ask the user (options in this order):
 
-1. **Cortar aquí (recomendado si la pieza actual es coherente)**.
-2. **Seguir y registrar la sobreestimación**.
-3. **Reabrir plan**. Volver a `/feat-plan` para replantear todo el troceo.
+1. **Cut here (recommended if the current piece is coherent)**.
+2. **Continue and record the overrun**.
+3. **Reopen plan**. Return to `/feat-plan` to rethink the entire split.
 
-### 2.4 ¿Sale algo fuera del brief?
+### 2.4 Does something fall outside the brief?
 
-Si durante el build aparece la tentación de añadir algo que **no está en el brief de §2**, **pausa** y pregunta al usuario:
-- **Sí, añádelo al brief** — actualiza el brief en `05-implementation.md` y sigue.
-- **No, déjalo fuera** — anótalo en la sección "Ideas para tickets aparte" de `05-implementation.md`.
+If during the build the temptation arises to add something **not in the §2 brief**, **pause** and ask the user:
+- **Yes, add it to the brief** — update the brief in `05-implementation.md` and continue.
+- **No, leave it out** — note it in the "Ideas for separate tickets" section of `05-implementation.md`.
 
-## 3. Bitácora
+## 3. Implementation log
 
-Mantén `.claude/work/<TICKET>/05-implementation.md` actualizado mientras trabajas (no al final):
+Keep `.claude/work/<TICKET>/05-implementation.md` updated while you work (not at the end):
 
 ```markdown
-# Implementación <TICKET>
+# Implementation <TICKET>
 
 ## Brief MR/PR #N
-<3-5 bullets de qué podrá hacer el usuario tras esta MR/PR, en lenguaje de negocio>
+<3-5 bullets of what the user will be able to do after this MR/PR, in business language>
 
-**Esta MR/PR NO incluye**:
-- <piezas que quedan fuera>
+**This MR/PR does NOT include**:
+- <pieces that stay out>
 
-## Cambios por archivo
-- <archivo> — qué cambió y por qué (1 línea cada uno)
+## Changes per file
+- <file> — what changed and why (1 line each)
 
-## Decisiones tomadas durante la implementación
-- Decisión: …
-  - Por qué: …
-  - Alternativa descartada: …
+## Decisions made during implementation
+- Decision: …
+  - Why: …
+  - Discarded alternative: …
 
-## Desviaciones del diseño
-- Diseño decía X → se hizo Y porque Z
+## Deviations from the design
+- Design said X → did Y because Z
 
-## Comandos ejecutados relevantes
-- <quality.style_fix de FLOW.md>
-- <quality.db_update de FLOW.md>
+## Relevant commands run
+- <quality.style_fix from FLOW.md>
+- <quality.db_update from FLOW.md>
 
-## Pendientes
+## Pending
 - [ ] …
 
-## Ideas para tickets aparte
-<cosas que surgieron durante el build y se decidió NO incluir>
+## Ideas for separate tickets
+<things that came up during the build and were decided NOT to include>
 ```
 
-## 4. Calidad durante implementación
+## 4. Quality during implementation
 
-Al ir terminando piezas grandes:
+As larger pieces are completed:
 
-- Lanza `quality.style_fix` de `FLOW.md` para arreglar estilo; si está vacío, autodescubre.
-- Lanza `quality.static_analysis` de `FLOW.md` cuando haya pieza estable; si está vacío, autodescubre.
-- Si añadiste tests, lánzalos puntuales con `quality.test_one` de `FLOW.md` (sustituyendo `{FILTER}`); si está vacío, autodescubre.
+- Run `quality.style_fix` from `FLOW.md` to fix style; if empty, auto-discover.
+- Run `quality.static_analysis` from `FLOW.md` when a piece is stable; if empty, auto-discover.
+- If you added tests, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover.
 
-## 4.1 ¿El diseño sigue siendo válido?
+## 4.1 Is the design still valid?
 
-Revisa la sección "Desviaciones del diseño" de `05-implementation.md`. Si se cumple **cualquiera** de:
+Review the "Deviations from the design" section of `05-implementation.md`. If **any** of the following apply:
 
-- **2+ desviaciones significativas** (cambio de módulo, contrato de evento distinto, entidad diferente, repositorio nuevo no previsto).
-- **1 desviación que invalida una decisión** del ADR-light de `03-design.md`.
+- **2+ significant deviations** (module change, different event contract, different entity, new unpredicted repository).
+- **1 deviation that invalidates a decision** from the ADR-light in `03-design.md`.
 
-**Pausa el build y vuelve a `/feat-design`** para actualizar el documento.
+**Pause the build and return to `/feat-design`** to update the document.
 
-## 4.2 Verificación textual de contratos (antes de cerrar)
+## 4.2 Textual contract verification (before closing)
 
-Si en §2.0bis copiaste contratos, **antes de marcar el build como hecho** confronta el código contra cada contrato citado — **no es un test que correr**, es una comparación textual deliberada:
+If in §2.0bis you copied contracts, **before marking the build as done** compare the code against each cited contract — **this is not a test to run**, it's a deliberate textual comparison:
 
-Para cada contrato en "Contratos a respetar":
-1. Localiza en el código la construcción de la shape.
-2. Vuelca las **claves y anidamiento** que produce ese código.
-3. Compara **clave a clave, carácter a carácter** contra la cita literal copiada en §2.0bis.
-4. Si difiere algo, **vuelve a editar el código** para que coincida.
+For each contract in "Contracts to respect":
+1. Locate in the code where the shape is constructed.
+2. List the **keys and nesting** that code produces.
+3. Compare **key by key, character by character** against the literal quote copied in §2.0bis.
+4. If anything differs, **go back and edit the code** to match.
 
-Anota el resultado en `05-implementation.md` bajo "## Verificación de contratos":
+Note the result in `05-implementation.md` under "## Contract verification":
 ```
-## Verificación de contratos (§4.2)
-- Contrato N "<descripción>": código produce <shape real>, cita declara <shape declarada>. ✅ coincide / ❌ ajustado.
+## Contract verification (§4.2)
+- Contract N "<description>": code produces <actual shape>, quote declares <declared shape>. ✅ matches / ❌ adjusted.
 ```
 
-## 5. Cierre
+## 5. Close
 
-- Actualiza `meta.json`: `phase = "build"`, añade a `phases_done`.
-- Resume al usuario en bullets: archivos tocados (alto nivel), pendientes, **resultado de §4.2 (contratos verificados)**, y siguiente comando: `/feat-review`.
+- Update `meta.json`: `phase = "build"`, add to `phases_done`.
+- Summarize for the user in bullets: touched files (high level), pending items, **§4.2 result (contracts verified)**, and next command: `/feat-review`.

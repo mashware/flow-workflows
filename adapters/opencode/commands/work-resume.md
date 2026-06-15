@@ -1,46 +1,46 @@
 ---
-description: Retoma el trabajo asociado a la rama actual y sugiere el siguiente paso
+description: Resume the work associated with the current branch and suggest the next step
 ---
 
 # `/work-resume`
 
-**Paso 0**: lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+**Step 0**: Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-Para usar al volver a un trabajo después de un parón (mañana siguiente, otra sesión, etc.).
+Use this command when returning to work after a break (next morning, another session, etc.).
 
-## 1. Detección
+## 1. Detection
 
-- Lee `git branch --show-current`.
-- Busca en `.claude/work/` el `meta.json` con `branch` coincidente.
-- Si no hay: pregunta al usuario el ticket o si quiere arrancar uno nuevo.
+- Read `git branch --show-current`.
+- Look in `.claude/work/` for a `meta.json` with a matching `branch`.
+- If none found: ask the user for the ticket or whether they want to start a new one.
 
-## 2. Recapitulación
+## 2. Summary
 
-Imprime al usuario en formato breve:
+Print to the user in brief format:
 
 ```
-Retomas <TICKET> [feat|bug] [tamaño]
-Fase actual:   <phase>
-Fases hechas:  <lista>
-Última edición: <updated_at>
-Notas:         <meta.notes>
+Resuming <TICKET> [feat|bug] [size]
+Current phase:   <phase>
+Completed phases: <list>
+Last edited:     <updated_at>
+Notes:           <meta.notes>
 ```
 
-El formato del ticket sigue `tracker.prefix` de FLOW.md; si está vacío, se muestra tal cual está en `meta.json`.
+The ticket format follows `tracker.prefix` from FLOW.md; if empty, display it as-is from `meta.json`.
 
-Luego un **resumen de 5 líneas** sintetizando todos los artefactos disponibles (`01-context.md` + lo más reciente):
-- Qué se está haciendo y por qué.
-- Decisiones tomadas hasta ahora.
-- Qué quedaba pendiente.
+Then a **5-line summary** synthesising all available artifacts (`01-context.md` + the most recent):
+- What is being done and why.
+- Decisions made so far.
+- What was still pending.
 
-## 3. Estado del repo
+## 3. Repo state
 
-- `git status --short` → cambios pendientes.
-- `git log --oneline -5` → últimos commits.
-- Avisa si hay cambios sin commitear que no aparecen en la bitácora más reciente.
+- `git status --short` → pending changes.
+- `git log --oneline -5` → latest commits.
+- Warn if there are uncommitted changes that do not appear in the most recent log.
 
-## 4. Siguiente paso
+## 4. Next step
 
-Sugiere el comando concreto según `phase` y `size`. Si la fase actual quedó interrumpida (p.ej. `build` con artefacto vacío), sugiere repetirla con `/feat-build` o `/bug-fix`.
+Suggest the concrete command based on `phase` and `size`. If the current phase was interrupted (e.g. `build` with an empty artifact), suggest repeating it with `/feat-build` or `/bug-fix`.
 
-No avances solo. El usuario decide.
+Do not proceed on your own. The user decides.

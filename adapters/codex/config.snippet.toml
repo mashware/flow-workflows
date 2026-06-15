@@ -1,88 +1,88 @@
-# config.snippet.toml — fragmento para fusionar en ~/.codex/config.toml
+# config.snippet.toml — fragment to merge into ~/.codex/config.toml
 #
-# Instrucciones:
-#   1. Copia las secciones que necesites a tu ~/.codex/config.toml existente.
-#   2. Ajusta command/args/env con la instalación real de domain-memory en tu máquina.
-#   3. Para los agentes, define los roles que necesites según el mapa agents/review de FLOW.md.
+# Instructions:
+#   1. Copy the sections you need into your existing ~/.codex/config.toml.
+#   2. Adjust command/args/env to match your real domain-memory install.
+#   3. For agents, define the roles you need per the agents/review map in FLOW.md.
 #
-# AVISO: este fichero es un fragmento de ejemplo, NO un config.toml completo.
-# No lo uses directamente como ~/.codex/config.toml — fúsionalo con el tuyo.
+# WARNING: this file is an example fragment, NOT a complete config.toml.
+# Do not use it directly as ~/.codex/config.toml — merge it into yours.
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MCP server: domain-memory
 # ──────────────────────────────────────────────────────────────────────────────
-# Ajusta command y args según cómo tengas instalado domain-memory.
-# Ejemplo con npx (instalación global de npm):
+# Adjust command and args to match how you have domain-memory installed.
+# Example with npx (global npm install):
 [mcp_servers.domain-memory]
 command = "npx"
 args = ["-y", "domain-memory-mcp"]
 env = {}
 startup_timeout_sec = 10
 
-# Alternativa con node directamente (si tienes el repo clonado):
+# Alternative with node directly (if you have the repo cloned):
 # [mcp_servers.domain-memory]
 # command = "node"
-# args = ["/ruta/a/domain-memory/dist/index.js"]
-# env = { "DOMAIN_MEMORY_PATH" = "/ruta/a/tu/almacen.json" }
+# args = ["/path/to/domain-memory/dist/index.js"]
+# env = { "DOMAIN_MEMORY_PATH" = "/path/to/your/store.json" }
 # startup_timeout_sec = 10
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Subagentes (agents)
+# Subagents (agents)
 # ──────────────────────────────────────────────────────────────────────────────
-# Los flujos /feat-* y /bug-* delegan trabajo en subagentes cuyos nombres
-# vienen del mapa `agents` y `review` de FLOW.md. Cada entrada de FLOW.md
-# como agents.architecture = "mi-arquitecto" se declara aquí como [agents.mi-arquitecto].
+# The /feat-* and /bug-* flows delegate work to subagents whose names come
+# from the `agents` and `review` map in FLOW.md. Each FLOW.md entry such as
+# agents.architecture = "my-architect" is declared here as [agents.my-architect].
 #
-# NO se empaquetan agentes concretos en este adaptador: los nombres los define
-# el usuario en FLOW.md. Lo que sigue son ejemplos del formato.
+# This adapter does NOT bundle concrete agents: the names are defined by the
+# user in FLOW.md. What follows are format examples.
 #
-# Formato de cada sección:
-#   [agents.<nombre>]
-#   model = "<modelo>"                # p.ej. "o4-mini", "o3", "codex-mini-latest"
-#   model_reasoning_effort = "high"   # "low" | "medium" | "high" (solo modelos con razonamiento)
+# Format of each section:
+#   [agents.<name>]
+#   model = "<model>"                 # e.g. "o4-mini", "o3", "codex-mini-latest"
+#   model_reasoning_effort = "high"   # "low" | "medium" | "high" (reasoning models only)
 #   instructions = """
-#     <system prompt del agente>
+#     <agent system prompt>
 #   """
 #
-# Ejemplos comentados (descomenta y ajusta los que necesites):
+# Commented examples (uncomment and adjust the ones you need):
 
-# [agents.arquitecto]
+# [agents.architect]
 # model = "o4-mini"
 # model_reasoning_effort = "high"
 # instructions = """
-# Eres un arquitecto de software especializado en DDD y CQRS.
-# Tu función es proponer la estructura de módulos, entidades, comandos y eventos
-# para nuevas features, minimizando acoplamiento y maximizando reutilización.
-# Cuando te pidan diseño, busca primero qué ya existe en el repositorio
-# antes de proponer piezas nuevas.
+# You are a software architect specialized in DDD and CQRS.
+# Your job is to propose the module, entity, command and event structure
+# for new features, minimizing coupling and maximizing reuse.
+# When asked to design, first look at what already exists in the repository
+# before proposing new pieces.
 # """
 
 # [agents.testing]
 # model = "o4-mini"
 # model_reasoning_effort = "medium"
 # instructions = """
-# Eres un especialista en tests. Escribes pruebas unitarias, de integración
-# y de regresión. Sigues las convenciones del proyecto (ver FLOW.md sección conventions).
-# Para bugs, escribes siempre el test que falla antes del arreglo y pasa después.
-# No reescribas tests que ya pasan.
+# You are a testing specialist. You write unit, integration and regression tests.
+# You follow the project's conventions (see the FLOW.md conventions section).
+# For bugs, you always write the test that fails before the fix and passes after.
+# Do not rewrite tests that already pass.
 # """
 
-# [agents.seguridad]
+# [agents.security]
 # model = "o4-mini"
 # model_reasoning_effort = "high"
 # instructions = """
-# Eres un revisor de seguridad ofensivo. Piensas como un atacante.
-# Buscas vulnerabilidades concretas (OWASP Top 10, lógica de negocio, autenticación,
-# autorización) con escenarios de ataque específicos. No produces listas genéricas.
+# You are an offensive security reviewer. You think like an attacker.
+# You look for concrete vulnerabilities (OWASP Top 10, business logic, authentication,
+# authorization) with specific attack scenarios. You do not produce generic lists.
 # """
 
-# [agents.rendimiento]
+# [agents.performance]
 # model = "o4-mini"
 # model_reasoning_effort = "medium"
 # instructions = """
-# Eres un especialista en rendimiento de backends PHP/Symfony.
-# Detectas consultas N+1, índices faltantes, consultas no acotadas,
-# flush() en bucles y trabajo síncrono que debería ir a cola.
-# Solo reportas lo accionable — no teorizas.
+# You are a performance specialist for backend services.
+# You detect N+1 queries, missing indexes, unbounded queries,
+# flush() inside loops and synchronous work that should be queued.
+# You only report what is actionable — you do not theorize.
 # """

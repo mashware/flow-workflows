@@ -1,58 +1,58 @@
 # `/bug-review`
 
-Code review obligatorio del arreglo.
+Mandatory code review of the fix.
 
 ## 1. Pre-flight
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-- Carga `meta.json`. Exige `fix` en `phases_done`. Para `size` ≥ S exige también `validate`.
-- Si `git diff` no muestra cambios, avisa y termina.
+- Load `meta.json`. Require `fix` in `phases_done`. For `size` ≥ S also require `validate`.
+- If `git diff` shows no changes, warn and stop.
 
-## 2. Invoca los dos code reviews
+## 2. Invoke the two code reviews
 
-Lanza **ambos** sobre el alcance del arreglo frente a la base (commiteado + árbol de trabajo sin commitear) y **consolida sus hallazgos en un único informe deduplicado**:
+Launch **both** over the fix scope against the base (committed + uncommitted working tree) and **consolidate their findings into a single deduplicated report**:
 
-1. **Revisión de correctitud**: una pasada sobre el diff local: fallos de correctitud + simplificación/eficiencia, a esfuerzo alto.
-2. **Skill `quality.review_skill` de FLOW.md**: invócalo como `<review_skill> branch`. Si `quality.review_skill` está vacío y `quality.reviewers` tiene entradas, lanza esos subagentes en paralelo como panel de revisión. Si ambos están vacíos, la revisión del punto anterior ya cubre esta pasada.
+1. **Correctness review**: one pass over the local diff: correctness bugs + simplification/efficiency, at high effort.
+2. **Skill `quality.review_skill` from FLOW.md**: invoke it as `<review_skill> branch`. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those subagents in parallel as a review panel. If both are empty, the review in point 1 already covers this pass.
 
-Deduplica los solapamientos. Foco específico del arreglo además del análisis genérico:
-- El cambio debe resolver realmente el problema de `02-diagnose.md` / `03-investigation.md`.
-- No debe haber alcance ampliado (refactor encubierto). Si lo hay, listar.
-- El test de regresión de `05-validation.md` debe cubrir el caso.
+Deduplicate overlaps. Specific fix focus in addition to the generic analysis:
+- The change must actually resolve the problem from `02-diagnose.md` / `03-investigation.md`.
+- There must be no expanded scope (hidden refactor). If there is, list it.
+- The regression test from `05-validation.md` must cover the case.
 
-Pasa como contexto: `03-investigation.md` y `04-fix.md`.
+Pass as context: `03-investigation.md` and `04-fix.md`.
 
-## 3. Refuerzos según área
+## 3. Reinforcements by area
 
-Solo lo que el skill de §2 no cubre ya. Lanza adicionalmente en paralelo si aplica:
+Only what the §2 skill doesn't already cover. Launch additionally in parallel if applicable:
 
-- BD / consultas → agente de `agents.performance` de FLOW.md; si está vacío, usa un subagente general con rol de rendimiento.
-- Workers / cola de fallos → agente de `agents.queues` de FLOW.md para confirmar que el arreglo evita reincidencia; si está vacío, subagente general con rol de mensajería.
+- DB / queries → `agents.performance` agent from FLOW.md; if empty, use a general subagent with a performance role.
+- Workers / failure queue → `agents.queues` agent from FLOW.md to confirm the fix prevents recurrence; if empty, general subagent with a messaging role.
 
-## 4. Auditoría de sobreingeniería (encaje + YAGNI)
+## 4. Over-engineering audit (fit + YAGNI)
 
-Un arreglo también puede colar defensas de más. Revisa el diff buscando mecanismos defensivos nuevos (validación, guard, reintento, cerrojo, mecanismo de respaldo, caché, idempotencia, circuito):
+A fix can also sneak in unnecessary defenses. Review the diff for new defensive mechanisms (validation, guard, retry, lock, fallback, cache, idempotency, circuit breaker):
 
-- Para cada uno: *"¿qué escenario real y presente del proyecto lo justifica?"*. Verifícalo contra el código — ¿el flujo puede llegar a ese estado, o hay algo que ya lo impide? Si `domain_memory.enabled`, consulta `mcp__domain-memory__search_knowledge` si depende de reglas de dominio.
-- Un arreglo debe ser **mínimo**: lo que no ataca directamente la causa raíz va a Bloqueantes con propuesta de recorte.
+- For each one: *"what real and present scenario in the project justifies this?"*. Verify against the code — can the flow actually reach that state, or is there something that already prevents it? If `domain_memory.enabled`, query `mcp__domain-memory__search_knowledge` if it depends on domain rules.
+- A fix must be **minimal**: anything that doesn't directly address the root cause goes to Blockers with a proposed cut.
 
-## 4.5. Comprobación de completitud (M/L, sin bucle)
+## 4.5. Completeness check (M/L, no loop)
 
-Un arreglo es mínimo por diseño, así que aquí basta **una** comprobación. **Solo M/L**: tras consolidar los hallazgos de §2-§3, contrasta `git diff --stat <git.default_base>...HEAD` contra lo revisado. Si algún archivo cambiado del arreglo no recibió mirada de ningún revisor, dale una pasada dirigida y fusiona los hallazgos nuevos.
+A fix is minimal by design, so here one check is enough. **M/L only**: after consolidating findings from §2-§3, compare `git diff --stat <git.default_base>...HEAD` against what was reviewed. If any changed file from the fix wasn't looked at by any reviewer, give it a targeted pass and merge any new findings.
 
-## 5. Verificación adversarial de hallazgos (opcional M/L)
+## 5. Adversarial finding verification (optional M/L)
 
-Si `meta.json.size` es **M o L** y hay **≥ 4** hallazgos entre bloqueantes y sugerencias, ofrece al usuario filtrarlos con un panel de escépticos en paralelo (3 escépticos por hallazgo, con instrucción de refutar-por-defecto; sobrevive si menos de 2 lo refutan). Los descartados se anotan bajo "Descartados por verificación" con el motivo. No se ofrece en XS/S ni con menos de 4 hallazgos.
+If `meta.json.size` is **M or L** and there are **≥ 4** findings across blockers and suggestions, offer the user to filter them with a parallel skeptics panel (3 skeptics per finding, with a refute-by-default instruction; survives if fewer than 2 refute it). Discarded ones are noted under "Discarded by verification" with the reason. Not offered for XS/S or with fewer than 4 findings.
 
 ## 6. Quality gates
 
-Usa los comandos de `quality` de FLOW.md; si están vacíos, autodescubre:
+Use the `quality` commands from FLOW.md; if empty, auto-discover:
 
 ```
 <quality.style_fix>
 <quality.static_analysis>
-<quality.test_one> (test de regresión)
+<quality.test_one> (regression test)
 ```
 
 ## 7. Output
@@ -60,37 +60,37 @@ Usa los comandos de `quality` de FLOW.md; si están vacíos, autodescubre:
 `.claude/work/<TICKET>/06-review.md`:
 
 ```markdown
-# Review arreglo {TICKET}
+# Fix review {TICKET}
 
-## Resumen
-- Revisores lanzados: …
-- Bloqueantes: N
-- Sugerencias: M
+## Summary
+- Reviewers launched: …
+- Blockers: N
+- Suggestions: M
 
-## ¿El arreglo resuelve realmente el fallo?
-- Sí / No / Parcial — explica
+## Does the fix actually resolve the failure?
+- Yes / No / Partial — explain
 
-## ¿Hay alcance ampliado fuera del fallo?
-- Sí (listar y proponer mover a otro ticket) / No
+## Is there expanded scope outside the failure?
+- Yes (list and propose moving to another ticket) / No
 
-## Sobreingeniería (encaje + YAGNI)
-- Mecanismos defensivos nuevos en el arreglo: <lista, o "ninguno">
-- Sin escenario real que los justifique: <lista, o "ninguno">
+## Over-engineering (fit + YAGNI)
+- New defensive mechanisms in the fix: <list, or "none">
+- Without a real scenario to justify them: <list, or "none">
 
-## ¿El test de regresión es adecuado?
-- Sí / No (qué falta)
+## Is the regression test adequate?
+- Yes / No (what's missing)
 
-## Descartados por verificación adversarial
-<solo si se corrió §5; hallazgos refutados con su motivo, o "no aplica">
+## Discarded by adversarial verification
+<only if §5 was run; refuted findings with reason, or "not applicable">
 
-## Bloqueantes
-1. [archivo:línea] …
+## Blockers
+1. [file:line] …
 
-## Sugerencias
+## Suggestions
 1. …
 ```
 
-## 8. Cierre
+## 8. Close
 
-- Con bloqueantes: `phase` queda en `validate`. Iterar.
-- Sin bloqueantes: `phase = "review"`, añade a `phases_done`. Sugiere `/bug-postmortem` (M/L) o `/bug-ship` (XS/S).
+- With blockers: `phase` stays at `validate`. Iterate.
+- Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/bug-postmortem` (M/L) or `/bug-ship` (XS/S).

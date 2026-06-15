@@ -1,141 +1,141 @@
 # `/feat-review`
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-Fase de revisión obligatoria. **No se hace `/feat-ship` sin pasar por aquí y resolver bloqueantes.**
+Mandatory review phase. **`/feat-ship` cannot run without passing through here and resolving blockers.**
 
 ## 1. Pre-flight
 
-- Carga `meta.json`. Exige que `build` esté en `phases_done`. Si no, manda al usuario a `/feat-build` y termina.
-- Comprueba que `git diff` tenga cambios reales. Si no hay cambios, avisa y termina.
+- Load `meta.json`. Require that `build` is in `phases_done`. If not, send the user to `/feat-build` and stop.
+- Verify that `git diff` has real changes. If not, warn and stop.
 
-## 2. Invoca los code reviews
+## 2. Invoke the code reviews
 
-Lanza **ambos** sobre el mismo alcance y **consolida sus hallazgos en un único informe deduplicado**. Alcance: el trabajo completo de la feature frente a la rama base (commiteado + árbol de trabajo, porque los commits son opt-in y puede haber cambios sin commitear).
+Launch **both** over the same scope and **consolidate their findings into a single deduplicated report**. Scope: the full feature work against the base branch (committed + working tree, because commits are opt-in and there may be uncommitted changes).
 
-1. **Revisión de correctitud**: una pasada sobre el diff local: fallos de correctitud + reutilización/simplificación/eficiencia, a esfuerzo alto. Si Codex tiene una herramienta de revisión de código configurada, úsala; si no, realiza la revisión directamente.
-2. **Panel de proyecto**: lee `quality.review_skill` de `FLOW.md`.
-   - Si `review_skill` tiene valor: invócalo pasándole como contexto adicional el `03-design.md`. Alcance: `git diff <git.default_base>...HEAD`; si hay cambios sin commitear, asegúrate de que entren.
-   - Si `review_skill` está vacío pero `quality.reviewers` tiene entradas: lanza en paralelo cada subagente de esa lista como panel, con el mismo contexto y alcance.
-   - Si ambos están vacíos: el paso 1 ya cubre esta pasada; no se lanza nada adicional.
+1. **Correctness review**: one pass over the local diff: correctness bugs + reuse/simplification/efficiency, at high effort. If Codex has a code review tool configured, use it; otherwise perform the review directly.
+2. **Project panel**: read `quality.review_skill` from `FLOW.md`.
+   - If `review_skill` has a value: invoke it passing `03-design.md` as additional context. Scope: `git diff <git.default_base>...HEAD`; if there are uncommitted changes, make sure they're included.
+   - If `review_skill` is empty but `quality.reviewers` has entries: launch each subagent from that list in parallel as a panel, with the same context and scope.
+   - If both are empty: step 1 already covers this pass; don't launch anything additional.
 
-Los dos se solapan en correctitud y simplificación: deduplica esos hallazgos (cuéntalos una vez).
+The two overlap on correctness and simplification: deduplicate those findings (count them once).
 
-## 3. Refuerzos según área
+## 3. Reinforcements by area
 
-Solo lo que el skill de §2 **no** cubre ya. Si la feature toca puntos concretos, lanza adicionalmente **en paralelo**:
+Only what the §2 skill does **not** already cover. If the feature touches specific areas, additionally launch **in parallel**:
 
-- DB / consultas pesadas → usa el agente de `agents.performance` de `FLOW.md` sobre los archivos cambiados; si está vacío, salta este refuerzo.
-- Workers / colas de mensajes → usa el agente de `agents.queues` de `FLOW.md` para verificar que no haya `flush()` en bucle y que los workers estén registrados con la convención del proyecto; si está vacío, salta este refuerzo.
-- Frontend → si hay cambios en código de interfaz, usa el agente de `agents.frontend` de `FLOW.md`; si además hay tests de frontend afectados, usa también `agents.frontend_test`; si alguno está vacío, salta ese refuerzo.
+- DB / heavy queries → use the `agents.performance` agent from `FLOW.md` on the changed files; if empty, skip this reinforcement.
+- Workers / message queues → use the `agents.queues` agent from `FLOW.md` to verify there's no `flush()` in a loop and that workers are registered per the project convention; if empty, skip this reinforcement.
+- Frontend → if there are changes to UI code, use the `agents.frontend` agent from `FLOW.md`; if there are also affected frontend tests, use `agents.frontend_test` as well; if either is empty, skip that reinforcement.
 
-## 3.5. Barrido de completitud (solo M/L)
+## 3.5. Completeness sweep (M/L only)
 
-Un revisor con un diff grande tiende a abandonar pronto. **Solo si `meta.json.size` es M o L**:
+A reviewer with a large diff tends to give up early. **Only if `meta.json.size` is M or L**:
 
-Bucle, máximo **2 rondas**:
-1. **Lista de archivos**: `git diff --stat <git.default_base>...HEAD` → lista de archivos/áreas cambiados.
-2. **Mapa de cobertura**: de los hallazgos consolidados de §2-§3, marca qué archivos/áreas recibieron al menos un hallazgo o fueron examinados explícitamente.
-3. **Auditor de completitud** (subagente general, con solo dos cosas: la lista completa de archivos del diff y, por cada revisor de §2-§3, una línea de qué cubrió):
+Loop, maximum **2 rounds**:
+1. **File list**: `git diff --stat <git.default_base>...HEAD` → list of changed files/areas.
+2. **Coverage map**: from the consolidated findings of §2-§3, mark which files/areas received at least one finding or were explicitly examined.
+3. **Completeness auditor** (general subagent, with only two things: the full file list from the diff and, for each reviewer from §2-§3, one line on what area each one covered):
 
-   > Eres auditor de cobertura de un code review. Te paso (1) la lista de archivos cambiados en este diff y (2) un resumen de una línea por revisor de qué área cubrió cada uno. Tu única tarea: nombrar los archivos o áreas del diff que **ningún** revisor llegó a examinar, y cualquier afirmación que un revisor dio por buena sin verificar. No opines sobre los hallazgos existentes. Output: lista de huecos concretos (`archivo/área` + por qué merece una segunda mirada) o exactamente "ninguno". Bajo 150 palabras.
+   > You are a coverage auditor for a code review. I'm giving you (1) the list of files changed in this diff and (2) a one-line summary per reviewer of what area each one covered. Your only task: name the files or areas in the diff that **no** reviewer got to examine, and any claim a reviewer accepted as true without verifying. Don't comment on existing findings. Output: list of concrete gaps (`file/area` + why it deserves a second look) or exactly "none". Under 150 words.
 
-4. **Si nombra huecos frescos**: relanza una ronda dirigida **solo a esos archivos/áreas**.
-5. **Repite 2-4** hasta que una ronda devuelva "ninguno" o se alcancen las 2 rondas.
-6. **Sin truncado silencioso**: si tras 2 rondas el auditor sigue señalando áreas sin cubrir, anótalas en el output bajo "Áreas no cubiertas tras 2 rondas".
+4. **If it names fresh gaps**: relaunch a targeted round **only on those files/areas**.
+5. **Repeat 2-4** until a round returns "none" or 2 rounds are reached.
+6. **No silent truncation**: if after 2 rounds the auditor still flags uncovered areas, note them in the output under "Areas not covered after 2 rounds".
 
-## 4. Auditoría de sobreingeniería (encaje + YAGNI)
+## 4. Over-engineering audit (fit + YAGNI)
 
-**Segunda barrera contra la sobreingeniería**. Busca lo que **sobra** en el diff:
+**Second barrier against over-engineering.** Looks for what is **unnecessary** in the diff:
 
-1. **Localiza todo mecanismo defensivo en el diff**: validación, guard, reintento, cerrojo, mecanismo de respaldo, caché, idempotencia, circuito, cola, indicador, reintento.
-2. **Para cada uno, busca su fila** en la tabla "Mecanismos defensivos y su justificación" de `03-design.md`.
-   - **Si no tiene fila**: bloqueante. Coló sin pasar el filtro del diseño.
-   - **Si tiene fila pero el escenario es hipotético**: bloqueante tipo "sobra".
-3. **Verifica el escenario contra el código**: ¿el flujo realmente puede llegar a ese estado? Si `domain_memory.enabled` es `true`, consulta `mcp__domain-memory__search_knowledge` si el escenario depende de reglas de dominio.
-4. **Pregunta clave**: *"si quito esto, ¿qué se rompe en el proyecto — hoy, no en un futuro hipotético?"*. Si la respuesta honesta es "nada que pueda pasar de verdad", es un hallazgo de sobreingeniería.
+1. **Locate every defensive mechanism in the diff**: validation, guard, retry, lock, fallback, cache, idempotency, circuit breaker, queue, flag, retry.
+2. **For each one, find its row** in the "Defensive mechanisms and their justification" table in `03-design.md`.
+   - **If it has no row**: blocker. It slipped through without passing the design filter.
+   - **If it has a row but the scenario is hypothetical**: blocker of type "unnecessary".
+3. **Verify the scenario against the code**: can the flow actually reach that state? If `domain_memory.enabled` is `true`, query `mcp__domain-memory__search_knowledge` if the scenario depends on domain rules.
+4. **Key question**: *"if I remove this, what breaks in the project — today, not in a hypothetical future?"*. If the honest answer is "nothing that could actually happen", it's an over-engineering finding.
 
-Los hallazgos "sobra" van a Bloqueantes con propuesta concreta.
+"Unnecessary" findings go to Blockers with a concrete proposal.
 
-## 5. Verificación double-blind de contratos
+## 5. Double-blind contract verification
 
-Si `05-implementation.md` tiene sección "Contratos a respetar", lanza un subagente general con un prompt **deliberadamente cegado** — solo recibe dos cosas:
+If `05-implementation.md` has a "Contracts to respect" section, launch a general subagent with a **deliberately blinded** prompt — it only receives two things:
 
-> Eres revisor de contratos. Tienes que decir si el diff cumple unos contratos literales que te paso. **No tienes acceso al resto del diseño, ni al contexto del controller, ni al brief, ni a las explicaciones de implementación.** Solo:
+> You are a contract reviewer. You have to say whether the diff fulfills some literal contracts I'm giving you. **You have no access to the rest of the design, nor to the controller context, nor to the brief, nor to the implementation explanations.** Only:
 >
-> 1. **Contratos a respetar** (copiados verbatim del diseño):
->    <PEGA aquí la sección "Contratos a respetar" de `05-implementation.md` tal cual, sin re-formatear>
+> 1. **Contracts to respect** (copied verbatim from the design):
+>    <PASTE here the "Contracts to respect" section from `05-implementation.md` as-is, without reformatting>
 >
-> 2. **Diff de archivos relevantes**: las construcciones de shape (arrays JSON, serialización, eventos, headers, rutas, columnas, métricas) de los archivos cambiados:
->    <PEGA aquí solo los hunks del diff que tocan construcción de shape>
+> 2. **Diff of relevant files**: the shape constructions (JSON arrays, serialization, events, headers, routes, columns, metrics) from the changed files:
+>    <PASTE here only the diff hunks that touch shape construction>
 >
-> Tu única tarea: para **cada contrato** del bloque 1, dime si el código del bloque 2 produce **exactamente** esa shape — clave a clave, anidamiento a anidamiento, mismo case, mismo singular/plural. Output: tabla `| Contrato | Coincide (sí/no) | Si no: qué difiere |`. Bajo 200 palabras. No racionalices desajustes: si difiere, dilo.
+> Your only task: for **each contract** in block 1, tell me whether the code in block 2 produces **exactly** that shape — key by key, nesting by nesting, same case, same singular/plural. Output: table `| Contract | Matches (yes/no) | If no: what differs |`. Under 200 words. Don't rationalize mismatches: if it differs, say so.
 
-Cualquier "no" en la tabla → bloqueante.
+Any "no" in the table → blocker.
 
-Si `05-implementation.md` no tiene "Contratos a respetar" (build registró "N/A"), salta este paso.
+If `05-implementation.md` has no "Contracts to respect" (build recorded "N/A"), skip this step.
 
-## 6. Verificación adversarial de hallazgos (opcional M/L)
+## 6. Adversarial finding verification (optional M/L)
 
-Si `meta.json.size` es **M o L** y la suma de bloqueantes + sugerencias de §2-§5 es **≥ 4**, ofrece al usuario filtrarlos con un panel de escépticos en paralelo. Si acepta, lanza subagentes en paralelo sobre cada hallazgo (3 escépticos por hallazgo, con instrucción de refutar-por-defecto): un hallazgo sobrevive si menos de 2 escépticos lo refutan. Los descartados (≥2 los refutan) se anotan en el output bajo "Descartados por verificación" con el motivo.
+If `meta.json.size` is **M or L** and the sum of blockers + suggestions from §2-§5 is **≥ 4**, offer the user to filter them with a parallel skeptics panel. If accepted, launch subagents in parallel on each finding (3 skeptics per finding, with a refute-by-default instruction): a finding survives if fewer than 2 skeptics refute it. Discarded ones (≥2 refute them) are noted in the output under "Discarded by verification" with the reason.
 
-No se ofrece en XS/S ni con menos de 4 hallazgos: el coste no compensa.
+Not offered for XS/S or with fewer than 4 findings: the cost doesn't justify it.
 
-## 7. Quality gates locales
+## 7. Local quality gates
 
-Lee `quality.*` de `FLOW.md`. Si están vacíos, autodescubre los comandos equivalentes y avisa de lo que uses.
+Read `quality.*` from `FLOW.md`. If empty, auto-discover equivalent commands and flag what you're using.
 
-Lanza en paralelo (en segundo plano si tardan):
+Launch in parallel (in the background if slow):
 - `quality.style_fix`
 - `quality.static_analysis`
-- `quality.test_one` (si hay tests nuevos, con el filtro apropiado)
+- `quality.test_one` (if there are new tests, with the appropriate filter)
 
 ## 8. Output
 
-Escribe `.claude/work/<TICKET>/06-review.md`:
+Write `.claude/work/<TICKET>/06-review.md`:
 
 ```markdown
 # Code review <TICKET>
 
-## Resumen
-- Revisores lanzados: …
-- Rondas de completitud (M/L): N
-- Hallazgos críticos (bloquean ship): N
-- Hallazgos sugerencia: M
+## Summary
+- Reviewers launched: …
+- Completeness rounds (M/L): N
+- Critical findings (block ship): N
+- Suggestion findings: M
 
-## Áreas no cubiertas tras 2 rondas
-<solo si §3.5 quedó con huecos al agotar el tope; lista literal con su motivo, o "ninguna">
+## Areas not covered after 2 rounds
+<only if §3.5 had gaps after hitting the cap; literal list with reason, or "none">
 
-## Verificación double-blind de contratos
-- Contratos comparados: N
-- Desajustes: <lista o "ninguno">
+## Double-blind contract verification
+- Contracts compared: N
+- Mismatches: <list or "none">
 
-## Sobreingeniería (encaje + YAGNI)
-- Mecanismos defensivos en el diff: <lista>
-- Sin justificación en `03-design.md` o con escenario hipotético: <lista, o "ninguno">
-- Propuesta de recorte: <qué quitar y por qué, o "nada que recortar">
+## Over-engineering (fit + YAGNI)
+- Defensive mechanisms in the diff: <list>
+- Without justification in `03-design.md` or with hypothetical scenario: <list, or "none">
+- Proposed cuts: <what to remove and why, or "nothing to cut">
 
-## Descartados por verificación adversarial
-<solo si se corrió §6; lista de hallazgos refutados con su motivo, o "no aplica">
+## Discarded by adversarial verification
+<only if §6 was run; list of refuted findings with reason, or "not applicable">
 
-## Bloqueantes (must-fix)
-1. [archivo:línea] descripción + propuesta concreta
+## Blockers (must-fix)
+1. [file:line] description + concrete proposal
 
-## Sugerencias (nice-to-have)
-1. [archivo:línea] descripción
+## Suggestions (nice-to-have)
+1. [file:line] description
 
 ## Quality gates
 - style_fix: ✅ / ❌
 - static_analysis: ✅ / ❌
-- tests modificados: ✅ / ❌
+- modified tests: ✅ / ❌
 
-## Próximo paso
-<si hay bloqueantes: "resolver y volver a /feat-review">
-<si no: "/feat-validate">
+## Next step
+<if blockers: "resolve and return to /feat-review">
+<if none: "/feat-validate">
 ```
 
-## 9. Cierre
+## 9. Close
 
-- Si hay bloqueantes: **no avances `phase`**. Deja `phase = "build"` y el usuario resuelve.
-- Si no hay bloqueantes: `phase = "review"`, añade a `phases_done`.
-- Resume al usuario los hallazgos y siguiente paso.
+- If there are blockers: **do not advance `phase`**. Leave `phase = "build"` and the user resolves them.
+- If no blockers: `phase = "review"`, add to `phases_done`.
+- Summarize findings and next step for the user.

@@ -1,137 +1,137 @@
 ---
-description: Arranca una feature nueva (lee el tracker, clasifica tamaño, crea rama y artefacto inicial)
+description: Start a new feature (read the tracker, classify size, create branch and initial artifact)
 ---
 
 # `/feat-start $ARGUMENTS`
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user.
 
-Estás iniciando una feature. `$ARGUMENTS` debe ser el identificador del ticket (formato `tracker.prefix` de `FLOW.md`; vacío = libre). Si está vacío, pregunta al usuario y termina sin escribir nada.
+You are starting a feature. `$ARGUMENTS` must be the ticket identifier (format: `tracker.prefix` from `FLOW.md`; empty = freeform). If empty, ask the user and exit without writing anything.
 
 ## 1. Pre-flight
 
-- Lee `FLOW.md` en la raíz del repo. Si no existe, continúa con comportamiento por defecto (cada paso indica qué hace si falta una clave).
-- Verifica que el repo tiene estructura de proyecto reconocible. Si no, avisa y termina.
-- Si `.claude/work/$ARGUMENTS/meta.json` ya existe, no lo sobreescribas: avisa al usuario y sugiere `/work-resume`.
+- Read `FLOW.md` at the repo root. If it does not exist, continue with default behavior (each step states what to do when a key is missing).
+- Verify the repo has a recognizable project structure. If not, warn and exit.
+- If `.claude/work/$ARGUMENTS/meta.json` already exists, do not overwrite it: warn the user and suggest `/work-resume`.
 
-## 2. Recopila contexto
+## 2. Gather context
 
-Lanza estas tareas en **paralelo**:
+Launch these tasks in **parallel**:
 
-1. **Tracker**: si `tracker.tool` de `FLOW.md` no es `none`, lee el ticket con `tracker.view_cmd` sustituyendo `{TICKET}` — extrae título, descripción, criterios de aceptación. Si `tool` es `none` o vacío, o si el comando falla, pide al usuario que pegue el enunciado y continúa con lo que aporte.
-2. **domain-memory**: si `domain_memory.enabled` es `true`, invoca el MCP `domain-memory` con `search_knowledge` usando el título y palabras clave del ticket. Si no responde en 2s o falla, sigue sin contexto.
-3. **Git**: comprueba que estás en rama limpia. Si hay cambios sin commitear, avisa pero no bloquees.
+1. **Tracker**: if `tracker.tool` in `FLOW.md` is not `none`, read the ticket using `tracker.view_cmd` replacing `{TICKET}` — extract title, description, acceptance criteria. If `tool` is `none` or empty, or if the command fails, ask the user to paste the brief and continue with whatever they provide.
+2. **domain-memory**: if `domain_memory.enabled` is `true`, invoke the `domain-memory` MCP with `search_knowledge` using the ticket title and keywords. If it does not respond within 2 s or fails, continue without context.
+3. **Git**: verify you are on a clean branch. If there are uncommitted changes, warn but do not block.
 
-## 3. Clarifica huecos del ticket
+## 3. Clarify gaps in the ticket
 
-Antes de clasificar tamaño, identifica si quedan dudas que afectan al diseño y que no resuelve el enunciado ni `domain-memory`. Ejemplos típicos:
+Before classifying size, identify whether there are open questions that affect the design and that neither the brief nor `domain-memory` resolves. Typical examples:
 
-- Comportamiento con distintos tipos de plan o acceso.
-- Locales, países o idiomas con reglas distintas.
-- Qué pasa con usuarios existentes del flujo actual (compatibilidad).
-- Qué cuenta como "éxito" (métrica, evento, registro que hay que dejar).
-- Casos límite obvios no especificados (entrada vacía, duplicado, fallo de red).
+- Behavior with different plan types or access levels.
+- Locales, countries, or languages with different rules.
+- What happens to existing users of the current flow (compatibility).
+- What counts as "success" (metric, event, log entry to leave).
+- Obvious edge cases not specified (empty input, duplicate, network failure).
 
-Si hay dudas, **pregúntalas todas de golpe** (máx 4 preguntas, las más bloqueantes). No inventes ni asumas. Si todo está claro, sigue.
+If there are open questions, **ask them all at once** (max 4 questions, the most blocking ones). Do not invent or assume. If everything is clear, continue.
 
-Las respuestas se anotan en `01-context.md` bajo "Decisiones aclaradas en /feat-start".
+Record the answers in `01-context.md` under "Decisions clarified in /feat-start".
 
-## 4. Clasifica el tamaño
+## 4. Classify size
 
-A partir del enunciado y el contexto, propón un tamaño y pídele confirmación al usuario (pregunta única):
+Based on the brief and context, propose a size and ask the user to confirm (single question):
 
-| Tamaño | Criterio                                                                  | Fases sugeridas                     |
-|--------|---------------------------------------------------------------------------|-------------------------------------|
-| XS     | < 50 líneas, sin DB, sin API nueva, sin lógica de dominio                 | start → build → review → ship       |
-| S      | Cambio acotado, 1-3 archivos relevantes, sin migraciones                  | start → design (corto) → build → review → validate → ship |
-| M      | Lógica de dominio nueva, posibles migraciones, varios módulos             | start → brainstorm → design → build → review → validate → ship |
-| L      | Cross-module, integraciones externas, cambios de modelo importantes       | flujo completo, considerar dividir  |
+| Size | Criterion | Suggested phases |
+|------|-----------|------------------|
+| XS | < 50 lines, no DB, no new API, no domain logic | start → build → review → ship |
+| S | Scoped change, 1-3 relevant files, no migrations | start → design (short) → build → review → validate → ship |
+| M | New domain logic, possible migrations, multiple modules | start → brainstorm → design → build → review → validate → ship |
+| L | Cross-module, external integrations, significant model changes | full flow, consider splitting |
 
-Recomienda el tamaño que tú estimes con un "(Recomendado)".
+Recommend the size you estimate with a "(Recommended)".
 
-## 5. Crea la rama
+## 5. Create the branch
 
-**Dos reglas innegociables**, porque romperlas ya ha provocado un despliegue accidental:
+**Two non-negotiable rules**, because breaking them has already caused an accidental deployment:
 
-1. **Nunca** crees la rama implícitamente desde donde estés parado. Si estás en la rama de otra tarea, un `git checkout -b` heredaría sus commits.
-2. **Nunca** dejes que la rama nueva tenga la rama base como upstream automático. Con `branch.autoSetupMerge=true` un `git checkout -b X <base>` fija el upstream a esa base, y un envío que resuelva el upstream puede acabar en la rama principal y disparar un despliegue.
+1. **Never** create the branch implicitly from wherever you are. If you are on another task's branch, a `git checkout -b` would inherit its commits.
+2. **Never** let the new branch have the base branch as its automatic upstream. With `branch.autoSetupMerge=true`, a `git checkout -b X <base>` pins the upstream to that base, and a push that resolves the upstream can land on the main branch and trigger a deployment.
 
-### 5.1 Mira dónde estás antes de nada
+### 5.1 Check where you are first
 ```bash
-git rev-parse --abbrev-ref HEAD   # rama actual
-git status --porcelain            # ¿árbol limpio?
+git rev-parse --abbrev-ref HEAD   # current branch
+git status --porcelain            # clean working tree?
 ```
-- Si hay cambios sin commitear: avisa y pregunta antes de seguir (se arrastran al hacer `switch`).
-- Si la rama actual **no es la rama principal** (master/main): NO asumas la base. Pregunta al usuario:
-  - **Base = `git.default_base` de FLOW.md** *(Recomendado)* — tarea independiente. Es el caso normal.
-  - **Apilada sobre `<rama-actual>`** (modo tren) — solo si esta tarea depende de otra aún sin fusionar. Anótalo en `meta.json` como `stacked_on` y recuerda que el MR/PR apuntará a esa rama, no a la base principal.
+- If there are uncommitted changes: warn and ask before continuing (they carry over when you switch).
+- If the current branch **is not the main branch** (master/main): do NOT assume the base. Ask the user:
+  - **Base = `git.default_base` from FLOW.md** *(Recommended)* — independent task. This is the normal case.
+  - **Stacked on `<current-branch>`** (train mode) — only if this task depends on another not yet merged. Record it in `meta.json` as `stacked_on` and note that the MR/PR will point to that branch, not the main base.
 
-### 5.2 Crea con base explícita y SIN heredar su upstream
-Nombre: según `git.branch_pattern` de `FLOW.md` (sustituye `{PREFIX}` y `{TICKET}`; `{slug}` en inglés, kebab-case). Crea solo si el usuario confirma:
+### 5.2 Create with explicit base and WITHOUT inheriting its upstream
+Name: per `git.branch_pattern` from `FLOW.md` (replace `{PREFIX}` and `{TICKET}`; `{slug}` in English, kebab-case). Create only if the user confirms:
 ```bash
 git fetch origin
-git switch --create <nombre-rama> --no-track <git.default_base>      # tarea independiente
-# — o, en modo tren confirmado: —
-git switch --create <nombre-rama> --no-track origin/<rama-padre>
+git switch --create <branch-name> --no-track <git.default_base>      # independent task
+# — or, in confirmed train mode: —
+git switch --create <branch-name> --no-track origin/<parent-branch>
 ```
-`--no-track` es **obligatorio**: es lo que impide que el upstream quede en la base remota. La base explícita (la de `git.default_base` o la rama padre, nunca "donde estoy") es lo que evita heredar commits de otra tarea.
+`--no-track` is **mandatory**: it is what prevents the upstream from being set to the remote base. The explicit base (`git.default_base` or the parent branch, never "where I am") is what avoids inheriting commits from another task.
 
-### 5.3 Regla de envío (se ejecuta en `ship`, se declara aquí)
-El primer envío es **siempre** explícito a la rama propia, nunca un envío que resuelva upstream a ciegas:
+### 5.3 Push rule (executed in `ship`, declared here)
+The first push is **always** explicit to the branch's own remote, never a push that resolves the upstream blindly:
 ```bash
-git push -u origin HEAD    # upstream = origin/<nombre-rama>, jamás la base principal
+git push -u origin HEAD    # upstream = origin/<branch-name>, never the main base
 ```
 
-## 6. Escribe artefactos
+## 6. Write artifacts
 
-Crea `.claude/work/$ARGUMENTS/`:
+Create `.claude/work/$ARGUMENTS/`:
 
 ### `meta.json`
 ```json
 {
   "ticket": "$ARGUMENTS",
   "type": "feat",
-  "title": "<título del ticket>",
-  "branch": "<rama creada en §5>",
+  "title": "<ticket title>",
+  "branch": "<branch created in §5>",
   "stacked_on": null,
   "size": "<XS|S|M|L>",
   "phase": "context",
   "phases_done": ["context"],
-  "started_at": "<ISO8601 ahora>",
-  "updated_at": "<ISO8601 ahora>",
+  "started_at": "<ISO8601 now>",
+  "updated_at": "<ISO8601 now>",
   "notes": ""
 }
 ```
 
 ### `01-context.md`
-Estructura:
+Structure:
 ```markdown
-# Contexto <TICKET>
+# Context <TICKET>
 
 ## Ticket
-<resumen del enunciado en 3-5 bullets>
+<brief summary in 3-5 bullets>
 
-## Criterios de aceptación
-<lista del tracker o "no especificados">
+## Acceptance criteria
+<list from tracker or "not specified">
 
-## Conocimiento de dominio relevante
-<resultados de domain-memory con un bullet por hallazgo, o "sin hallazgos">
+## Relevant domain knowledge
+<domain-memory results, one bullet per finding, or "no findings">
 
-## Estado del repo al arrancar
-- Rama: <nombre>
-- Último commit: <hash corto + mensaje>
+## Repo state at start
+- Branch: <name>
+- Last commit: <short hash + message>
 
-## Decisiones aclaradas en /feat-start
-<lista pregunta → respuesta del usuario, o "no había dudas">
+## Decisions clarified in /feat-start
+<list question → user answer, or "no open questions">
 
-## Tamaño estimado: <XS|S|M|L>
-<2 líneas justificando>
+## Estimated size: <XS|S|M|L>
+<2 lines of justification>
 ```
 
-## 7. Cierre
+## 7. Wrap-up
 
-Resume al usuario en 2-3 líneas:
-- Ticket, tamaño, rama.
-- Siguiente comando recomendado según tamaño (ver tabla).
+Summarize for the user in 2-3 lines:
+- Ticket, size, branch.
+- Next recommended command based on size (see table).
 
-No invokes el siguiente paso automáticamente.
+Do not invoke the next step automatically.

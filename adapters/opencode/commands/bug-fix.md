@@ -1,109 +1,109 @@
 ---
-description: Implementa el arreglo mínimo y deja bitácora
+description: Implement the minimal fix and keep a log
 ---
 
 # `/bug-fix`
 
-Aplica el arreglo. **Mínimo viable**: no aproveches para refactorizar áreas adyacentes. Si descubres más problemas, anótalos pero no los toques aquí.
+Apply the fix. **Minimum viable**: do not use this as an opportunity to refactor adjacent areas. If you discover more problems, note them but don't touch them here.
 
 ## 1. Pre-flight
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step indicates. On `domain_memory`: if enabled but the MCP fails or takes more than 2 s, continue without that context — don't block or notify the user.
 
-- Carga `meta.json`.
-- Si `size` es `XS`: permite arrancar sin `diagnose`/`investigate`, pero exige una descripción de 2-3 líneas del arreglo.
-- Si `size` ≥ S: exige `diagnose` (y `investigate` para M/L) en `phases_done`.
-- Lee artefactos previos.
+- Load `meta.json`.
+- If `size` is `XS`: allow starting without `diagnose`/`investigate`, but require a 2-3 line description of the fix.
+- If `size` ≥ S: require `diagnose` (and `investigate` for M/L) in `phases_done`.
+- Read prior artifacts.
 
-## 2. Brief del arreglo (antes de teclear)
+## 2. Fix brief (before touching code)
 
-Antes de tocar código, redacta un brief en lenguaje **claro** (no técnico) específico de este arreglo:
+Before touching any code, write a brief in **plain language** (non-technical) specific to this fix:
 
 ```
-Brief arreglo {TICKET}
+Fix brief {TICKET}
 
-Qué deja de pasar tras el arreglo:
-- <síntoma observable que el usuario reportó, descrito en términos de qué veía>
+What stops happening after the fix:
+- <observable symptom the user reported, described in terms of what they saw>
 
-Qué se cambia:
-- <una línea, en lenguaje de negocio o de comportamiento, no de archivos>
+What changes:
+- <one line, in business or behavioral terms, not file names>
 
-Qué NO se toca:
-- <áreas adyacentes que podrían tentar a refactorizar>
-- <regresiones potenciales que NO se atacan aquí>
+What is NOT touched:
+- <adjacent areas that might tempt a refactor>
+- <potential regressions that are NOT addressed here>
 ```
 
-**Pregunta al usuario** si refleja el arreglo esperado:
-- **Sí, adelante** → aplica el arreglo.
-- **No, falta algo o sobra** → ajusta el brief, vuelve a preguntar. No tocas código hasta confirmación.
+**Ask the user** whether this reflects the expected fix:
+- **Yes, go ahead** → apply the fix.
+- **No, something is missing or wrong** → adjust the brief, ask again. Do not touch code until confirmed.
 
-Guarda el brief al inicio de `04-fix.md`. Si durante la implementación surge la tentación de "ya que estamos, también arreglar X" (típico en fallos), vuelve a §2.3 — los arreglos que se aprovechan para refactorizar áreas adyacentes son la principal vía de introducir regresiones nuevas mientras arreglas la antigua.
+Save the brief at the top of `04-fix.md`. If during implementation the temptation arises to "while we're here, also fix X" (common with bugs), return to §2.3 — fixes that expand into adjacent refactors are the main path to introducing new regressions while fixing the old one.
 
-## 2.1 Trabajo
+## 2.1 Work
 
-- Aplica el arreglo mínimo apuntando al hallazgo del `03-investigation.md` (o al diagnóstico si saltaste investigate).
-- Si toca área sensible (autenticación, pagos, datos sensibles), apóyate puntualmente en el subagente de `agents.architecture` de FLOW.md para confirmar capa correcta; si está vacío, contrasta directamente con `conventions` de FLOW.md.
-- Mientras editas, mantén la bitácora.
+- Apply the minimal fix targeting the finding in `03-investigation.md` (or the diagnosis if you skipped investigate).
+- If touching a sensitive area (authentication, payments, sensitive data), consult the `agents.architecture` subagent from FLOW.md to confirm the correct layer; if empty, cross-check directly against `conventions` in FLOW.md.
+- Keep the log updated while editing.
 
-**Commits opt-in**: el agente **no hace `git commit` por su cuenta** durante `/bug-fix`. Al terminar cada paso (o el arreglo completo si es de un solo paso), reporta resumen (archivos, líneas, sugerencia de validación) y espera tu decisión: commitea trabajo en progreso ahora, espera a que valides, o sigue sin commit. Sin tu confirmación explícita, los cambios se quedan en el árbol de trabajo para que puedas probar el arreglo manualmente antes de que quede registrado en el historial.
+**Opt-in commits**: the agent **does not run `git commit` on its own** during `/bug-fix`. After completing each step (or the entire fix if it's a single step), report a summary (files, lines, validation suggestion) and wait for your decision: commit work in progress now, wait until you validate, or continue without committing. Without your explicit confirmation, changes stay in the working tree so you can test the fix manually before it's recorded in the history.
 
-## 2.3 ¿Surge algo fuera del brief?
+## 2.3 Does something arise outside the brief?
 
-Si durante el arreglo asoma una tentación que **no está en el brief de §2** ("ya que estamos, arreglo también X", "este renombrado encaja aquí", "este test extra cubre otro caso"):
+If during the fix something tempts you that **is not in the §2 brief** ("while we're here, fix X too", "this rename fits here", "this extra test covers another case"):
 
-**Pausa antes de tocarlo** y pregunta al usuario:
-- **Sí, añádelo al brief** — actualiza el brief en `04-fix.md` y sigue.
-- **No, déjalo fuera** — anótalo en "Áreas con riesgo similar" (si es un riesgo del mismo patrón) o crea una sección "Ideas para tickets aparte" en `04-fix.md`.
+**Pause before touching it** and ask the user:
+- **Yes, add it to the brief** — update the brief in `04-fix.md` and continue.
+- **No, leave it out** — note it under "Areas with similar risk" (if it's a risk from the same pattern) or create an "Ideas for separate tickets" section in `04-fix.md`.
 
-Los arreglos ampliados son la causa principal de regresiones colaterales — el flujo te empuja a mantener el arreglo realmente mínimo.
+Scope-expanding fixes are the main cause of collateral regressions — the flow pushes you to keep the fix genuinely minimal.
 
-## 3. Bitácora
+## 3. Log
 
 `.claude/work/<TICKET>/04-fix.md`:
 
 ```markdown
-# Arreglo {TICKET}
+# Fix {TICKET}
 
 ## Brief
-**Qué deja de pasar tras el arreglo**:
-- <síntoma observable>
+**What stops happening after the fix**:
+- <observable symptom>
 
-**Qué se cambia**:
-- <una línea de comportamiento>
+**What changes**:
+- <one line of behavior>
 
-**Qué NO se toca**:
-- <áreas adyacentes fuera del alcance>
+**What is NOT touched**:
+- <adjacent areas out of scope>
 
-## Descripción del arreglo
-<una frase: "El arreglo consiste en …">
+## Fix description
+<one sentence: "The fix consists of …">
 
-## Cambios por archivo
-- <archivo> — qué cambió y por qué (1 línea)
+## Changes by file
+- <file> — what changed and why (1 line)
 
-## Áreas con riesgo similar (anotadas, NO tocadas aquí)
-- abrir ticket aparte si procede
+## Areas with similar risk (noted, NOT touched here)
+- open a separate ticket if appropriate
 
-## Ideas para tickets aparte
-<cosas que surgieron durante el arreglo y se decidió NO incluir>
+## Ideas for separate tickets
+<things that came up during the fix and were decided NOT to include>
 
-## Comandos relevantes
-- <comandos usados para instalar dependencias, etc.>
+## Relevant commands
+- <commands used to install dependencies, etc.>
 - …
 ```
 
-## 4. Calidad inmediata
+## 4. Immediate quality
 
-Usa los comandos de `quality` de FLOW.md; si están vacíos, autodescubre (Makefile, scripts npm/composer) y avisa de lo que uses:
+Use the commands from `quality` in FLOW.md; if empty, auto-discover (Makefile, npm/composer scripts) and report what you use:
 
 - `quality.style_fix`
 - `quality.static_analysis`
-- Lanza el test que cubre el arreglo: `quality.test_one` (si no existe, lo añadirás en `/bug-validate`).
+- Run the test that covers the fix: `quality.test_one` (if it doesn't exist, you'll add it in `/bug-validate`).
 
-## 4.1 ¿La investigación sigue siendo válida?
+## 4.1 Is the investigation still valid?
 
-Si al aplicar el arreglo descubres que la **causa raíz** no era la que apuntaba `03-investigation.md` (p.ej. el commit sospechoso no era el culpable, o el patrón roto está en otro sitio), **pausa y vuelve a `/bug-investigate`** para actualizar la causa antes de seguir. Un arreglo que no apunta al porqué real suele dejar la incidencia abierta de otra forma. No avances con una investigación que sabes que está incompleta.
+If while applying the fix you discover that the **root cause** wasn't what `03-investigation.md` pointed to (e.g. the suspected commit wasn't the culprit, or the broken pattern is somewhere else), **pause and return to `/bug-investigate`** to update the cause before continuing. A fix that doesn't target the real "why" usually leaves the issue open in another form. Do not advance with an investigation you know is incomplete.
 
-## 5. Cierre
+## 5. Wrap-up
 
-- Actualiza `meta.json`: `phase = "fix"`, añade a `phases_done`.
-- Sugiere siguiente: `/bug-validate` (S/M/L) o `/bug-review` (XS).
+- Update `meta.json`: `phase = "fix"`, add to `phases_done`.
+- Suggest next step: `/bug-validate` (S/M/L) or `/bug-review` (XS).

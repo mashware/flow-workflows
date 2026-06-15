@@ -1,88 +1,88 @@
-# Mapa de primitivas: plugin flow → Gemini CLI
+# Primitive map: flow plugin → Gemini CLI
 
-## Tabla de traducción
+## Translation table
 
-| Primitiva original (Claude Code) | Significado | Traducción en este adaptador |
+| Original primitive (Claude Code) | Meaning | Translation in this adapter |
 |---|---|---|
-| `AskUserQuestion` | Menú estructurado de opciones que espera elección del usuario | Pregunta directa en texto. Gemini CLI no tiene menú estructurado; el agente pregunta y espera la respuesta libre del usuario. |
-| `ScheduleWakeup(N min)` | Re-despertarse automáticamente en N minutos dentro de la sesión | **No existe en sesión.** El comando `/work:watch` hace un ciclo y termina. Para repetirlo: cron del SO + `gemini -p "/work:watch TICKET"`. El estado entre ciclos vive en `monitor.md` (superficie, línea base, plan aprobado). |
-| `Workflow` (fan-out paralelo) | Orquestación determinista de N agentes en paralelo + síntesis | Si el usuario ha declarado subagentes en `.gemini/agents/`, invócalos con `@nombre`. Si no hay subagentes configurados, ejecuta las tareas secuencialmente en el mismo contexto. Los Workflow de `/feat:brainstorm`, `/bug:investigate` y `/feat:review`/`/bug:review` son los tres puntos donde el fan-out aporta más valor. |
-| `Agent <rol>` / `Agent general-purpose` | Delega trabajo aislado en un subagente de un tipo concreto | `@nombre` donde `nombre` viene del mapa `agents.<rol>` de FLOW.md. Si el campo está vacío o el agente no existe en `.gemini/agents/`, el conductor realiza la tarea en el mismo contexto. |
-| `Skill commit-commands:commit-push-pr` | Crea commit + push + abre MR/PR | Ejecuta directamente `git add`, `git commit`, `git push -u origin HEAD` y el CLI de `git.cli` de FLOW.md (p.ej. `glab mr create` o `gh pr create`). |
-| `Skill save-knowledge` | Consolida hallazgos de domain-memory | Ejecuta el comando `/save-knowledge` de este adaptador. |
-| `Skill <otros>` | Invocar un flujo reutilizable del proyecto | Incluye la lógica inline en el prompt o invoca al subagente correspondiente con `@nombre`. |
-| `TaskCreate` / `TaskUpdate` | Seguimiento de pasos con estado (in_progress, completed) | Mantén un checklist markdown manual en `05-implementation.md` o `04-fix.md`. Actualízalo conforme avanza el trabajo. |
-| `mcp__domain-memory__<tool>` | Llamada a una herramienta del MCP domain-memory | El nombre de la herramienta es idéntico. Solo cambia el mecanismo de configuración del servidor (ver `settings.snippet.json`). |
-| `$ARGUMENTS` | Argumentos pasados al comando | `{{args}}` en TOML de Gemini CLI. |
+| `AskUserQuestion` | Structured options menu waiting for the user's choice | Plain text question. Gemini CLI has no structured menu; the agent asks and waits for the user's free-text reply. |
+| `ScheduleWakeup(N min)` | Auto-wake in N minutes within the session | **Does not exist in session.** The `/work:watch` command runs one cycle and exits. To repeat it: OS cron + `gemini -p "/work:watch TICKET"`. State between cycles lives in `monitor.md` (surface, baseline, approved plan). |
+| `Workflow` (parallel fan-out) | Deterministic orchestration of N agents in parallel + synthesis | If the user has declared sub-agents in `.gemini/agents/`, invoke them with `@name`. If no sub-agents are configured, run tasks sequentially in the same context. The Workflow fan-out in `/feat:brainstorm`, `/bug:investigate`, and `/feat:review`/`/bug:review` is where parallelism adds the most value. |
+| `Agent <role>` / `Agent general-purpose` | Delegate isolated work to a sub-agent of a specific type | `@name` where `name` comes from the `agents.<role>` map in FLOW.md. If the field is empty or the agent does not exist in `.gemini/agents/`, the conductor performs the task in the same context. |
+| `Skill commit-commands:commit-push-pr` | Create commit + push + open MR/PR | Run directly: `git add`, `git commit`, `git push -u origin HEAD`, and the `git.cli` CLI from FLOW.md (e.g. `glab mr create` or `gh pr create`). |
+| `Skill save-knowledge` | Consolidate domain-memory findings | Run the `/save-knowledge` command from this adapter. |
+| `Skill <others>` | Invoke a reusable project flow | Include the logic inline in the prompt or invoke the corresponding sub-agent with `@name`. |
+| `TaskCreate` / `TaskUpdate` | Step tracking with status (in_progress, completed) | Maintain a manual markdown checklist in `05-implementation.md` or `04-fix.md`. Update it as work progresses. |
+| `mcp__domain-memory__<tool>` | Call to a domain-memory MCP tool | The tool name is identical. Only the server configuration mechanism changes (see `settings.snippet.json`). |
+| `$ARGUMENTS` | Arguments passed to the command | `{{args}}` in Gemini CLI TOML. |
 
 ---
 
-## Qué se porta sin cambios
+## What is ported unchanged
 
-Las siguientes reglas se mantienen idénticas a la versión original del plugin:
+The following rules are kept identical to the original plugin version:
 
-- Fases y gates de cada comando (`phases_done`, `meta.json` como fuente de verdad).
-- Cuarentena de input no confiable (logs, trazas, payloads de usuario tratados como datos inertes).
-- Verificación adversarial del diseño (challenger de `/feat:design` y `/bug:investigate`).
-- Sección Pre-deploy + hilo bloqueante en `/feat:ship` y `/bug:ship`.
-- Lectura de `FLOW.md` en el paso 0 de cada comando.
-- Regla de degradación de `domain_memory`: si el MCP no responde en 2 s o falla, continúa sin contexto sin notificar al usuario.
-- Brief de negocio obligatorio antes de teclear código (`/feat:build`, `/bug:fix`).
-- Previsualización del MR/PR antes de crear (`/feat:ship`, `/bug:ship`).
-- Anclaje de contratos del diseño (copia verbatim + verificación double-blind).
+- Phase gates for each command (`phases_done`, `meta.json` as source of truth).
+- Untrusted input quarantine (logs, traces, user payloads treated as inert data).
+- Adversarial design verification (challenger in `/feat:design` and `/bug:investigate`).
+- Pre-deploy section + blocking thread in `/feat:ship` and `/bug:ship`.
+- Reading `FLOW.md` in step 0 of every command.
+- `domain_memory` degradation rule: if the MCP does not respond within 2 s or fails, continue without context without notifying the user.
+- Business brief required before writing code (`/feat:build`, `/bug:fix`).
+- MR/PR preview before creating (`/feat:ship`, `/bug:ship`).
+- Design contract anchoring (verbatim copy + double-blind verification).
 
 ---
 
-## Qué se recortó o degrada
+## What was trimmed or degrades
 
-### `AskUserQuestion` — sin menú estructurado
+### `AskUserQuestion` — no structured menu
 
-En Claude Code, `AskUserQuestion` presenta opciones numeradas y el usuario elige una. Gemini CLI no tiene este mecanismo. Los comandos preguntan en texto libre. El flujo es equivalente, pero la interacción es menos guiada: el usuario debe escribir su elección en lugar de pulsar un número.
+In Claude Code, `AskUserQuestion` presents numbered options and the user picks one. Gemini CLI has no such mechanism. Commands ask in free text. The flow is equivalent, but the interaction is less guided: the user must type their choice rather than pressing a number.
 
-### Autopilot de `/work:watch` — sin `ScheduleWakeup` en sesión
+### `/work:watch` autopilot — no `ScheduleWakeup` in session
 
-En Claude Code, `/work:watch` se re-agenda automáticamente dentro de la sesión usando `ScheduleWakeup`. En Gemini CLI no existe un equivalente de sesión. Solución:
+In Claude Code, `/work:watch` reschedules itself automatically within the session using `ScheduleWakeup`. Gemini CLI has no session-level equivalent. Solution:
 
-1. El comando hace **un ciclo** de vigilancia y termina.
-2. Para repetirlo cada 5 minutos, el usuario configura un cron:
+1. The command runs **one monitoring cycle** and exits.
+2. To repeat every 5 minutes, configure a cron job:
    ```
    */5 * * * * gemini -p "/work:watch TICKET" >> ~/.gemini/watch-TICKET.log 2>&1
    ```
-3. El estado entre ciclos (superficie vigilada, línea base, plan aprobado, veredictos acumulados) se persiste en `.claude/work/TICKET/monitor.md`. El comando lo lee al arrancar cada ciclo para no repetir el descubrimiento.
-4. La alternativa manual es `/loop 5m /work:watch TICKET` si el harness del usuario tiene ese comando disponible.
+3. State between cycles (monitored surface, baseline, approved plan, accumulated verdicts) is persisted in `.claude/work/TICKET/monitor.md`. The command reads it at the start of each cycle to avoid repeating the discovery step.
+4. The manual alternative is `/loop 5m /work:watch TICKET` if the user's harness has that command available.
 
-### Fan-out paralelo — condicional a subagentes configurados
+### Parallel fan-out — conditional on configured sub-agents
 
-El fan-out de `/feat:brainstorm`, `/bug:investigate` y los verificadores adversariales de `/feat:review`/`/bug:review` solo es paralelo si el usuario ha declarado subagentes en `.gemini/agents/`. Sin ellos, la ejecución es secuencial en el mismo contexto. El resultado es funcionalmente equivalente pero más lento y con menos diversidad de perspectivas.
+The fan-out in `/feat:brainstorm`, `/bug:investigate`, and the adversarial reviewers of `/feat:review`/`/bug:review` is only parallel if the user has declared sub-agents in `.gemini/agents/`. Without them, execution is sequential in the same context. The result is functionally equivalent but slower and with less diversity of perspectives.
 
 ---
 
-## Subagentes en Gemini CLI: formato de referencia
+## Sub-agents in Gemini CLI: reference format
 
-Los nombres de subagente vienen del mapa `agents` de FLOW.md (campos `architecture`, `persistence`, `api`, `performance`, `security`, `testing`, `queues`, `frontend`, `frontend_test`).
+Sub-agent names come from the `agents` map in FLOW.md (fields `architecture`, `persistence`, `api`, `performance`, `security`, `testing`, `queues`, `frontend`, `frontend_test`).
 
-Para declarar un subagente en Gemini CLI, crea `.gemini/agents/<nombre>.md` con este frontmatter:
+To declare a sub-agent in Gemini CLI, create `.gemini/agents/<name>.md` with this frontmatter:
 
 ```markdown
 ---
-name: <nombre>           # debe coincidir con el valor en FLOW.md agents.<rol>
-description: <qué hace>  # Gemini lo usa para selección automática por descripción
-kind: agent              # opcional; indica que es un subagente delegable
-tools:                   # opcional; lista de herramientas permitidas
+name: <name>           # must match the value in FLOW.md agents.<role>
+description: <what it does>  # Gemini uses this for automatic selection by description
+kind: agent              # optional; indicates it is a delegable sub-agent
+tools:                   # optional; list of allowed tools
   - read_file
   - run_shell_command
-mcpServers:              # opcional; hereda los del settings.json si no se especifica
+mcpServers:              # optional; inherits from settings.json if not specified
   - domain-memory
-model: gemini-2.5-pro    # opcional; por defecto hereda del conductor
-temperature: 0.3         # opcional
-max_turns: 20            # opcional
-timeout_mins: 10         # opcional
+model: gemini-2.5-pro    # optional; inherits from the conductor by default
+temperature: 0.3         # optional
+max_turns: 20            # optional
+timeout_mins: 10         # optional
 ---
 
-<!-- System prompt del subagente a partir de aquí -->
-Eres el agente de <rol> del proyecto. Tu trabajo es...
+<!-- Sub-agent system prompt starts here -->
+You are the <role> agent for the project. Your job is...
 ```
 
-Invocación desde un comando: `@nombre encargo aquí`.
+Invocation from a command: `@name task here`.
 
-**No empaquetes agentes concretos en este adaptador.** Los nombres y prompts de los subagentes son específicos de cada proyecto y equipo. Los que correspondan a tu proyecto van en `.gemini/agents/` (local, no versionado en el plugin).
+**Do not bundle concrete agents in this adapter.** Sub-agent names and prompts are project- and team-specific. Those for your project go in `.gemini/agents/` (local, not versioned in the plugin).

@@ -1,132 +1,132 @@
 # `/bug-ship`
 
-Cierre del flujo de incidencia: commit, push, MR/PR. Usa la misma mecánica que `/feat-ship` con dos diferencias:
+Close the bug workflow: commit, push, MR/PR. Uses the same mechanics as `/feat-ship` with two differences:
 
-1. Si existe `99-postmortem.md`, **incluye el enlace o el resumen ejecutivo** en la descripción del MR/PR.
-2. La oferta de guardar conocimiento ya se hizo en `/bug-postmortem` — aquí no se vuelve a preguntar.
+1. If `99-postmortem.md` exists, **include the link or executive summary** in the MR/PR description.
+2. The offer to save knowledge was already made in `/bug-postmortem` — it's not asked again here.
 
 ## 0. Pre-flight
 
-Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user.
 
-- Carga `meta.json`. Exige `review` en `phases_done` (y `validate` si `size` ≥ S, y `postmortem` si `size` es L).
-- Si no, niégate y manda al paso faltante.
+- Load `meta.json`. Require `review` in `phases_done` (and `validate` if `size` ≥ S, and `postmortem` if `size` is L).
+- If not met, refuse and send to the missing step.
 
-## 1. Redactar título y descripción (sin enviar nada todavía)
+## 1. Draft title and description (without sending anything yet)
 
-**Importante**: en este paso **no** se invoca aún commit ni push. Solo se redacta el contenido para mostrárselo al usuario en §2.
+**Important**: in this step **no** commit or push is invoked yet. Only draft the content to show the user in §2.
 
-### Título
+### Title
 
-Formato: `{PREFIX}{TICKET} Fix <síntoma observable, en lenguaje claro> [patch]`.
+Format: `{PREFIX}{TICKET} Fix <observable symptom, in plain language> [patch]`.
 
-**Bien**: `{PREFIX}15310 Fix aperturas contadas dos veces al reintentar [patch]`
-**Mal**: `{PREFIX}15310 Fix tracking pixel double-counting on retry in PixelOpenedHandler [patch]`
+**Good**: `{PREFIX}15310 Fix opens counted twice on retry [patch]`
+**Bad**: `{PREFIX}15310 Fix tracking pixel double-counting on retry in PixelOpenedHandler [patch]`
 
-Los arreglos son `[patch]` salvo que rompan contrato.
+Fixes are `[patch]` unless they break a contract.
 
-### Descripción
+### Description
 
-**Construye la descripción a partir del Brief del `04-fix.md`**, no de los artefactos técnicos previos. Si el `04-fix.md` no tiene Brief (arreglo antiguo), redáctalo ahora partiendo del síntoma reportado.
+**Build the description from the Brief in `04-fix.md`**, not from the previous technical artifacts. If `04-fix.md` has no Brief (old fix), draft one now from the reported symptom.
 
-Plantilla (en este orden):
+Template (in this order):
 
 ```markdown
-## Qué deja de pasar tras este arreglo
-<lo que el usuario observaba que ya no observará. Lenguaje del síntoma, no del código.>
+## What stops happening after this fix
+<what the user was observing that they will no longer see. Symptom language, not code language.>
 
-## Qué se cambia (comportamiento)
-<1-2 líneas en lenguaje claro. NO archivos.>
+## What changes (behavior)
+<1-2 lines in plain language. NOT file names.>
 
-## Qué NO se ha tocado
-<bullets sacados del "Qué NO se toca" del Brief. Importante para que el revisor sepa que el arreglo es mínimo.>
+## What has NOT been touched
+<bullets from the "What is NOT touched" of the Brief. Important so the reviewer knows the fix is minimal.>
 
-## Pasos para reproducir y probar
-<sacados de `05-validation.md`:
-1. Reproducción del fallo antes del arreglo (que ya no aplica, pero documenta el caso).
-2. Cómo verificar que el comportamiento es correcto tras el arreglo.
-3. Test de regresión añadido y dónde está.>
+## Steps to reproduce and test
+<from `05-validation.md`:
+1. Reproduction of the failure before the fix (no longer applies, but documents the case).
+2. How to verify the behavior is correct after the fix.
+3. Regression test added and where it is.>
 
-## Pre-deploy (SOLO si `git.predeploy_gate` está activo y el arreglo toca la base de datos)
-SQL que hay que ejecutar **a mano en el servidor ANTES de desplegar**, todas las sentencias en un único bloque:
+## Pre-deploy (ONLY if `git.predeploy_gate` is active and the fix touches the database)
+SQL that must be run **manually on the server BEFORE deploying**, all statements in a single block:
 ```sql
-<DDL/índices/columnas/correcciones de datos — todas juntas>
+<DDL/indexes/columns/data corrections — all together>
 ```
-⚠️ **No desplegar hasta haber ejecutado este SQL en producción.**
+⚠️ **Do not deploy until this SQL has been run in production.**
 
-## Postmortem (si existe)
-<si hay `99-postmortem.md`: resumen ejecutivo de 3-5 bullets + enlace al artefacto en el repo o wiki.>
+## Postmortem (if it exists)
+<if `99-postmortem.md` exists: executive summary of 3-5 bullets + link to the artifact in the repo or wiki.>
 
 ---
 
 <details>
-<summary>Detalles técnicos para revisores</summary>
+<summary>Technical details for reviewers</summary>
 
-- **Causa raíz** (de `03-investigation.md` §"Causa raíz identificada"): <una línea>.
-- **Archivos del arreglo**: <de `04-fix.md` "Cambios por archivo">.
-- **Test de regresión**: `tests/...` (falla antes del arreglo, pasa después).
-- **Áreas con riesgo similar** (anotadas, no arregladas aquí): <de `04-fix.md`>.
+- **Root cause** (from `03-investigation.md` §"Root cause identified"): <one line>.
+- **Fix files**: <from `04-fix.md` "Changes per file">.
+- **Regression test**: `tests/...` (fails before the fix, passes after).
+- **Areas with similar risk** (noted, not fixed here): <from `04-fix.md`>.
 
 </details>
 ```
 
-Usa las secciones de `git.request_sections` de FLOW.md si están definidas; si no, la plantilla de arriba sirve.
+Use the sections from `git.request_sections` in FLOW.md if defined; if not, the template above works.
 
-Reglas:
-- **El revisor de la incidencia es a menudo un PM o soporte** además del desarrollador. La descripción debe servirle para validar que el síntoma reportado realmente queda resuelto.
-- **"Qué NO se ha tocado" es especialmente importante en arreglos** — deja claro que el arreglo es mínimo.
-- **La sección `## Pre-deploy` NO va en `<details>`**.
-- **Postmortem en cabeza**: si existe, su resumen va en la descripción principal, no en el `<details>`.
+Rules:
+- **The reviewer of the bug is often a PM or support person** in addition to the developer. The description must help them validate that the reported symptom is actually resolved.
+- **"What has NOT been touched" is especially important in fixes** — it makes clear the fix is minimal.
+- **The `## Pre-deploy` section does NOT go in `<details>`**.
+- **Postmortem at the top**: if it exists, its summary goes in the main description, not in `<details>`.
 
-### Recolectar el SQL de pre-deploy (solo si `git.predeploy_gate` activo)
-Si `quality.db_diff` está definido en `FLOW.md`, ejecútalo. Recolecta **todas** las sentencias en **un único bloque**.
+### Collect the pre-deploy SQL (only if `git.predeploy_gate` is active)
+If `quality.db_diff` is defined in `FLOW.md`, run it. Collect **all** statements in **a single block**.
 
-## 2. Mostrar al usuario y esperar confirmación (OBLIGATORIO)
+## 2. Show the user and wait for confirmation (MANDATORY)
 
-**Nunca se salta este paso.**
+**This step is never skipped.**
 
-Imprime al usuario en este formato exacto:
+Print to the user in this exact format:
 
 ```
-─── Previsualización del {request_term} (arreglo) ───────────────────────────────
-Título: <título completo, incluyendo [patch]>
-Asignado a: <git.assignee de FLOW.md; vacío = sin asignar>
-Squash: <git.squash de FLOW.md>
-Rama destino (target): <git.default_base>
-Pre-deploy (SQL manual): <"sí — N sentencias, se abrirá hilo bloqueante" / "no aplica">
+─── Preview of the {request_term} (fix) ────────────────────────────────────
+Title: <full title, including [patch]>
+Assigned to: <git.assignee from FLOW.md; empty = unassigned>
+Squash: <git.squash from FLOW.md>
+Target branch: <git.default_base>
+Pre-deploy (manual SQL): <"yes — N statements, a blocking thread will be opened" / "not applicable">
 
-Descripción:
-<descripción completa renderizada tal cual irá al MR/PR>
+Description:
+<full description rendered as it will appear in the MR/PR>
 ─────────────────────────────────────────────────────────────────
 ```
 
-Si hay SQL de pre-deploy, pide al usuario que **confirme expresamente que el bloque está completo y correcto**.
+If there's pre-deploy SQL, ask the user to **expressly confirm the block is complete and correct**.
 
-Después pregunta al usuario (header: "Crear {request_term}"):
+Then ask the user (header: "Create {request_term}"):
 
-- **Crear {request_term} con este contenido**: confirma → se invoca §3.
-- **Editar antes de crear**: el usuario indica qué cambiar; ajustas y vuelves a §2.
-- **Cancelar**: termina sin crear nada.
+- **Create {request_term} with this content**: confirms → invoke §3.
+- **Edit before creating**: user specifies what to change; adjust and return to §2.
+- **Cancel**: stop without creating anything.
 
-No invoques push hasta confirmación explícita.
+Do not invoke push until explicit confirmation.
 
-## 3. Commit, push y creación del MR/PR
+## 3. Commit, push, and create the MR/PR
 
-### 3.0 Cerrojo anti-despliegue (antes de cualquier push)
+### 3.0 Anti-deployment lock (before any push)
 
-Igual que `/feat-ship` §4.0: HEAD no debe ser la base principal (master/main), y el upstream no debe apuntar a `git.default_base`. Si el upstream apunta a la base, `git branch --unset-upstream` y `git push -u origin HEAD`. En modo tren el MR/PR apunta a la rama padre.
+Same as `/feat-ship` §4.0: HEAD must not be the main branch (master/main), and the upstream must not point to `git.default_base`. If the upstream points to the base, `git branch --unset-upstream` and `git push -u origin HEAD`. In train mode the MR/PR targets the parent branch.
 
-### 3.1 Crear MR/PR
+### 3.1 Create MR/PR
 
-Solo aquí — con el contenido aprobado en §2 — haz commit con `git commit`, push con `git push -u origin HEAD` (rama propia, nunca a la base principal) y crea el MR/PR con el CLI de `git.cli` de `FLOW.md` usando el título y descripción ya finales.
+Only here — with the content approved in §2 — commit with `git commit`, push with `git push -u origin HEAD` (branch's own remote, never to the main base), and create the MR/PR with the `git.cli` CLI from `FLOW.md` using the finalized title and description.
 
-Asignar a `git.assignee` de FLOW.md (si vacío, sin asignar). Activar squash según `git.squash`.
+Assign to `git.assignee` from FLOW.md (if empty, unassigned). Enable squash per `git.squash`.
 
-### 3.2 Hilo de pre-deploy (freno de despliegue)
-**Solo si `git.predeploy_gate` está activo y el arreglo tiene SQL de pre-deploy** (§1). Tras crear el MR/PR, abre **un único hilo resoluble/bloqueante** con todo el SQL consolidado. Cuerpo: el bloque SQL bajo "Pre-deploy: ejecutar este SQL en el servidor ANTES de desplegar" + "Resolver solo después de ejecutarlo en producción". **Un solo hilo aunque haya varias sentencias.**
+### 3.2 Pre-deploy thread (deployment brake)
+**Only if `git.predeploy_gate` is active and the fix has pre-deploy SQL** (§1). After creating the MR/PR, open **a single resolvable/blocking thread** with all the consolidated SQL. Body: the SQL block under "Pre-deploy: run this SQL on the server BEFORE deploying" + "Resolve only after running it in production". **One thread even if there are multiple statements.**
 
-## 4. Cierre
+## 4. Close
 
-- Actualiza `meta.json`: `phase = "done"`, añade `ship` a `phases_done`.
-- Resume: ticket, URL del MR/PR, test de regresión añadido.
-- Pregunta si quiere archivar `.claude/work/<TICKET>/` a `.claude/work/_archive/`.
+- Update `meta.json`: `phase = "done"`, add `ship` to `phases_done`.
+- Summarize: ticket, MR/PR URL, regression test added.
+- Ask whether they want to archive `.claude/work/<TICKET>/` to `.claude/work/_archive/`.
