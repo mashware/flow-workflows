@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "flow",
+  "displayName": "Flow — guided dev workflows",
+  "description": "Flujos guiados feat/bug (start→ship), vigilancia post-deploy y code-review multiagente, agnósticos de stack. Cada repo se configura con un FLOW.md en la raíz.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Alberto Vioque",
+    "email": "mashware@gmail.com"
+  },
+  "keywords": ["workflow", "code-review", "post-deploy", "git", "feature-flow", "bug-flow"]
+}

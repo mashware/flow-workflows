@@ -1,0 +1,14 @@
+{
+  "name": "flow-plugins",
+  "owner": {
+    "name": "Alberto Vioque",
+    "email": "mashware@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "flow",
+      "source": "./plugins/flow",
+      "description": "Flujos guiados feat/bug (start→ship), vigilancia post-deploy y code-review multiagente, agnósticos de stack. Cada repo se configura con un FLOW.md en su raíz."
+    }
+  ]
+}

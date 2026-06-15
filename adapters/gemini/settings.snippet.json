@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "domain-memory": {
+      "command": "npx",
+      "args": ["-y", "@mashware/domain-memory@latest"],
+      "env": {
+        "DOMAIN_MEMORY_DIR": ".domain-memory"
+      }
+    }
+  }
+}

@@ -1,0 +1,104 @@
+description = "Trocea el trabajo en MRs/PRs pequeñas, mergeables de forma independiente, antes de implementar"
+
+prompt = """
+# `/feat:plan`
+
+Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+
+Fase de planificación de entrega. **No escribe código.** Decide cómo partir la feature en MRs/PRs que puedan vivir solas en la rama principal aunque las siguientes nunca lleguen.
+
+## 1. Pre-flight
+
+- Carga `meta.json` por rama actual. Si no existe, manda al usuario a `/feat:start`.
+- Exige `design` en `phases_done`. Si no, manda a `/feat:design` y termina.
+- Lee `01-context.md`, `02-brainstorm.md` (si existe) y `03-design.md`.
+- **Si `size` es `XS` o `S`**: avisa que esta fase no aplica (siempre 1 MR/PR), marca `plan` como saltada en `phases_done` con valor `"plan:skipped"` y sugiere `/feat:build`. Termina.
+
+## 2. Trabajo
+
+Carga los skills de convenciones del proyecto (ver `FLOW.md` sección `conventions`).
+
+**Antes de trocear, filtro YAGNI sobre el diseño**: el plan solo divide trabajo que el `03-design.md` ya validó como necesario. Si al trocear ves una MR/PR (o parte de una) dedicada a un problema **futuro hipotético** o a proteger contra un escenario que **en este proyecto no puede ocurrir**, no la conviertas en entregable: márcala como "fuera de scope — idea para ticket aparte" y avísalo al usuario. No se trocea ni se planifica lo que no se va a construir hoy. Si esto revela que el diseño coló piezas de más, vuelve a `/feat:design` para recortarlas antes de planificar.
+
+Trabaja con un agente (o tú mismo) con el encargo (autocontenido):
+
+> Lee `.claude/work/<TICKET>/03-design.md`. Propón cómo trocear la implementación en MRs/PRs **independientemente mergeables**: cada una debe poder vivir sola en la rama principal sin romper nada aunque las siguientes nunca lleguen. Pensá en feature flags, código muerto temporal, retrocompatibilidad de schema, migraciones online en varios pasos, contrato de eventos estable. **No crees MRs/PRs dedicadas a problemas futuros hipotéticos ni a defensas contra escenarios que el proyecto ya impide — trocea solo lo necesario para lo que pide el ticket hoy (YAGNI).** Tabla con: orden, qué incluye, mergeable solo (sí/no + cómo se garantiza), qué desbloquea de la siguiente, riesgo si se queda sola en la rama principal indefinidamente, **`lines_est`** (líneas aproximadas, suma de añadidas + modificadas) y **`files_est`** (archivos aproximados que toca). Las estimaciones son **blandas** — sirven como termómetro durante el build, no son contrato. Si la respuesta correcta es "1 sola MR/PR", justifícalo y devuelve eso. Bajo 500 palabras.
+
+Si la feature toca pagos, autenticación o datos sensibles, lanza **en paralelo** (o secuencialmente) el agente de `agents.security` de `FLOW.md` (o agente genérico si está vacío) con el encargo: "Para cada MR/PR propuesta en el plan de entrega, identifica si abre una ventana de exposición de seguridad mientras las siguientes no estén mergeadas (p.ej. endpoint nuevo sin chequeo definitivo, columna sin restricción final). Solo accionables".
+
+## 3. Output
+
+Consolida en `.claude/work/<TICKET>/04-mr-plan.md`:
+
+```markdown
+# Plan de entrega <TICKET>
+
+## Resumen
+- Número de MRs/PRs: N
+- Justificación del troceo (1-2 líneas):
+- Orden recomendado: #1 → #2 → …
+
+## MRs/PRs
+
+### #1: <título corto>
+- **Incluye**: bullets de qué cambia.
+- **Mergeable solo**: sí / no — cómo se garantiza (flag, columna nullable, código sin uso, etc.).
+- **Desbloquea**: qué permite hacer en la siguiente.
+- **Riesgo si se queda sola en la rama principal**: …
+- **Tamaño estimado**: XS / S / M.
+- **`lines_est`**: ~N líneas (añadidas + modificadas).
+- **`files_est`**: ~N archivos.
+
+### #2: …
+
+## Dependencias entre MRs/PRs
+<grafo simple en bullets: #2 depende de migración de #1, etc.>
+
+## Riesgos del plan
+- Migraciones online:
+- Compatibilidad con clientes desplegados:
+- Eventos de dominio nuevos:
+- Feature flags introducidas (y cuándo se quitan):
+
+## Decisión: ¿una o varias MRs/PRs?
+<si es 1: justificación. Si son varias: por qué este corte y no otro>
+```
+
+Si el plan propone 1 sola MR/PR, mantén el artefacto igual con esa única entrada y la justificación. No fuerces troceo artificial.
+
+## 4. Registro en `meta.json`
+
+Añade al `meta.json` el array `mrs` con el plan acordado:
+
+```json
+"mrs": [
+  { "n": 1, "title": "…", "size": "S", "status": "pending", "lines_est": 120, "files_est": 6 },
+  { "n": 2, "title": "…", "size": "M", "status": "pending", "lines_est": 350, "files_est": 14 }
+]
+```
+
+Las estimaciones son **orientativas**, no contractuales. `/feat:build` las usa como termómetro: si el trabajo real supera +50% de `lines_est` o `files_est + 2`, dispara la pregunta de "cortar o seguir" (ver §C del build).
+
+Estados válidos:
+
+| Estado | Significado |
+|--------|-------------|
+| `pending` | Aún no se ha empezado a construir. |
+| `in_progress` | Build/review/validate de esta MR/PR está en curso. |
+| `merged` | MR/PR fusionada a la rama principal. |
+| `closed` | MR/PR cerrada sin merge (rechazada, descartada). Requiere `note` con motivo. |
+| `superseded` | Sustituida por otra MR/PR posterior (el plan se replanteó). Requiere `note` apuntando a la sustituta. |
+
+`/feat:build` mueve `pending` → `in_progress`. `/feat:ship` mueve `in_progress` → `merged` cuando confirma merge, o a `closed` si se descarta. Si tras un build hay que replantear el troceo, vuelve a `/feat:plan`, marca la entrada vieja como `superseded` y añade las nuevas.
+
+## 5. ¿El tamaño sigue siendo correcto?
+
+Si al trocear ves que en realidad sale 1 sola MR/PR pequeña (≤ 50 líneas, sin migraciones), reclasifica a `S` y avísalo. Si por el contrario salen 5+ MRs/PRs grandes, considera subir a `L`. Confirma con el usuario (pregunta directa en texto) antes de cambiar `meta.json.size`.
+
+## 6. Cierre
+
+- Actualiza `meta.json`: `phase = "plan"`, añade `plan` a `phases_done`.
+- Muestra al usuario la tabla resumen y pide aprobación.
+- Si pide cambios, edita el artefacto y `meta.json.mrs` antes de avanzar.
+- Sugiere `/feat:build` para arrancar la primera MR/PR.
+"""

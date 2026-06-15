@@ -1,0 +1,88 @@
+# config.snippet.toml — fragmento para fusionar en ~/.codex/config.toml
+#
+# Instrucciones:
+#   1. Copia las secciones que necesites a tu ~/.codex/config.toml existente.
+#   2. Ajusta command/args/env con la instalación real de domain-memory en tu máquina.
+#   3. Para los agentes, define los roles que necesites según el mapa agents/review de FLOW.md.
+#
+# AVISO: este fichero es un fragmento de ejemplo, NO un config.toml completo.
+# No lo uses directamente como ~/.codex/config.toml — fúsionalo con el tuyo.
+
+# ──────────────────────────────────────────────────────────────────────────────
+# MCP server: domain-memory
+# ──────────────────────────────────────────────────────────────────────────────
+# Ajusta command y args según cómo tengas instalado domain-memory.
+# Ejemplo con npx (instalación global de npm):
+[mcp_servers.domain-memory]
+command = "npx"
+args = ["-y", "domain-memory-mcp"]
+env = {}
+startup_timeout_sec = 10
+
+# Alternativa con node directamente (si tienes el repo clonado):
+# [mcp_servers.domain-memory]
+# command = "node"
+# args = ["/ruta/a/domain-memory/dist/index.js"]
+# env = { "DOMAIN_MEMORY_PATH" = "/ruta/a/tu/almacen.json" }
+# startup_timeout_sec = 10
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Subagentes (agents)
+# ──────────────────────────────────────────────────────────────────────────────
+# Los flujos /feat-* y /bug-* delegan trabajo en subagentes cuyos nombres
+# vienen del mapa `agents` y `review` de FLOW.md. Cada entrada de FLOW.md
+# como agents.architecture = "mi-arquitecto" se declara aquí como [agents.mi-arquitecto].
+#
+# NO se empaquetan agentes concretos en este adaptador: los nombres los define
+# el usuario en FLOW.md. Lo que sigue son ejemplos del formato.
+#
+# Formato de cada sección:
+#   [agents.<nombre>]
+#   model = "<modelo>"                # p.ej. "o4-mini", "o3", "codex-mini-latest"
+#   model_reasoning_effort = "high"   # "low" | "medium" | "high" (solo modelos con razonamiento)
+#   instructions = """
+#     <system prompt del agente>
+#   """
+#
+# Ejemplos comentados (descomenta y ajusta los que necesites):
+
+# [agents.arquitecto]
+# model = "o4-mini"
+# model_reasoning_effort = "high"
+# instructions = """
+# Eres un arquitecto de software especializado en DDD y CQRS.
+# Tu función es proponer la estructura de módulos, entidades, comandos y eventos
+# para nuevas features, minimizando acoplamiento y maximizando reutilización.
+# Cuando te pidan diseño, busca primero qué ya existe en el repositorio
+# antes de proponer piezas nuevas.
+# """
+
+# [agents.testing]
+# model = "o4-mini"
+# model_reasoning_effort = "medium"
+# instructions = """
+# Eres un especialista en tests. Escribes pruebas unitarias, de integración
+# y de regresión. Sigues las convenciones del proyecto (ver FLOW.md sección conventions).
+# Para bugs, escribes siempre el test que falla antes del arreglo y pasa después.
+# No reescribas tests que ya pasan.
+# """
+
+# [agents.seguridad]
+# model = "o4-mini"
+# model_reasoning_effort = "high"
+# instructions = """
+# Eres un revisor de seguridad ofensivo. Piensas como un atacante.
+# Buscas vulnerabilidades concretas (OWASP Top 10, lógica de negocio, autenticación,
+# autorización) con escenarios de ataque específicos. No produces listas genéricas.
+# """
+
+# [agents.rendimiento]
+# model = "o4-mini"
+# model_reasoning_effort = "medium"
+# instructions = """
+# Eres un especialista en rendimiento de backends PHP/Symfony.
+# Detectas consultas N+1, índices faltantes, consultas no acotadas,
+# flush() en bucles y trabajo síncrono que debería ir a cola.
+# Solo reportas lo accionable — no teorizas.
+# """

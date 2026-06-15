@@ -1,0 +1,77 @@
+---
+description: Lecciones aprendidas, áreas a vigilar y oferta de guardar en domain-memory
+---
+
+# `/flow:bug:postmortem`
+
+**Solo para `size` M/L** (en S es opcional, en XS se salta).
+
+Objetivo: capturar lecciones que eviten que vuelva a pasar — no para regañar a nadie.
+
+## 1. Pre-flight
+
+Lee `FLOW.md` en la raíz del repo para las convenciones de este repo (tracker, git, calidad, dominio, observabilidad). Si no existe o una clave está vacía, usa el valor por defecto o autodescubre según indique cada paso. Sobre `domain_memory`: si está activo pero el MCP falla o tarda más de 2 s, continúa sin ese contexto, no bloquees ni se lo notifiques al usuario.
+
+- Carga `meta.json`. Exige `review` en `phases_done`.
+- Si `size` es `XS`, sugiere saltar a `/flow:bug:ship`.
+
+## 2. Trabajo
+
+Lee todos los artefactos previos. Genera un análisis honesto:
+
+- **Cronología**: cuándo se introdujo, cuándo se detectó, cuánto tiempo estuvo activo.
+- **Causa raíz** (ya en `03-investigation.md` — copia el resumen).
+- **Por qué los tests no lo cogieron**: hueco real, no excusas.
+- **Por qué el code review no lo cogió**: si aplica.
+- **Acciones de prevención** accionables (no genéricas tipo "mejorar tests"). Cada acción con dueño y ticket sugerido.
+- **Áreas con riesgo similar**: las anotadas en `03-investigation.md`.
+
+## 3. Output
+
+`.claude/work/<TICKET>/99-postmortem.md`:
+
+```markdown
+# Postmortem {TICKET}
+
+## Resumen ejecutivo
+<3-5 bullets: qué pasó, impacto, causa, arreglo>
+
+## Cronología
+- <fecha>: <evento>
+
+## Causa raíz
+<copia del investigation>
+
+## Impacto
+- Usuarios afectados:
+- Datos comprometidos:
+- Servicios degradados:
+
+## Por qué no se detectó antes
+- Tests:
+- Code review:
+- Monitorización:
+
+## Acciones de prevención
+| Acción | Dueño | Ticket sugerido |
+|--------|-------|-----------------|
+
+## Áreas con riesgo similar (para abrir tickets aparte)
+- patrón a auditar
+```
+
+## 4. Conocimiento de dominio (oferta)
+
+Si `domain_memory.enabled`:
+
+1. **Lee el staging acumulado durante la rama**: llama a `mcp__domain-memory__read_staging`. Habrá hallazgos stageados en `/flow:bug:investigate` si la causa raíz reveló algo no obvio. Ese es el material principal.
+2. **Revisa el postmortem** por si hay "por qué" adicionales (decisiones de negocio, restricciones legales, integraciones, supuestos del modelo que eran falsos) que no se stagearon en su momento. El "qué" (código, rutas) no se guarda.
+3. **Combina staging + hallazgos nuevos**. Si queda vacío o solo cosas obvias, no insistas.
+4. Si hay 1+ hallazgos relevantes, pregunta al usuario si quiere guardarlos. Si dice sí, invoca `Skill save-knowledge` con el ángulo correcto (la lección, no el código). Si no, no insistas.
+
+Si `domain_memory.enabled` es falso o está vacío, salta este bloque sin avisar.
+
+## 5. Cierre
+
+- Actualiza `meta.json`: `phase = "postmortem"`, añade a `phases_done`.
+- Sugiere `/flow:bug:ship`. Si en el postmortem salieron acciones de prevención, propón abrir tickets aparte (no se hacen en este flujo).

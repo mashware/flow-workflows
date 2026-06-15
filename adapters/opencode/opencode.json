@@ -1,0 +1,8 @@
+{
+  "mcp": {
+    "domain-memory": {
+      "command": "npx",
+      "args": ["-y", "domain-memory-mcp"]
+    }
+  }
+}
