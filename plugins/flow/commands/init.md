@@ -43,7 +43,7 @@ Run and deduce; show what was found so the user can confirm or correct:
 For each point, use `AskUserQuestion` with options and a recommended value; always leave the path
 "leave empty → auto-discover / skip this". Ask about:
 
-- **Ticket prefix** (`tracker.prefix`, e.g., `PROJ-`, or none) and **how to read a ticket** (`tracker.tool`: acli/gh/linear/none).
+- **Ticket prefix** (`tracker.prefix`, e.g., `PROJ-`, or none) and **how to read a ticket** (`tracker.tool`). Offer the options **without preselecting one** (the git host does not determine the tracker — a GitLab repo may track in Jira): `acli` (Jira), `gh` (GitHub issues), `glab` (GitLab issues), `linear`, or `none` (manual). From the chosen `tool`, set a default `tracker.view_cmd` the user can override: `acli` → `acli jira workitem view {TICKET}`; `gh` → `gh issue view {TICKET}`; `glab` → `glab issue view {TICKET}`; `linear`/`none` → leave empty. When proposing `gh`/`glab`, check the CLI is installed (`command -v gh glab`); if missing, keep the choice but warn the step will degrade to a manual paste until it is.
 - **MR/PR assignee** (`git.assignee`, or none) and **squash** (`git.squash`).
 - **MR/PR sections** (`git.request_sections`, or free-form).
 - **Pre-deploy gate** (`git.predeploy_gate`): do you run schema SQL manually on the server before deploying? If yes and you detected a schema diff command, propose `quality.db_diff`.

@@ -3,3 +3,6 @@
 *~
 .idea/
 .vscode/
+
+# domain-memory MCP local index
+.domain-memory/
