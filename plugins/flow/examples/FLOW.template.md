@@ -10,8 +10,11 @@ Place it at the repo root (can be committed: it is team config, not secrets).
 How tickets are identified and read.
 
 - `prefix:`            # e.g. `PROJ-`. Empty = no prefix / free-form ticket.
-- `tool:`             # `acli` (Jira) | `gh` (GitHub issues) | `linear` | `none` (manual). Empty = none.
-- `view_cmd:`         # optional, command to view a ticket. `{TICKET}` is substituted. e.g.: `acli jira workitem view {TICKET}`
+- `tool:`             # `acli` (Jira) | `gh` (GitHub issues) | `glab` (GitLab issues) | `linear` | `none` (manual). Empty = none.
+- `view_cmd:`         # optional, command to view a ticket. `{TICKET}` is substituted. e.g.:
+                      #   Jira:   `acli jira workitem view {TICKET}`
+                      #   GitHub: `gh issue view {TICKET}`
+                      #   GitLab: `glab issue view {TICKET}`
 
 ## git
 Branch and Pull/Merge Request conventions.

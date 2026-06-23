@@ -20,7 +20,7 @@ Run and infer; show findings for confirmation or correction:
 - **domain-memory** — is the `domain-memory` MCP available? If yes, `domain_memory.enabled: true`.
 
 ## 3. Ask only for what cannot be inferred (in text, listing options; always leave "empty → auto-discover")
-- Ticket prefix (`tracker.prefix`) and how to read it (`tracker.tool`: acli/gh/linear/none).
+- Ticket prefix (`tracker.prefix`) and how to read it (`tracker.tool`: `acli`=Jira / `gh`=GitHub issues / `glab`=GitLab issues / `linear` / `none`), offered without preselecting (the git host does not determine the tracker). From the choice, set a default `tracker.view_cmd` the user can override: `acli` → `acli jira workitem view {TICKET}`; `gh` → `gh issue view {TICKET}`; `glab` → `glab issue view {TICKET}`; `linear`/`none` → empty.
 - Assignee (`git.assignee`) and squash (`git.squash`).
 - MR/PR sections (`git.request_sections`, or free-form).
 - Pre-deploy gate (`git.predeploy_gate`): do you run SQL manually before deploying? If yes, suggest `quality.db_diff`.
