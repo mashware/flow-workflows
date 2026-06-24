@@ -63,6 +63,16 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 ## Executive summary
 <3-5 bullets of the chosen solution>
 
+## Acceptance criteria
+<The WHAT: observable, verifiable conditions that must hold for the feature to be "done", distinct from the design's HOW. The feature is done **iff** every criterion holds. Each criterion gets a stable ID (`AC1`, `AC2`, …), is written given/when/then or as a clear assertion, and uses the **literal** values from "External contracts" / "Internal behavioral contracts" below for its concrete result — never prose like "works correctly". Proportional to size: XS/S → a couple of criteria covering what the ticket asks today, no hypothetical futures; M/L → one per distinct observable behavior. Do not manufacture criteria to fill space — the same restraint as the challenger.>
+
+| ID | Given / When / Then (or clear assertion) | Proof |
+|----|------------------------------------------|-------|
+| AC1 | Given <state>, when <action>, then <observable result with literal value> | test \| manual |
+| AC2 | … | … |
+
+`Proof` is a hint at how the criterion will be demonstrated in `/feat:validate`: `test` (an automated test can prove it) or `manual` (UI / end-to-end flow verified together with the user). It is a hint, not a commitment — `/feat:validate` builds the real criterion→test mapping and gates against it.
+
 ## Modules/layers affected
 - <module/layer> — <what changes>
 
@@ -109,6 +119,13 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 
 ### Contract N+1: …
 
+## Internal behavioral contracts
+<Same anti-ambiguity rigor as "External contracts", applied to behavior with **no** external surface: a domain rule, a service's pre/postconditions, a calculation's expected outputs, a state transition. Express each as a concrete, **checkable** statement — literal inputs → literal outputs, or an exact invariant — never prose like "calculates the discount correctly". Each one should map directly to an acceptance criterion above (it is what gives that criterion its literal teeth). If the change has no non-trivial internal behavior (pure wiring, a rename), write "none" and move on — do not invent rules to fill space.>
+
+- **Rule / postcondition**: <e.g. "discount(plan=pro, seats=5) → 15% off; discount(plan=free, *) → 0%">
+- **Invariant**: <e.g. "after assignTo(user), ticket.assignee == user AND ticket.status != 'unassigned'">
+- **Edge / boundary**: <e.g. "empty input list → returns 0, does not throw">
+
 ## Defensive mechanisms and their justification
 <One row per validation, guard, retry, lock, fallback, cache, idempotency, queue, or flag the design introduces. If you cannot name a REAL and PRESENT scenario that justifies it, the piece is unnecessary — remove it from the design.>
 
@@ -122,6 +139,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 2. …
 
 ## Planned tests
+<Map each planned test to the acceptance criteria it proves (AC ids). A test that proves no criterion and guards no contract is a candidate to cut. Criteria marked `manual` above need no automated test here — they are verified with the user in `/feat:validate`.>
 - Unit:
 - Integration:
 - Functional:
@@ -133,6 +151,8 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 ## Design challenges
 <filled in by §5 with the challenger table>
 ```
+
+When filling **"Acceptance criteria"**: start from the provisional list in `01-context.md` (pinned from the ticket in `/feat:start`), fold in the clarifications and the internal/external contracts decided here, and promote it to the canonical, enumerated list. This is the list `/feat:validate` gates against — keep it observable, verifiable, and proportional to size.
 
 ## 6. Design challenge (challenger)
 
@@ -199,6 +219,7 @@ Do not invoke `save_knowledge` here — the final save is in `/feat:ship` with a
 ## 9. Close
 
 - Update `meta.json`: `phase = "design"`, add to `phases_done`.
+- **Confirm the acceptance criteria** as part of the design review: present the enumerated list to the user. If every criterion is unambiguous and verifiable, the design review covers them — no separate prompt. Escalate to `AskUserQuestion` **only** when a criterion is ambiguous, not verifiable, or you suspect one is missing for what the ticket asks today (same restraint as the challenger — do not invent criteria). The user can edit/add/remove; apply their edits to `03-design.md` before advancing.
 - Ask the user to review the design. If they request changes, edit the artifact before advancing.
 - Next step by size:
   - **XS / S**: suggest `/feat:build` (1 single MR/PR, no need to plan splitting).

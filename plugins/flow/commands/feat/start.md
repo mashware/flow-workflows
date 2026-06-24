@@ -111,8 +111,8 @@ Structure:
 ## Ticket
 <ticket summary in 3-5 bullets>
 
-## Acceptance criteria
-<list from tracker or "not specified">
+## Acceptance criteria (provisional — promoted to first-class criteria in /feat:design)
+<list from tracker or "not specified". These are the WHAT pinned from the ticket so it is never lost; `/feat:design` refines them into an enumerated, verifiable list (`AC1`, `AC2`, …) that `/feat:validate` gates against.>
 
 ## Relevant domain knowledge
 <domain-memory hits with one bullet per finding, or "no findings">
