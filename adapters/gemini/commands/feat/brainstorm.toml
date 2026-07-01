@@ -40,7 +40,11 @@ If the environment has subagents defined in `.gemini/agents/`, launch one per le
 - `operations`: the most production-solid approach (observability, external integration failure, data at scale).
 - `rethink`: challenges the premise: what if the problem is solved without building what is requested, or elsewhere?
 
-Each agent receives: the ticket title, path to `01-context.md`, and the instruction to propose ONE approach from its specific lens — real modules/layers of the project, main risk, and why it could be a bad idea. It does not write code. The synthesizer agent ranks the approaches from best to worst for THIS case (fit in the project + simplicity) and gives an initial recommendation with 2-3 lines of justification.
+Each agent receives: the ticket title, path to `01-context.md`, and the instruction to propose ONE approach from its specific lens — real modules/layers of the project, main risk, and why it could be a bad idea. It does not write code.
+
+Then run a **peer-review round** (the LLM-council step that keeps synthesis from ranking on presentation instead of substance): relaunch the lens agents in parallel, each now **seeing all the approaches**, and have each critique the OTHERS from its lens — for every approach the single biggest flaw for THIS project (or "none"), plus which is strongest and which weakest. Grounded in the project; no invented flaws.
+
+The synthesizer agent receives the approaches **and the peer-reviews**, ranks them from best to worst for THIS case (fit in the project + simplicity) weighing the surfaced fatal flaws, states where the lenses agreed and where they disagreed, and gives an initial recommendation with 2-3 lines of justification.
 
 If a subagent fails, simply do not include its approach in the result.
 
@@ -76,7 +80,8 @@ Create `.claude/work/<TICKET>/02-brainstorm.md`:
 <bullets>
 
 ## Initial recommendation
-<one option, with 2-3 lines of justification>
+<one option, with 2-3 lines of justification. If the panel ran (§3.A), prefix with a one-line
+"Panel consensus / disagreement:" summarizing where the advisors' peer-review agreed and where it split.>
 ```
 
 ## 5. Emerging questions
