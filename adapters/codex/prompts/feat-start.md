@@ -52,6 +52,14 @@ Recommend the size you estimate with a "(Recommended)".
 1. **Never** create the branch implicitly from wherever you currently are. If you're on another task's branch, a `git checkout -b` would inherit its commits.
 2. **Never** let the new branch have the base branch as its automatic upstream. With `branch.autoSetupMerge=true`, a `git checkout -b X <base>` sets the upstream to that base, and a push that resolves the upstream can end up on the main branch and trigger a deployment.
 
+Both rules apply the same whether the branch is created in place or as a worktree.
+
+### 5.0 In place or worktree?
+Read `git.worktree` from `FLOW.md`:
+- `off` or empty → in place (§5.2). This is the current behavior; skip to §5.1.
+- `always` → create as a worktree (§5.4).
+- `ask` → ask the user ("Create this branch as a git worktree (separate checkout) or in place?"). Worktree → §5.4; in place → §5.2.
+
 ### 5.1 Check where you are first
 ```bash
 git rev-parse --abbrev-ref HEAD   # current branch
@@ -70,7 +78,19 @@ git switch --create <branch-name> --no-track <git.default_base>      # independe
 # — or, in confirmed train mode: —
 git switch --create <branch-name> --no-track origin/<parent-branch>
 ```
-`--no-track` is **mandatory**: it's what prevents the upstream from being set to the remote base. The explicit base (from `git.default_base` or the parent branch, never "where I am") is what prevents inheriting commits from another task.
+`--no-track` is **mandatory**: it's what prevents the upstream from being set to the remote base. The explicit base (from `git.default_base` or the parent branch, never "where I am") is what prevents inheriting commits from another task. Then go to §6 (record `"worktree": null` in `meta.json`).
+
+### 5.4 Create as a git worktree (when §5.0 chose worktree)
+Same name and the same two non-negotiable rules. The worktree directory comes from `git.worktree_path` (substitute `{branch}` = branch name, `{repo}` = repo dir name); empty → `.worktrees/<branch-name>` at the repo root. `git worktree add` creates the branch **and** its checkout in a single step:
+```bash
+git fetch origin
+git worktree add --no-track -b <branch-name> <worktree-path> <git.default_base>   # independent task
+# — or, in confirmed train mode: —
+git worktree add --no-track -b <branch-name> <worktree-path> origin/<parent-branch>
+```
+`--no-track` is **mandatory** here too (same upstream rule). Do NOT `git switch` — the current checkout stays where it is; the new branch lives in `<worktree-path>`.
+- If the path is under the repo (e.g. `.worktrees/`) and it isn't already ignored, add the worktree root to `.gitignore` (or `.git/info/exclude`) so the checkout doesn't show up as untracked. Don't commit the worktree contents.
+- Tell the user the rest of the flow runs **from the worktree**: `cd <worktree-path>`. Record the resolved path in `meta.json` as `worktree`.
 
 ### 5.3 Push rule (executed in `ship`, declared here)
 The first push is **always** explicit to the branch's own remote, never a push that blindly resolves upstream:
@@ -90,6 +110,7 @@ Create `.claude/work/$ARGUMENTS/`:
   "title": "<ticket title>",
   "branch": "<branch created in §5>",
   "stacked_on": null,
+  "worktree": "<worktree path if created in §5.4, else null>",
   "size": "<XS|S|M|L>",
   "phase": "context",
   "phases_done": ["context"],

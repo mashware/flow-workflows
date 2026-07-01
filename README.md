@@ -116,10 +116,11 @@ in `monitor.md`, so on harnesses without in-session scheduling it also works dri
 
 ## Configuration: `FLOW.md`
 
-A file at the repo root describes your conventions: issue tracker, git host and CLI, quality
-commands (test/lint/static-analysis/DB), role→agent map, code-review panel, per-command `notes`,
-whether you use the [`domain-memory`](https://github.com/mashware/domain-memory) MCP, and the
-observability profile for the watcher. **Anything left empty is auto-detected or asked for** — a
+A file at the repo root describes your conventions: issue tracker, git host and CLI, optional
+git-worktree mode (`off`/`ask`/`always`, plus optional project "try this branch" helpers),
+quality commands (test/lint/static-analysis/DB), role→agent map, code-review panel, per-command
+`notes`, whether you use the [`domain-memory`](https://github.com/mashware/domain-memory) MCP, and
+the observability profile for the watcher. **Anything left empty is auto-detected or asked for** — a
 repo with no `FLOW.md` still works, just with more questions. Run `/flow:init` to generate it, or
 copy [`plugins/flow/examples/FLOW.template.md`](plugins/flow/examples/FLOW.template.md) by hand.
 

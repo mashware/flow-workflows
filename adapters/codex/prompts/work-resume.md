@@ -9,6 +9,7 @@ Use when returning to a work item after a break (next morning, another session, 
 - Read `git branch --show-current`.
 - Search in `.claude/work/` for the `meta.json` with a matching `branch`.
 - If none found: ask the user for the ticket or whether they want to start a new one.
+- If the matched `meta.json` has a non-null `worktree` and the current directory is not that worktree, tell the user the work lives in a worktree and to `cd <worktree>` before continuing — run the repo-state checks below from there (`git -C <worktree> …`).
 
 ## 2. Recap
 

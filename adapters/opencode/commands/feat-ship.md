@@ -165,3 +165,5 @@ Update `meta.json` based on the scenario:
 Summarize for the user: ticket, MR/PR URL, changed files, added tests. In multi-delivery, also indicate remaining entries per `meta.json.mrs`.
 
 Ask whether to keep `.claude/work/<TICKET>/` or archive it (move to `.claude/work/_archive/`) — only if `phase = "done"`.
+
+If `phase = "done"` and `meta.json.worktree` is not null, the branch's worktree is no longer needed once the MR/PR is merged: offer to remove it (from the main checkout) with `git worktree remove <worktree>` (`--force` only if it still has changes the user confirms discarding). Do not remove it if the MR/PR is not yet merged, or without confirmation.

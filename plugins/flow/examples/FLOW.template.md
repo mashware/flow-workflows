@@ -28,6 +28,10 @@ Branch and Pull/Merge Request conventions.
 - `squash:`           # `true` | `false` (squash-before-merge).
 - `request_sections:` # MR/PR description sections, one per line with `- `. Empty = free-form.
 - `predeploy_gate:`   # `true` if this repo runs schema SQL manually on the server BEFORE deploying and wants to block the MR/PR until done. Empty/false = no Pre-deploy section or blocking thread.
+- `worktree:`         # `off` (default) | `ask` | `always`. Whether `/feat:start` & `/bug:start` create the new branch as a git worktree instead of switching in place. `ask` = prompt each time; `always` = always; `off`/empty = never (in-place, current behavior).
+- `worktree_path:`    # path template for the worktree dir. `{branch}` and `{repo}` are substituted. Empty with `worktree`≠`off` = `.worktrees/{branch}` at the repo root (git-ignore it). e.g. `.worktrees/{branch}` or `../{repo}.worktrees/{branch}`.
+- `worktree_try_cmd:` # optional project command that points the MAIN checkout at a branch and re-syncs its environment (e.g. the DB), to test a worktree branch without a full separate env. `{BRANCH}` is substituted. e.g. `make wt-try branch={BRANCH}`. Empty = not offered.
+- `worktree_back_cmd:`# the command that undoes `worktree_try_cmd` (returns to the previous branch and re-syncs). e.g. `make wt-back`. Empty = not offered. Only meaningful if `worktree_try_cmd` is set.
 
 ## quality
 Repo commands for quality gates. **Empty = the command auto-discovers** (Makefile,

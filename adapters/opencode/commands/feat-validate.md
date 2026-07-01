@@ -25,6 +25,8 @@ Launch **in parallel**:
 
 ## 3. Manual edge cases
 
+If `git.worktree_try_cmd` is set in `FLOW.md` (a project helper that points the main environment at a branch and re-syncs it, e.g. the DB), offer it once before verifying — useful when the work was developed in a worktree and the runnable env lives in the main checkout: "to test this branch against the synced environment, run `<worktree_try_cmd with {BRANCH}=meta.branch>`; `<git.worktree_back_cmd>` to return afterwards." Suggest it, don't run it yourself and don't force it. If the key is empty, skip silently.
+
 If the feature has a UI or critical flows:
 - If it touches payments: test with the test cards or credentials appropriate for the provider (see conventions in `FLOW.md` section `conventions` or a specific skill if one exists).
 - If it touches workers/queues: make sure no jobs are stuck in the failure queue. If there are and they're not yours, don't touch them here.

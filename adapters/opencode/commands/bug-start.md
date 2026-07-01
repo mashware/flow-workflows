@@ -46,6 +46,8 @@ git switch --create $ARGUMENTS-fix-slug --no-track <git.default_base>   # indepe
 
 If the current branch is not the main base, ask the user for the base (`git.default_base` recommended, or stacked on top of the current one in train mode → record it as `stacked_on`). Create only after user confirmation. First push always `git push -u origin HEAD` (in `ship`), never to the main base.
 
+**Worktree mode** (same as `/feat-start` §5.0/§5.4): read `git.worktree` from FLOW.md. If `always` (or `ask` and the user chooses it), create the branch as a worktree instead of switching in place — `git worktree add --no-track -b <branch> <worktree-path> <git.default_base>`, path from `git.worktree_path` (empty → `.worktrees/<branch>`, git-ignore it). Don't `git switch`; the fix runs from the worktree (`cd <worktree-path>`). Record the resolved path in `meta.json.worktree`. If `off`/empty, in place as above and `worktree` is `null`.
+
 ## 4. Write artifacts
 
 `.claude/work/$ARGUMENTS/meta.json`:
@@ -56,6 +58,7 @@ If the current branch is not the main base, ask the user for the base (`git.defa
   "title": "<symptom from tracker>",
   "branch": "<branch created in §3>",
   "stacked_on": null,
+  "worktree": "<worktree path if created in §3, else null>",
   "size": "<XS|S|M|L>",
   "phase": "context",
   "phases_done": ["context"],
