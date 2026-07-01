@@ -1,6 +1,6 @@
 # flow → opencode adapter
 
-This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 22 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
+This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 24 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
 
 ## Requirements
 
@@ -86,7 +86,10 @@ Once installed, invoke them with `/` in opencode:
 | `/work-status` | Overview of all open work items |
 | `/work-resume` | Resume work on the current branch |
 | `/work-abandon` | Close a work item without shipping |
+| `/work-try <branch>` | Point the main checkout at a branch to test it (and back), re-syncing per FLOW.md |
 | `/work-watch <TICKET> [duration]` | Monitor observability after a deployment (one cycle) |
+| `/flow-init` | Generate/update the repo's FLOW.md |
+| `/flow-config` | Show the repo's effective FLOW.md config and validate it |
 | `/save-knowledge` | Consolidate findings into the domain-memory store |
 
 ## Subagent configuration

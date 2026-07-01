@@ -136,3 +136,4 @@ With a "all threads resolved before merge" policy, the MR/PR cannot be merged or
 - Update `meta.json`: `phase = "done"`, add `ship` to `phases_done`.
 - Summarize: ticket, MR/PR URL, regression test added.
 - Ask whether to archive `.claude/work/<TICKET>/` to `.claude/work/_archive/`.
+- If `meta.json.worktree` is not null, offer to remove the worktree once the MR/PR is merged: `git worktree remove <worktree>` (`--force` only if it still has changes the user confirms discarding). Not before merge, not without confirmation.

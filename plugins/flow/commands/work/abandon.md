@@ -44,6 +44,7 @@ Write `.claude/work/<TICKET>/99-abandoned.md`:
 - Phase reached: <phase>
 - Completed phases: <phases_done>
 - Branch: <branch>
+- Worktree: <meta.worktree path, or "none"> — <removed / kept>
 - Commits on branch: <git log --oneline <base>..HEAD | wc -l>
 - Is there unmerged code?: yes / no
 
@@ -69,6 +70,8 @@ Ask the user what to do with the branch:
 - **Delete it locally** (if there is nothing worth keeping): `git checkout <base> && git branch -D <branch>`. **Only if the user confirms** — this is destructive.
 - **Leave it** (in case the topic comes back): do nothing.
 - **Push it to the remote as a reference** (rare but valid if there is valuable analysis).
+
+If `meta.json.worktree` is not null, the branch is checked out in a worktree and cannot be deleted while it exists. On **Delete it locally**, first remove the worktree (from the main checkout, not from inside it): `git worktree remove <worktree>` (add `--force` only if it has changes the user confirms discarding), then `git branch -D <branch>`. On **Leave it**, you may still offer to remove just the worktree directory (`git worktree remove <worktree>`) while keeping the branch. Note what was done in `99-abandoned.md`.
 
 Do not decide alone — ask.
 

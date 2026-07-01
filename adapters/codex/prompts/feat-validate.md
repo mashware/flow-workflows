@@ -21,6 +21,8 @@ Launch in **parallel**:
 
 ## 3. Manual edge cases
 
+If `meta.json.worktree` is not null (the work was developed in a worktree and the runnable env lives in the main checkout), offer once before verifying: "to test this branch against the main environment, run `/work-try <meta.branch>` (it switches the main checkout and re-syncs per `git.worktree_resync`), and `/work-try --back` to return afterwards." Suggest it, don't run it yourself, and don't force it.
+
 If the feature has a user interface or critical flows:
 - If it touches payments: test with the appropriate test cards or credentials for the provider (see the `stripe:test-cards` skill if using Stripe).
 - If it touches workers/queues: make sure no jobs are stuck in the failure queue. If there are and they're not yours, don't touch them here.
