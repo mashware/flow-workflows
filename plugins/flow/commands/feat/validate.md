@@ -36,7 +36,7 @@ The gate of this phase is not "suite green" — it is "every acceptance criterio
 
 ## 4. Assisted manual verification (for `needs-manual` criteria)
 
-If `git.worktree_try_cmd` is set in `FLOW.md` (a project helper to point the main environment at a branch and re-sync it, e.g. the DB), offer it once before verifying — useful when the work was developed in a worktree and the runnable env lives in the main checkout: "to test this branch against the synced environment, run `<worktree_try_cmd with {BRANCH}=meta.branch>`; `<git.worktree_back_cmd>` to return afterwards." Suggest it, do not run it yourself and do not force it. If the key is empty, skip silently.
+If `meta.json.worktree` is not null (the work was developed in a worktree and the runnable env lives in the main checkout), offer once before verifying: "to test this branch against the main environment, run `/flow:work:try <meta.branch>` (it switches the main checkout and re-syncs per `git.worktree_resync`), and `/flow:work:try --back` to return afterwards." Suggest it, do not run it yourself and do not force it.
 
 For criteria that no automated test can prove now, verify them **together with the user**, one or a few at a time, keeping the running register — the user runs the flow, you keep the checklist until every criterion is accounted for:
 

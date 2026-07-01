@@ -8,7 +8,7 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 - Load `meta.json`. Require `fix` in `phases_done`.
 - If `size` is `XS`, suggest jumping to `/bug-review` unless the user insists.
-- If `git.worktree_try_cmd` is set in `FLOW.md` and the fix was developed in a worktree (`meta.json.worktree` not null), offer it once so the user can test this branch against the synced environment: "run `<worktree_try_cmd with {BRANCH}=meta.branch>`; `<git.worktree_back_cmd>` to return." Suggest it, don't run it yourself. Empty key = skip silently.
+- If the fix was developed in a worktree (`meta.json.worktree` not null), offer once so the user can test this branch against the main environment: "run `/work-try <meta.branch>` (switches the main checkout and re-syncs per `git.worktree_resync`); `/work-try --back` to return." Suggest it, don't run it yourself.
 
 ## 2. Work
 

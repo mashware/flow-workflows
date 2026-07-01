@@ -94,9 +94,11 @@ next step, and `/flow:work:resume` picks up the work tied to your current branch
 | Command | What it does |
 |---|---|
 | `/flow:init` | Wizard that generates this repo's `FLOW.md` (auto-detects, asks the minimum) |
+| `/flow:config` | Show the effective `FLOW.md` config: what is set, what is empty (and its fallback), plus validation |
 | `/flow:work:watch` | **Post-deploy watcher** — monitors observability after a deploy, flags regressions (see below) |
 | `/flow:work:status` | Summary of all open work items in `.claude/work/` |
 | `/flow:work:resume` | Resume the work tied to the current branch and suggest the next step |
+| `/flow:work:try` | Point the main checkout at a branch to test it (then `--back`), re-syncing the env per `git.worktree_resync` |
 | `/flow:work:abandon` | Close a work item without shipping (discarded feature, non-bug…) |
 | `/flow:save-knowledge` | Consolidate the branch's findings into the `domain-memory` store |
 
@@ -117,10 +119,10 @@ in `monitor.md`, so on harnesses without in-session scheduling it also works dri
 ## Configuration: `FLOW.md`
 
 A file at the repo root describes your conventions: issue tracker, git host and CLI, optional
-git-worktree mode (`off`/`ask`/`always`, plus optional project "try this branch" helpers),
+git-worktree mode (`off`/`ask`/`always`) and the `worktree_resync` commands `/flow:work:try` runs,
 quality commands (test/lint/static-analysis/DB), role→agent map, code-review panel, per-command
 `notes`, whether you use the [`domain-memory`](https://github.com/mashware/domain-memory) MCP, and
-the observability profile for the watcher. **Anything left empty is auto-detected or asked for** — a
+the observability profile for the watcher. Run `/flow:config` to see your effective config at a glance. **Anything left empty is auto-detected or asked for** — a
 repo with no `FLOW.md` still works, just with more questions. Run `/flow:init` to generate it, or
 copy [`plugins/flow/examples/FLOW.template.md`](plugins/flow/examples/FLOW.template.md) by hand.
 

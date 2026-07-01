@@ -108,6 +108,8 @@ For M/L with multiple MR/PRs, the `build → review → validate → ship` block
 
 - `/work:status` — shows all works in `.claude/work/`, current phase, and divergence with git.
 - `/work:resume` — detects the current branch, reads `meta.json`, recaps, and suggests the next step.
+- `/work:try <branch>` / `/work:try --back` — point the main checkout at a branch to test it against this checkout's environment, then return; re-syncs per `git.worktree_resync` in FLOW.md. Generic (no project Makefile needed); complements worktrees.
+- `/flow:config` — show the effective FLOW.md config (set vs empty-with-fallback) and validate it. Read-only.
 - `/work:watch {TICKET} [30m]` — autopiloted post-deploy monitoring: observes the observability platform (per FLOW.md `observability`) scoped to the change, comparing against a baseline (preceding window + same weekday of the prior week, ratios over counts), and alerts immediately on any regression. External state polling via `ScheduleWakeup`; does not touch code or production.
 
 ## Golden rules

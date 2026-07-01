@@ -6,7 +6,7 @@ Brings the `/feat-*`, `/bug-*`, and `/work-*` workflows from the `flow` plugin t
 
 ```
 adapters/codex/
-├── prompts/              — 22 custom prompts (one per workflow command)
+├── prompts/              — 24 custom prompts (one per workflow command)
 │   ├── feat-start.md
 │   ├── feat-brainstorm.md
 │   ├── feat-design.md
@@ -26,8 +26,10 @@ adapters/codex/
 │   ├── work-README.md
 │   ├── work-resume.md
 │   ├── work-status.md
+│   ├── work-try.md
 │   ├── work-abandon.md
 │   ├── work-watch.md
+│   ├── flow-config.md
 │   └── save-knowledge.md
 ├── config.snippet.toml   — sections to merge into ~/.codex/config.toml
 ├── AGENTS.md             — repo guide that Codex reads as context

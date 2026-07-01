@@ -24,7 +24,7 @@ Launch **in parallel** (or sequentially if not possible):
 
 ## 3. Manual edge cases
 
-If `git.worktree_try_cmd` is set in `FLOW.md` (a project helper to point the main environment at a branch and re-sync it, e.g. the DB), offer it once before verifying — useful when the work was developed in a worktree and the runnable env lives in the main checkout: "to test this branch against the synced environment, run `<worktree_try_cmd with {BRANCH}=meta.branch>`; `<git.worktree_back_cmd>` to return afterwards." Suggest it, do not run it yourself and do not force it. If the key is empty, skip silently.
+If `meta.json.worktree` is not null (the work was developed in a worktree and the runnable env lives in the main checkout), offer once before verifying: "to test this branch against the main environment, run `/work:try <meta.branch>` (it switches the main checkout and re-syncs per `git.worktree_resync`), and `/work:try --back` to return afterwards." Suggest it, do not run it yourself and do not force it.
 
 If the feature has UI or critical flows:
 - If it touches payments: test with the appropriate test cards or credentials for the provider (see `/stripe:test-cards` if using Stripe).
