@@ -44,6 +44,7 @@ Workflows are invoked as custom prompts with the `/` prefix:
 | `/work-try {BRANCH}` | Point the main checkout at a branch to test it (`--back` to return), re-syncing per FLOW.md |
 | `/work-watch {TICKET} [duration]` | Post-deployment monitoring (one cycle) |
 | `/work-abandon` | Close a work without shipping |
+| `/flow-init` | Generate this repo's FLOW.md (auto-detects, asks the minimum) |
 | `/flow-config` | Show this repo's effective FLOW.md config and validate it (read-only) |
 | `/save-knowledge` | Consolidate findings to the domain-memory store |
 

@@ -29,6 +29,7 @@ adapters/codex/
 │   ├── work-try.md
 │   ├── work-abandon.md
 │   ├── work-watch.md
+│   ├── flow-init.md
 │   ├── flow-config.md
 │   └── save-knowledge.md
 ├── config.snippet.toml   — sections to merge into ~/.codex/config.toml
