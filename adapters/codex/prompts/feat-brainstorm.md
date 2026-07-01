@@ -40,7 +40,9 @@ Lenses:
 
 Each lens agent receives: the ticket, the path to `.claude/work/<TICKET>/01-context.md`, and the lens assigned. Returns: approach name, what it is (one sentence), affected modules/layers, main risk, why it could be a bad idea.
 
-The synthesizer agent receives the four structured verdicts and orders them from best to worst for THIS case (project fit + simplicity), with an initial recommendation of 2-3 lines of justification.
+Then run a **peer-review round** (the LLM-council step that keeps synthesis honest): relaunch the four lens agents in parallel, each now **seeing all four approaches**, and have each critique the OTHERS from its lens — for every approach the single biggest flaw for THIS project (or "none"), plus which is strongest and which weakest. Grounded in the project; no invented flaws.
+
+The synthesizer agent receives the four approaches **and the four peer-reviews**, orders them from best to worst for THIS case (project fit + simplicity) weighing the surfaced fatal flaws, states where the lenses agreed and where they disagreed, and gives an initial recommendation of 2-3 lines of justification.
 
 Using the result, fill §4 (each approach → one "Option", the synthesis → "Initial recommendation"). If a subagent fails, simply don't include it.
 
@@ -76,7 +78,8 @@ Create `.claude/work/<TICKET>/02-brainstorm.md`:
 <bullets>
 
 ## Initial recommendation
-<one option, with 2-3 lines of justification>
+<one option, with 2-3 lines of justification. If the panel ran (§3.A), prefix with a one-line
+"Panel consensus / disagreement:" summarizing where the advisors' peer-review agreed and where it split.>
 ```
 
 ## 5. Emerging questions

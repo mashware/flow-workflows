@@ -32,15 +32,15 @@ Launch 2-3 queries in parallel. Timeout 2 s; if it fails, continue without conte
 - If `meta.json.size` is **M or L**: offer the **parallel-approach panel** with `AskUserQuestion` ("Generate options with a parallel multi-agent panel? Higher token cost, less single-line-of-thought bias."). If accepted → §3.A. If declined → §3.B.
 - If **S** (or the user declined): §3.B directly. The panel is not offered for XS/S — the cost does not justify it.
 
-### 3.A Approach panel (parallel Workflow)
+### 3.A Approach panel (parallel Workflow — LLM-council pattern)
 
-Call the `Workflow` tool. Each agent generates **one** approach from a different angle (in parallel, without seeing each other → real diversity), and a final agent synthesizes and ranks them. Base script:
+Call the `Workflow` tool. This follows the **LLM-council** shape (Karpathy): independent advisors from different angles → a **cross-critique (peer-review)** round → a chairman synthesizes. The peer-review round is what keeps the chairman from ranking on presentation instead of substance: each advisor sees the full set and attacks the others' reasoning before anyone wins. Base script:
 
 ```js
 export const meta = {
   name: 'brainstorm-panel',
-  description: 'Parallel approach panel for a feature + synthesis',
-  phases: [{ title: 'Approaches' }, { title: 'Synthesis' }],
+  description: 'Parallel approach panel for a feature + peer-review + synthesis',
+  phases: [{ title: 'Approaches' }, { title: 'Peer-review' }, { title: 'Synthesis' }],
 }
 const TICKET = args.ticket
 const LENSES = [
@@ -57,21 +57,54 @@ const OPTION = {
   },
   required: ['nombre', 'queEs', 'modulos', 'riesgo', 'porQueMala'],
 }
-const approaches = await parallel(LENSES.map(l => () =>
+const CRITIQUE = {
+  type: 'object',
+  properties: {
+    strongest: { type: 'string' },   // which approach best fits THIS project, from this lens, and why
+    weakest:   { type: 'string' },   // which is worst and why
+    perApproach: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          nombre:    { type: 'string' },
+          fatalFlaw: { type: 'string' },   // the biggest hole this lens sees, or "none"
+        },
+        required: ['nombre', 'fatalFlaw'],
+      },
+    },
+  },
+  required: ['strongest', 'weakest', 'perApproach'],
+}
+// Round 1 — advisors, blind to each other → real diversity.
+const approaches = (await parallel(LENSES.map(l => () =>
   agent(
     `Propose ONE approach to solve ticket ${TICKET} (see project conventions in FLOW.md), from this lens: ${l.p}. ` +
     `Read .claude/work/${TICKET}/01-context.md for context. Do not write code. Be specific about real project modules and layers.`,
     { label: `approach:${l.k}`, phase: 'Approaches', schema: OPTION, model: 'sonnet' }
-  )))
+  )))).filter(Boolean)
+// Round 2 — peer-review. Each advisor now sees ALL approaches and attacks the others from its lens.
+const critiques = (await parallel(LENSES.map(l => () =>
+  agent(
+    `You are the "${l.k}" advisor. Here are ${approaches.length} proposed approaches for ${TICKET}:\n` +
+    `${JSON.stringify(approaches, null, 2)}\n` +
+    `Read .claude/work/${TICKET}/01-context.md. From your lens (${l.p}), critique the OTHER approaches — not your own bias. ` +
+    `For each approach name its single biggest flaw for THIS project (or "none"), and say which is strongest and which weakest. ` +
+    `Be concrete and grounded in the project; do not invent flaws to fill space.`,
+    { label: `peer-review:${l.k}`, phase: 'Peer-review', schema: CRITIQUE, model: 'sonnet' }
+  )))).filter(Boolean)
+// Round 3 — chairman. Synthesizes across proposals AND critiques, surfacing consensus and disagreement.
 const synthesis = await agent(
-  `You are the synthesizer. Here are ${LENSES.length} approaches for ${TICKET}:\n${JSON.stringify(approaches.filter(Boolean), null, 2)}\n` +
-  `Read .claude/work/${TICKET}/01-context.md. Rank from best to worst for THIS case (project fit + simplicity, not generic), ` +
-  `and give an initial recommendation with 2-3 lines of justification. Output markdown.`,
+  `You are the chairman. Approaches for ${TICKET}:\n${JSON.stringify(approaches, null, 2)}\n\n` +
+  `Peer-review from the advisors:\n${JSON.stringify(critiques, null, 2)}\n\n` +
+  `Read .claude/work/${TICKET}/01-context.md. Rank the approaches from best to worst for THIS case (project fit + simplicity, not generic), ` +
+  `weighing the fatal flaws the peer-review surfaced. State explicitly where the advisors AGREED and where they DISAGREED, ` +
+  `then give an initial recommendation with 2-3 lines of justification. Output markdown.`,
   { label: 'synthesis', phase: 'Synthesis', model: 'opus' })
-return { approaches: approaches.filter(Boolean), synthesis }
+return { approaches, critiques, synthesis }
 ```
 
-Pass `args: { ticket: "<TICKET>" }`. With the result, fill §4 (each approach → one "Option", synthesis → "Initial recommendation"). If an approach came back `null` (agent down), simply omit it.
+Pass `args: { ticket: "<TICKET>" }`. With the result, fill §4 (each approach → one "Option", the chairman's consensus/disagreement + recommendation → "Initial recommendation"). Fold each approach's surfaced `fatalFlaw` into its "Why it could be a bad idea" line. If an approach came back `null` (agent down), it is already filtered out; if the whole peer-review round comes back empty, the chairman still synthesizes from the approaches alone.
 
 ### 3.B Single agent (default case)
 
@@ -105,7 +138,8 @@ Create `.claude/work/<TICKET>/02-brainstorm.md`:
 <bullets>
 
 ## Initial recommendation
-<one option, with 2-3 lines of justification>
+<one option, with 2-3 lines of justification. If the panel ran (§3.A), prefix with a one-line
+"Panel consensus / disagreement:" summarizing where the advisors' peer-review agreed and where it split.>
 ```
 
 ## 5. Emerging questions

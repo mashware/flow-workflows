@@ -43,7 +43,9 @@ Launch several subagents via `@name` (per `agents.architecture` and equivalents 
 
 For each lens, the subagent receives: the ticket title, the path to `01-context.md`, and the specific lens. No code is written. Report in markdown: what the approach is, modules/layers affected, main risk, why it could be a bad idea.
 
-Once all approaches are received, **synthesize them yourself** (the main agent): rank from best to worst for THIS case (fit in the project + simplicity, not generically), and give an initial recommendation with 2-3 lines of justification. If a subagent did not respond, simply omit it.
+Once all approaches are received, run a **peer-review round** (the LLM-council step that keeps synthesis from ranking on presentation instead of substance): relaunch the same lens subagents in parallel, now each one **seeing all the approaches**, and ask it to critique the OTHERS from its lens — for each approach the single biggest flaw for THIS project (or "none"), plus which it thinks is strongest and weakest. Grounded in the project; no invented flaws.
+
+Then **synthesize yourself** (the main agent): rank from best to worst for THIS case (fit in the project + simplicity, not generically), weighing the fatal flaws the peer-review surfaced; state explicitly where the advisors agreed and where they disagreed; and give an initial recommendation with 2-3 lines of justification. If a subagent did not respond, simply omit it.
 
 ### 3.B Single subagent (default case)
 
@@ -77,7 +79,8 @@ Create `.claude/work/<TICKET>/02-brainstorm.md`:
 <bullets>
 
 ## Initial recommendation
-<one option, with 2-3 lines of justification>
+<one option, with 2-3 lines of justification. If the panel ran (§3.A), prefix with a one-line
+"Panel consensus / disagreement:" summarizing where the advisors' peer-review agreed and where it split.>
 ```
 
 ## 5. Emerging questions
