@@ -2,15 +2,27 @@
 
 This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 24 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
 
+## Command notation: `:` → `-`
+
+opencode does not support the `:` namespace separator that Claude Code uses, so every command is
+flattened to a hyphenated name. When following the docs or the main README, translate accordingly:
+
+| Claude Code | opencode |
+|---|---|
+| `/flow:init` | `/flow-init` |
+| `/flow:config` | `/flow-config` |
+| `/flow:feat:start` | `/feat-start` |
+| `/flow:bug:diagnose` | `/bug-diagnose` |
+| `/flow:work:status` | `/work-status` |
+
+The logic and prose of each command are identical; only the invocation name changes.
+
 ## Requirements
 
 - opencode installed and configured.
 - A `FLOW.md` file at the root of each repo where you want to use the flows. You can start from the template:
   ```
   ../../plugins/flow/examples/FLOW.template.md
-  ```
-  A filled-in example for a specific project is at:
-  ```
   ```
   If `FLOW.md` does not exist, the commands work with default behavior (they auto-discover repo conventions).
 
@@ -50,6 +62,19 @@ Copy or merge the `opencode.json` into the project root:
 cp /path/to/adapters/opencode/opencode.json .opencode/opencode.json
 # or merge the "mcp" section into the existing opencode.json
 ```
+
+## Autonomy
+
+How far each phase advances on its own is controlled by `autonomy.mode` in `FLOW.md`
+(documented in `../../plugins/flow/examples/FLOW.template.md`):
+
+- `manual` (default) — every phase stops at each decision and only recommends the next command.
+- `guided` — resolves low-risk, unambiguous decisions itself (recorded in the phase artifact) and
+  chains into the next command; still asks at genuine decision points.
+- `auto` — as `guided`, plus auto-resolves the remaining decisions with recorded defaults.
+
+**Hard gates always stop and ask, in every mode:** any push or MR/PR, creating a branch on an
+ambiguous base, DB schema changes/migrations, and a review with high-severity findings.
 
 ## Available commands
 

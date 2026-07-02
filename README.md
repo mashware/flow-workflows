@@ -61,6 +61,13 @@ You don't have to memorize the order — `/flow:work:status` shows every open wo
 next step, and `/flow:work:resume` picks up the work tied to your current branch. Type `/flow` (or
 `/`) for autocomplete.
 
+**Autonomy.** By default each phase stops at every decision and only *recommends* the next command
+(`autonomy.mode: manual` in `FLOW.md`). Set it to `guided` to let a phase resolve low-risk,
+unambiguous choices on its own (recording them in the artifact) and chain into the next command, or
+`auto` to also auto-resolve the remaining decisions. **Hard gates always stop and ask, in every
+mode:** any push or MR/PR, creating a branch on an ambiguous base, DB schema changes/migrations, and
+a review with high-severity findings.
+
 ## Commands
 
 **Feature flow**

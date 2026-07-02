@@ -48,6 +48,7 @@ For each point, use `AskUserQuestion` with options and a recommended value; alwa
 - **MR/PR sections** (`git.request_sections`, or free-form).
 - **Pre-deploy gate** (`git.predeploy_gate`): do you run schema SQL manually on the server before deploying? If yes and you detected a schema diff command, propose `quality.db_diff`.
 - **Agents by role** (`agents.*` and `quality.review_skill`/`reviewers`): optional. Explain that they can be left empty (`general-purpose` is used) and filled in later. If the user has custom agents, collect the names.
+- **Autonomy** (`autonomy.mode`): how much the flow advances on its own. Offer `manual` *(Recommended)* — every phase stops at each decision and only recommends the next command (current behavior) — `guided` — auto-resolves low-risk/unambiguous decisions and chains phases, still asking at real decision points — or `auto` — also auto-resolves the rest with recorded defaults. Explain that the hard gates (push/MR-PR, ambiguous-base branch creation, DB/migrations, high-severity review findings) always stop and ask regardless of the mode, and that it can be changed at any time by editing `FLOW.md`. Empty = `manual`.
 - **Observability** (`observability`): default is **empty = auto-discover** in `/flow:work:watch`. Only collect a profile if the user provides one ready to go.
 
 What was auto-detected in §2 is shown as the default value; the user only corrects what does not fit.
@@ -55,9 +56,9 @@ What was auto-detected in §2 is shown as the default value; the user only corre
 ## 4. Write `FLOW.md`
 
 Generate the file at the repo root with the **same section structure** as
-`examples/FLOW.template.md` (tracker, git, quality, agents, review, conventions, domain_memory,
-observability), filling in what was detected/answered and **leaving empty** the keys the user
-does not want to fix (each command already degrades gracefully on an empty key).
+`examples/FLOW.template.md` (tracker, git, autonomy, quality, agents, review, conventions,
+domain_memory, observability), filling in what was detected/answered and **leaving empty** the keys
+the user does not want to fix (each command already degrades gracefully on an empty key).
 
 ## 5. Close
 

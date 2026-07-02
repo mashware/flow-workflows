@@ -17,7 +17,7 @@ the repo's `FLOW.md` (those are the "empty → fallback" rows).
 - Read `FLOW.md` at the repo root. If it does not exist, say so, explain that every command still
   works by auto-detecting/asking, and suggest `/flow:init` to generate one. Then, so the output is
   still useful, run §2 treating **every** key as empty (all fallbacks).
-- Parse it by section: `tracker`, `git`, `quality`, `agents`, `conventions`, `notes`,
+- Parse it by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `conventions`, `notes`,
   `domain_memory`, `observability`.
 
 ## 2. Effective config (per section)
@@ -50,6 +50,10 @@ Light checks — report problems, never change anything:
 - **Coherence**: `git.worktree` is `ask`/`always` but `git.worktree_path` empty → note the default
   `.worktrees/{branch}` will be used. `git.host` and `git.cli` disagree → flag. `domain_memory.enabled`
   is `true` but the MCP is not available this session → note the domain steps will be skipped.
+- **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and only
+  recommends the next command). If set, echo the mode and remind that the hard gates (push/MR-PR,
+  ambiguous-base branch creation, DB/migrations, high-severity review findings) still stop and ask in
+  every mode. An unrecognized value → flag it and state that `manual` will be assumed.
 
 ## 4. Close
 
