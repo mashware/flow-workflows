@@ -3,7 +3,7 @@
   "name": "flow",
   "displayName": "Flow — guided dev workflows",
   "description": "Guided feat/bug workflows (start→ship), post-deploy monitoring and multi-agent code review, stack-agnostic. Each repo is configured with a FLOW.md at its root.",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "author": {
     "name": "Alberto Vioque",
     "email": "mashware@gmail.com"

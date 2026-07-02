@@ -34,6 +34,21 @@ Branch and Pull/Merge Request conventions.
                       #   - make database-update
                       #   - make frontend
 
+## autonomy
+How much the flow advances on its own vs. stopping to ask you.
+
+- `mode:`             # `manual` (default) | `guided` | `auto`. Empty = `manual`.
+                      #   manual — current behavior: every phase stops at each decision point and, at the
+                      #            end, only recommends the next command (never invokes it).
+                      #   guided — the command resolves low-risk, unambiguous decisions itself with the
+                      #            recommended default (recorded in the phase artifact) instead of asking,
+                      #            still asks at genuine decision points, and chains into the next command.
+                      #   auto   — as guided, plus auto-resolves the remaining decision points with sensible
+                      #            (recorded) defaults, chaining phases without pausing.
+                      # HARD GATES stop and ask in EVERY mode, no exceptions: any push or MR/PR (ship),
+                      # branch creation with an ambiguous base, DB schema changes/migrations, and a review
+                      # with high-severity findings.
+
 ## quality
 Repo commands for quality gates. **Empty = the command auto-discovers** (Makefile,
 npm/composer scripts, etc.) and reports what it uses.
