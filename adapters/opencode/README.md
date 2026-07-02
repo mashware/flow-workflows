@@ -63,6 +63,19 @@ cp /path/to/adapters/opencode/opencode.json .opencode/opencode.json
 # or merge the "mcp" section into the existing opencode.json
 ```
 
+## Autonomy
+
+How far each phase advances on its own is controlled by `autonomy.mode` in `FLOW.md`
+(documented in `../../plugins/flow/examples/FLOW.template.md`):
+
+- `manual` (default) — every phase stops at each decision and only recommends the next command.
+- `guided` — resolves low-risk, unambiguous decisions itself (recorded in the phase artifact) and
+  chains into the next command; still asks at genuine decision points.
+- `auto` — as `guided`, plus auto-resolves the remaining decisions with recorded defaults.
+
+**Hard gates always stop and ask, in every mode:** any push or MR/PR, creating a branch on an
+ambiguous base, DB schema changes/migrations, and a review with high-severity findings.
+
 ## Available commands
 
 Once installed, invoke them with `/` in opencode:
