@@ -2,15 +2,27 @@
 
 This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 24 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
 
+## Command notation: `:` → `-`
+
+opencode does not support the `:` namespace separator that Claude Code uses, so every command is
+flattened to a hyphenated name. When following the docs or the main README, translate accordingly:
+
+| Claude Code | opencode |
+|---|---|
+| `/flow:init` | `/flow-init` |
+| `/flow:config` | `/flow-config` |
+| `/flow:feat:start` | `/feat-start` |
+| `/flow:bug:diagnose` | `/bug-diagnose` |
+| `/flow:work:status` | `/work-status` |
+
+The logic and prose of each command are identical; only the invocation name changes.
+
 ## Requirements
 
 - opencode installed and configured.
 - A `FLOW.md` file at the root of each repo where you want to use the flows. You can start from the template:
   ```
   ../../plugins/flow/examples/FLOW.template.md
-  ```
-  A filled-in example for a specific project is at:
-  ```
   ```
   If `FLOW.md` does not exist, the commands work with default behavior (they auto-discover repo conventions).
 
