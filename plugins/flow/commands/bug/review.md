@@ -15,12 +15,26 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 - Load `meta.json`. Require `fix` in `phases_done`. For `size` ≥ S also require `validate`.
 - If `git diff` shows no changes, warn and stop.
 
-## 2. Run both code reviews
+## 2. Run the code reviews
 
-Launch **both** over the scope of the fix against the base (committed + uncommitted working tree) and **consolidate their findings into a single deduplicated report**:
+Scope for every reviewer below: the fix against the base (committed + uncommitted working tree).
 
-1. **Built-in `code-review`** (the Claude Code one, no prefix). Single pass over the local diff: correctness issues + simplification/efficiency, at high effort.
-2. **Skill `quality.review_skill` from FLOW.md**: invoke it as `<review_skill> branch`. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those agents in parallel as a review panel. If both are empty, use the built-in `code-review` (already launched above).
+### 2.0 Resolve review depth (scale to the work size)
+Read `quality.review_depth` from `FLOW.md` (`proportional` | `full`; empty → `proportional`) and `meta.json.size`. A minimal fix does not need a full specialized panel:
+
+- **`full`** (any size): built-in `code-review` (high) + the project panel. Pre-0.7 behavior; skip the tiering below.
+- **`proportional`** (default), by size:
+  - **XS**: built-in `code-review` **only**, at **medium** effort. No project panel.
+  - **S**: built-in `code-review` at **high** effort. Project panel **only if** the diff touches a **sensitive surface** (auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change); otherwise built-in only.
+  - **M** / **L**: built-in `code-review` (high) + the project panel.
+
+Record in `06-review.md` which tier ran and why. Note fixes skew XS/S, so most fixes get the built-in pass alone.
+
+### 2.1 Launch and consolidate
+Launch the reviewers selected in §2.0 and **consolidate their findings into a single deduplicated report**:
+
+1. **Built-in `code-review`** (the Claude Code one, no prefix), at the effort resolved in §2.0. Single pass over the local diff: correctness issues + simplification/efficiency.
+2. **Project panel** (only when §2.0 selected it): skill `quality.review_skill` from FLOW.md, invoked as `<review_skill> branch`. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those agents in parallel as a review panel. If both are empty, the built-in `code-review` above is the whole review.
 
 Deduplicate overlaps (correctness/simplification flagged by both; count once). Specific focus for the fix beyond generic analysis:
 - The change must genuinely resolve the problem from `02-diagnose.md` / `03-investigation.md`.
@@ -69,6 +83,7 @@ Use the `quality` commands from FLOW.md; if empty, auto-discover:
 # Fix review {TICKET}
 
 ## Summary
+- Review tier: <full | proportional — which reviewers ran and why, per §2.0>
 - Agents launched: …
 - Blockers: N
 - Suggestions: M

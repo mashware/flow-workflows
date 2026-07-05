@@ -29,6 +29,20 @@ Format: `<TICKET> <what it does for the user, in behavioral language> [patch|min
 
 If `git.squash` is `true`, the squash leaves the MR/PR title as the final commit message, so commit message and title coincide.
 
+The `<TICKET>` in the title is for humans and for trackers that link by convention (Jira, Linear). **On GitHub/GitLab a ticket in the title does NOT link the MR/PR to the issue** (it only cross-references in the timeline) — the formal link lives in the body, see below.
+
+### Issue link (in the body — this is what fills the tracker's "Development"/linked panel)
+The link must go in the **body**, and how depends on `tracker.tool`. Decide first whether **this** MR/PR is the one that *completes* the issue: it completes it when, after it, `meta.json.mrs` has **no** remaining `pending`/`in_progress` entries (or there is a single MR/PR). Otherwise it is an **intermediate** train MR/PR.
+
+- **`gh` / `glab`**: add a link line at the top of the body.
+  - Completing MR/PR → `Closes #<N>` (auto-links + auto-closes the issue on merge to the default branch).
+  - Intermediate MR/PR → `Part of #<N>` (references without closing; keeps the issue open for the rest of the train).
+  - `<N>` = the numeric issue id from `meta.json.ticket`.
+  - **GitHub train caveat**: for a stacked MR/PR (target = parent branch, not the default branch) GitHub **ignores** `Closes`/`Part of` for panel/auto-close purposes — the Development-panel link comes from the **linked branch** created in `/feat:start §5.5`. Keep the `Part of #<N>` line anyway for human context, and rely on the branch link for the panel.
+- **`acli` (Jira)**: **add nothing** — Jira's Git integration links via the issue key already present in the branch name and the title prefix.
+- **`linear`**: add `Closes <TICKET>` (Linear id, e.g. `ENG-123`) on the completing MR/PR; nothing on intermediates.
+- **`none` / empty**: nothing to link.
+
 ### Description
 
 **Build the description from the `Brief MR/PR #N` in `05-implementation.md`**, not from the technical design. The brief is already written in business language — that is the right material. If `05-implementation.md` has no Brief (older work), draft one now based on what was actually built.
@@ -92,7 +106,8 @@ Print to the user in this exact format:
 Title: <full title, including [patch|minor|major]>
 Assigned to: <git.assignee from FLOW.md; if empty: "unassigned">
 Squash on merge: <git.squash from FLOW.md>
-Target branch: <git.default_base from FLOW.md>
+Target branch: <git.default_base from FLOW.md, or the parent branch in train mode>
+Issue link: <keyword that will appear in the body, e.g. "Closes #123" / "Part of #123 (intermediate train PR)" / "none — Jira links by title prefix">
 Pre-deploy (manual SQL): <"yes — N statements, a blocking thread will be opened" / "not applicable">
 
 Description:
@@ -153,11 +168,11 @@ If `domain_memory.enabled` is `false` or empty, skip without notifying.
 
 ## 6. Close
 
-Update `meta.json` per scenario:
+### 6.1 Update `meta.json` per scenario
 
-**A) The MR/PR was merged correctly** (normal case):
-- If there are **no** `mrs` or there was only 1: `phase = "done"`, add `ship` to `phases_done`, update `updated_at`.
-- If it is a multi-delivery build: mark the current MR/PR as `merged` (with the final `url`) in `meta.json.mrs`. If there are still `pending` entries, leave `phase = "build"` (the cycle repeats for the next one). If all are `merged`/`closed`/`superseded`, `phase = "done"`.
+**A) The MR/PR was created (and merged, if the flow reached that)** (normal case):
+- If there are **no** `mrs` or there was only 1: once merged, `phase = "done"`, add `ship` to `phases_done`, update `updated_at`.
+- If it is a multi-delivery build: record the current MR/PR's `url` in its `meta.json.mrs` entry. Set its `status` to `merged` **only if the user confirms it was actually merged**; otherwise keep it `in_progress` — **the train does not require the current MR/PR to be merged to proceed**. If there are still `pending` entries, leave `phase = "build"` and go to §6.2 (train continuation). If all entries are `merged`/`closed`/`superseded`, `phase = "done"`.
 
 **B) The MR/PR was closed without merge** (rejected, discarded by reviewers):
 - Mark the current entry as `closed` with a `note` explaining the reason.
@@ -165,6 +180,23 @@ Update `meta.json` per scenario:
 
 **C) The plan changed and this MR/PR is no longer needed**:
 - If coming here because the plan was rethought: mark the entry as `superseded` with `note` pointing to the new MR/PR.
+
+### 6.2 Train continuation (only if `meta.json.mrs` still has `pending` entries)
+
+The whole point of a train is to build the next MR/PR **without waiting for the current one to merge**. So do not stop here to wait for the merge — resolve `git.train_chain` from FLOW.md (`ask` | `always` | `wait`; **empty → derive from `autonomy.mode`**: `manual` → `ask`, `guided`/`auto` → `always`) and act:
+
+- **`wait`**: do not continue now. Leave `phase = "build"` and tell the user to run `/feat:build` once the current MR/PR is merged. This legacy "wait for merge" behavior happens **only** when explicitly configured.
+- **`ask`**: ask with `AskUserQuestion` — "Continue now with the next MR/PR (#\<n+1\> «\<title\>»), stacked on this branch?". If **no** → stop and recommend `/feat:build`. If **yes** → continue as in `always`.
+- **`always`**: continue automatically; record the decision in the artifact, do not prompt.
+
+To continue (both `ask`→yes and `always`):
+1. Create the next branch **stacked on the current branch**, following `/feat:start §5` rules (explicit base = the current branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/feat:start §5.5` (base = the current branch). Record `stacked_on` = current branch in `meta.json`.
+2. Leave `phase = "build"` (`/feat:build §1` will pick the next `pending` MR/PR and mark it `in_progress`).
+3. Chain into `/feat:build`.
+
+This continuation is **not** a hard gate: creating a stacked branch on an explicit, unambiguous parent is safe, and the next real hard gate — creating MR/PR #\<n+1\> in its own `/feat:ship` — will still stop and ask. Never hold the train back solely to wait for a merge unless `train_chain: wait`.
+
+### 6.3 Summary and cleanup
 
 Summarize to the user: ticket, MR/PR URL, changed files, added tests. In multi-delivery, also indicate remaining entries per `meta.json.mrs`.
 

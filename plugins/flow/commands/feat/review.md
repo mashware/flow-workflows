@@ -17,15 +17,29 @@ Mandatory review phase. **`/feat:ship` cannot run without passing through here a
 
 ## 2. Invoke the code reviews
 
-Launch **both** over the same scope and **consolidate their findings into a single deduplicated report**. Scope: the full feature work against the base branch (committed + working tree, because commits are opt-in and there may be uncommitted changes).
+Scope for every reviewer below: the full feature work against the base branch (committed + working tree, because commits are opt-in and there may be uncommitted changes).
 
-1. **Built-in `code-review`** (the Claude Code one, no prefix). Single pass over the local diff: correctness failures + reuse/simplification/efficiency, at high effort.
-2. **Project panel**: read `quality.review_skill` from `FLOW.md`.
+### 2.0 Resolve review depth (scale to the work size)
+Read `quality.review_depth` from `FLOW.md` (`proportional` | `full`; empty → `proportional`) and `meta.json.size`. This decides **what §2.1 launches** — a handful of changed lines does not need a full specialized panel, and running one over a tiny diff is almost pure latency:
+
+- **`full`** (any size): run both the built-in `code-review` (high effort) and the project panel. This is the pre-0.7 behavior; skip the tiering below.
+- **`proportional`** (default), by size:
+  - **XS**: built-in `code-review` **only**, at **medium** effort. Do **not** launch the project panel (`review_skill`/`reviewers`).
+  - **S**: built-in `code-review` at **high** effort. Launch the project panel **only if** the diff touches a **sensitive surface** — authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, or a DB migration/schema change. If it does not, the built-in `code-review` alone is the review.
+  - **M** / **L**: built-in `code-review` (high) + the full project panel (as below).
+
+Record in `06-review.md` which tier ran and why (e.g. "S, no sensitive surface → built-in only").
+
+### 2.1 Launch and consolidate
+Launch the reviewers selected in §2.0 and **consolidate their findings into a single deduplicated report**:
+
+1. **Built-in `code-review`** (the Claude Code one, no prefix), at the effort resolved in §2.0. Single pass over the local diff: correctness failures + reuse/simplification/efficiency.
+2. **Project panel** (only when §2.0 selected it): read `quality.review_skill` from `FLOW.md`.
    - If `review_skill` has a value: invoke that skill passing `03-design.md` as additional context. Scope: `git diff <git.default_base>...HEAD`; if there are uncommitted working tree changes, make sure they are included.
    - If `review_skill` is empty but `quality.reviewers` has entries: launch each agent in that list in parallel as a panel, with the same context and scope.
    - If both are empty: step 1 (built-in `code-review`) already covers this pass; nothing additional is launched.
 
-The two overlap on correctness and simplification: deduplicate those findings (count each once). The specific reviewers from `review_skill` (offensive/defensive security, silent failures, architecture) should not be repeated in later phases.
+When both run, they overlap on correctness and simplification: deduplicate those findings (count each once). The specific reviewers from `review_skill` (offensive/defensive security, silent failures, architecture) should not be repeated in later phases.
 
 ## 3. Targeted reinforcements
 
@@ -142,6 +156,7 @@ Write `.claude/work/<TICKET>/06-review.md`:
 # Code review <TICKET>
 
 ## Summary
+- Review tier: <full | proportional — which reviewers ran and why, per §2.0>
 - Agents launched: …
 - Completeness rounds (M/L): N
 - Critical findings (block ship): N

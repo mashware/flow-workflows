@@ -31,6 +31,15 @@ Format: `{PREFIX}{TICKET} Fix <observable symptom, in plain language> [patch]`.
 
 Fixes are `[patch]` unless they break a contract — in that case reconsider whether it is actually a fix or a versioned feature.
 
+The `{PREFIX}{TICKET}` in the title is for humans / for trackers that link by convention (Jira, Linear). **On GitHub/GitLab a ticket in the title does NOT link the MR/PR to the issue** — that link must live in the body (below).
+
+### Issue link (in the body — fills the tracker's "Development"/linked panel)
+A fix is a single MR/PR that completes the issue, and it targets `git.default_base`, so the closing keyword works directly. Add it at the top of the body per `tracker.tool`:
+- **`gh` / `glab`**: `Closes #<N>` (`<N>` = numeric issue id from `meta.json.ticket`) — auto-links + auto-closes on merge.
+- **`acli` (Jira)**: add nothing — Jira links via the issue key in the branch name and title prefix.
+- **`linear`**: `Closes <TICKET>` (Linear id).
+- **`none` / empty**: nothing.
+
 ### Description
 
 **Build the description from the Brief in `04-fix.md`**, not from previous technical artifacts. If `04-fix.md` has no Brief (old fix), draft one now from the reported symptom.
@@ -99,6 +108,7 @@ Title: <full title, including [patch]>
 Assigned to: <git.assignee from FLOW.md; empty = unassigned>
 Squash: <git.squash from FLOW.md>
 Target branch: <git.default_base>
+Issue link: <keyword that will appear in the body, e.g. "Closes #123" / "none — Jira links by title prefix">
 Pre-deploy (manual SQL): <"yes — N statements, a blocking thread will be opened" / "not applicable">
 
 Description:
