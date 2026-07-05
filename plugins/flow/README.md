@@ -13,7 +13,7 @@ writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
 `examples/FLOW.template.md` to the repo root. Commands read it in their step 0. It covers:
 
 - **tracker**: ticket prefix and how to read a ticket.
-- **git**: host and CLI (GitHub, GitLab, Bitbucket, Azure, Gitea, self-hosted…), term (MR/PR), default base, branch pattern, assignee, squash, description sections, pre-deploy gate.
+- **git**: host and CLI (GitHub, GitLab, Bitbucket, Azure, Gitea, self-hosted…), term (MR/PR), default base, branch pattern, assignee, squash, description sections, pre-deploy gate, train chaining (multi-PR stacked branches).
 - **quality**: test/analysis/style/DB commands for the repo (empty = auto-discover).
 - **agents** / **review**: role→agent map and code-review panel.
 - **conventions**: code conventions the commands must respect (free text).

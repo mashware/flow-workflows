@@ -17,6 +17,7 @@ Implementation phase. Code is written here.
 - For `size` XS/S: allow starting without a design but ask the user for a 2-3 line note on what will be done and save it as a minimal `03-design.md`. There is no MR/PR plan (always 1 MR/PR).
 - Read all prior artifacts.
 - **If `meta.json.mrs` has more than one entry**: identify the first MR/PR with `status: "pending"`. That is the MR/PR for this iteration. If all are `merged`, warn: feature is done, nothing to build. Mark the chosen one as `in_progress` in `meta.json.mrs`.
+  - **Train/stacked**: this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/feat:ship §6.2` creates and links it when it chains here; if you reached this step directly (not via that chain) and you are still on the previous branch, create the next branch now following `/feat:start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/feat:start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
 
 ## 2. Business brief (before typing)
 

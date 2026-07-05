@@ -104,6 +104,15 @@ The first push is **always** explicit to the own branch, never a push that blind
 git push -u origin HEAD    # upstream = origin/<branch-name>, never the main base
 ```
 
+### 5.5 Link the branch to the tracker issue (GitHub only, best-effort)
+**Only if `tracker.tool` is `gh` and the ticket is a numeric GitHub issue.** GitHub does not populate the issue's "Development" panel from a `#N` in the MR/PR title (that is only a timeline cross-reference), and closing keywords in the MR/PR body are **ignored when the PR targets a non-default branch** — which is exactly the train/stacked case. The reliable link is a **linked branch**, registered when the branch is created:
+```bash
+gh issue develop <N> --base <resolved-base> --name <branch-name>   # <N> = numeric issue, <resolved-base> = git.default_base or, in train mode, the parent branch
+```
+This registers `origin/<branch-name>` as a linked branch of issue `<N>` (it creates the remote ref from `<resolved-base>`; the later `git push -u origin HEAD` fast-forwards it with your commits, and the link persists). From then on the branch — and any MR/PR opened from it — shows in the issue's Development panel regardless of the PR's target branch.
+
+Best-effort: if the command fails (branch already on the remote, permissions, older `gh`), **warn and continue** — do not block branch creation. For non-`gh` trackers (`glab`, `acli`/Jira, `linear`) skip this: they link by cross-reference/convention and are covered by the body keyword in `/feat:ship §2`.
+
 ## 6. Write artifacts
 
 Create `.claude/work/$ARGUMENTS/`:

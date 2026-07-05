@@ -98,7 +98,7 @@ The ticket format follows `tracker.prefix` from FLOW.md; if empty, the ticket is
 
 `/feat:start {TICKET}` → `/feat:brainstorm` → `/feat:design` → `/feat:plan` → `/feat:build` → `/feat:review` → `/feat:validate` → `/feat:ship`
 
-For M/L with multiple MR/PRs, the `build → review → validate → ship` block repeats for each MR/PR in the plan. `meta.json.mrs` tracks the state.
+For M/L with multiple MR/PRs, the `build → review → validate → ship` block repeats for each MR/PR in the plan. `meta.json.mrs` tracks the state. In a **train** (stacked branches, `meta.json.stacked_on` set) the next MR/PR is built on top of the previous branch **without waiting for it to merge** — `/feat:ship §6.2` chains into the next `/feat:build` per `git.train_chain` (empty → derived from `autonomy.mode`; only `train_chain: wait` holds for the merge).
 
 ## Full `/bug:*` flow
 
