@@ -18,11 +18,11 @@ Run and infer; show what was found for confirmation/correction:
 - MR/PR sections (git.request_sections, or free-form).
 - Pre-deploy gate (git.predeploy_gate): do you run SQL manually before deploying? If yes, propose quality.db_diff.
 - Agents by role (agents.*, review.*): optional; empty uses the general sub-agent. If the repo has its own agents (.gemini/agents/*.md), collect their names.
-- Observability: empty by default = auto-discover in /work:watch.
+- Observability: empty by default = auto-discover in /flow:work:watch.
 
 ## 4. Write `FLOW.md`
 Generate the file at the repo root with all contract sections (tracker, git, quality, agents, review, conventions, domain_memory, observability), filling in detected/answered values and leaving empty what the user did not set.
 
 ## 5. Close
-Summarize what was configured and what was left empty (= auto-discover). FLOW.md can be committed. Suggest /feat:start or /work:status.
+Summarize what was configured and what was left empty (= auto-discover). FLOW.md can be committed. Suggest /flow:feat:start or /flow:work:status.
 """

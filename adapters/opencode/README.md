@@ -11,9 +11,9 @@ flattened to a hyphenated name. When following the docs or the main README, tran
 |---|---|
 | `/flow:init` | `/flow-init` |
 | `/flow:config` | `/flow-config` |
-| `/flow:feat:start` | `/feat-start` |
-| `/flow:bug:diagnose` | `/bug-diagnose` |
-| `/flow:work:status` | `/work-status` |
+| `/flow:feat:start` | `/flow-feat-start` |
+| `/flow:bug:diagnose` | `/flow-bug-diagnose` |
+| `/flow:work:status` | `/flow-work-status` |
 
 The logic and prose of each command are identical; only the invocation name changes.
 
@@ -83,39 +83,39 @@ Once installed, invoke them with `/` in opencode:
 ### Feature flow
 | Command | Description |
 |---------|-------------|
-| `/feat-start <TICKET>` | Start a new feature |
-| `/feat-brainstorm` | Generate options and risks before designing |
-| `/feat-design` | Design the technical solution |
-| `/feat-plan` | Break the work into independent MRs/PRs |
-| `/feat-build` | Implement following the approved design |
-| `/feat-review` | Mandatory multi-agent code review |
-| `/feat-validate` | Validate tests, edge cases, and integrity |
-| `/feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
+| `/flow-feat-start <TICKET>` | Start a new feature |
+| `/flow-feat-brainstorm` | Generate options and risks before designing |
+| `/flow-feat-design` | Design the technical solution |
+| `/flow-feat-plan` | Break the work into independent MRs/PRs |
+| `/flow-feat-build` | Implement following the approved design |
+| `/flow-feat-review` | Mandatory multi-agent code review |
+| `/flow-feat-validate` | Validate tests, edge cases, and integrity |
+| `/flow-feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
 
 ### Bug flow
 | Command | Description |
 |---------|-------------|
-| `/bug-start <TICKET>` | Start the bug flow |
-| `/bug-diagnose` | Reproduce the failure and scope what is broken |
-| `/bug-investigate` | Find the root cause of the failure |
-| `/bug-fix` | Implement the minimal fix |
-| `/bug-validate` | Regression test and verification |
-| `/bug-review` | Multi-agent code review of the fix |
-| `/bug-postmortem` | Lessons learned and offer to save knowledge |
-| `/bug-ship` | Commit, push, MR/PR of the fix |
+| `/flow-bug-start <TICKET>` | Start the bug flow |
+| `/flow-bug-diagnose` | Reproduce the failure and scope what is broken |
+| `/flow-bug-investigate` | Find the root cause of the failure |
+| `/flow-bug-fix` | Implement the minimal fix |
+| `/flow-bug-validate` | Regression test and verification |
+| `/flow-bug-review` | Multi-agent code review of the fix |
+| `/flow-bug-postmortem` | Lessons learned and offer to save knowledge |
+| `/flow-bug-ship` | Commit, push, MR/PR of the fix |
 
 ### Cross-cutting commands
 | Command | Description |
 |---------|-------------|
-| `/work-README` | Guide to the flow system |
-| `/work-status` | Overview of all open work items |
-| `/work-resume` | Resume work on the current branch |
-| `/work-abandon` | Close a work item without shipping |
-| `/work-try <branch>` | Point the main checkout at a branch to test it (and back), re-syncing per FLOW.md |
-| `/work-watch <TICKET> [duration]` | Monitor observability after a deployment (one cycle) |
+| `/flow-work-README` | Guide to the flow system |
+| `/flow-work-status` | Overview of all open work items |
+| `/flow-work-resume` | Resume work on the current branch |
+| `/flow-work-abandon` | Close a work item without shipping |
+| `/flow-work-try <branch>` | Point the main checkout at a branch to test it (and back), re-syncing per FLOW.md |
+| `/flow-work-watch <TICKET> [duration]` | Monitor observability after a deployment (one cycle) |
 | `/flow-init` | Generate/update the repo's FLOW.md |
 | `/flow-config` | Show the repo's effective FLOW.md config and validate it |
-| `/save-knowledge` | Consolidate findings into the domain-memory store |
+| `/flow-save-knowledge` | Consolidate findings into the domain-memory store |
 
 ## Subagent configuration
 
@@ -125,11 +125,11 @@ To get the most out of the system, declare project-specific subagents in `agents
 
 ## Continuous monitoring with work-watch
 
-The `/work-watch` command runs **one cycle** and persists state in `monitor.md`. For continuous monitoring, set up a cron job:
+The `/flow-work-watch` command runs **one cycle** and persists state in `monitor.md`. For continuous monitoring, set up a cron job:
 
 ```bash
 # Example: monitor every 5 minutes (adjust the path and ticket)
-*/5 * * * * cd /path/to/repo && opencode run -p "/work-watch PROJ-XXXXX"
+*/5 * * * * cd /path/to/repo && opencode run -p "/flow-work-watch PROJ-XXXXX"
 ```
 
 See `PRIMITIVES.md` for more details on this difference from the original plugin.

@@ -1,0 +1,100 @@
+description = "Multi-agent code review of the fix before shipping"
+
+prompt = """
+# `/flow:bug:review`
+
+Mandatory code review of the fix.
+
+## 1. Pre-flight
+
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+
+- Load `meta.json`. Require `fix` in `phases_done`. For `size` ≥ S also require `validate`.
+- If `git diff` shows no changes, warn and stop.
+
+## 2. Run both code reviews
+
+Launch **both** over the scope of the fix against the base (committed + uncommitted working tree) and **consolidate their findings into a single deduplicated report**:
+
+1. **Built-in code-review** (if available in the environment). Single pass over the local diff: correctness bugs + simplification/efficiency, at high effort.
+2. **Skill `quality.review_skill` from FLOW.md**: invoke it if available. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those agents in parallel (or sequentially) as a review panel. If both are empty, use the built-in code-review (already launched above).
+
+Deduplicate overlaps (correctness/simplification flagged by both; count once). Fix-specific focus on top of the generic analysis:
+- The change must actually resolve the issue from `02-diagnose.md` / `03-investigation.md`.
+- There must be no expanded scope (hidden refactor). If there is, list it.
+- The regression test from `05-validation.md` must cover the case.
+
+Pass as context: `03-investigation.md` and `04-fix.md`.
+
+## 3. Area-specific reinforcements
+
+Only what the skill in §2 does not already cover. Additionally launch in parallel (or sequentially) if applicable:
+
+- DB / queries → `agents.performance` agent from FLOW.md; if empty, use a generic agent with a performance role in the prompt.
+- Workers / dead-letter queue → `agents.queues` agent from FLOW.md to confirm the fix prevents recurrence; if empty, use a generic agent with a messaging role in the prompt.
+
+## 4. Over-engineering audit (fit + YAGNI)
+
+A fix can also sneak in excessive defenses ("while fixing this, I'll add a retry/guard/fallback just in case"). Review the diff for new defensive mechanisms (validation, guard, retry, lock, fallback, cache, idempotency, circuit breaker):
+
+- For each one: *"what real and present scenario in the project justifies it?"*. Verify against the code — can the flow actually reach that state, or is there something that already prevents it? If `domain_memory.enabled`, consult `mcp__domain-memory__search_knowledge` if it depends on domain rules.
+- A fix must be **minimal**: anything that does not directly address the root cause in `03-investigation.md` and does not respond to a present scenario is excess. Add to Blockers with a proposed removal.
+
+## 4.5. Completeness check (M/L, no loop)
+
+A fix is minimal by design (§4), so **one** check is enough here, no loop. **M/L only**: after consolidating findings from §2-§3, compare `git diff --stat <git.default_base>...HEAD` against what was reviewed. If any changed file in the fix received no reviewer attention, give it a targeted pass with the applicable reviewer and merge. If the diff is small (normal for a fix), this resolves in seconds or does not apply.
+
+## 5. Adversarial verification of findings (parallel subagents, optional M/L)
+
+Same as `/flow:feat:review` §6: if `meta.json.size` is **M or L** and there are **≥ 4** findings across blockers and suggestions, ask the user directly in text whether they want to filter them with a parallel skeptic panel (3 skeptics per finding, refute-by-default, survives if <2 refute it). Discarded findings are removed from the list and noted in the output under "Discarded by verification" with the reason. Not offered for XS/S or with fewer than 4 findings.
+
+## 6. Quality gates
+
+Use the `quality` commands from FLOW.md; if empty, auto-discover:
+
+```
+<quality.style_fix>
+<quality.static_analysis>
+<quality.test_one> (regression test)
+```
+
+## 7. Output
+
+`.claude/work/<TICKET>/06-review.md`:
+
+```markdown
+# Fix review {TICKET}
+
+## Summary
+- Agents launched: …
+- Blockers: N
+- Suggestions: M
+
+## Does the fix actually resolve the bug?
+- Yes / No / Partial — explain
+
+## Is there expanded scope outside the bug?
+- Yes (list and propose moving to another ticket) / No
+
+## Over-engineering (fit + YAGNI)
+- New defensive mechanisms in the fix: <list, or "none">
+- Without a real scenario to justify them: <list, or "none">
+
+## Is the regression test adequate?
+- Yes / No (what is missing)
+
+## Discarded by adversarial verification
+<only if §5 was run; refuted findings with their reason, or "not applicable">
+
+## Blockers
+1. [file:line] …
+
+## Suggestions
+1. …
+```
+
+## 8. Close
+
+- With blockers: `phase` stays at `validate`. Iterate.
+- Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/flow:bug:postmortem` (M/L) or `/flow:bug:ship` (XS/S).
+"""

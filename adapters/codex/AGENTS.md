@@ -23,30 +23,30 @@ Workflows are invoked as custom prompts with the `/` prefix:
 
 | Command | Description |
 |---------|-------------|
-| `/feat-start {TICKET}` | Start a new feature |
-| `/feat-brainstorm` | Generate options and risks before designing |
-| `/feat-design` | Technical design (no code) |
-| `/feat-plan` | Split work into independent MRs/PRs (M/L) |
-| `/feat-build` | Implement the feature |
-| `/feat-review` | Mandatory multi-agent code review |
-| `/feat-validate` | Validate tests, edge cases, and integrity |
-| `/feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
-| `/bug-start {TICKET}` | Start a bug |
-| `/bug-diagnose` | Reproduce the failure and delimit what is broken |
-| `/bug-investigate` | Find the root cause |
-| `/bug-fix` | Apply the minimal fix |
-| `/bug-validate` | Regression test and verification |
-| `/bug-review` | Code review of the fix |
-| `/bug-postmortem` | Lessons learned (M/L) |
-| `/bug-ship` | Commit, push, MR/PR of the fix |
-| `/work-status` | Overview of all open work |
-| `/work-resume` | Resume work on the current branch |
-| `/work-try {BRANCH}` | Point the main checkout at a branch to test it (`--back` to return), re-syncing per FLOW.md |
-| `/work-watch {TICKET} [duration]` | Post-deployment monitoring (one cycle) |
-| `/work-abandon` | Close a work without shipping |
+| `/flow-feat-start {TICKET}` | Start a new feature |
+| `/flow-feat-brainstorm` | Generate options and risks before designing |
+| `/flow-feat-design` | Technical design (no code) |
+| `/flow-feat-plan` | Split work into independent MRs/PRs (M/L) |
+| `/flow-feat-build` | Implement the feature |
+| `/flow-feat-review` | Mandatory multi-agent code review |
+| `/flow-feat-validate` | Validate tests, edge cases, and integrity |
+| `/flow-feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
+| `/flow-bug-start {TICKET}` | Start a bug |
+| `/flow-bug-diagnose` | Reproduce the failure and delimit what is broken |
+| `/flow-bug-investigate` | Find the root cause |
+| `/flow-bug-fix` | Apply the minimal fix |
+| `/flow-bug-validate` | Regression test and verification |
+| `/flow-bug-review` | Code review of the fix |
+| `/flow-bug-postmortem` | Lessons learned (M/L) |
+| `/flow-bug-ship` | Commit, push, MR/PR of the fix |
+| `/flow-work-status` | Overview of all open work |
+| `/flow-work-resume` | Resume work on the current branch |
+| `/flow-work-try {BRANCH}` | Point the main checkout at a branch to test it (`--back` to return), re-syncing per FLOW.md |
+| `/flow-work-watch {TICKET} [duration]` | Post-deployment monitoring (one cycle) |
+| `/flow-work-abandon` | Close a work without shipping |
 | `/flow-init` | Generate this repo's FLOW.md (auto-detects, asks the minimum) |
 | `/flow-config` | Show this repo's effective FLOW.md config and validate it (read-only) |
-| `/save-knowledge` | Consolidate findings to the domain-memory store |
+| `/flow-save-knowledge` | Consolidate findings to the domain-memory store |
 
 ## Artifact structure
 

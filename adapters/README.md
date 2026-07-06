@@ -6,9 +6,9 @@ The `flow` plugin (in `../plugins/flow`) is for **Claude Code**. These adapters 
 
 | Harness | Commands | Subagents | MCP | Autopilot watch |
 |---|---|---|---|---|
-| **opencode** | `commands/*.md` (`/feat-start`) | `agents/*.md` `mode:subagent`, `@name` | `opencode.json` | cron + `opencode run -p` |
-| **Gemini CLI** | `commands/**/*.toml` (`/feat:start`) | `.gemini/agents/*.md`, `@name` | `settings.json` `mcpServers` | cron + `gemini -p` |
-| **Codex CLI** | `prompts/*.md` (`/feat-start`) | `[agents.*]` in `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
+| **opencode** | `commands/*.md` (`/flow-feat-start`) | `agents/*.md` `mode:subagent`, `@name` | `opencode.json` | cron + `opencode run -p` |
+| **Gemini CLI** | `commands/**/*.toml` (`/flow:feat:start`) | `.gemini/agents/*.md`, `@name` | `settings.json` `mcpServers` | cron + `gemini -p` |
+| **Codex CLI** | `prompts/*.md` (`/flow-feat-start`) | `[agents.*]` in `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
 
 ## Install
 
@@ -31,7 +31,7 @@ observability, and the subagent map for YOUR project.
   all three harnesses support them; only the declaration format changes.
 - **Trimmed** (see each adapter's `PRIMITIVES.md`):
   - **`AskUserQuestion`**: none of them have a structured menu UI → becomes a plain text question.
-  - **Autopilot for `/work:watch`**: no in-session re-wakeup → replaced by **OS cron +
+  - **Autopilot for `/flow:work:watch`**: no in-session re-wakeup → replaced by **OS cron +
     headless execution**. The command runs ONE cycle and exits; state lives in `monitor.md`,
     which each cycle re-reads. It works, but the trigger is external, not the session itself.
 

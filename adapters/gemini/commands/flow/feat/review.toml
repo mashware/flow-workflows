@@ -1,0 +1,154 @@
+description = "Mandatory multi-agent code review before shipping"
+
+prompt = """
+# `/flow:feat:review`
+
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+
+Mandatory review phase. **`/flow:feat:ship` is not run without passing through here and resolving blockers.**
+
+## 1. Pre-flight
+
+- Load `meta.json`. Require `build` in `phases_done`. If not, send the user to `/flow:feat:build` and stop.
+- Check that `git diff` has real changes. If not, warn and stop.
+
+## 2. Run the code reviews
+
+Launch **both** over the same scope and **consolidate their findings into a single deduplicated report**. Scope: the complete feature work against the base branch (committed + working tree, because commits are opt-in and there may be uncommitted changes).
+
+1. **Built-in code-review** (if available in the environment). Single pass over the local diff: correctness bugs + reuse/simplification/efficiency, at high effort.
+2. **Project panel**: read `quality.review_skill` from `FLOW.md`.
+   - If `review_skill` has a value: invoke that skill, passing `03-design.md` as additional context. Scope: `git diff <git.default_base>...HEAD`; if there are uncommitted working tree changes, make sure they are included.
+   - If `review_skill` is empty but `quality.reviewers` has entries: launch each agent in that list in parallel (or sequentially) as a panel, with the same context and scope.
+   - If both are empty: step 1 already covers this pass; do not launch anything additional.
+
+Both overlap on correctness and simplification: deduplicate those findings (count once). The specific reviewers that `review_skill` contributes (offensive/defensive security, silent failures, architecture) do not repeat in later phases.
+
+## 3. Area-specific reinforcements
+
+Only what the skill in §2 does **not** already cover. If the feature touches specific areas, additionally launch **in parallel** (or sequentially):
+
+- DB / heavy queries → use the `agents.performance` agent from `FLOW.md` on the changed files; if empty, skip this reinforcement.
+- Workers / message queues → use the `agents.queues` agent from `FLOW.md` to verify there is no `flush()` in a loop and that workers are registered with the project convention (see `FLOW.md` section `conventions`); if empty, skip this reinforcement.
+- Frontend → if there are changes in UI code, use the `agents.frontend` agent from `FLOW.md`; if frontend tests are also affected, also use `agents.frontend_test`; if either is empty, skip that reinforcement.
+
+## 3.5. Completeness sweep (anti-abandonment, M/L only)
+
+A reviewer with a large diff tends to **give up early**: covers the obvious parts of the first files, summarizes the rest as "no issues", and declares done. This pass corrects that structurally. **Only if `meta.json.size` is M or L** (for XS/S the diff fits in a single pass and this adds no value).
+
+Loop, maximum **2 rounds**:
+
+1. **Worklist**: `git diff --stat <git.default_base>...HEAD` → list of changed files/areas.
+2. **Coverage map**: from the consolidated findings of §2-§3, mark which files/areas received at least one finding or were explicitly examined.
+3. **Completeness critic (1 agent, blinded)**: launch it as a generic agent (with more reasoning capacity if possible) passing **only** two things: the full list of diff files (step 1) and, for each reviewer from §2-§3, one line on what area it covered. **Do not** pass the findings in detail or the design — its only job is to detect gaps, not to comment on what was already seen. Prompt:
+
+   > You are a coverage auditor for a code review. I give you (1) the list of files changed in this diff and (2) a one-line summary per reviewer of what area each one covered. Your only task: name the files or areas in the diff that **no** reviewer examined, and any claim a reviewer accepted as correct without verifying. Do not comment on existing findings. Output: list of concrete gaps (`file/area` + why it deserves a second look) or exactly "none". Under 150 words.
+
+4. **If it names fresh gaps**: relaunch a targeted round **only on those files/areas** with the `quality.review_skill` reviewers that apply (scope their paths to the gaps). Merge new findings and deduplicate against already consolidated ones.
+5. **Repeat 2-4** until a round returns "none" fresh gaps **or** 2 rounds have been reached.
+6. **No silent truncation**: if after 2 rounds the critic still points to uncovered areas, **list them literally** in the output under "Areas not covered after 2 rounds" with their reason. Better to declare the limit than to appear to have total coverage.
+
+Fresh findings from this sweep enter the normal flow: they go through §4 (over-engineering), §5 (contracts), and §6 (adversarial verification) like any other.
+
+## 4. Over-engineering audit (fit + YAGNI)
+
+**Second barrier against over-engineering** (the first is the challenger in `/flow:feat:design`). Independent of the multi-agent code review: here the diff is examined for what is **excess**, not what is missing.
+
+1. **Locate every defensive mechanism in the diff**: validation, guard, retry, lock, fallback, cache, idempotency, circuit breaker, queue, flag.
+2. **For each one, find its row** in the "Defensive mechanisms and their justification" table of `03-design.md`.
+   - **If it has no row**: blocker. It slipped through without passing the design filter. Question: what real and present scenario in the project justifies it?
+   - **If it has a row but the scenario is hypothetical** ("just in case", "could happen that…", "in the future"): blocker of type "excess".
+3. **Verify the scenario against the code, not on paper**: can the flow actually reach that state? is there an upstream that already prevents it? a quota/constraint that already limits it? is the mechanism redundant with something that already exists? If `domain_memory.enabled` is `true`, consult `mcp__domain-memory__search_knowledge` if the scenario depends on domain rules.
+4. **Key question for each piece**: *"if I remove this, what breaks in the project — today, not in a hypothetical future?"*. If the honest answer is "nothing that can actually happen", it is an over-engineering finding.
+
+"Excess" findings go to Blockers with a concrete proposal: "remove X — it protects against Y, which does not occur because Z (evidence)".
+
+## 5. Double-blind contract verification
+
+If `05-implementation.md` has a "Contracts to respect" section, launch a generic agent with a **deliberately blinded** prompt: it receives only two things, nothing more, nothing less.
+
+> You are a contract reviewer. You must say whether the diff fulfills some literal contracts I pass you. **You do not have access to the rest of the design, the controller context, the brief, or the implementation notes.** Only:
+>
+> 1. **Contracts to respect** (copied verbatim from the design):
+>    <PASTE here the "Contracts to respect" section of `05-implementation.md` as-is, without reformatting>
+>
+> 2. **Diff of relevant files**: the shape constructions (JSON arrays, JsonSerializable, events, headers, routes, columns, metrics) from the changed files:
+>    <PASTE here only the diff hunks that touch shape construction, not the full file>
+>
+> Your only task: for **each contract** in block 1, tell me whether the code in block 2 produces **exactly** that shape — key by key, nesting by nesting, same case, same singular/plural. Output: table `| Contract | Matches (yes/no) | If no: what differs |`. Under 200 words. Do not rationalize mismatches ("maybe they meant X"): if it differs, say so.
+
+Why blinded: if you pass the full code or full design, the agent rationalizes the mismatch by reading nearby justifications. By blinding it to "literal contract vs what the diff emits", the comparison stays textual and does not self-contaminate.
+
+Any "no" in the table → blocker. Pass it to the output as a broken-contract finding with a concrete adjustment proposal.
+
+If `05-implementation.md` has no "Contracts to respect" (build recorded "N/A"), skip this step.
+
+## 6. Adversarial verification of findings (parallel subagents, optional M/L)
+
+Reviewers tend to **over-report**: a "plausible" finding is not always real, and fixing false positives costs time and can sometimes worsen the code. If `meta.json.size` is **M or L** and the sum of blockers + suggestions from §2-§5 is **≥ 4**, ask the user directly in text whether they want to filter them ("Verify findings with a parallel skeptic panel? Discard false positives before you go fix them."). If they accept, launch several subagents in parallel (or sequentially), one per finding:
+
+Each subagent receives: file, problem description, fix proposal, and instructions to try to REFUTE it — read the actual code and say whether the problem is NOT real (refuted=true) or is (refuted=false). When in doubt, refute — the burden of proof is on the finding. Launch 3 independent skeptics per finding; if 2 or more refute it, the finding is discarded.
+
+Discarded findings are removed from the blockers/suggestions list — note them in the output under "Discarded by verification" with the reason, so there is a trace of what was filtered and why. Confirmed ones continue to the normal output. Not offered for XS/S or with fewer than 4 findings: the cost does not justify it.
+
+## 7. Local quality gates
+
+Read `quality.*` from `FLOW.md`. If empty, auto-discover the equivalent commands (Makefile, npm/composer scripts) and report what you use.
+
+Launch in parallel (in the background if they take time):
+- `quality.style_fix`
+- `quality.static_analysis`
+- `quality.test_one` (if there are new tests, with the appropriate filter)
+
+Collect the results.
+
+## 8. Output
+
+Write `.claude/work/<TICKET>/06-review.md`:
+
+```markdown
+# Code review <TICKET>
+
+## Summary
+- Agents launched: …
+- Completeness rounds (M/L): N
+- Critical findings (block ship): N
+- Suggestion findings: M
+
+## Areas not covered after 2 rounds
+<only if §3.5 still had gaps after exhausting the limit; literal list with reason, or "none">
+
+## Double-blind contract verification
+- Contracts compared: N
+- Mismatches: <list or "none">
+
+## Over-engineering (fit + YAGNI)
+- Defensive mechanisms in the diff: <list>
+- Without justification in `03-design.md` or with a hypothetical scenario: <list, or "none">
+- Proposed removal: <what to remove and why, or "nothing to remove">
+
+## Discarded by adversarial verification
+<only if §6 was run; list of refuted findings with their reason, or "not applicable">
+
+## Blockers (must-fix)
+1. [file:line] description + concrete proposal
+
+## Suggestions (nice-to-have)
+1. [file:line] description
+
+## Quality gates
+- style_fix: ✅ / ❌
+- static_analysis: ✅ / ❌
+- modified tests: ✅ / ❌
+
+## Next step
+<if there are blockers: "resolve and return to /flow:feat:review">
+<if not: "/flow:feat:validate">
+```
+
+## 9. Close
+
+- If there are blockers: **do not advance `phase`**. Leave `phase = "build"` and the user resolves them.
+- If no blockers: `phase = "review"`, add to `phases_done`.
+- Summary to the user: findings and next step.
+"""

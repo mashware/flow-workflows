@@ -30,7 +30,7 @@ startup_timeout_sec = 10
 # ──────────────────────────────────────────────────────────────────────────────
 # Subagents (agents)
 # ──────────────────────────────────────────────────────────────────────────────
-# The /feat-* and /bug-* flows delegate work to subagents whose names come
+# The /flow-feat-* and /flow-bug-* flows delegate work to subagents whose names come
 # from the `agents` and `review` map in FLOW.md. Each FLOW.md entry such as
 # agents.architecture = "my-architect" is declared here as [agents.my-architect].
 #
