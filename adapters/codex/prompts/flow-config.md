@@ -1,6 +1,6 @@
 # flow-config
 
-Read-only. Shows what the `/feat-*`, `/bug-*`, and `/work-*` commands will actually use in this repo,
+Read-only. Shows what the `/flow-feat-*`, `/flow-bug-*`, and `/flow-work-*` commands will actually use in this repo,
 so you don't have to open `FLOW.md` and cross-check it against the template by hand. **Writes nothing** —
 to change the config use `/flow-init` or edit `FLOW.md`.
 
@@ -24,7 +24,7 @@ For **every** documented key in `FLOW.template.md`, print one row:
 - **empty / absent** → show `(empty → <what happens>)`, taking the "what happens" from that key's comment
   in the template (e.g. `quality.test` empty → "auto-discover from Makefile/npm/composer"; `tracker.tool`
   empty → "manual paste"; `agents.security` empty → "general subagent with the role"; `git.worktree` empty
-  → "off / in-place"; `git.worktree_resync` empty → "`/work-try` only switches, no re-sync"). Never leave a
+  → "off / in-place"; `git.worktree_resync` empty → "`/flow-work-try` only switches, no re-sync"). Never leave a
   reader guessing what an empty key does.
 
 Group the output by section with a short header each, so it reads as a table/scan, not prose. Keep

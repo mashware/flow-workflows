@@ -1,0 +1,116 @@
+description = "Guide to the /feat and /bug flow system"
+
+prompt = """
+# `/flow:feat:*` and `/flow:bug:*` flow system
+
+This system **orchestrates** the subagents and skills that already exist in the project (it does not replace them). Its job is to persist context between phases, prevent each step from starting from scratch, and enforce a code-review gate before closing.
+
+## Per-repo configuration: `FLOW.md`
+
+Place a `FLOW.md` file at the repo root to adapt the plugin to your conventions. It defines the ticket tracker, branch and MR/PR conventions, quality commands, code conventions, the domain-memory MCP, and the observability profile. All commands read this file in their step 0.
+
+You can start from the template at [`examples/FLOW.template.md`](../../examples/FLOW.template.md).
+
+If the file does not exist or a key is empty, each command auto-discovers the value or uses the default behavior described in its corresponding section.
+
+## Principles
+
+- **One folder per ticket**: `.claude/work/{TICKET}/` contains `meta.json` and the markdown artifacts.
+- **Numbered artifacts**: each phase writes a `NN-phase.md` that the next step reads.
+- **`meta.json` is the source of truth** for state (current phase, size, branch). Without it, commands refuse to continue.
+- **Size governs**: in `/flow:feat:start` and `/flow:bug:start` the work is classified XS/S/M/L and phases are suggested to skip for small changes.
+- **Branch with explicit base and no upstream to the base**: a branch creation already caused an accidental deployment, so `/flow:feat:start` §5 and `/flow:bug:start` §4 enforce two rules. (1) **Explicit base**: never `git checkout -b` from "where I am" — the base is `git.default_base` from FLOW.md (normal case) or a confirmed parent branch (train mode, recorded in `meta.json.stacked_on`). If the current branch is not the base, the base is asked directly before creating. (2) **`--no-track` required**: with `branch.autoSetupMerge=true`, creating from the base without `--no-track` leaves the upstream on the remote base; a push that resolves the upstream ends up on the base and can trigger a deployment. The first push is always `git push -u origin HEAD` (own branch), and `/flow:feat:ship` §4.0 / `/flow:bug:ship` §4.0 block if HEAD is the base branch or the upstream points to it.
+- **Small, meaningful, loosely coupled MRs/PRs**: the default goal is to close the feature in MRs/PRs as small as possible, each with a clear purpose, independently mergeable when possible. Coupling between MRs/PRs only when unavoidable; then it must be justified in `04-mr-plan.md` and the merge order recorded. A huge MR/PR "because it cannot be split" is a sign that `/flow:feat:plan` was not thought through — go back to that phase before continuing.
+- **Understand before starting**: if after reading the ticket, `domain-memory`, and the code there are open questions that affect the design (which cases it covers, what happens with certain roles/plans, what it does if user X, what metric/event counts as "success"), **ask the user** before closing `/flow:feat:start` or `/flow:feat:brainstorm`. Inventing answers the user will later have to correct is worse than the question. Ask all at once (not drip by drip).
+- **Reuse before creating**: in `/flow:feat:design`, before proposing new entities, columns, repositories, services, or events, verify whether something equivalent already exists in the affected module or neighboring modules. Every new piece in `03-design.md` must carry the implicit meaning "I found nothing that fits". If knowingly duplicating, justify it (unwanted coupling, different semantics). This does NOT mean forcing reuse of a poor fit — it means not adding by inertia.
+- **Solve the project's real problem, not a generic one (fit + YAGNI)**: before adding any defensive mechanism (validation, guard, retry, lock, fallback, cache, idempotency, queue, flag), answer **two questions with evidence**:
+  - **(a) Does it fit? Can this scenario actually occur given how this project works?** Evidence comes from `domain-memory` and the code, **not** from generic textbook patterns or "it could happen that…". If the current system already prevents that scenario (an upstream validates first, a constraint blocks it, the flow does not allow that state), the protection **is excess**.
+  - **(b) Do we need it now, for what the ticket asks?** If it solves a future hypothetical problem rather than today's, **do not add it** (YAGNI). Future ideas are noted as "idea for a separate ticket", not built.
+
+  The default bias is **remove, not add**. A protection without a concrete and present scenario behind it is over-engineering. This is anchored operationally in the challenger in `/flow:feat:design` (angle "Fit and necessity", which looks for what is excess) and in the defensive mechanisms table in `03-design.md`.
+- **Size is revisable**: the XS/S/M/L classification is made in `/flow:feat:start` or `/flow:bug:start` with partial information. Any later phase (`brainstorm`, `design`, `plan`, `diagnose`, `investigate`) that sees a clear mismatch must **propose reclassifying to the user** before advancing, and update `meta.json.size`. Carrying a wrong size contaminates subsequent phases (wrong skips, unnecessary MR/PR plans, postmortems that did not apply).
+- **If implementation invalidates the design, go back to design**: during `/flow:feat:build` it is normal to discover things. If the accumulated deviations in `05-implementation.md` are 2+ significant, or one that changes a decision from the ADR-light in the design, **pause the build and go back to `/flow:feat:design`** to update the document before continuing. The reason: the design is the source that `/flow:feat:review` and `/flow:feat:validate` read — if it lies, everything that follows is based on something false. The same applies to `/flow:bug:fix` when the real fix diverges from what `/flow:bug:investigate` pointed to.
+- **Design/investigation is challenged before executing**: at the end of `/flow:feat:design` and `/flow:bug:investigate` a *challenger* is launched (a generic subagent with a sharp prompt). Its **first and dominant** angle is **"Fit and necessity"** — it looks for what is **excess**: protections against scenarios that cannot occur in this project, and YAGNI pieces that solve future hypothetical problems (this angle is the counterweight to the natural tendency to add too many defenses). The other angles (fragile assumptions, simplification, production operation) look for what is missing. The result is recorded in the artifact itself under "Design challenges". Findings of **high** severity with no response — both "this is missing" and "this is excess" — block the advance; the user decides whether to reopen, trim, or assume and document.
+- **Business brief before typing code**: just before starting to edit files (in `/flow:feat:build` and `/flow:bug:fix`), write 3-5 bullets **in business (non-technical) language** explaining what the user/system will be able to do after this task, and what is **NOT** included. Ask the user for confirmation before the first commit. This filters two things: invented features the design did not ask for, and scope creep using the fact that we are already there. If something outside the brief comes up during implementation, confirm before adding it — never "while we're at it, also…".
+- **The MR/PR communicates functionality, not implementation**: the MR/PR title and description (in `/flow:feat:ship` and `/flow:bug:ship`) are built from the **Brief** in the corresponding artifact, not from the technical design. A reviewer or product manager must be able to read the header and understand what changes for the user without opening the diff. Technical details go in an **optional section at the end** ("Technical details for reviewers"), not at the top. Title: descriptive in behavior language, not internal implementation jargon.
+- **Mandatory MR/PR preview before creating**: in `/flow:feat:ship` and `/flow:bug:ship`, before invoking the creation, print the complete block (title + assignee + squash + description as it will appear) to the user and ask for confirmation. **No exceptions, not even when the content seems obvious**. Options: create, edit (show preview again after changes), or cancel. Nothing is published until explicit confirmation — this prevents generic titles/descriptions when the underlying skill decides not to ask. The assignee, squash, and sections are read from `git.assignee`, `git.squash`, and `git.request_sections` in FLOW.md; if empty, use the default values indicated in FLOW.template.md.
+- **Design contract anchoring (anti-self-deception for the agent)**: the same agent that designs often builds next — and in that transition the contract declared in `03-design.md` gets diluted against the "gravity field" of repo patterns. To prevent this, three anchoring points:
+  1. **`/flow:feat:design` §"External contracts"**: any surface consumed from outside (HTTP body, header, route, event, column, metric) is declared as a **literal shape**, not in prose. If the contract breaks the repo's usual pattern, it is explicitly marked "Pattern deviation".
+  2. **`/flow:feat:build` §2.0bis**: before typing code, the "External contracts" section of the design is **copied verbatim** to `05-implementation.md`. This way the contract lives in the file being written, not in another one no longer being looked at. And §4.2: when closing build, key-by-key textual comparison between what the code produces and the cited contract — not a test, a deliberate comparison by the agent.
+  3. **`/flow:feat:review` §5**: **deliberately blinded** subagent that receives only the literal contracts + the diff hunks touching shape construction. Without context from the rest of the design or the full code, it cannot rationalize mismatches — it only compares textually and reports.
+
+  Acknowledged limitations: if the contract is copied incorrectly (transcription typo) or was declared wrongly in the design (not what the real consumer expects), the system faithfully confirms the broken version. The package reduces the problem to those two categories, but does not eliminate them.
+- **Commits are opt-in by the user**: during `/flow:feat:build` and `/flow:bug:fix`, the agent **does not run `git commit` on its own**. After each checklist step, it edits the files and reports a summary (files, lines, suggested validation). It waits for you to decide: commit now, wait to validate locally first (test UI, run the flow, read the diff), or continue without committing. This breaks the previous pattern of automatic WIP commits per step. User control is preferred: if you occasionally validate and commit, there are still cuttable units for `/flow:feat:build` §2.3; if you prefer not to commit until the end, you accept losing that granularity.
+- **Mandatory code review**: `/flow:feat:ship` and `/flow:bug:postmortem` are not run without going through `/*:review`.
+- **Existing subagents**: commands invoke the agents and skills available in the project for design, API building, testing, performance analysis, etc. Work is not duplicated — it is delegated to what already exists.
+- **`domain-memory` (full cycle)**: if `domain_memory.enabled` is `true` in FLOW.md, the `domain-memory` MCP is used at four points throughout the flow. If at any point the MCP does not respond within 2s or fails, continue without context and do not mention it to the user. If `enabled` is `false` or absent, skip all domain-memory steps without notifying.
+  - **`search_knowledge`** when entering new territory: `/flow:feat:start` and `/flow:bug:start` (ticket keywords), `/flow:feat:brainstorm` (concept/pattern), `/flow:feat:design` (module + integrations), `/flow:bug:diagnose` (affected component), `/flow:bug:investigate` (hypothetical cause). Searching at the start of the ticket is not enough — the context needed in `/flow:feat:design` is different from what was needed in `/flow:feat:start`.
+  - **`stage_finding`** during the process: when closing `/flow:feat:design` and `/flow:bug:investigate`, if non-obvious domain decisions emerged (legal constraints, integrations with surprising behavior, model assumptions that are hard to deduce from the code), propose staging them to the user. Silence by default — only if there is a clear signal. Staging is per-branch and accumulates until the save.
+  - **`read_staging`** before the save: `/flow:feat:ship` and `/flow:bug:postmortem` read what was accumulated in staging for that branch before proposing the final save. This avoids duplication and helps decide what to consolidate.
+  - **`save_knowledge`** on closing: `/flow:feat:ship` and `/flow:bug:postmortem` offer to consolidate. Only the "why" is saved (decisions, constraints, motivations); the "what" (code, paths) lives in the repo.
+
+## `meta.json` schema
+
+```json
+{
+  "ticket": "{PREFIX}XXXXX",
+  "type": "feat" | "bug",
+  "title": "Tracker text or short description",
+  "branch": "{PREFIX}XXXXX-slug",
+  "size": "XS" | "S" | "M" | "L",
+  "phase": "context" | "brainstorm" | "design" | "plan" | "build" | "review" | "validate" | "ship" | "diagnose" | "investigate" | "fix" | "postmortem" | "done" | "abandoned",
+  "phases_done": ["context", ...],
+  "mrs": [
+    {
+      "n": 1,
+      "title": "…",
+      "size": "S",
+      "status": "pending" | "in_progress" | "merged" | "closed" | "superseded",
+      "lines_est": 120,
+      "files_est": 6,
+      "url": "https://...",
+      "note": "reason if closed/superseded; empty otherwise"
+    }
+  ],
+  "started_at": "2026-05-11T10:00:00Z",
+  "updated_at": "2026-05-11T11:30:00Z",
+  "notes": "free field the user can edit"
+}
+```
+
+The ticket format follows `tracker.prefix` from FLOW.md; if empty, the ticket is free-form.
+
+## Size shortcuts
+
+| Size | Features                                                                  | Bugs                                                            |
+|------|---------------------------------------------------------------------------|-----------------------------------------------------------------|
+| XS   | start → build → review → ship                                             | start → fix → review → ship                                     |
+| S    | start → design (short) → build → review → validate → ship                | start → diagnose → fix → review → validate → ship               |
+| M    | start → brainstorm → design → **plan** → build → review → validate → ship | full flow                                                       |
+| L    | full flow (includes **plan**)                                             | full flow                                                       |
+
+`/flow:feat:plan` is skipped for XS/S (always 1 MR/PR). For M/L it is mandatory and records the `mrs` array in `meta.json`.
+
+## Full `/flow:feat:*` flow
+
+`/flow:feat:start {TICKET}` → `/flow:feat:brainstorm` → `/flow:feat:design` → `/flow:feat:plan` → `/flow:feat:build` → `/flow:feat:review` → `/flow:feat:validate` → `/flow:feat:ship`
+
+For M/L with multiple MRs/PRs, the `build → review → validate → ship` block repeats for each MR/PR in the plan. The `meta.json.mrs` array tracks the state.
+
+## Full `/flow:bug:*` flow
+
+`/flow:bug:start {TICKET}` → `/flow:bug:diagnose` → `/flow:bug:investigate` → `/flow:bug:fix` → `/flow:bug:validate` → `/flow:bug:review` → `/flow:bug:postmortem` → `/flow:bug:ship`
+
+## Cross-cutting commands
+
+- `/flow:work:status` — shows all works in `.claude/work/`, current phase, and divergence with git.
+- `/flow:work:resume` — detects the current branch, opens `meta.json`, recaps, and suggests the next step.
+- `/flow:work:watch {TICKET} [30m]` — automated post-deployment monitoring: observes the observability platform (per FLOW.md `observability`) scoped to the change, comparing against a baseline (previous window + same weekday last week, ratios over counts), and alerts immediately on regression. For periodic re-runs, use OS cron + `gemini -p "/flow:work:watch {TICKET}"`. State persists in `monitor.md`.
+
+## Golden rules
+
+1. **Never skip `review`.** If the previous phase is not in `phases_done`, the command refuses.
+2. **If you edit code outside the flow**, `/flow:work:status` warns about the divergence.
+3. **Artifacts are hand-editable**. If you rewrite `03-design.md`, the next step will respect it.
+4. **`domain-memory` is optional but recommended** when closing large features or postmortems (requires `domain_memory.enabled: true` in FLOW.md).
+"""

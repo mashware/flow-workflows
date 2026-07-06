@@ -3,7 +3,7 @@ description = "Show this repo's effective FLOW.md config — what is set, what i
 prompt = """
 # `/flow:config`
 
-Read-only. Shows what the `/feat:*`, `/bug:*`, `/work:*` and `/flow:*` commands will actually use in this repo, so you do not have to open `FLOW.md` and cross-check it against the template by hand. **Writes nothing** — to change the config use `/flow:init` or edit `FLOW.md`.
+Read-only. Shows what the `/flow:feat:*`, `/flow:bug:*`, `/flow:work:*` and `/flow:*` commands will actually use in this repo, so you do not have to open `FLOW.md` and cross-check it against the template by hand. **Writes nothing** — to change the config use `/flow:init` or edit `FLOW.md`.
 
 Canonical key list and their meaning: `examples/FLOW.template.md` from the plugin. Report against that contract — do not invent keys, and do report keys that are documented there but absent from the repo's `FLOW.md` (those are the "empty → fallback" rows).
 
@@ -17,7 +17,7 @@ Canonical key list and their meaning: `examples/FLOW.template.md` from the plugi
 For **every** documented key in `examples/FLOW.template.md`, print one row:
 
 - **set** → show the value (for a list key like `git.worktree_resync` or `quality.reviewers`, show the items).
-- **empty / absent** → show `(empty → <what happens>)`, taking the "what happens" from that key's comment in the template (e.g. `quality.test` empty → "auto-discover from Makefile/npm/composer"; `tracker.tool` empty → "manual paste"; `agents.security` empty → "the conductor performs the task in the same context"; `git.worktree` empty → "off / in-place"; `git.worktree_resync` empty → "`/work:try` only switches, no re-sync"). Never leave a reader guessing what an empty key does.
+- **empty / absent** → show `(empty → <what happens>)`, taking the "what happens" from that key's comment in the template (e.g. `quality.test` empty → "auto-discover from Makefile/npm/composer"; `tracker.tool` empty → "manual paste"; `agents.security` empty → "the conductor performs the task in the same context"; `git.worktree` empty → "off / in-place"; `git.worktree_resync` empty → "`/flow:work:try` only switches, no re-sync"). Never leave a reader guessing what an empty key does.
 
 Group the output by section with a short header each, so it reads as a table/scan, not prose. Keep set-vs-empty visually distinguishable (e.g. `✓` vs `·`).
 

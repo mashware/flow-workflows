@@ -1,6 +1,6 @@
 # flow adapter for Gemini CLI
 
-This adapter brings the 24 commands of the `flow` plugin (`/feat:*`, `/bug:*`, `/work:*`, `/flow:*`, `/save-knowledge`) to the **Gemini CLI** format.
+This adapter brings the 24 commands of the `flow` plugin (`/flow:feat:*`, `/flow:bug:*`, `/flow:work:*`, `/flow:*`, `/flow:save-knowledge`) to the **Gemini CLI** format.
 
 The commands are a format adapter, not a reimplementation: the logic and prose are identical to the original plugin. What changes is the target file format and the translation of Claude Code-specific primitives. See `PRIMITIVES.md` for full details.
 
@@ -34,36 +34,36 @@ Gemini CLI loads commands from both locations. Local commands take precedence ov
 
 After copying, the structure looks like this:
 ```
-~/.gemini/commands/          (or .gemini/commands/ in the repo)
-├── feat/
-│   ├── start.toml          → /feat:start
-│   ├── brainstorm.toml     → /feat:brainstorm
-│   ├── design.toml         → /feat:design
-│   ├── plan.toml           → /feat:plan
-│   ├── build.toml          → /feat:build
-│   ├── review.toml         → /feat:review
-│   ├── validate.toml       → /feat:validate
-│   └── ship.toml           → /feat:ship
-├── bug/
-│   ├── start.toml          → /bug:start
-│   ├── diagnose.toml       → /bug:diagnose
-│   ├── investigate.toml    → /bug:investigate
-│   ├── fix.toml            → /bug:fix
-│   ├── review.toml         → /bug:review
-│   ├── validate.toml       → /bug:validate
-│   ├── ship.toml           → /bug:ship
-│   └── postmortem.toml     → /bug:postmortem
-├── work/
-│   ├── README.toml         → /work:README
-│   ├── resume.toml         → /work:resume
-│   ├── status.toml         → /work:status
-│   ├── abandon.toml        → /work:abandon
-│   ├── watch.toml          → /work:watch
-│   └── try.toml            → /work:try
-├── flow/
-│   ├── init.toml           → /flow:init
-│   └── config.toml         → /flow:config
-└── save-knowledge.toml     → /save-knowledge
+~/.gemini/commands/              (or .gemini/commands/ in the repo)
+└── flow/
+    ├── feat/
+    │   ├── start.toml          → /flow:feat:start
+    │   ├── brainstorm.toml     → /flow:feat:brainstorm
+    │   ├── design.toml         → /flow:feat:design
+    │   ├── plan.toml           → /flow:feat:plan
+    │   ├── build.toml          → /flow:feat:build
+    │   ├── review.toml         → /flow:feat:review
+    │   ├── validate.toml       → /flow:feat:validate
+    │   └── ship.toml           → /flow:feat:ship
+    ├── bug/
+    │   ├── start.toml          → /flow:bug:start
+    │   ├── diagnose.toml       → /flow:bug:diagnose
+    │   ├── investigate.toml    → /flow:bug:investigate
+    │   ├── fix.toml            → /flow:bug:fix
+    │   ├── review.toml         → /flow:bug:review
+    │   ├── validate.toml       → /flow:bug:validate
+    │   ├── ship.toml           → /flow:bug:ship
+    │   └── postmortem.toml     → /flow:bug:postmortem
+    ├── work/
+    │   ├── README.toml         → /flow:work:README
+    │   ├── resume.toml         → /flow:work:resume
+    │   ├── status.toml         → /flow:work:status
+    │   ├── abandon.toml        → /flow:work:abandon
+    │   ├── watch.toml          → /flow:work:watch
+    │   └── try.toml            → /flow:work:try
+    ├── init.toml               → /flow:init
+    ├── config.toml             → /flow:config
+    └── save-knowledge.toml     → /flow:save-knowledge
 ```
 
 ### 2. Configure the domain-memory MCP server
@@ -100,7 +100,7 @@ Key fields to fill in: `tracker`, `git.default_base`, `git.branch_pattern`, `git
 
 ## Sub-agents (optional but recommended for M/L)
 
-The commands delegate work to sub-agents using `@name`, where `name` comes from the `agents.<role>` map in FLOW.md. For parallel fan-out to work in `/feat:brainstorm`, `/bug:investigate`, and adversarial checks in reviews, declare the sub-agents in `.gemini/agents/`:
+The commands delegate work to sub-agents using `@name`, where `name` comes from the `agents.<role>` map in FLOW.md. For parallel fan-out to work in `/flow:feat:brainstorm`, `/flow:bug:investigate`, and adversarial checks in reviews, declare the sub-agents in `.gemini/agents/`:
 
 ```
 .gemini/agents/
@@ -119,13 +119,13 @@ Without declared sub-agents, the commands run tasks sequentially in the same con
 
 ---
 
-## Post-deploy monitoring (`/work:watch`)
+## Post-deploy monitoring (`/flow:work:watch`)
 
-`/work:watch` does not self-pilot in Gemini CLI (there is no `ScheduleWakeup` in session). The command runs one monitoring cycle and exits. To repeat it automatically:
+`/flow:work:watch` does not self-pilot in Gemini CLI (there is no `ScheduleWakeup` in session). The command runs one monitoring cycle and exits. To repeat it automatically:
 
 ```bash
 # Example: watch TICKET every 5 minutes for 30 minutes
-*/5 * * * * gemini -p "/work:watch TICKET 30m" >> ~/.gemini/watch-TICKET.log 2>&1
+*/5 * * * * gemini -p "/flow:work:watch TICKET 30m" >> ~/.gemini/watch-TICKET.log 2>&1
 ```
 
 State between cycles (monitored surface, baseline, approved plan) is persisted in `.claude/work/TICKET/monitor.md`. Each cycle reads that file to avoid repeating the initial discovery.
@@ -136,31 +136,31 @@ State between cycles (monitored surface, baseline, approved plan) is persisted i
 
 ```
 # Start a feature
-/feat:start PROJ-12345
+/flow:feat:start PROJ-12345
 
 # Full flow for an M feature
-/feat:start PROJ-12345
-/feat:brainstorm
-/feat:design
-/feat:plan
-/feat:build
-/feat:review
-/feat:validate
-/feat:ship
+/flow:feat:start PROJ-12345
+/flow:feat:brainstorm
+/flow:feat:design
+/flow:feat:plan
+/flow:feat:build
+/flow:feat:review
+/flow:feat:validate
+/flow:feat:ship
 
 # S incident flow
-/bug:start PROJ-99999
-/bug:diagnose
-/bug:fix
-/bug:validate
-/bug:review
-/bug:ship
+/flow:bug:start PROJ-99999
+/flow:bug:diagnose
+/flow:bug:fix
+/flow:bug:validate
+/flow:bug:review
+/flow:bug:ship
 
 # Status of all open work
-/work:status
+/flow:work:status
 
 # Resume work after a break
-/work:resume
+/flow:work:resume
 ```
 
 ---

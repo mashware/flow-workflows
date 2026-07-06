@@ -27,4 +27,4 @@ Run and deduce; show findings to confirm/correct:
 Generate the file at the root with all contract sections (tracker, git, quality, agents, review, conventions, domain_memory, observability), filling in what was detected/answered and **leaving empty** what the user didn't set.
 
 ## 5. Close
-Summarize what was configured and what was left empty (= auto-discover). `FLOW.md` can be committed. Suggest `/feat-start` or `/work-status`.
+Summarize what was configured and what was left empty (= auto-discover). `FLOW.md` can be committed. Suggest `/flow-feat-start` or `/flow-work-status`.

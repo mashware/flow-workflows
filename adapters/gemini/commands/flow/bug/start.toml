@@ -1,0 +1,97 @@
+description = "Start the bug flow (tracker, domain-memory, size, branch, initial artifact)"
+
+prompt = """
+# `/flow:bug:start {{args}}`
+
+Start a bug report. `{{args}}` is the ticket (format: `tracker.prefix` from FLOW.md; empty = freeform). If empty, ask the user directly and stop.
+
+## 0. Pre-flight
+
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+
+- Verify you are in the correct repo.
+- If `.claude/work/{{args}}/meta.json` exists, suggest `/flow:work:resume`.
+
+## 1. Gather context
+
+In parallel (or sequentially if not possible):
+
+1. **Tracker**: read it with `tracker.view_cmd` from FLOW.md (substitute `{TICKET}` with `{{args}}`). If `tool:none` or the key is missing, ask the user for the symptom, severity, and environment.
+2. **domain-memory** (if `domain_memory.enabled`): `search_knowledge` with keywords from the symptom. Important for detecting whether there were previous postmortems in the same area.
+3. **Observability** if the incident is recent: if you have clues (service, trace, log), consider using the MCP tools from `observability.platform` in FLOW.md. If not, do not force it.
+4. **Git**: check for a clean branch and base commit.
+
+## 2. Classify the size
+
+| Size | Criteria                                                        | Suggested phases                                |
+|------|-----------------------------------------------------------------|-------------------------------------------------|
+| XS   | Obvious fix (typo, inverted condition, null check)              | start → fix → review → ship                     |
+| S    | Clear symptom, cause reasonably scoped                          | start → diagnose → fix → review → validate → ship |
+| M    | Clear symptom but cause not obvious, possible regression        | start → diagnose → investigate → fix → validate → review → postmortem |
+| L    | Critical incident, multi-component, production affected         | full flow + mandatory postmortem                |
+
+## 3. Branch
+
+Same two non-negotiable rules as in `/flow:feat:start` §5 (breaking them has already caused an accidental deployment):
+
+1. **Explicit base**, never implicit from where you are. If you are on another task's branch, you would inherit its commits.
+2. **No upstream inheritance**: with `branch.autoSetupMerge=true` (team config), creating from `git.default_base` in FLOW.md without `--no-track` sets the upstream to that base, and a push can end up there.
+
+```bash
+git rev-parse --abbrev-ref HEAD && git status --porcelain   # where I am / clean tree
+git fetch origin
+git switch --create {{args}}-fix-slug --no-track <git.default_base>   # independent base; --no-track required
+```
+
+If the current branch is not the main base, ask the user for the base directly in text (`git.default_base` recommended, or stacked on current in train mode → note as `stacked_on`). Create only if the user confirms. First push is always `git push -u origin HEAD` (in `ship`), never to the main base.
+
+**Worktree mode** (same as `/flow:feat:start` §5.0/§5.4): read `git.worktree` from FLOW.md. If `always` (or `ask` and the user chooses it), create the branch as a worktree instead of switching in place — `git worktree add --no-track -b <branch> <worktree-path> <git.default_base>`, path from `git.worktree_path` (empty → `.worktrees/<branch>`, git-ignore it). Do not `git switch`; the fix runs from the worktree (`cd <worktree-path>`). Record the resolved path in `meta.json.worktree`. If `off`/empty, in place as above and `worktree` is `null`.
+
+## 4. Write artifacts
+
+`.claude/work/{{args}}/meta.json`:
+```json
+{
+  "ticket": "{{args}}",
+  "type": "bug",
+  "title": "<symptom from tracker>",
+  "branch": "<branch created in §3>",
+  "stacked_on": null,
+  "worktree": "<worktree path if created in §3, else null>",
+  "size": "<XS|S|M|L>",
+  "phase": "context",
+  "phases_done": ["context"],
+  "started_at": "...",
+  "updated_at": "...",
+  "notes": ""
+}
+```
+
+`.claude/work/{{args}}/01-context.md`:
+```markdown
+# Bug context {TICKET}
+
+## Reported symptom
+<what the reporter says>
+
+## Tracker data
+- Severity / priority:
+- Affected environment:
+- Reporter:
+- Date first reported:
+
+## Prior knowledge (domain-memory)
+<findings or "no findings">
+
+## Initial clues
+- Known stack trace / log:
+- Observability trace (if any):
+- Workers in dead-letter queue (if applicable):
+
+## Estimated size: <XS|S|M|L>
+```
+
+## 5. Close
+
+Summarize and suggest the next command based on size (`/flow:bug:fix` for XS, `/flow:bug:diagnose` for the rest). Do not proceed automatically.
+"""
