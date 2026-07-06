@@ -26,8 +26,8 @@ Try without installing: `claude --plugin-dir <path>/flow-workflows/plugins/flow`
 
 For **opencode / Gemini CLI / Codex CLI**, run `adapters/install.sh <tool>` — see
 [`adapters/README.md`](adapters/README.md). Same commands and logic; only the invocation syntax
-differs per tool (`/flow:feat:start` in Claude Code, `/feat-start` in opencode/Codex,
-`/feat:start` in Gemini).
+differs per tool (`/flow:feat:start` in Claude Code and Gemini, `/flow-feat-start` in
+opencode/Codex).
 
 ## Starting a workflow
 
