@@ -2,7 +2,7 @@
 description: Design the technical solution (architecture, DB, APIs, risks) before touching code
 ---
 
-# `/feat:design`
+# `/flow:feat:design`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -12,9 +12,9 @@ Technical design phase. **Still no production code is written.** The output is a
 
 ## 1. Pre-flight
 
-- Load `meta.json` by current branch. If it does not exist, ask the user to start with `/feat:start`.
+- Load `meta.json` by current branch. If it does not exist, ask the user to start with `/flow:feat:start`.
 - Read `01-context.md` and (if it exists) `02-brainstorm.md`.
-- If `size` is `XS`, suggest jumping to `/feat:build` and stop unless the user insists.
+- If `size` is `XS`, suggest jumping to `/flow:feat:build` and stop unless the user insists.
 
 ## 2. Focused domain-memory query
 
@@ -73,7 +73,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 | AC1 | Given <state>, when <action>, then <observable result with literal value> | test \| manual |
 | AC2 | … | … |
 
-`Proof` is a hint at how the criterion will be demonstrated in `/feat:validate`: `test` (an automated test can prove it) or `manual` (UI / end-to-end flow verified together with the user). It is a hint, not a commitment — `/feat:validate` builds the real criterion→test mapping and gates against it.
+`Proof` is a hint at how the criterion will be demonstrated in `/flow:feat:validate`: `test` (an automated test can prove it) or `manual` (UI / end-to-end flow verified together with the user). It is a hint, not a commitment — `/flow:feat:validate` builds the real criterion→test mapping and gates against it.
 
 ## Modules/layers affected
 - <module/layer> — <what changes>
@@ -141,7 +141,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 2. …
 
 ## Planned tests
-<Map each planned test to the acceptance criteria it proves (AC ids). A test that proves no criterion and guards no contract is a candidate to cut. Criteria marked `manual` above need no automated test here — they are verified with the user in `/feat:validate`.>
+<Map each planned test to the acceptance criteria it proves (AC ids). A test that proves no criterion and guards no contract is a candidate to cut. Criteria marked `manual` above need no automated test here — they are verified with the user in `/flow:feat:validate`.>
 - Unit:
 - Integration:
 - Functional:
@@ -154,7 +154,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 <filled in by §5 with the challenger table>
 ```
 
-When filling **"Acceptance criteria"**: start from the provisional list in `01-context.md` (pinned from the ticket in `/feat:start`), fold in the clarifications and the internal/external contracts decided here, and promote it to the canonical, enumerated list. This is the list `/feat:validate` gates against — keep it observable, verifiable, and proportional to size.
+When filling **"Acceptance criteria"**: start from the provisional list in `01-context.md` (pinned from the ticket in `/flow:feat:start`), fold in the clarifications and the internal/external contracts decided here, and promote it to the canonical, enumerated list. This is the list `/flow:feat:validate` gates against — keep it observable, verifiable, and proportional to size.
 
 ## 6. Design challenge (challenger)
 
@@ -201,7 +201,7 @@ Design is when the real complexity of the work becomes visible (migrations, cros
 
 - Propose reclassifying to the user (`AskUserQuestion`).
 - If confirmed, update `meta.json.size` and note in `meta.json.notes`.
-- **Consequences**: moving from M to L activates the full flow. Moving from M to S removes `/feat:plan` from the path. Explicitly inform the user of the flow change.
+- **Consequences**: moving from M to L activates the full flow. Moving from M to S removes `/flow:feat:plan` from the path. Explicitly inform the user of the flow change.
 
 ## 8. Domain findings staging
 
@@ -214,9 +214,9 @@ If `domain_memory.enabled` is `true` in `FLOW.md`: review the decision table (AD
 **Silence by default**: if there is nothing non-obvious, do not ask. If there are 1+ findings with a clear signal:
 
 - Call `mcp__domain-memory__stage_finding` with the finding and the context. One call per finding.
-- Briefly inform the user: "Staged X domain finding(s) to consolidate in `/feat:ship`".
+- Briefly inform the user: "Staged X domain finding(s) to consolidate in `/flow:feat:ship`".
 
-Do not invoke `save_knowledge` here — the final save is in `/feat:ship` with a prior `read_staging`. If `domain_memory.enabled` is `false` or empty, skip without notifying.
+Do not invoke `save_knowledge` here — the final save is in `/flow:feat:ship` with a prior `read_staging`. If `domain_memory.enabled` is `false` or empty, skip without notifying.
 
 ## 9. Close
 
@@ -224,5 +224,5 @@ Do not invoke `save_knowledge` here — the final save is in `/feat:ship` with a
 - **Confirm the acceptance criteria** as part of the design review: present the enumerated list to the user. If every criterion is unambiguous and verifiable, the design review covers them — no separate prompt. Escalate to `AskUserQuestion` **only** when a criterion is ambiguous, not verifiable, or you suspect one is missing for what the ticket asks today (same restraint as the challenger — do not invent criteria). The user can edit/add/remove; apply their edits to `03-design.md` before advancing.
 - Ask the user to review the design. If they request changes, edit the artifact before advancing.
 - Next step by size:
-  - **XS / S**: suggest `/feat:build` (1 single MR/PR, no need to plan splitting).
-  - **M / L**: suggest `/feat:plan` to decide how to split the work into independently mergeable MRs/PRs before implementing.
+  - **XS / S**: suggest `/flow:feat:build` (1 single MR/PR, no need to plan splitting).
+  - **M / L**: suggest `/flow:feat:plan` to decide how to split the work into independently mergeable MRs/PRs before implementing.

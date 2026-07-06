@@ -2,7 +2,7 @@
 description: Validate tests, edge cases, and integrity before shipping
 ---
 
-# `/feat:validate`
+# `/flow:feat:validate`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -12,8 +12,8 @@ Verify the feature is complete: test coverage, edge cases, performance, regressi
 
 ## 1. Pre-flight
 
-- Load `meta.json`. Require `review` in `phases_done`. If missing, send to `/feat:review`.
-- If `size` is `XS`, this phase may be skipped (warn and continue with `/feat:ship`).
+- Load `meta.json`. Require `review` in `phases_done`. If missing, send to `/flow:feat:review`.
+- If `size` is `XS`, this phase may be skipped (warn and continue with `/flow:feat:ship`).
 
 ## 2. Work
 
@@ -98,5 +98,5 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 
 ## 7. Close
 
-- **Do not advance `phase`** if any of these holds: tests are red, regressions are found, or **any acceptance criterion is `unproven`** (no test demonstrably asserts it and it was not manually confirmed). The criterion→test mapping is part of the gate, not just a report — the same "do not advance on red" rule. The user resolves the gap (add the missing test, fix the implementation, or finish the manual verification) and returns to `/feat:validate`.
-- If the suite is green **and** every acceptance criterion is `proven-by-test` or `proven-manually`: `phase = "validate"`, add to `phases_done`. Suggest `/feat:ship`.
+- **Do not advance `phase`** if any of these holds: tests are red, regressions are found, or **any acceptance criterion is `unproven`** (no test demonstrably asserts it and it was not manually confirmed). The criterion→test mapping is part of the gate, not just a report — the same "do not advance on red" rule. The user resolves the gap (add the missing test, fix the implementation, or finish the manual verification) and returns to `/flow:feat:validate`.
+- If the suite is green **and** every acceptance criterion is `proven-by-test` or `proven-manually`: `phase = "validate"`, add to `phases_done`. Suggest `/flow:feat:ship`.

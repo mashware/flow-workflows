@@ -28,12 +28,12 @@ Branch and Pull/Merge Request conventions.
 - `squash:`           # `true` | `false` (squash-before-merge).
 - `request_sections:` # MR/PR description sections, one per line with `- `. Empty = free-form.
 - `predeploy_gate:`   # `true` if this repo runs schema SQL manually on the server BEFORE deploying and wants to block the MR/PR until done. Empty/false = no Pre-deploy section or blocking thread.
-- `train_chain:`      # multi-PR train (stacked branches) behavior at the end of `/feat:ship` when there are still pending MR/PRs. `ask` | `always` | `wait`. The train NEVER waits for the previous MR/PR to merge except in `wait`.
-                      #   ask    → ask "continue with the next MR/PR?" and, on yes, create the next stacked branch and chain into `/feat:build`.
-                      #   always → chain into the next MR/PR's `/feat:build` automatically (records it), no prompt.
+- `train_chain:`      # multi-PR train (stacked branches) behavior at the end of `/flow:feat:ship` when there are still pending MR/PRs. `ask` | `always` | `wait`. The train NEVER waits for the previous MR/PR to merge except in `wait`.
+                      #   ask    → ask "continue with the next MR/PR?" and, on yes, create the next stacked branch and chain into `/flow:feat:build`.
+                      #   always → chain into the next MR/PR's `/flow:feat:build` automatically (records it), no prompt.
                       #   wait   → do NOT continue: stop and recommend continuing only after the current MR/PR is merged (legacy behavior).
                       # Empty = derive from `autonomy.mode`: `manual` → `ask`; `guided`/`auto` → `always`.
-- `worktree:`         # `off` (default) | `ask` | `always`. Whether `/feat:start` & `/bug:start` create the new branch as a git worktree instead of switching in place. `ask` = prompt each time; `always` = always; `off`/empty = never (in-place, current behavior).
+- `worktree:`         # `off` (default) | `ask` | `always`. Whether `/flow:feat:start` & `/flow:bug:start` create the new branch as a git worktree instead of switching in place. `ask` = prompt each time; `always` = always; `off`/empty = never (in-place, current behavior).
 - `worktree_path:`    # path template for the worktree dir. `{branch}` and `{repo}` are substituted. Empty with `worktree`≠`off` = `.worktrees/{branch}` at the repo root (git-ignore it). e.g. `.worktrees/{branch}` or `../{repo}.worktrees/{branch}`.
 - `worktree_resync:`   # commands `/flow:work:try` runs after switching the main checkout to a branch (and again on `--back`), to re-sync the environment (e.g. DB schema, assets). One command per line with `- `, run in order. Empty = `/flow:work:try` only does the git switch, no env re-sync. e.g.:
                       #   - make database-update

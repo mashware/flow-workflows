@@ -2,7 +2,7 @@
 description: Implement the feature following the approved design and keep a running log
 ---
 
-# `/feat:build`
+# `/flow:feat:build`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -13,11 +13,11 @@ Implementation phase. Code is written here.
 ## 1. Pre-flight
 
 - Load `meta.json` by current branch.
-- For `size` M/L: require that both `03-design.md` **and** `04-mr-plan.md` exist. If the plan is missing, send to `/feat:plan`. If the design is missing, send to `/feat:design`.
+- For `size` M/L: require that both `03-design.md` **and** `04-mr-plan.md` exist. If the plan is missing, send to `/flow:feat:plan`. If the design is missing, send to `/flow:feat:design`.
 - For `size` XS/S: allow starting without a design but ask the user for a 2-3 line note on what will be done and save it as a minimal `03-design.md`. There is no MR/PR plan (always 1 MR/PR).
 - Read all prior artifacts.
 - **If `meta.json.mrs` has more than one entry**: identify the first MR/PR with `status: "pending"`. That is the MR/PR for this iteration. If all are `merged`, warn: feature is done, nothing to build. Mark the chosen one as `in_progress` in `meta.json.mrs`.
-  - **Train/stacked**: this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/feat:ship §6.2` creates and links it when it chains here; if you reached this step directly (not via that chain) and you are still on the previous branch, create the next branch now following `/feat:start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/feat:start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
+  - **Train/stacked**: this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/flow:feat:ship §6.2` creates and links it when it chains here; if you reached this step directly (not via that chain) and you are still on the previous branch, create the next branch now following `/flow:feat:start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow:feat:start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
 
 ## 2. Business brief (before typing)
 
@@ -74,7 +74,7 @@ Without this copy, do not proceed to §2.1.
 
 Load the project skills (see `FLOW.md` section `conventions`).
 
-**If in a multi-MR/PR build**: limit yourself to what the current MR/PR covers per `04-mr-plan.md`. Any code belonging to a later MR/PR is scope creep; cut it or isolate it behind a feature flag / dead code temporarily per the plan. If it cannot be isolated, pause and return to `/feat:plan` to cut it.
+**If in a multi-MR/PR build**: limit yourself to what the current MR/PR covers per `04-mr-plan.md`. Any code belonging to a later MR/PR is scope creep; cut it or isolate it behind a feature flag / dead code temporarily per the plan. If it cannot be isolated, pause and return to `/flow:feat:plan` to cut it.
 
 Choose execution mode:
 
@@ -85,7 +85,7 @@ Use `TaskCreate` to track the steps from the design's implementation plan. Mark 
 
 ### 2.2 Checkpoints (local commits on user confirmation)
 
-**Hard rule**: the agent **does not run `git commit` on its own** during `/feat:build`. Commits are **opt-in from the user** — without your explicit confirmation, changes stay in the working tree so you can validate them first (test the UI, run the flow, read the diff).
+**Hard rule**: the agent **does not run `git commit` on its own** during `/flow:feat:build`. Commits are **opt-in from the user** — without your explicit confirmation, changes stay in the working tree so you can validate them first (test the UI, run the flow, read the diff).
 
 **After completing each `TaskCreate` step**, the agent:
 
@@ -105,7 +105,7 @@ Use `TaskCreate` to track the steps from the design's implementation plan. Mark 
 
 Rules for when a commit does happen:
 - One commit per step (when done). Do not batch multiple steps into one commit unless you explicitly request it.
-- `--no-verify` is allowed **only for WIP commits** (slow hooks will run at the end in `/feat:review` and in the final commit of `/feat:ship`).
+- `--no-verify` is allowed **only for WIP commits** (slow hooks will run at the end in `/flow:feat:review` and in the final commit of `/flow:feat:ship`).
 - These commits are squashed on merge (if `git.squash` is `true`), so they do not need to be pretty — they are just cuttable units.
 - If a step is left halfway (interruption, change of focus) and you ask for a commit, the message has the suffix: `WIP <TICKET>: <step> (partial)`.
 
@@ -134,8 +134,8 @@ Warning thresholds:
 If either is exceeded, **pause** and ask the user with `AskUserQuestion` (options, in this order):
 
 1. **Cut here (recommended if the current piece is coherent)**. What has been built so far stays as this MR/PR. What remains of the plan is distributed into a new one inserted in `meta.json.mrs` right after. Zero code wasted.
-2. **Continue and record the overrun**. Useful if the cut would be artificial. The deviation is noted in `05-implementation.md` to calibrate `/feat:plan` on future tickets.
-3. **Reopen plan**. Return to `/feat:plan` to rethink the entire split. Only if the overrun indicates the plan is wrong at a deeper level, not just that this MR/PR is slightly underestimated.
+2. **Continue and record the overrun**. Useful if the cut would be artificial. The deviation is noted in `05-implementation.md` to calibrate `/flow:feat:plan` on future tickets.
+3. **Reopen plan**. Return to `/flow:feat:plan` to rethink the entire split. Only if the overrun indicates the plan is wrong at a deeper level, not just that this MR/PR is slightly underestimated.
 
 **Hot cut mechanics (option 1)**:
 
@@ -146,7 +146,7 @@ If either is exceeded, **pause** and ask the user with `AskUserQuestion` (option
    - Insert a new one with the next `n` (renumbering subsequent ones if any), `title` describing what remains, `status: "pending"`, and new `lines_est` and `files_est` (indicative).
 3. Edit `04-mr-plan.md`: split the original entry in two, keeping the standalone-mergeable justification for both halves.
 4. Note in `05-implementation.md` under "Hot cut": date, reason, what stays and what moves to the next one.
-5. **Do not rewrite history with `git rebase`**: the WIP commits that belong to the next MR/PR stay in the current branch. When the time comes to build the next one, start from a new branch over the base, and those commits are transferred with `git cherry-pick` or equivalent. This is documented and executed in `/feat:ship` or when starting the next `/feat:build`.
+5. **Do not rewrite history with `git rebase`**: the WIP commits that belong to the next MR/PR stay in the current branch. When the time comes to build the next one, start from a new branch over the base, and those commits are transferred with `git cherry-pick` or equivalent. This is documented and executed in `/flow:feat:ship` or when starting the next `/flow:feat:build`.
 
 **If there was already a cut and overrun happens again**: ask the user before cutting again — a second cut on the same MR/PR signals that the plan is wrong, not just that the estimate is slightly off. The right option is probably **3 (reopen plan)**.
 
@@ -204,7 +204,7 @@ As larger pieces are completed:
 - Run `quality.static_analysis` from `FLOW.md` when a piece is stable; if empty, auto-discover.
 - If tests were added, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover.
 
-Do not do code review here — that is `/feat:review`.
+Do not do code review here — that is `/flow:feat:review`.
 
 ## 4.1 Is the design still valid?
 
@@ -214,7 +214,7 @@ Review the "Deviations from design" section of `05-implementation.md`. If **any*
 - **1 deviation that invalidates a decision** from the ADR-light in `03-design.md`.
 - **A design piece appears that the prior inventory did not detect** and that changes the plan.
 
-**Pause the build and return to `/feat:design`** to update the document (and, if it affects splitting, also to `/feat:plan`). Do not keep implementing against a design that is no longer true — `/feat:review` and `/feat:validate` read `03-design.md` as truth and will make incorrect judgments if it lies.
+**Pause the build and return to `/flow:feat:design`** to update the document (and, if it affects splitting, also to `/flow:feat:plan`). Do not keep implementing against a design that is no longer true — `/flow:feat:review` and `/flow:feat:validate` read `03-design.md` as truth and will make incorrect judgments if it lies.
 
 If the deviations are minor (renames, local adjustments), that is fine: note them and continue.
 
@@ -241,5 +241,5 @@ If there were no copied contracts (design said "none"), skip this step and recor
 ## 5. Close
 
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
-- If multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will become `merged` when `/feat:ship` confirms the merge.
-- Summarize to the user in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and next command: `/feat:review`.
+- If multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will become `merged` when `/flow:feat:ship` confirms the merge.
+- Summarize to the user in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and next command: `/flow:feat:review`.

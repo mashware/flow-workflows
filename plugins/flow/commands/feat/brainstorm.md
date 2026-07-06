@@ -2,7 +2,7 @@
 description: Generate options, angles, and risks for the feature before designing
 ---
 
-# `/feat:brainstorm`
+# `/flow:feat:brainstorm`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -14,12 +14,12 @@ Exploration phase. **No code is written.** Only opens the option space so that d
 
 - Locate the active `meta.json`: search first by current branch (`git branch --show-current`), otherwise ask the user for the ticket.
 - If `meta.json.phase` is not `context`, warn and ask whether to continue anyway.
-- If `size` is `XS` or `S`, suggest jumping to `/feat:design` or `/feat:build` directly and stop (unless the user insists).
+- If `size` is `XS` or `S`, suggest jumping to `/flow:feat:design` or `/flow:feat:build` directly and stop (unless the user insists).
 - Read `01-context.md`.
 
 ## 2. Focused domain-memory query
 
-If `domain_memory.enabled` is `true` in `FLOW.md`: before generating options, call `mcp__domain-memory__search_knowledge` with queries focused on the **concept/pattern** the feature covers, not the generic title (that was already queried in `/feat:start`). Examples by area:
+If `domain_memory.enabled` is `true` in `FLOW.md`: before generating options, call `mcp__domain-memory__search_knowledge` with queries focused on the **concept/pattern** the feature covers, not the generic title (that was already queried in `/flow:feat:start`). Examples by area:
 
 - If the feature touches tracking → `"tracking deduplication"`, `"hash collision"`.
 - If it touches payments → `"trial expiration"`, `"plan downgrade flow"`.
@@ -146,7 +146,7 @@ Create `.claude/work/<TICKET>/02-brainstorm.md`:
 
 ## 5. Emerging questions
 
-Reviewing options often surfaces new questions that `/feat:start` did not catch (e.g. "does this only apply to paid plans?", "what happens if the user already has N of these?"). If they appeared, **ask the user before closing** with `AskUserQuestion`. Record the answers at the end of `02-brainstorm.md` under "Decisions clarified in /feat:brainstorm".
+Reviewing options often surfaces new questions that `/flow:feat:start` did not catch (e.g. "does this only apply to paid plans?", "what happens if the user already has N of these?"). If they appeared, **ask the user before closing** with `AskUserQuestion`. Record the answers at the end of `02-brainstorm.md` under "Decisions clarified in /flow:feat:brainstorm".
 
 ## 6. Is the size still correct?
 
@@ -159,4 +159,4 @@ After reviewing the options, assess whether `meta.json.size` still matches the r
 ## 7. Close
 
 - Update `meta.json`: `phase = "brainstorm"`, add to `phases_done`, update `updated_at`.
-- Show the user the options and ask them to choose (or request adjustments) **before** moving to `/feat:design`. If they choose one, record it in `meta.json.notes`.
+- Show the user the options and ask them to choose (or request adjustments) **before** moving to `/flow:feat:design`. If they choose one, record it in `meta.json.notes`.

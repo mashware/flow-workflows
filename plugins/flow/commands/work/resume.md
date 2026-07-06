@@ -2,7 +2,7 @@
 description: Resume the work associated with the current branch and suggest the next step
 ---
 
-# `/work:resume`
+# `/flow:work:resume`
 
 **Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes more than 2s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -42,6 +42,6 @@ Then a **5-line summary** synthesizing all available artifacts (`01-context.md` 
 
 ## 4. Next step
 
-Suggest the concrete command based on `phase` and `size`. If the current phase was interrupted (e.g., `build` with an empty artifact), suggest rerunning it with `/feat:build` or `/bug:fix`.
+Suggest the concrete command based on `phase` and `size`. If the current phase was interrupted (e.g., `build` with an empty artifact), suggest rerunning it with `/flow:feat:build` or `/flow:bug:fix`.
 
 Do not advance on your own. The user decides.

@@ -2,13 +2,13 @@
 description: Monitor the observability platform after a deploy and alert on errors or performance regressions (autopiloted)
 ---
 
-# `/work:watch`
+# `/flow:work:watch`
 
 **Autopiloted post-deploy monitoring**. After deploying a ticket, observe the signals **scoped to the change** during a window (default 30 min), comparing against a baseline, and alert on errors or performance regressions introduced by the deploy.
 
-Usage: `/work:watch {PREFIX}XXXXX [duration]` (prefix comes from `tracker.prefix` in FLOW.md; default duration `30m`).
+Usage: `/flow:work:watch {PREFIX}XXXXX [duration]` (prefix comes from `tracker.prefix` in FLOW.md; default duration `30m`).
 
-This is **external state polling** work (the observability platform changes over time and the harness does not track it). That is why it autopilots with `ScheduleWakeup`: run a cycle, reschedule, repeat. The user can walk away; if something turns red, they are alerted immediately. Manual alternative: `/loop 5m /work:watch {PREFIX}XXXXX`.
+This is **external state polling** work (the observability platform changes over time and the harness does not track it). That is why it autopilots with `ScheduleWakeup`: run a cycle, reschedule, repeat. The user can walk away; if something turns red, they are alerted immediately. Manual alternative: `/loop 5m /flow:work:watch {PREFIX}XXXXX`.
 
 ## 0. Step 0 — read FLOW.md
 
@@ -80,7 +80,7 @@ List in `monitor.md` which axes **you can** monitor and which you **cannot** due
 
 ## 4.5 Monitoring plan (show it and let the user adjust — BEFORE starting the loop)
 
-The loop is autopiloted, so **before** starting, show the plan and allow intervention — the same human gate as the brief in `/feat:build` or the preview in `/feat:ship`. The user must see **what** you are monitoring and **with what**, and be able to suggest changes. Without this, the monitoring is a black box that only says "🟢".
+The loop is autopiloted, so **before** starting, show the plan and allow intervention — the same human gate as the brief in `/flow:feat:build` or the preview in `/flow:feat:ship`. The user must see **what** you are monitoring and **with what**, and be able to suggest changes. Without this, the monitoring is a black box that only says "🟢".
 
 Print a clear block:
 - **What is being monitored** (business language): the change and the components it touches.
@@ -119,11 +119,11 @@ Over the window `[last cycle, now]`, scoped to the surface. **Default thresholds
 
 **Cycle verdict**: 🟢 green (nothing) / 🟡 yellow (specific signal to watch) / 🔴 red (clear regression correlated with the change). A single yellow cycle does not escalate; **yellow sustained ≥2 cycles → treat as red**.
 
-After each cycle: update `monitor.md` (accumulated state, to avoid repeating alerts and to have the final summary) and **reschedule with `ScheduleWakeup`** (~270-300s, or the chosen interval) passing the same `/work:watch {PREFIX}XXXXX` until reaching `T_end`. If the observability platform fails or is slow, do not break: retry in the next cycle.
+After each cycle: update `monitor.md` (accumulated state, to avoid repeating alerts and to have the final summary) and **reschedule with `ScheduleWakeup`** (~270-300s, or the chosen interval) passing the same `/flow:work:watch {PREFIX}XXXXX` until reaching `T_end`. If the observability platform fails or is slow, do not break: retry in the next cycle.
 
 ## 6. Escalation
 
-- **🔴 RED in any cycle** → **interrupt and alert immediately**, do not wait to exhaust the window. Give the specific signal, evidence (query/trace/log), and the correlation with the change. Offer `/bug:start` — and it is **there**, in `/bug:investigate`, where the multi-agent fan-out (hypothesis sweep) runs for root cause. The polling loop does not investigate; it escalates.
+- **🔴 RED in any cycle** → **interrupt and alert immediately**, do not wait to exhaust the window. Give the specific signal, evidence (query/trace/log), and the correlation with the change. Offer `/flow:bug:start` — and it is **there**, in `/flow:bug:investigate`, where the multi-agent fan-out (hypothesis sweep) runs for root cause. The polling loop does not investigate; it escalates.
 - **🟡 YELLOW** → note it, continue, include it in the final summary.
 
 ## 7. Close (when reaching `T_end` or at the user's request)

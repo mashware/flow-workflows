@@ -2,7 +2,7 @@
 description: Split the work into small, independently mergeable MRs/PRs before implementing
 ---
 
-# `/feat:plan`
+# `/flow:feat:plan`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -12,16 +12,16 @@ Delivery planning phase. **No code is written.** Decides how to split the featur
 
 ## 1. Pre-flight
 
-- Load `meta.json` by current branch. If it does not exist, send the user to `/feat:start`.
-- Require `design` in `phases_done`. If missing, send to `/feat:design` and stop.
+- Load `meta.json` by current branch. If it does not exist, send the user to `/flow:feat:start`.
+- Require `design` in `phases_done`. If missing, send to `/flow:feat:design` and stop.
 - Read `01-context.md`, `02-brainstorm.md` (if it exists), and `03-design.md`.
-- **If `size` is `XS` or `S`**: warn that this phase does not apply (always 1 MR/PR), mark `plan` as skipped in `phases_done` with value `"plan:skipped"`, and suggest `/feat:build`. Stop.
+- **If `size` is `XS` or `S`**: warn that this phase does not apply (always 1 MR/PR), mark `plan` as skipped in `phases_done` with value `"plan:skipped"`, and suggest `/flow:feat:build`. Stop.
 
 ## 2. Work
 
 Load the project convention skills (see `FLOW.md` section `conventions`).
 
-**Before splitting, apply a YAGNI filter to the design**: the plan only divides work that `03-design.md` has already validated as necessary. If when splitting you see a MR/PR (or part of one) dedicated to a **hypothetical future problem** or to protecting against a scenario that **cannot happen in this project**, do not turn it into a deliverable: mark it as "out of scope — idea for a separate ticket" and notify the user. Do not split or plan what is not going to be built today. If this reveals that the design let in unnecessary pieces, return to `/feat:design` to trim them before planning.
+**Before splitting, apply a YAGNI filter to the design**: the plan only divides work that `03-design.md` has already validated as necessary. If when splitting you see a MR/PR (or part of one) dedicated to a **hypothetical future problem** or to protecting against a scenario that **cannot happen in this project**, do not turn it into a deliverable: mark it as "out of scope — idea for a separate ticket" and notify the user. Do not split or plan what is not going to be built today. If this reveals that the design let in unnecessary pieces, return to `/flow:feat:design` to trim them before planning.
 
 Launch a subagent with this brief (self-contained):
 
@@ -80,7 +80,7 @@ Add to `meta.json` the `mrs` array with the agreed plan:
 ]
 ```
 
-Estimates are **indicative**, not contractual. `/feat:build` uses them as a thermometer: if real work exceeds `lines_est` by +50% or `files_est + 2`, it triggers the "cut or continue" question (see §C in build).
+Estimates are **indicative**, not contractual. `/flow:feat:build` uses them as a thermometer: if real work exceeds `lines_est` by +50% or `files_est + 2`, it triggers the "cut or continue" question (see §C in build).
 
 Valid statuses:
 
@@ -92,7 +92,7 @@ Valid statuses:
 | `closed` | MR/PR closed without merge (rejected, discarded). Requires `note` with reason. |
 | `superseded` | Replaced by a later MR/PR (the plan was rethought). Requires `note` pointing to the replacement. |
 
-`/feat:build` moves `pending` → `in_progress`. `/feat:ship` moves `in_progress` → `merged` when it confirms the merge, or to `closed` if discarded. If after a build the splitting needs to be rethought, return to `/feat:plan`, mark the old entry as `superseded`, and add the new ones.
+`/flow:feat:build` moves `pending` → `in_progress`. `/flow:feat:ship` moves `in_progress` → `merged` when it confirms the merge, or to `closed` if discarded. If after a build the splitting needs to be rethought, return to `/flow:feat:plan`, mark the old entry as `superseded`, and add the new ones.
 
 ## 5. Is the size still correct?
 
@@ -103,4 +103,4 @@ If when splitting you find that there is really just 1 small MR/PR (≤ 50 lines
 - Update `meta.json`: `phase = "plan"`, add `plan` to `phases_done`.
 - Show the user the summary table and ask for approval.
 - If they request changes, edit the artifact and `meta.json.mrs` before advancing.
-- Suggest `/feat:build` to start the first MR/PR.
+- Suggest `/flow:feat:build` to start the first MR/PR.
