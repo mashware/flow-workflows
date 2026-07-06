@@ -2,17 +2,17 @@
 description: Mandatory multi-agent code review before shipping
 ---
 
-# `/feat:review`
+# `/flow:feat:review`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — current behavior: stop at every decision point and, at the end, recommend the next command without invoking it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
-Mandatory review phase. **`/feat:ship` cannot run without passing through here and resolving blockers.**
+Mandatory review phase. **`/flow:feat:ship` cannot run without passing through here and resolving blockers.**
 
 ## 1. Pre-flight
 
-- Load `meta.json`. Require `build` in `phases_done`. If missing, send the user to `/feat:build` and stop.
+- Load `meta.json`. Require `build` in `phases_done`. If missing, send the user to `/flow:feat:build` and stop.
 - Check that `git diff` has real changes. If there are none, warn and stop.
 
 ## 2. Invoke the code reviews
@@ -69,7 +69,7 @@ Fresh findings from this sweep enter the normal flow: they go through §4 (over-
 
 ## 4. Over-engineering audit (fit + YAGNI)
 
-**Second barrier against over-engineering** (the first is the challenger in `/feat:design`). Independent of the multi-agent code review: here the diff is examined looking for what is **unnecessary**, not what is missing.
+**Second barrier against over-engineering** (the first is the challenger in `/flow:feat:design`). Independent of the multi-agent code review: here the diff is examined looking for what is **unnecessary**, not what is missing.
 
 1. **Locate every defensive mechanism in the diff**: validation, guard, retry, lock, fallback, cache, idempotency, circuit breaker, queue, flag, retry.
 2. **Find its row** in the "Defensive mechanisms and their justification" table in `03-design.md`.
@@ -189,8 +189,8 @@ Write `.claude/work/<TICKET>/06-review.md`:
 - modified tests: ✅ / ❌
 
 ## Next step
-<if there are blockers: "resolve and return to /feat:review">
-<if none: "/feat:validate">
+<if there are blockers: "resolve and return to /flow:feat:review">
+<if none: "/flow:feat:validate">
 ```
 
 ## 9. Close

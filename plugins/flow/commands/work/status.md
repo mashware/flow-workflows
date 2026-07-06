@@ -2,7 +2,7 @@
 description: Summary of all open works in .claude/work/
 ---
 
-# `/work:status`
+# `/flow:work:status`
 
 **Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes more than 2s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -50,7 +50,7 @@ Compare with `mrs[in_progress].lines_est` and `files_est` and show a line below 
 
 Rules:
 - If lines ≤ `lines_est * 1.5` **and** files ≤ `files_est + 2`: show without warning, in grey.
-- If **either** threshold is exceeded: add `⚠ exceeds estimate` and suggest that `/feat:build` applies §2.2 (cut / continue / reopen).
+- If **either** threshold is exceeded: add `⚠ exceeds estimate` and suggest that `/flow:feat:build` applies §2.2 (cut / continue / reopen).
 - If `lines_est` does not exist in meta.json (work created before this improvement): do not show the line, do not invent an estimate.
 
 ## 3. Divergences with git
@@ -78,6 +78,6 @@ The branch pattern is inferred from `git.branch_pattern` in FLOW.md; if empty, l
 At the end, if there is a work whose branch matches the current one, suggest:
 - If `phase = "done"`: nothing to do, offer to archive.
 - If `phase = "abandoned"`: the folder should already be in `_archive/`; if it is at the root, suggest moving it.
-- If there is an `in_progress` MR/PR waiting for merge confirmation: indicate that `/feat:ship` should update the state.
+- If there is an `in_progress` MR/PR waiting for merge confirmation: indicate that `/flow:feat:ship` should update the state.
 - If there is a `closed` MR/PR with no subsequent decision: warn so the user can decide (retry build or abandon).
 - Otherwise: the concrete next command.

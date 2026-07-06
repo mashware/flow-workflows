@@ -2,7 +2,7 @@
 description: Close a work without shipping (discarded feature, non-issue, etc.)
 ---
 
-# `/work:abandon`
+# `/flow:work:abandon`
 
 **Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes more than 2s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -82,7 +82,7 @@ Do not decide alone — ask.
   - `phases_done` is not touched (it reflects what was actually done).
   - `notes` += abandonment reason.
   - `updated_at` updated.
-- Move the folder to `.claude/work/_archive/<TICKET>/` so it does not appear in `/work:status` as pending.
+- Move the folder to `.claude/work/_archive/<TICKET>/` so it does not appear in `/flow:work:status` as pending.
 - Report to the user: ticket abandoned, reason, what was done with the branch.
 
 ## Recovery

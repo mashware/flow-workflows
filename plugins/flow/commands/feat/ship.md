@@ -2,7 +2,7 @@
 description: Commit, push, MR/PR, and offer to save domain knowledge
 ---
 
-# `/feat:ship`
+# `/flow:feat:ship`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -38,7 +38,7 @@ The link must go in the **body**, and how depends on `tracker.tool`. Decide firs
   - Completing MR/PR → `Closes #<N>` (auto-links + auto-closes the issue on merge to the default branch).
   - Intermediate MR/PR → `Part of #<N>` (references without closing; keeps the issue open for the rest of the train).
   - `<N>` = the numeric issue id from `meta.json.ticket`.
-  - **GitHub train caveat**: for a stacked MR/PR (target = parent branch, not the default branch) GitHub **ignores** `Closes`/`Part of` for panel/auto-close purposes — the Development-panel link comes from the **linked branch** created in `/feat:start §5.5`. Keep the `Part of #<N>` line anyway for human context, and rely on the branch link for the panel.
+  - **GitHub train caveat**: for a stacked MR/PR (target = parent branch, not the default branch) GitHub **ignores** `Closes`/`Part of` for panel/auto-close purposes — the Development-panel link comes from the **linked branch** created in `/flow:feat:start §5.5`. Keep the `Part of #<N>` line anyway for human context, and rely on the branch link for the panel.
 - **`acli` (Jira)**: **add nothing** — Jira's Git integration links via the issue key already present in the branch name and the title prefix.
 - **`linear`**: add `Closes <TICKET>` (Linear id, e.g. `ENG-123`) on the completing MR/PR; nothing on intermediates.
 - **`none` / empty**: nothing to link.
@@ -121,7 +121,7 @@ Then ask with `AskUserQuestion` (header: "Create <git.request_term>"):
 
 - **Create with this content**: user confirms → invoke §4.
 - **Edit before creating**: user indicates what to change (title, some section, both); adjust and return to §3 with the new preview.
-- **Cancel**: stop without creating anything. Do not touch `meta.json`. The user can return to `/feat:ship` later.
+- **Cancel**: stop without creating anything. Do not touch `meta.json`. The user can return to `/flow:feat:ship` later.
 
 Do not push or invoke any creation command until the user has responded "Create with this content".
 
@@ -159,7 +159,7 @@ If `domain_memory.enabled` is `true` in `FLOW.md`:
 
 **Only if there is something non-obvious worth saving** (silence-by-default rule):
 
-1. **Read the staging accumulated during the branch**: call `mcp__domain-memory__read_staging`. This shows you what `/feat:design` (and possibly other phases) already staged. That is the main material to consolidate.
+1. **Read the staging accumulated during the branch**: call `mcp__domain-memory__read_staging`. This shows you what `/flow:feat:design` (and possibly other phases) already staged. That is the main material to consolidate.
 2. **Review the artifacts** `03-design.md`, `05-implementation.md`, and `06-review.md` for findings of the "why" type (domain decisions, legal constraints, integrations, business motivations) that **were not staged at the time**. The "what" (code, paths) is NOT saved — that is in the repo.
 3. **Combine staging + new findings** into a short list. If the list is empty or only has things obviously derivable from the code, do not insist.
 4. If there are 1+ relevant findings, ask the user if they want to consolidate them. If yes, invoke `Skill save-knowledge` (this skill already does `read_staging` internally and orchestrates the save; you provide the context of what to consolidate). If no, do not insist.
@@ -176,7 +176,7 @@ If `domain_memory.enabled` is `false` or empty, skip without notifying.
 
 **B) The MR/PR was closed without merge** (rejected, discarded by reviewers):
 - Mark the current entry as `closed` with a `note` explaining the reason.
-- Ask the user: retry with a different MR/PR approach (return to `/feat:build` with a different approach), or consider the feature unviable (`/work:abandon`)? Do not decide alone.
+- Ask the user: retry with a different MR/PR approach (return to `/flow:feat:build` with a different approach), or consider the feature unviable (`/flow:work:abandon`)? Do not decide alone.
 
 **C) The plan changed and this MR/PR is no longer needed**:
 - If coming here because the plan was rethought: mark the entry as `superseded` with `note` pointing to the new MR/PR.
@@ -185,16 +185,16 @@ If `domain_memory.enabled` is `false` or empty, skip without notifying.
 
 The whole point of a train is to build the next MR/PR **without waiting for the current one to merge**. So do not stop here to wait for the merge — resolve `git.train_chain` from FLOW.md (`ask` | `always` | `wait`; **empty → derive from `autonomy.mode`**: `manual` → `ask`, `guided`/`auto` → `always`) and act:
 
-- **`wait`**: do not continue now. Leave `phase = "build"` and tell the user to run `/feat:build` once the current MR/PR is merged. This legacy "wait for merge" behavior happens **only** when explicitly configured.
-- **`ask`**: ask with `AskUserQuestion` — "Continue now with the next MR/PR (#\<n+1\> «\<title\>»), stacked on this branch?". If **no** → stop and recommend `/feat:build`. If **yes** → continue as in `always`.
+- **`wait`**: do not continue now. Leave `phase = "build"` and tell the user to run `/flow:feat:build` once the current MR/PR is merged. This legacy "wait for merge" behavior happens **only** when explicitly configured.
+- **`ask`**: ask with `AskUserQuestion` — "Continue now with the next MR/PR (#\<n+1\> «\<title\>»), stacked on this branch?". If **no** → stop and recommend `/flow:feat:build`. If **yes** → continue as in `always`.
 - **`always`**: continue automatically; record the decision in the artifact, do not prompt.
 
 To continue (both `ask`→yes and `always`):
-1. Create the next branch **stacked on the current branch**, following `/feat:start §5` rules (explicit base = the current branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/feat:start §5.5` (base = the current branch). Record `stacked_on` = current branch in `meta.json`.
-2. Leave `phase = "build"` (`/feat:build §1` will pick the next `pending` MR/PR and mark it `in_progress`).
-3. Chain into `/feat:build`.
+1. Create the next branch **stacked on the current branch**, following `/flow:feat:start §5` rules (explicit base = the current branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow:feat:start §5.5` (base = the current branch). Record `stacked_on` = current branch in `meta.json`.
+2. Leave `phase = "build"` (`/flow:feat:build §1` will pick the next `pending` MR/PR and mark it `in_progress`).
+3. Chain into `/flow:feat:build`.
 
-This continuation is **not** a hard gate: creating a stacked branch on an explicit, unambiguous parent is safe, and the next real hard gate — creating MR/PR #\<n+1\> in its own `/feat:ship` — will still stop and ask. Never hold the train back solely to wait for a merge unless `train_chain: wait`.
+This continuation is **not** a hard gate: creating a stacked branch on an explicit, unambiguous parent is safe, and the next real hard gate — creating MR/PR #\<n+1\> in its own `/flow:feat:ship` — will still stop and ask. Never hold the train back solely to wait for a merge unless `train_chain: wait`.
 
 ### 6.3 Summary and cleanup
 

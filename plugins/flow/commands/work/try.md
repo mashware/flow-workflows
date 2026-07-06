@@ -2,7 +2,7 @@
 description: Point the main checkout at a branch to test it (then return), re-syncing per FLOW.md
 ---
 
-# `/work:try $ARGUMENTS`
+# `/flow:work:try $ARGUMENTS`
 
 **Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -25,7 +25,7 @@ git status --porcelain
 ```
 If there are uncommitted or staged changes, **stop**: switching would carry them over. Tell the user to commit or stash first. Do not `--force` anything. This mirrors the guard in the reference `wt-try`/`wt-back` targets.
 
-## 3. Try mode — `/work:try <branch>`
+## 3. Try mode — `/flow:work:try <branch>`
 
 1. Resolve the branch: if `<branch>` exists locally use it; otherwise `git fetch origin` and use `origin/<branch>` (tell the user you are using the remote ref).
 2. Switch the main checkout to it in **detached HEAD** (intentional — you are only testing, not committing onto that branch):
@@ -34,9 +34,9 @@ If there are uncommitted or staged changes, **stop**: switching would carry them
    ```
    `git switch -` in §4 returns you to the branch you were on before this.
 3. **Re-sync the environment** with `git.worktree_resync`. Because these commands can be invasive (schema migrations, container rebuilds), show the exact list and ask the user to confirm before running (`AskUserQuestion`: Run / Skip). On confirm, run them **in order**, stopping and reporting if one fails. If `git.worktree_resync` is empty, skip this step silently.
-4. Report: now on `<branch>` (detached), which re-sync commands ran, and remind that `/work:try --back` returns to the previous branch.
+4. Report: now on `<branch>` (detached), which re-sync commands ran, and remind that `/flow:work:try --back` returns to the previous branch.
 
-## 4. Back mode — `/work:try --back`
+## 4. Back mode — `/flow:work:try --back`
 
 1. Clean-tree guard (§2).
 2. Return to the previous branch:

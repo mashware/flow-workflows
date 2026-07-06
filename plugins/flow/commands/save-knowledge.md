@@ -2,7 +2,7 @@
 description: Consolidate the current branch's staged findings into the domain-memory store
 ---
 
-You are in the `/save-knowledge` flow.
+You are in the `/flow:save-knowledge` flow.
 
 **Step 0**: read `FLOW.md` at the repo root. If `domain_memory.enabled` is not `true`, respond to the user *"domain-memory is not enabled in this repo's FLOW.md."* and stop without doing anything else.
 

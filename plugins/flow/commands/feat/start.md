@@ -2,7 +2,7 @@
 description: Start a new feature (read the tracker, classify size, create branch and initial artifact)
 ---
 
-# `/feat:start $ARGUMENTS`
+# `/flow:feat:start $ARGUMENTS`
 
 Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
@@ -14,7 +14,7 @@ You are starting a feature. `$ARGUMENTS` must be the ticket identifier (`tracker
 
 - Read `FLOW.md` at the repo root. If it does not exist, continue with default behavior (each step indicates what to do if a key is missing).
 - Verify that the repo has a recognizable project structure. If not, warn and stop.
-- If `.claude/work/$ARGUMENTS/meta.json` already exists, do not overwrite it: warn the user and suggest `/work:resume`.
+- If `.claude/work/$ARGUMENTS/meta.json` already exists, do not overwrite it: warn the user and suggest `/flow:work:resume`.
 
 ## 2. Gather context
 
@@ -36,7 +36,7 @@ Before classifying size, identify whether there are open questions that affect t
 
 If there are questions, **ask them all at once** with `AskUserQuestion` (max 4 questions, the most blocking ones). Do not invent or assume. If everything is clear, continue.
 
-Record the answers in `01-context.md` under "Decisions clarified in /feat:start".
+Record the answers in `01-context.md` under "Decisions clarified in /flow:feat:start".
 
 ## 4. Classify size
 
@@ -111,7 +111,7 @@ gh issue develop <N> --base <resolved-base> --name <branch-name>   # <N> = numer
 ```
 This registers `origin/<branch-name>` as a linked branch of issue `<N>` (it creates the remote ref from `<resolved-base>`; the later `git push -u origin HEAD` fast-forwards it with your commits, and the link persists). From then on the branch — and any MR/PR opened from it — shows in the issue's Development panel regardless of the PR's target branch.
 
-Best-effort: if the command fails (branch already on the remote, permissions, older `gh`), **warn and continue** — do not block branch creation. For non-`gh` trackers (`glab`, `acli`/Jira, `linear`) skip this: they link by cross-reference/convention and are covered by the body keyword in `/feat:ship §2`.
+Best-effort: if the command fails (branch already on the remote, permissions, older `gh`), **warn and continue** — do not block branch creation. For non-`gh` trackers (`glab`, `acli`/Jira, `linear`) skip this: they link by cross-reference/convention and are covered by the body keyword in `/flow:feat:ship §2`.
 
 ## 6. Write artifacts
 
@@ -143,8 +143,8 @@ Structure:
 ## Ticket
 <ticket summary in 3-5 bullets>
 
-## Acceptance criteria (provisional — promoted to first-class criteria in /feat:design)
-<list from tracker or "not specified". These are the WHAT pinned from the ticket so it is never lost; `/feat:design` refines them into an enumerated, verifiable list (`AC1`, `AC2`, …) that `/feat:validate` gates against.>
+## Acceptance criteria (provisional — promoted to first-class criteria in /flow:feat:design)
+<list from tracker or "not specified". These are the WHAT pinned from the ticket so it is never lost; `/flow:feat:design` refines them into an enumerated, verifiable list (`AC1`, `AC2`, …) that `/flow:feat:validate` gates against.>
 
 ## Relevant domain knowledge
 <domain-memory hits with one bullet per finding, or "no findings">
@@ -153,7 +153,7 @@ Structure:
 - Branch: <name>
 - Last commit: <short hash + message>
 
-## Decisions clarified in /feat:start
+## Decisions clarified in /flow:feat:start
 <list question → user answer, or "no open questions">
 
 ## Estimated size: <XS|S|M|L>
