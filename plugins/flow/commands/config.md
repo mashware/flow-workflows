@@ -50,8 +50,8 @@ Light checks — report problems, never change anything:
 - **Coherence**: `git.worktree` is `ask`/`always` but `git.worktree_path` empty → note the default
   `.worktrees/{branch}` will be used. `git.host` and `git.cli` disagree → flag. `domain_memory.enabled`
   is `true` but the MCP is not available this session → note the domain steps will be skipped.
-- **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and only
-  recommends the next command). If set, echo the mode and remind that the hard gates (push/MR-PR,
+- **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and, at the
+  end, proposes the next command as a one-click confirmation — never runs it without confirming). If set, echo the mode and remind that the hard gates (push/MR-PR,
   ambiguous-base branch creation, DB/migrations, high-severity review findings) still stop and ask in
   every mode. An unrecognized value → flag it and state that `manual` will be assumed.
 

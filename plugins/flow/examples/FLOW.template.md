@@ -43,11 +43,13 @@ Branch and Pull/Merge Request conventions.
 How much the flow advances on its own vs. stopping to ask you.
 
 - `mode:`             # `manual` (default) | `guided` | `auto`. Empty = `manual`.
-                      #   manual — current behavior: every phase stops at each decision point and, at the
-                      #            end, only recommends the next command (never invokes it).
+                      #   manual — every phase stops at each decision point and, at the end, proposes the
+                      #            next command as a one-click confirmation (you accept to advance, it is
+                      #            never typed for you and never runs without your confirmation).
                       #   guided — the command resolves low-risk, unambiguous decisions itself with the
                       #            recommended default (recorded in the phase artifact) instead of asking,
-                      #            still asks at genuine decision points, and chains into the next command.
+                      #            still asks at genuine decision points, and chains into the next command
+                      #            automatically (no advance confirmation).
                       #   auto   — as guided, plus auto-resolves the remaining decision points with sensible
                       #            (recorded) defaults, chaining phases without pausing.
                       # HARD GATES stop and ask in EVERY mode, no exceptions: any push or MR/PR (ship),
