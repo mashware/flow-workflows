@@ -25,6 +25,8 @@ Format: `<TICKET> <what it does for the user, in behavior language> [patch|minor
 
 If `git.squash` is `true`, the squash leaves the MR/PR title as the final commit message, so the commit message and title are identical.
 
+**Referencing other MRs/PRs of the plan in the body**: never write `#<n>` (the plan order from `meta.json.mrs`). GitHub/GitLab auto-resolve `#N` to whatever real issue/PR carries that number and append its state (e.g. `#5 (closed)`), linking the wrong thing. Reference an already-created MR/PR by its **URL** (`meta.json.mrs[].url`; the platform renders its title + real id) and a not-yet-created one by its **title** in quotes. This does not apply to the `Closes #<N>` issue-link line, where `<N>` is the real issue id.
+
 ### Description
 
 **Build the description from the `Brief MR/PR #N` in `05-implementation.md`**, not from the technical design. If `05-implementation.md` has no Brief (old work), draft one now based on what was actually built.
@@ -52,7 +54,7 @@ SQL that must be run **manually on the server BEFORE deploying**, all statements
 ⚠️ **Do not deploy until this SQL has been run in production.**
 
 ## MR/PR in a multi-delivery plan (only if applicable)
-<if `meta.json.mrs` has >1 entry: "MR/PR 2/4 of the delivery plan — see #1 (link) and remaining pending #3, #4".>
+<if `meta.json.mrs` has >1 entry: state which one this is (e.g. "MR/PR 2 of 4 in the delivery plan"), then list already-created previous ones by their **URL** and still-pending ones by their **title** in quotes. **Never use `#<n>`** — see the reference rule above. Example: "MR/PR 2 of 4. Previous: <url-of-first-MR>. Pending: «<title of the third>», «<title of the fourth>» (not opened yet).">
 
 ---
 

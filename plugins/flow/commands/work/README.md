@@ -69,6 +69,8 @@ If the file does not exist or a key is empty, each command auto-discovers the va
       "title": "…",
       "size": "S",
       "status": "pending" | "in_progress" | "merged" | "closed" | "superseded",
+      "wave": 1,
+      "depends_on": [],
       "lines_est": 120,
       "files_est": 6,
       "url": "https://...",
@@ -92,7 +94,7 @@ The ticket format follows `tracker.prefix` from FLOW.md; if empty, the ticket is
 | M    | start → brainstorm → design → **plan** → build → review → validate → ship | full flow                                                       |
 | L    | full flow (includes **plan**)                                             | full flow                                                       |
 
-`/flow:feat:plan` is skipped on XS/S (always 1 MR/PR). On M/L it is mandatory and populates the `mrs` array in `meta.json`.
+`/flow:feat:plan` is skipped on XS/S (always 1 MR/PR). On M/L it is mandatory and populates the `mrs` array in `meta.json`. The `n` of each MR/PR **is its execution order** (topological): `depends_on` only references lower `n`, and `wave` groups the ones that can run in parallel — so `/flow:feat:build` always starts from a genuinely startable MR/PR (no "start at #5") and flags the parallel siblings.
 
 ## Full `/flow:feat:*` flow
 

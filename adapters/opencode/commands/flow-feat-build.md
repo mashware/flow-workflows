@@ -16,7 +16,10 @@ Implementation phase. This is where code gets written.
 - For `size` M/L: require that both `03-design.md` **and** `04-mr-plan.md` exist. If the plan is missing, send to `/flow-feat-plan`. If the design is missing, send to `/flow-feat-design`.
 - For `size` XS/S: allow starting without a design but ask the user for a 2-3 line note on what they're about to do and save it as a minimal `03-design.md`. No MR/PR plan (always 1 MR/PR).
 - Read all previous artifacts.
-- **If `meta.json.mrs` has more than one entry**: identify the first MR/PR with `status: "pending"`. That is the MR/PR for this iteration. If all are `merged`, warn: feature complete, nothing left to build. Mark the selected one as `in_progress` in `meta.json.mrs`.
+- **If `meta.json.mrs` has more than one entry**: pick the **startable** MR/PR — the `pending` one with the **lowest `n` whose `depends_on` are all `merged`**. An MR/PR whose dependencies are still `pending`/`in_progress` is **not** startable yet, even if its `n` is low. Since `n` follows the execution order (see `/flow-feat-plan`), that is normally the lowest-`n` pending entry; `depends_on` is the guard for trains where an earlier MR/PR has not merged. (If entries have no `wave`/`depends_on` — an older plan — fall back to "first pending by `n`".)
+  - **Parallel siblings**: if several `pending` MRs/PRs in the **same `wave`** are startable and have no dependency between them, they can be built in parallel or as a train. In `manual`, tell the user and let them choose which to take now (default: lowest `n`); in `guided`/`auto`, take the lowest `n` and record it. Mark the chosen one as `in_progress`.
+  - If all are `merged`, warn: feature complete, nothing left to build.
+  - If some are `pending` but **none** is startable (all blocked by unmerged dependencies), do not start anything: tell the user which MR/PR needs to merge to unlock the next wave and stop.
 
 ## 2. Business brief (before typing)
 
@@ -134,7 +137,7 @@ If either is exceeded, **pause** and ask the user (options, in this order):
 
 0. **If there are uncommitted changes** in the working tree: warn the user and ask them to decide before cutting.
 1. Identify a cut point: the last work-in-progress commit where the piece is coherent and mergeable.
-2. Edit `meta.json.mrs`: the current MR/PR keeps its `n` and `title`, adjust `lines_est` and `files_est` to the real numbers, stays `in_progress`. Insert a new entry with the next `n`, `title` describing what remains, `status: "pending"`.
+2. Edit `meta.json.mrs`: the current MR/PR keeps its `n`, `title`, `wave` and `depends_on`, adjust `lines_est` and `files_est` to the real numbers, stays `in_progress`. Insert a new entry with the next `n`, `title` describing what remains, `status: "pending"`, `depends_on: [n_current]`, `wave` = one after the current one. If you renumber later entries, update their `depends_on` references so none points to a higher `n` than its own.
 3. Edit `04-mr-plan.md`: split the original entry in two.
 4. Note in `05-implementation.md` under "Hot cut": date, reason, what stays and what moves to the next one.
 5. **Don't rewrite history with `git rebase`**: work-in-progress commits that belong to the next MR/PR stay on the current branch and will be moved with `git cherry-pick` when the time comes.
@@ -202,6 +205,7 @@ Review the "Design deviations" section of `05-implementation.md`. If **any** of 
 - **2+ significant deviations** (module change, different event contract, different entity, new repository not foreseen).
 - **1 deviation that invalidates a decision** from the ADR-light in `03-design.md`.
 - **A design piece appears that the previous inventory didn't detect** and that changes the plan.
+- **A primitive materialized with a different name/role than the design named it** (design said *Query*, code built a *Command*; design said *service*, code built a *handler* wired through a bus). This is **vocabulary drift**: either the design's naming was wrong (update `03-design.md`) or the code chose the wrong primitive (fix the code). Reconcile it now — don't let the design and the code disagree on what each piece *is*, because `/flow-feat-review §5.5` and the reader will judge the code, not the design's intent.
 
 **Pause the build and go back to `/flow-feat-design`** to update the document. Don't keep implementing against a design that's no longer true — `/flow-feat-review` and `/flow-feat-validate` read `03-design.md` as truth and will make wrong judgments if it lies.
 

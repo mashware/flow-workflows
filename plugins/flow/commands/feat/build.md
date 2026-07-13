@@ -16,7 +16,10 @@ Implementation phase. Code is written here.
 - For `size` M/L: require that both `03-design.md` **and** `04-mr-plan.md` exist. If the plan is missing, send to `/flow:feat:plan`. If the design is missing, send to `/flow:feat:design`.
 - For `size` XS/S: allow starting without a design but ask the user for a 2-3 line note on what will be done and save it as a minimal `03-design.md`. There is no MR/PR plan (always 1 MR/PR).
 - Read all prior artifacts.
-- **If `meta.json.mrs` has more than one entry**: identify the first MR/PR with `status: "pending"`. That is the MR/PR for this iteration. If all are `merged`, warn: feature is done, nothing to build. Mark the chosen one as `in_progress` in `meta.json.mrs`.
+- **If `meta.json.mrs` has more than one entry**: pick the **startable** MR/PR — the `pending` one with the **lowest `n` whose `depends_on` are all `merged`**. An MR/PR whose dependencies are still `pending`/`in_progress` is **not** startable yet, even if its `n` is low. Because `n` follows the execution order (see `/flow:feat:plan`), the startable one is normally the lowest-`n` pending entry; `depends_on` is the guard for trains where an earlier MR/PR has not merged. (If entries have no `wave`/`depends_on` — an older plan — fall back to "first pending by `n`".)
+  - **Parallel siblings**: if several `pending` MRs/PRs in the **same `wave`** are startable and have no dependency between them, they can be built in parallel or as a train. In `manual`, tell the user and let them choose which to take now (default: lowest `n`); in `guided`/`auto`, take the lowest `n` and record the choice. Mark the chosen one as `in_progress`.
+  - If all are `merged`, warn: feature is done, nothing to build.
+  - If some are `pending` but **none** is startable (all blocked by unmerged dependencies), do not start anything: tell the user which MR/PR needs to merge to unlock the next wave and stop.
   - **Train/stacked**: this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/flow:feat:ship §6.2` creates and links it when it chains here; if you reached this step directly (not via that chain) and you are still on the previous branch, create the next branch now following `/flow:feat:start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow:feat:start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
 
 ## 2. Business brief (before typing)
@@ -142,8 +145,8 @@ If either is exceeded, **pause** and ask the user with `AskUserQuestion` (option
 0. **If there are uncommitted changes** in the working tree: warn the user and ask them to decide before cutting. Either commit what is done as a WIP for the corresponding step, or stash it (`git stash`) so it does not mix with the next MR/PR. Without this, the cut leaves loose changes that belong to one side or the other without knowing which.
 1. Identify a cut point: the last WIP commit where the piece is coherent and mergeable (a closed sub-goal: "endpoint and DTO done", "migration applied", "flow X tests green"). Do not cut in the middle of a change.
 2. Edit `meta.json.mrs`:
-   - The current MR/PR keeps `n` and `title`, adjust `lines_est` and `files_est` to actuals, and stays `in_progress`.
-   - Insert a new one with the next `n` (renumbering subsequent ones if any), `title` describing what remains, `status: "pending"`, and new `lines_est` and `files_est` (indicative).
+   - The current MR/PR keeps `n`, `title`, `wave` and `depends_on`, adjust `lines_est` and `files_est` to actuals, and stays `in_progress`.
+   - Insert a new one with the next `n` (renumbering subsequent ones if any), `title` describing what remains, `status: "pending"`, `depends_on: [n_current]` (the remainder needs the cut piece first), `wave` = one after the current one, and new `lines_est` and `files_est` (indicative). If you renumber subsequent entries, **update their `depends_on` references accordingly** so no `depends_on` points to a higher `n` than its own.
 3. Edit `04-mr-plan.md`: split the original entry in two, keeping the standalone-mergeable justification for both halves.
 4. Note in `05-implementation.md` under "Hot cut": date, reason, what stays and what moves to the next one.
 5. **Do not rewrite history with `git rebase`**: the WIP commits that belong to the next MR/PR stay in the current branch. When the time comes to build the next one, start from a new branch over the base, and those commits are transferred with `git cherry-pick` or equivalent. This is documented and executed in `/flow:feat:ship` or when starting the next `/flow:feat:build`.
@@ -213,6 +216,7 @@ Review the "Deviations from design" section of `05-implementation.md`. If **any*
 - **2+ significant deviations** (module change, different event contract, different entity, unforeseen new repository).
 - **1 deviation that invalidates a decision** from the ADR-light in `03-design.md`.
 - **A design piece appears that the prior inventory did not detect** and that changes the plan.
+- **A primitive materialized with a different name/role than the design named it** (design said *Query*, code built a *Command*; design said *service*, code built a *handler* wired through a bus). This is **vocabulary drift**: either the design's naming was wrong (update `03-design.md`) or the code chose the wrong primitive (fix the code). Reconcile it now — do not let the design and the code disagree on what each piece *is*, because `/flow:feat:review §5.5` and the reader will judge the code, not the design's intent.
 
 **Pause the build and return to `/flow:feat:design`** to update the document (and, if it affects splitting, also to `/flow:feat:plan`). Do not keep implementing against a design that is no longer true — `/flow:feat:review` and `/flow:feat:validate` read `03-design.md` as truth and will make incorrect judgments if it lies.
 

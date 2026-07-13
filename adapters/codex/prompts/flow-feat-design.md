@@ -133,8 +133,12 @@ Before closing, **challenge the design** by launching a general subagent with th
 > 2. **Fragile assumptions** (look for what's missing): what beliefs in the design might not hold? Confirm the failure is possible in the project — don't invent theoretical fragilities.
 > 3. **Simplification**: is there a simpler way to achieve the same thing? Is any piece redundant with "What already exists"?
 > 4. **Production operation**: rollback, observability, live migrations, cross-effects with workers/caches/queues. Only what genuinely applies to this change.
+> 5. **Decision idiom (audit the "Decisions (ADR-light)" table)**: for each row `Decision | Discarded alternative | Why`:
+>    - **False dichotomy**: the row frames the choice as exactly two options (A vs B). Is there an **option C** that wasn't considered? Name it. The classic trap: *"use the bus vs couple to the concrete class directly"* silently ignores *"expose a service behind an interface"* — which respects the boundary just as well without the downside. If the decision is binary, suspect a missing third path.
+>    - **Rationale smell**: is the "Why" a *verifiable reason* or a *manual-sounding phrase* (*"respects bounded contexts"*, *"for consistency"*, *"follows the pattern"*)? If it can't be checked against a concrete constraint in this project, flag it — it must be made concrete, or marked as a claim to re-verify against the code in review.
+>    - **Primitive fit**: does each chosen primitive match its job by name and role (a Query that only reads, a Command that mutates or emits events)? A primitive doing the opposite of its name is a design smell before it's a code smell.
 >
-> Output: markdown table `| Angle | Finding | Type (unnecessary/missing) | Severity |` with severities `high`/`medium`/`low`. Under 500 words. Don't invent problems to fill space — if an angle has no findings, say "no findings".
+> Output: markdown table `| Angle | Finding | Type (unnecessary/missing/idiom) | Severity |` with severities `high`/`medium`/`low`. Under 550 words. Don't invent problems to fill space — if an angle has no findings, say "no findings".
 
 If the feature touches **sensitive domain** (payments, authentication, personal data, usage/tracking counters), launch **in parallel** a second general subagent focused specifically on that domain.
 
@@ -151,6 +155,7 @@ Consolidate findings at the end of `03-design.md` under:
 
 - If the finding is **"unnecessary"**: **Cut** (remove the piece from the design — default option), or **Keep and justify** (fill "Response" with the real scenario — if you can't name one, it's unnecessary).
 - If the finding is **"missing"**: **Reopen brainstorm/design** to incorporate it, or **Assume and document** (fill "Response" with the conscious assumption).
+- If the finding is **"idiom"** (false dichotomy / rationale smell / primitive mismatch): **Adopt the third option or correct the primitive** (update the ADR row and the affected plan — default when option C is clearly better), or **Keep and make the "Why" concrete** (replace the manual-sounding phrase with a checkable reason; if you can't, the decision isn't justified). Don't leave the rationale as a textbook phrase.
 
 Do not advance to close with high-severity findings without a response. Medium and low are informational.
 

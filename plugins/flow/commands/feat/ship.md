@@ -43,6 +43,16 @@ The link must go in the **body**, and how depends on `tracker.tool`. Decide firs
 - **`linear`**: add `Closes <TICKET>` (Linear id, e.g. `ENG-123`) on the completing MR/PR; nothing on intermediates.
 - **`none` / empty**: nothing to link.
 
+### Referencing other MRs/PRs of the plan in the body (never `#<n>`)
+
+When the description mentions **another MR/PR of the delivery plan** — in the multi-delivery section, when explaining a dependency ("the table is created by …"), or anywhere in the body — **never write `#<n>`, where `<n>` is the plan order from `meta.json.mrs`.** GitHub/GitLab treat `#N` as a magic auto-reference to a real issue/PR: they link it to whatever issue/PR happens to carry that number in the project — almost always the wrong one — and append its state, producing eyesores like `#5 (closed)` that neither point where you meant nor were written by you.
+
+Instead:
+- **MR/PR already created** → reference it by its **URL** (`meta.json.mrs[].url`). The platform expands the URL to the MR/PR's title and real id (`!42` on GitLab), which is exactly the "real id" a reader expects.
+- **MR/PR not created yet** (still `pending`) → name it by its **title** in quotes, never `#N` (e.g. «Load-test infra» (not opened yet)).
+
+This does **not** apply to the issue-link line (`Closes #<N>` / `Part of #<N>`): there `<N>` is the **real issue id** from `meta.json.ticket`, which is precisely what should auto-link. The ban is only on the plan's internal order number.
+
 ### Description
 
 **Build the description from the `Brief MR/PR #N` in `05-implementation.md`**, not from the technical design. The brief is already written in business language — that is the right material. If `05-implementation.md` has no Brief (older work), draft one now based on what was actually built.
@@ -70,7 +80,7 @@ SQL to run **manually on the server BEFORE deploying**, all statements in a sing
 ⚠️ **Do not deploy until this SQL has been executed in production.**
 
 ## MR/PR in multi-delivery plan (only if applicable)
-<if `meta.json.mrs` has >1 entry: "MR/PR 2/4 of the delivery plan — see #1 (link) and pending #3, #4". Include links to already-merged previous ones.>
+<if `meta.json.mrs` has >1 entry: state which one this is (e.g. "MR/PR 2 of 4 in the delivery plan"), then list the already-created previous ones by their **URL** (the platform renders each one's title + real id) and the still-pending ones by their **title** in quotes. **Never use `#<n>`** — see the reference rule above. Example: "MR/PR 2 of 4. Previous: <url-of-first-MR>. Pending: «<title of the third>», «<title of the fourth>» (not opened yet).">
 
 ---
 
@@ -186,11 +196,15 @@ If `domain_memory.enabled` is `false` or empty, skip without notifying.
 The whole point of a train is to build the next MR/PR **without waiting for the current one to merge**. So do not stop here to wait for the merge — resolve `git.train_chain` from FLOW.md (`ask` | `always` | `wait`; **empty → derive from `autonomy.mode`**: `manual` → `ask`, `guided`/`auto` → `always`) and act:
 
 - **`wait`**: do not continue now. Leave `phase = "build"` and tell the user to run `/flow:feat:build` once the current MR/PR is merged. This legacy "wait for merge" behavior happens **only** when explicitly configured.
-- **`ask`**: ask with `AskUserQuestion` — "Continue now with the next MR/PR (#\<n+1\> «\<title\>»), stacked on this branch?". If **no** → stop and recommend `/flow:feat:build`. If **yes** → continue as in `always`.
+First identify the **next startable MR/PR**: the `pending` one with the lowest `n` whose `depends_on` are all `merged` (same rule as `/flow:feat:build §1`). Then decide its **base branch** by whether it depends on the just-shipped MR/PR:
+- **Depends on the current MR/PR** (`depends_on` includes the current `n`) → real train: base = the current branch (stacked).
+- **Parallel sibling** (does not depend on the current MR/PR — e.g. same wave, or a different independent chain) → it is **not** part of this train: base = `git.default_base`, `stacked_on` = null. Do not stack an independent MR/PR on an unrelated branch just because it is built next.
+
+- **`ask`**: ask with `AskUserQuestion` — "Continue now with the next MR/PR (#\<n\> «\<title\>»), based on \<its base branch per the rule above\>?". If **no** → stop and recommend `/flow:feat:build`. If **yes** → continue as in `always`.
 - **`always`**: continue automatically; record the decision in the artifact, do not prompt.
 
 To continue (both `ask`→yes and `always`):
-1. Create the next branch **stacked on the current branch**, following `/flow:feat:start §5` rules (explicit base = the current branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow:feat:start §5.5` (base = the current branch). Record `stacked_on` = current branch in `meta.json`.
+1. Create the next branch following `/flow:feat:start §5` rules with the **base chosen above** (explicit base, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow:feat:start §5.5` (base = the same). If it is a train (depends on the current one), record `stacked_on` = current branch in `meta.json`; if it is a parallel sibling, leave `stacked_on` = null.
 2. Leave `phase = "build"` (`/flow:feat:build §1` will pick the next `pending` MR/PR and mark it `in_progress`).
 3. Chain into `/flow:feat:build`.
 
