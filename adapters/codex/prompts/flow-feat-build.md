@@ -12,7 +12,7 @@ Implementation phase. This is where code gets written.
 - For `size` M/L: require that both `03-design.md` **and** `04-mr-plan.md` exist. If the plan is missing, send to `/flow-feat-plan`. If the design is missing, send to `/flow-feat-design`.
 - For `size` XS/S: allow starting without a design but ask the user for a 2-3 line note on what they're going to do and save it as a minimal `03-design.md`. No MR/PR plan (always 1 MR/PR).
 - Read all previous artifacts.
-- **If `meta.json.mrs` has more than one entry**: identify the first MR/PR with `status: "pending"`. That's the MR/PR for this iteration. If all are `merged`, warn: feature is done, nothing left to build. Mark the selected one as `in_progress` in `meta.json.mrs`.
+- **If `meta.json.mrs` has more than one entry**: pick the **startable** MR/PR — the `pending` one with the **lowest `n` whose `depends_on` are all `merged`**. An MR/PR whose dependencies are still `pending`/`in_progress` is **not** startable yet, even if its `n` is low. Since `n` follows the execution order (see `/flow-feat-plan`), that is normally the lowest-`n` pending entry; `depends_on` is the guard for trains where an earlier MR/PR has not merged. (Older plan without `wave`/`depends_on` → fall back to "first pending by `n`".) If several `pending` MRs/PRs share the same `wave` and have no dependency between them, they can go in parallel or as a train: default to the lowest `n`, but tell the user. If all are `merged`, warn: feature is done. If some are `pending` but none is startable, say which merge unlocks the next wave and stop. Mark the chosen one as `in_progress` in `meta.json.mrs`.
 
 ## 2. Business brief (before typing)
 
@@ -181,6 +181,7 @@ Review the "Deviations from the design" section of `05-implementation.md`. If **
 
 - **2+ significant deviations** (module change, different event contract, different entity, new unpredicted repository).
 - **1 deviation that invalidates a decision** from the ADR-light in `03-design.md`.
+- **A primitive materialized with a different name/role than the design named it** (design said *Query*, code built a *Command*; design said *service*, code built a *handler* wired through a bus). This is **vocabulary drift**: either the design's naming was wrong (update `03-design.md`) or the code chose the wrong primitive (fix the code). Reconcile it now — don't let the design and the code disagree on what each piece *is*, because `/flow-feat-review §5.5` and the reader judge the code, not the design's intent.
 
 **Pause the build and return to `/flow-feat-design`** to update the document.
 

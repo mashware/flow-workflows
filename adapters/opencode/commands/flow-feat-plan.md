@@ -25,7 +25,11 @@ Load the project conventions (see `FLOW.md` section `conventions`).
 
 Launch a sub-agent with this self-contained task:
 
-> Read `.claude/work/<TICKET>/03-design.md`. Propose how to split the implementation into **independently mergeable MRs/PRs**: each one must be able to live on its own on the main branch without breaking anything even if the following ones never arrive. Think about feature flags, temporary dead code, schema backward compatibility, multi-step online migrations, stable event contracts. **Do not create MRs/PRs dedicated to hypothetical future problems or defenses against scenarios the project already prevents — split only what the ticket needs today (YAGNI).** Table with: order, what it includes, independently mergeable (yes/no + how it's guaranteed), what it unblocks in the next one, risk if it stays alone on the main branch indefinitely, **`lines_est`** (approximate lines, sum of added + modified) and **`files_est`** (approximate files touched). Estimates are **soft** — they serve as a gauge during construction, not a contract. If the right answer is "1 single MR/PR", justify it and return that. Under 500 words.
+> Read `.claude/work/<TICKET>/03-design.md`. Propose how to split the implementation into **independently mergeable MRs/PRs**: each one must be able to live on its own on the main branch without breaking anything even if the following ones never arrive. Think about feature flags, temporary dead code, schema backward compatibility, multi-step online migrations, stable event contracts. **Do not create MRs/PRs dedicated to hypothetical future problems or defenses against scenarios the project already prevents — split only what the ticket needs today (YAGNI).**
+>
+> Then build the **dependency graph** (which MR/PR needs another one merged or deployed before it can start) and **sort it topologically into execution waves**: wave 1 = everything with no unmet dependency (can start immediately, in parallel); wave 2 = everything unblocked once wave 1 is in; and so on. **Number the MRs/PRs following that wave order** — the lowest numbers to wave 1, then wave 2, etc. — so that **every MR/PR's dependencies have a strictly lower number than itself** (`#1` is always a valid starting point, never "start at #5"). Within a wave (parallel, no dependency between them) the order is free; number them consecutively. **The number is the execution order, not a grouping by feature area.**
+>
+> Return a table with: **`n`** (final number = execution order), **`wave`**, **`depends_on`** (list of the `n` it needs merged first; empty if it can start immediately), what it includes, independently mergeable (yes/no + how it's guaranteed), what it unblocks in the next one, risk if it stays alone on the main branch indefinitely, **`lines_est`** (approximate lines, sum of added + modified) and **`files_est`** (approximate files touched). Estimates are **soft** — they serve as a gauge during construction, not a contract. If the right answer is "1 single MR/PR", justify it and return that. Under 600 words.
 
 If the feature touches payments, authentication, or sensitive data, launch **in parallel** the security sub-agent from `FLOW.md` (or a general-purpose sub-agent if empty) with this task: "For each proposed MR/PR in the delivery plan, identify whether it opens a security exposure window while the following ones aren't merged yet (e.g. new endpoint without its final check, column without its final constraint). Actionable items only."
 
@@ -39,11 +43,19 @@ Consolidate into `.claude/work/<TICKET>/04-mr-plan.md`:
 ## Summary
 - Number of MRs/PRs: N
 - Split rationale (1-2 lines):
-- Recommended order: #1 → #2 → …
+
+## Execution order (waves)
+The number of each MR/PR **is** its execution order: a lower number never depends on a higher one, so `#1` is always a valid starting point.
+- **Wave 1** (start now, in parallel): #1, #2
+- **Wave 2** (after #1 is merged/deployed): #3, #4
+- **Wave 3** (after #3): #5
+
+MRs/PRs in the same wave with no dependency between them can be built in parallel (or as a train). There is no "start at #5" — if something can start first, it is numbered first.
 
 ## MRs/PRs
 
 ### #1: <short title>
+- **Wave**: N — **depends on**: #a, #b (or "nothing — can start immediately").
 - **Includes**: bullets of what changes.
 - **Independently mergeable**: yes / no — how it's guaranteed (flag, nullable column, unused code, etc.).
 - **Unblocks**: what the next one can do.
@@ -55,7 +67,7 @@ Consolidate into `.claude/work/<TICKET>/04-mr-plan.md`:
 ### #2: …
 
 ## Dependencies between MRs/PRs
-<simple graph in bullets: #2 depends on migration from #1, etc.>
+<simple graph in bullets: #3 depends on migration from #1, etc. This graph is what produced the waves and the numbering above — keep them consistent.>
 
 ## Plan risks
 - Online migrations:
@@ -75,10 +87,12 @@ Add to `meta.json` the `mrs` array with the agreed plan:
 
 ```json
 "mrs": [
-  { "n": 1, "title": "…", "size": "S", "status": "pending", "lines_est": 120, "files_est": 6 },
-  { "n": 2, "title": "…", "size": "M", "status": "pending", "lines_est": 350, "files_est": 14 }
+  { "n": 1, "title": "…", "size": "S", "status": "pending", "wave": 1, "depends_on": [], "lines_est": 120, "files_est": 6 },
+  { "n": 2, "title": "…", "size": "M", "status": "pending", "wave": 2, "depends_on": [1], "lines_est": 350, "files_est": 14 }
 ]
 ```
+
+`n` follows the execution order (topological): `depends_on` only ever references a **lower** `n`, and `wave` groups MRs/PRs that can run in parallel. `/flow-feat-build §1` reads `depends_on` to pick the next **startable** MR/PR and to tell the user which ones can go in parallel; keep both fields accurate whenever the plan is edited or renumbered.
 
 Estimates are **indicative**, not contractual. `/flow-feat-build` uses them as a gauge: if real work exceeds `lines_est` by +50% or `files_est + 2`, it triggers the "cut or continue" question (see §C of build).
 

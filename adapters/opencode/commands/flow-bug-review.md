@@ -27,6 +27,12 @@ Deduplicate overlaps (correctness/simplification flagged by both — count once)
 - There must be no scope creep (hidden refactor). If there is, list it.
 - The regression test in `05-validation.md` must cover the case.
 
+`03-investigation.md` and `04-fix.md` are passed as context, **but treat their justifications as hypotheses, not axioms**: the root cause and the contracts are truth, yet any *"why I chose this approach"* prose in `04-fix.md` is a claim to test against the code — do not bless a choice merely because the fix rationalized it in writing.
+
+## 2.2 Idiom / primitive audit (only if the fix introduces new architectural pieces)
+
+A minimal fix rarely adds new classes — but when it does (a new service, handler, command/query, interface, or new bus/dispatch wiring), run the same blind idiom check as `/flow-feat-review §5.5`: launch the architecture sub-agent from `FLOW.md` (`agents.architecture`, or a general-purpose sub-agent if empty) with **only** the new pieces + their wiring and the project's primitive vocabulary (from `FLOW.md` `conventions`), **without** the fix's justifications. It asks the naïve first-read question per piece: does this class do what its name/role promises? Why does it depend on what it depends on (a bus injected only to call another handler, a service dressed as something else, an interface with a single handler consumer)? Is there a simpler, more honest primitive? Findings enter the flow like any other. If the fix adds no new architectural pieces, skip this.
+
 ## 3. Additional checks by area
 
 Only what the skill in §2 does not already cover. Launch additionally in parallel if applicable:

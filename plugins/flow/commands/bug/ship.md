@@ -40,6 +40,8 @@ A fix is a single MR/PR that completes the issue, and it targets `git.default_ba
 - **`linear`**: `Closes <TICKET>` (Linear id).
 - **`none` / empty**: nothing.
 
+**Referencing other issues/MRs/PRs in the body**: the `Closes #<N>` line above uses the **real issue id** and must auto-link. But anywhere else in the body, if you mention another MR/PR, **do not write a bare `#<number>` that is not the real issue** — GitHub/GitLab auto-resolve `#N` to whatever issue/PR carries that number and append its state (e.g. `#5 (closed)`), linking the wrong thing. Reference an existing MR/PR by its **URL**, and one that does not exist yet by its **title** in quotes.
+
 ### Description
 
 **Build the description from the Brief in `04-fix.md`**, not from previous technical artifacts. If `04-fix.md` has no Brief (old fix), draft one now from the reported symptom.

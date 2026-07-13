@@ -26,6 +26,14 @@ Launch **both** over the same scope and **consolidate their findings into a sing
 
 Both overlap on correctness and simplification: deduplicate those findings (count once). The specific reviewers that `review_skill` contributes (offensive/defensive security, silent failures, architecture) do not repeat in later phases.
 
+## 2.2 Design truth vs design rationale (do not inherit rationalizations)
+
+`03-design.md` is passed to reviewers as context, but **not all of it carries the same authority**:
+- Its **contracts and acceptance criteria are truth** — respect them, verify the code meets them.
+- Its **pattern/architecture decisions and their justifications** — the ADR-light "Why" column, phrases like *"respects bounded contexts"*, *"for consistency"*, *"follows the pattern"* — are **hypotheses, not axioms**. A reviewer may and should refute them if the code tells a different story.
+
+Do not bless a choice merely because the design rationalized it in prose. **A plausible written justification is the single most common way a wrong idiom survives review**: the reviewer reads "respects X", checks that X is indeed respected, and never asks whether that was the right tool at all. Treat every "Why" as a claim to test against the code, not a reason to stop looking.
+
 ## 3. Area-specific reinforcements
 
 Only what the skill in §2 does **not** already cover. If the feature touches specific areas, additionally launch **in parallel** (or sequentially):
@@ -84,6 +92,24 @@ Why blinded: if you pass the full code or full design, the agent rationalizes th
 Any "no" in the table → blocker. Pass it to the output as a broken-contract finding with a concrete adjustment proposal.
 
 If `05-implementation.md` has no "Contracts to respect" (build recorded "N/A"), skip this step.
+
+## 5.5 Idiom / primitive audit (blind to the design's rationale)
+
+The structural review (§2-§3) checks whether the code **respects the design's boundaries**; it does not ask whether the design **picked the right primitive**. That is a distinct blind spot: a piece can respect every layer and still be the wrong tool (a "Command" that only reads, a handler injecting the bus just to call another handler, a service dressed as something else). Structural reviewers miss it because it is **locally coherent and justified in writing** — and they read that justification. This pass is the naïve first-read question a fresh senior reviewer asks, deliberately **blinded** to the design's prose, exactly like §5.
+
+**When to run**: only if the diff **introduces new architectural pieces** (new classes, new wiring, new use of a stack primitive — not renames or tweaks). Then: **always on M/L**; on **S** only if it introduces such pieces or touches a sensitive surface; **skip on XS**. If it runs, launch the `agents.architecture` agent from `FLOW.md` (or a generic agent if empty) with this self-contained brief:
+
+> You audit the **idiom** of the new code — not its correctness, not whether it respects the design. You receive ONLY: (1) the new/changed architectural pieces of this diff (new classes, their constructor dependencies, how they are wired), and (2) the project's primitive vocabulary from its conventions (see `FLOW.md` `conventions`). **You do NOT receive the design document or its justifications.** If a choice was rationalized in prose elsewhere, that rationale is exactly what you must not inherit — your value is asking "why does this exist?" *without* the paper answer.
+>
+> For each new piece, ask what a fresh senior reviewer asks on first read:
+> - **Does this class do what its role/name promises?** A `Command`/`Query` doing the opposite (a command that only reads, a query that mutates); a `Service`/`Finder` that is a thin pass-through; a `Handler` with no handling logic.
+> - **Why does it depend on what it depends on?** Especially: an entry-point primitive (bus, dispatcher) injected only to call *another* handler (handler-to-handler dispatch); a bus used as glue between two internal pieces instead of as an entry point; an interface whose only consumer is another handler.
+> - **Is there a simpler, more honest primitive?** If the piece is a service disguised as something else, name the primitive it should be.
+> - **Lost type/contract**: a return typed `mixed`/`object` patched with a `@var` docblock is a signal the wrong seam was chosen.
+>
+> Output: per finding, `file:line`, the smell in one line, and the honest alternative primitive. Say nothing about pieces that are idiomatic. Do not invent smells to fill space — "the new pieces are idiomatic" is a valid, good result. Under 250 words.
+
+Findings from this pass enter the normal flow: they go through §6 (adversarial verification) and into the output like any other. **Why blinded**: as in §5, if you feed it the design's rationale it rationalizes the smell away ("ah, it uses the bus to respect bounded contexts") instead of asking whether the bus belonged there at all.
 
 ## 6. Adversarial verification of findings (parallel subagents, optional M/L)
 

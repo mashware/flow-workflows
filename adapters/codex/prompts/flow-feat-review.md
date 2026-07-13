@@ -23,6 +23,14 @@ Launch **both** over the same scope and **consolidate their findings into a sing
 
 The two overlap on correctness and simplification: deduplicate those findings (count them once).
 
+## 2.2 Design truth vs design rationale (don't inherit rationalizations)
+
+`03-design.md` is passed to reviewers as context, but not all of it carries the same authority:
+- Its **contracts and acceptance criteria are truth** — respect them, verify the code meets them.
+- Its **pattern/architecture decisions and their justifications** — the ADR-light "Why" column, phrases like *"respects bounded contexts"*, *"for consistency"*, *"follows the pattern"* — are **hypotheses, not axioms**. A reviewer may and should refute them if the code tells a different story.
+
+Don't bless a choice merely because the design rationalized it in prose. **A plausible written justification is the single most common way a wrong idiom survives review**: the reviewer reads "respects X", checks that X is indeed respected, and never asks whether that was the right tool at all. Treat every "Why" as a claim to test against the code, not a reason to stop looking.
+
 ## 3. Reinforcements by area
 
 Only what the §2 skill does **not** already cover. If the feature touches specific areas, additionally launch **in parallel**:
@@ -76,6 +84,24 @@ If `05-implementation.md` has a "Contracts to respect" section, launch a general
 Any "no" in the table → blocker.
 
 If `05-implementation.md` has no "Contracts to respect" (build recorded "N/A"), skip this step.
+
+## 5.5 Idiom / primitive audit (blind to the design's rationale)
+
+The structural review (§2-§3) checks whether the code **respects the design's boundaries**; it doesn't ask whether the design **picked the right primitive**. A piece can respect every layer and still be the wrong tool (a "Command" that only reads, a handler injecting the bus just to call another handler, a service dressed as something else). Structural reviewers miss it because it's locally coherent and justified in writing — and they read that justification. This is the naïve first-read question, deliberately **blinded** to the design's prose, exactly like §5.
+
+**When to run**: only if the diff **introduces new architectural pieces** (new classes, new wiring, new use of a stack primitive — not renames or tweaks). Then: **always on M/L**; on **S** only if it introduces such pieces or touches a sensitive surface; **skip on XS**. If it runs, launch the `agents.architecture` agent from `FLOW.md` (or a general subagent if empty) with this self-contained brief:
+
+> You audit the **idiom** of the new code — not its correctness, not whether it respects the design. You receive ONLY: (1) the new/changed architectural pieces of this diff (new classes, their constructor dependencies, how they're wired), and (2) the project's primitive vocabulary from its `conventions` (see `FLOW.md`). **You do NOT receive the design document or its justifications** — that rationale is exactly what you must not inherit; your value is asking "why does this exist?" *without* the paper answer.
+>
+> For each new piece, ask what a fresh senior reviewer asks on first read:
+> - **Does this class do what its role/name promises?** A `Command`/`Query` doing the opposite (a command that only reads, a query that mutates); a `Service`/`Finder` that is a thin pass-through; a `Handler` with no handling logic.
+> - **Why does it depend on what it depends on?** Especially: an entry-point primitive (bus, dispatcher) injected only to call *another* handler; a bus used as glue between two internal pieces instead of as an entry point; an interface whose only consumer is another handler.
+> - **Is there a simpler, more honest primitive?** If the piece is a service disguised as something else, name the primitive it should be.
+> - **Lost type/contract**: a return typed `mixed`/`object` patched with a docblock is a signal the wrong seam was chosen.
+>
+> Output: per finding, `file:line`, the smell in one line, and the honest alternative primitive. Say nothing about idiomatic pieces. Don't invent smells to fill space — "the new pieces are idiomatic" is a valid, good result. Under 250 words.
+
+Findings enter the normal flow (§6 verification, then output). **Why blinded**: as in §5, feeding it the design's rationale makes it rationalize the smell away ("ah, it uses the bus to respect bounded contexts") instead of asking whether the bus belonged there at all.
 
 ## 6. Adversarial finding verification (optional M/L)
 

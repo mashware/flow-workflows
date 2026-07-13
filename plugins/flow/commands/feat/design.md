@@ -169,8 +169,12 @@ Before closing, **challenge the design** by launching an `Agent general-purpose`
 > 2. **Fragile assumptions** (look for what is missing): what beliefs in the design might not hold? What is each one, how could it fail, what would happen? **But before flagging it, confirm the failure is possible in the project** — do not invent theoretical fragilities.
 > 3. **Simplification**: is there a simpler way to achieve the same? Is any piece redundant with "What already exists"?
 > 4. **Production operation**: rollback, observability, online migrations, cross-effects with workers/caches/queues. Only what truly applies to this change.
+> 5. **Decision idiom (audit the "Decisions (ADR-light)" table)**: for each row `Decision | Discarded alternative | Why`:
+>    - **False dichotomy**: the row frames the choice as exactly two options (A vs B). Is there an **option C** that was not considered? Name it. The classic trap: *"use the bus vs couple to the concrete class directly"* silently ignores *"expose a service behind an interface"* — which respects the boundary just as well without the downside. If the decision is binary, suspect a missing third path.
+>    - **Rationale smell**: is the "Why" a *verifiable reason* or a *manual-sounding phrase* (*"respects bounded contexts"*, *"for consistency"*, *"follows the pattern"*)? If it cannot be checked against a concrete constraint in this project, flag it — it must be made concrete, or marked as a claim to re-verify against the code in review. A justification that sounds like a textbook is how the wrong choice survives.
+>    - **Primitive fit**: does each chosen primitive match its job by name and role (a Query that only reads, a Command that mutates state or emits events)? A primitive doing the opposite of its name is a design smell before it is a code smell.
 >
-> Read `01-context.md` for the business goal. Output: markdown table `| Angle | Finding | Type (unnecessary/missing) | Severity |` with severities `high`/`medium`/`low`. Under 500 words. Do not invent problems to fill space — if an angle has no findings, say "no findings". It is perfectly valid (and desirable) for the result to say "the design is tight, nothing unnecessary or missing".
+> Read `01-context.md` for the business goal. Output: markdown table `| Angle | Finding | Type (unnecessary/missing/idiom) | Severity |` with severities `high`/`medium`/`low`. Under 550 words. Do not invent problems to fill space — if an angle has no findings, say "no findings". It is perfectly valid (and desirable) for the result to say "the design is tight, nothing unnecessary or missing".
 
 If the feature touches a **sensitive domain** (payments, authentication, personal data, usage/tracking counters), launch **in parallel** a second `Agent general-purpose` focused on that domain:
 
@@ -185,6 +189,7 @@ Consolidate findings at the end of `03-design.md` under:
 |-------|---------|------|----------|----------|
 | Fit/need | … | unnecessary | high | <empty at first — user fills in> |
 | Assumption | … | missing | medium | … |
+| Decision idiom | … | idiom | high | … |
 | Operation | … | missing | low | … |
 ```
 
@@ -192,6 +197,7 @@ Consolidate findings at the end of `03-design.md` under:
 
 - If the finding is **"unnecessary"** (fit/YAGNI): **Cut it** (remove the piece from the design — default option), or **Keep and justify** (fill in "Response" with the real scenario that requires it — if you cannot name one, it is unnecessary).
 - If the finding is **"missing"** (assumption/operation): **Reopen brainstorm/design** to incorporate it, or **Assume and document** (fill in "Response" with the conscious assumption — `"We assume X because Y"`).
+- If the finding is **"idiom"** (false dichotomy / rationale smell / primitive mismatch): **Adopt the third option or correct the primitive** (update the ADR row and the affected plan — default when option C is clearly better), or **Keep and make the "Why" concrete** (replace the manual-sounding phrase with a checkable reason; if you cannot, the decision is not justified). Do not leave the rationale as a textbook phrase.
 
 Do not advance to close with unresolved high severities. Medium and low ones are informational — they stay on record so code review has them in view. **A challenger that returns "nothing unnecessary or missing, the design is tight" is a good result, not a failure** — do not force findings.
 

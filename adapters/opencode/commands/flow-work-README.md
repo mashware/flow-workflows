@@ -63,6 +63,8 @@ If the file does not exist or a key is empty, each command auto-discovers the va
       "title": "…",
       "size": "S",
       "status": "pending" | "in_progress" | "merged" | "closed" | "superseded",
+      "wave": 1,
+      "depends_on": [],
       "lines_est": 120,
       "files_est": 6,
       "url": "https://...",
