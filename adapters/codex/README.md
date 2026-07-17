@@ -6,7 +6,7 @@ Brings the `/flow-feat-*`, `/flow-bug-*`, and `/flow-work-*` workflows from the 
 
 ```
 adapters/codex/
-├── prompts/              — 24 custom prompts (one per workflow command)
+├── prompts/              — 25 custom prompts (one per workflow command)
 │   ├── flow-feat-start.md
 │   ├── flow-feat-brainstorm.md
 │   ├── flow-feat-design.md
@@ -28,6 +28,7 @@ adapters/codex/
 │   ├── flow-work-status.md
 │   ├── flow-work-try.md
 │   ├── flow-work-abandon.md
+│   ├── flow-work-respond.md
 │   ├── flow-work-watch.md
 │   ├── flow-init.md
 │   ├── flow-config.md

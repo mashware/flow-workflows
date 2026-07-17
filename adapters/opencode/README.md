@@ -1,6 +1,6 @@
 # flow → opencode adapter
 
-This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 24 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
+This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 25 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
 
 ## Command notation: `:` → `-`
 

@@ -106,11 +106,16 @@ For M/L with multiple MR/PRs, the `build → review → validate → ship` block
 
 `/flow:bug:start {TICKET}` → `/flow:bug:diagnose` → `/flow:bug:investigate` → `/flow:bug:fix` → `/flow:bug:validate` → `/flow:bug:review` → `/flow:bug:postmortem` → `/flow:bug:ship` (alias)
 
+## After `ship`, before `merge`: the review loop
+
+`ship` opens the MR/PR; it is rarely merged untouched. When reviewers comment and a discussion starts, `/flow:work:respond` runs the round: triage → debate → agreed changes → reply. It is cross-cutting (feat or bug) and repeats once per review round until the MR/PR is approved. It never resolves threads. See the cross-cutting section below.
+
 ## Cross-cutting commands
 
 - `/flow:work:status` — shows all works in `.claude/work/`, current phase, and divergence with git.
 - `/flow:work:resume` — detects the current branch, reads `meta.json`, recaps, and suggests the next step.
 - `/flow:work:try <branch>` / `/flow:work:try --back` — point the main checkout at a branch to test it against this checkout's environment, then return; re-syncs per `git.worktree_resync` in FLOW.md. Generic (no project Makefile needed); complements worktrees.
+- `/flow:work:respond [mr-iid-or-url]` — the phase **between `ship` and `merge`**: reviewers left comments on the open MR/PR and a discussion is happening. Triages the open threads (question / nitpick / change request / design debate / out-of-scope / obsolete), drafts a reasoned response per thread **grounded in the recorded design rationale** (`03-design.md` ADR-light + `domain-memory`), implements the agreed code changes reusing `build`/`fix` mechanics, and replies — with hard gates on every posting and push, and it **never resolves a thread** (that stays the reviewer's call). Repeatable: one invocation per review round, logged to `08-feedback.md`. It does not advance `meta.json.phase`.
 - `/flow:config` — show the effective FLOW.md config (set vs empty-with-fallback) and validate it. Read-only.
 - `/flow:work:watch {TICKET} [30m]` — autopiloted post-deploy monitoring: observes the observability platform (per FLOW.md `observability`) scoped to the change, comparing against a baseline (preceding window + same weekday of the prior week, ratios over counts), and alerts immediately on any regression. External state polling via `ScheduleWakeup`; does not touch code or production.
 

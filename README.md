@@ -103,12 +103,29 @@ a review with high-severity findings.
 |---|---|
 | `/flow:init` | Wizard that generates this repo's `FLOW.md` (auto-detects, asks the minimum) |
 | `/flow:config` | Show the effective `FLOW.md` config: what is set, what is empty (and its fallback), plus validation |
+| `/flow:work:respond` | **Review loop** (between `ship` and `merge`) — triage the open MR/PR threads, debate, implement the agreed changes, reply; never resolves threads (see below) |
 | `/flow:work:watch` | **Post-deploy watcher** — monitors observability after a deploy, flags regressions (see below) |
 | `/flow:work:status` | Summary of all open work items in `.claude/work/` |
 | `/flow:work:resume` | Resume the work tied to the current branch and suggest the next step |
 | `/flow:work:try` | Point the main checkout at a branch to test it (then `--back`), re-syncing the env per `git.worktree_resync` |
 | `/flow:work:abandon` | Close a work item without shipping (discarded feature, non-bug…) |
 | `/flow:save-knowledge` | Consolidate the branch's findings into the `domain-memory` store |
+
+## Review loop (`/flow:work:respond`)
+
+`ship` opens the MR/PR, but it is rarely merged untouched — reviewers comment, a discussion starts
+on the code, and only after you agree do you know whether to change something, defer it, or hold
+your ground. That phase, **between `ship` and `merge`**, is what `/flow:work:respond` runs.
+
+It fetches the open threads (via `gh`/`glab`), **triages** each one (question · nitpick · change
+request · design debate · out-of-scope · obsolete), and drafts a response per thread. For the
+design debates it argues from the **rationale the flow already recorded** (`03-design.md` ADR-light,
+the challenges, `domain-memory`) instead of re-deriving it — that recorded "why" is exactly the
+ammunition a good review reply needs. Agreed code changes reuse the `build`/`fix` mechanics (with
+the same review gate for non-trivial diffs); replies and pushes are **hard gates** you confirm; and
+it **never resolves a thread** — it tells you which are ready and leaves that call to you. It is
+repeatable (one run per review round, logged to `08-feedback.md`) and works for both feat and bug
+MR/PRs.
 
 ## Post-deploy watcher (`/flow:work:watch`)
 
