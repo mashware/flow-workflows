@@ -7,21 +7,62 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command by asking the user to confirm it (write the question with the recommended next step as the default numbered option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
-You are starting a feature. `{{args}}` must be the ticket identifier (format `tracker.prefix` from `FLOW.md`; empty = free). If empty, ask the user directly and stop without writing anything.
+You are starting a feature. `{{args}}` is **optional**:
+
+- **Given** — an identifier in `tracker.prefix` format from `FLOW.md` → *ticket mode*: start from that ticket (the classic path; §2 reads it).
+- **Empty** — *ticket-less mode*: do **not** stop and do **not** demand a ticket. Synthesize a draft ticket from the conversation you have just had with the user (§2.5) — the same way `/flow:feat:ship` builds the MR/PR body from the work log. This is the one-word entry: land the idea in chat, type `/flow:feat:start`, and it captures what you concluded instead of making you restate it. Only fall back to asking the user for a one-liner if there is no conversation to draft from.
 
 ## 1. Pre-flight
 
 - Read `FLOW.md` at the repo root. If it does not exist, continue with default behavior (each step indicates what to do if a key is missing).
 - Verify that the repo has a recognizable project structure. If not, warn and stop.
-- If `.claude/work/{{args}}/meta.json` already exists, do not overwrite it: warn the user and suggest `/flow:work:resume`.
+- **Determine the mode** from `{{args}}`: non-empty → *ticket mode* (identifier = `{{args}}`); empty → *ticket-less mode* (the identifier is the slug resolved in §2.5).
+- Once the identifier is known, if `.claude/work/<identifier>/meta.json` already exists, do not overwrite it: warn the user and suggest `/flow:work:resume`. In ticket-less mode run this check right after the slug is decided in §2.5.
 
 ## 2. Gather context
 
 Launch these tasks in **parallel** (if your environment supports it, or sequentially otherwise):
 
-1. **Tracker**: if `tracker.tool` from `FLOW.md` is not `none`, read the ticket with `tracker.view_cmd` substituting `{TICKET}` — extract title, description, acceptance criteria. If `tool` is `none` or empty, or if the command fails, ask the user to paste the description and continue with what they provide.
+1. **Tracker** *(ticket mode only)*: if `tracker.tool` from `FLOW.md` is not `none`, read the ticket with `tracker.view_cmd` substituting `{TICKET}` — extract title, description, acceptance criteria. If `tool` is `none` or empty, or if the command fails, ask the user to paste the description and continue with what they provide. **In ticket-less mode there is no ticket to read — skip this and use the synthesis in §2.5 as the source of title/description/criteria.**
 2. **domain-memory**: if `domain_memory.enabled` is `true`, invoke the `domain-memory` MCP with `search_knowledge` using the title and keywords of the ticket. If it does not respond within 2 s or fails, continue without context.
 3. **Git**: check that you are on a clean branch. If there are uncommitted changes, warn but do not block.
+
+## 2.5 Ticket-less start (only when `{{args}}` is empty)
+
+Skip this whole section in ticket mode. In ticket-less mode it replaces the tracker read as the source of the work definition.
+
+### 2.5.1 Synthesize the draft from the conversation
+From the conversation held with the user in this session, distil a draft ticket — do **not** invent scope that was not discussed:
+
+- **Title** — one line, imperative, English.
+- **Summary** — 3-5 bullets of what is being built and why.
+- **Provisional acceptance criteria** — what "done" looks like, as far as the conversation settled it.
+- **Decisions already closed while talking** — the conclusions you reached together; capture them verbatim so they are not lost.
+- **Open questions / risks** — what is still undecided.
+- **Estimated size** — `XS|S|M|L` with one line of justification (confirmed in §4).
+
+If there is **not enough conversation** to draft from (e.g. `start` was invoked cold), do not fabricate: ask the user for a one-line description (or a ticket id) and build the draft from that.
+
+### 2.5.2 Slug
+Derive a short English kebab-case slug (≤5 words) from the title. This is the work identifier: the work lives in `.claude/work/<slug>/` and, in local-only mode, names the branch. Run the §1 "already exists" check now against `<slug>`.
+
+### 2.5.3 Confirm the draft
+Show the draft to the user and let them confirm or adjust **before writing anything**. This is the step that replaces having to say "create a task with what we discussed".
+
+### 2.5.4 Offer to create the tracker issue
+Creating a tracker issue is an **outward-facing action → always ask, in every autonomy mode** (like the MR/PR gate; never automatic):
+
+- If `tracker.tool` is not `none`, ask the user directly in text whether to create the real issue in the tracker from this draft.
+  - **Yes** → create it with the tool's native command, best-effort:
+    - `gh` → `gh issue create --title "<title>" --body "<summary + criteria>"`
+    - `glab` → `glab issue create --title "<title>" --description "<summary + criteria>"`
+    - `acli` (Jira) / `linear` → the tool's create command; if it is unclear, ask the user to create it and paste the id.
+
+    Capture the returned identifier. **From here the run is in ticket mode**: the identifier becomes that id, the work dir is `.claude/work/<id>/`, and branch naming uses the real id (so the branch is registered as a linked branch of the issue when it is created). If creation fails, warn and fall back to local-only with the slug.
+  - **No** → local-only: the identifier stays the slug, no tracker issue is created. You (or a later `start`) can create one by hand.
+- If `tracker.tool` is `none` or empty, skip the offer and proceed local-only with the slug.
+
+Record the outcome for `meta.json` (§6): `draft_from_conversation: true`, and `tracker_issue` = the created id/url or `null`.
 
 ## 3. Clarify ticket gaps
 
@@ -76,7 +117,7 @@ git status --porcelain            # clean tree?
   - **Stacked on `<current-branch>`** (train mode) — only if this task depends on another not yet merged. Note it in `meta.json` as `stacked_on` and remember that the MR/PR will point to that branch, not the main base.
 
 ### 5.2 Create with explicit base and WITHOUT inheriting its upstream
-Name: per `git.branch_pattern` from `FLOW.md` (substitute `{PREFIX}` and `{TICKET}`; `{slug}` in English, kebab-case). Create only if the user confirms:
+Name: per `git.branch_pattern` from `FLOW.md` (substitute `{PREFIX}` and `{TICKET}`; `{slug}` in English, kebab-case). **In ticket-less local-only mode there is no `{TICKET}`**: name the branch `<prefix><slug>` (prefix from `tracker.prefix` if set), i.e. apply the pattern with the §2.5 slug in the `{slug}` position and drop the `{TICKET}` segment (collapse any doubled separator). Create only if the user confirms:
 ```bash
 git fetch origin
 git switch --create <branch-name> --no-track <git.default_base>      # independent task
@@ -105,12 +146,12 @@ git push -u origin HEAD    # upstream = origin/<branch-name>, never the main bas
 
 ## 6. Write artifacts
 
-Create `.claude/work/{{args}}/`:
+Create `.claude/work/<identifier>/` (identifier = `{{args}}` in ticket mode; the slug or created issue id in ticket-less mode):
 
 ### `meta.json`
 ```json
 {
-  "ticket": "{{args}}",
+  "ticket": "<identifier: {{args}} in ticket mode; the slug or created issue id in ticket-less mode>",
   "type": "feat",
   "title": "<ticket title>",
   "branch": "<branch created in §5>",
@@ -119,11 +160,15 @@ Create `.claude/work/{{args}}/`:
   "size": "<XS|S|M|L>",
   "phase": "context",
   "phases_done": ["context"],
+  "draft_from_conversation": false,
+  "tracker_issue": null,
   "started_at": "<ISO8601 now>",
   "updated_at": "<ISO8601 now>",
   "notes": ""
 }
 ```
+
+In ticket-less mode (§2.5) set `draft_from_conversation: true` and `tracker_issue` to the created issue id/url (or `null` if local-only). In ticket mode leave both at their defaults above.
 
 ### `01-context.md`
 Structure:
@@ -149,6 +194,8 @@ Structure:
 ## Estimated size: <XS|S|M|L>
 <2 lines of justification>
 ```
+
+In ticket-less mode, fill `## Ticket` and `## Acceptance criteria` from the §2.5 synthesized draft, put the conversation's closed decisions under `## Decisions clarified in /flow:feat:start`, and add one line noting the work was synthesized from conversation and whether a tracker issue was created (id) or it is local-only.
 
 ## 7. Close
 

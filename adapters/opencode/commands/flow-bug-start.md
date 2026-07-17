@@ -4,7 +4,10 @@ description: Start a bug flow (tracker, domain-memory, size, branch, initial art
 
 # `/flow-bug-start $ARGUMENTS`
 
-Start a bug. `$ARGUMENTS` is the ticket (format `tracker.prefix` from FLOW.md; empty = free-form). If empty, ask for it and stop.
+Start a bug. `$ARGUMENTS` is **optional**:
+
+- **Given** — a ticket (format `tracker.prefix` from FLOW.md) → *ticket mode*: start from it (§1 reads it).
+- **Empty** — *ticket-less mode*: do **not** stop. Synthesize the bug from the conversation you have just had with the user (§1.5) — the frequent case where the user detected something and you investigated it together. Only fall back to asking for a one-line symptom if there is no conversation to draft from.
 
 ## 0. Pre-flight
 
@@ -13,16 +16,49 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command by asking the user to confirm it (write the question with the recommended next step as the default numbered option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
 - Verify you're in the correct repo.
-- If `.claude/work/$ARGUMENTS/meta.json` exists, suggest `/flow-work-resume`.
+- **Determine the mode** from `$ARGUMENTS`: non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
+- Once the identifier is known, if `.claude/work/<identifier>/meta.json` exists, suggest `/flow-work-resume`. In ticket-less mode run this check right after the slug is decided in §1.5.
 
 ## 1. Gather context
 
 In parallel:
 
-1. **Tracker**: read it using `tracker.view_cmd` from FLOW.md (replace `{TICKET}` with `$ARGUMENTS`). If `tool:none` or the key is missing, ask the user for the symptom, severity, and environment.
+1. **Tracker** *(ticket mode only)*: read it using `tracker.view_cmd` from FLOW.md (replace `{TICKET}` with `$ARGUMENTS`). If `tool:none` or the key is missing, ask the user for the symptom, severity, and environment. **In ticket-less mode skip this — §1.5 synthesis is the source of symptom/severity/environment.**
 2. **domain-memory** (if `domain_memory.enabled`): call `search_knowledge` with keywords from the symptom. Useful for detecting prior postmortems in the same area.
 3. **Observability** if the incident is recent: if you have clues (service, trace, log), consider using the `observability.platform` MCP tools from FLOW.md. If not, don't force it.
 4. **Git**: check for a clean working tree and base commit.
+
+## 1.5 Ticket-less start (only when `$ARGUMENTS` is empty)
+
+Skip this whole section in ticket mode. In ticket-less mode it replaces the tracker read as the source of the bug definition.
+
+### 1.5.1 Synthesize the bug from the conversation
+From the conversation held with the user in this session — the user spotted something and you investigated it together — distil the bug. Do **not** invent facts not observed:
+
+- **Symptom** — what is misbehaving, one line.
+- **Severity / affected environment** — as far as the conversation established it.
+- **Reproduction / trigger** — the steps or condition seen to cause it.
+- **Initial clues** — stack traces, logs, traces, dead-letter workers mentioned while investigating.
+- **What you already found together** — conclusions reached in the investigation so far (capture verbatim; this is real progress, don't lose it).
+- **Estimated size** — `XS|S|M|L` with one line (confirmed in §2).
+
+If there is **not enough conversation** to draft from, don't fabricate: ask the user for a one-line symptom (or a ticket id) and build from that.
+
+### 1.5.2 Slug
+Derive a short English kebab-case slug (≤5 words) from the symptom. This is the work identifier: the work lives in `.claude/work/<slug>/` and, in local-only mode, names the branch. Run the §0 "already exists" check now against `<slug>`.
+
+### 1.5.3 Confirm the draft
+Show the draft to the user and let them confirm or adjust **before writing anything**. This replaces having to say "create a task with what we found".
+
+### 1.5.4 Offer to create the tracker issue
+Creating a tracker issue is an **outward-facing action → always ask, in every autonomy mode** (like the MR/PR gate; never automatic):
+
+- If `tracker.tool` is not `none`, ask the user (numbered options, recommended default first) whether to create the real issue from this draft.
+  - **Yes** → create it with the tool's native command, best-effort (`gh issue create`, `glab issue create`, the `acli`/`linear` create command; if unclear, ask the user to create it and paste the id). Capture the id. **From here the run is in ticket mode**: identifier = that id, work dir `.claude/work/<id>/`, branch named from the real id. If creation fails, warn and fall back to local-only with the slug.
+  - **No** → local-only: identifier stays the slug, no issue created.
+- If `tracker.tool` is `none` or empty, skip the offer and proceed local-only with the slug.
+
+Record the outcome for `meta.json` (§4): `draft_from_conversation: true`, and `tracker_issue` = the created id/url or `null`.
 
 ## 2. Classify size
 
@@ -46,6 +82,8 @@ git fetch origin
 git switch --create $ARGUMENTS-fix-slug --no-track <git.default_base>   # independent base; --no-track required
 ```
 
+In ticket-less local-only mode there is no `$ARGUMENTS`: name the branch `<slug>-fix` from the §1.5 slug (prefix from `tracker.prefix` if set). If an issue was created in §1.5.4, use the real id as usual.
+
 If the current branch is not the main base, ask the user for the base (`git.default_base` recommended, or stacked on top of the current one in train mode → record it as `stacked_on`). Create only after user confirmation. First push always `git push -u origin HEAD` (in `ship`), never to the main base.
 
 **Worktree mode** (same as `/flow-feat-start` §5.0/§5.4): read `git.worktree` from FLOW.md. If `always` (or `ask` and the user chooses it), create the branch as a worktree instead of switching in place — `git worktree add --no-track -b <branch> <worktree-path> <git.default_base>`, path from `git.worktree_path` (empty → `.worktrees/<branch>`, git-ignore it). Don't `git switch`; the fix runs from the worktree (`cd <worktree-path>`). Record the resolved path in `meta.json.worktree`. If `off`/empty, in place as above and `worktree` is `null`.
@@ -55,15 +93,17 @@ If the current branch is not the main base, ask the user for the base (`git.defa
 `.claude/work/$ARGUMENTS/meta.json`:
 ```json
 {
-  "ticket": "$ARGUMENTS",
+  "ticket": "<identifier: $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
   "type": "bug",
-  "title": "<symptom from tracker>",
+  "title": "<symptom from tracker, or synthesized in §1.5>",
   "branch": "<branch created in §3>",
   "stacked_on": null,
   "worktree": "<worktree path if created in §3, else null>",
   "size": "<XS|S|M|L>",
   "phase": "context",
   "phases_done": ["context"],
+  "draft_from_conversation": false,
+  "tracker_issue": null,
   "started_at": "...",
   "updated_at": "...",
   "notes": ""
@@ -93,6 +133,8 @@ If the current branch is not the main base, ask the user for the base (`git.defa
 
 ## Estimated size: <XS|S|M|L>
 ```
+
+In ticket-less mode set `draft_from_conversation: true` and `tracker_issue` (created id/url or `null`); fill `## Reported symptom`, `## Tracker data` and `## Initial clues` from the §1.5 synthesized draft, and add one line noting the bug was synthesized from the investigation and whether a tracker issue was created (id) or it is local-only.
 
 ## 5. Wrap-up
 
