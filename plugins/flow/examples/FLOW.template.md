@@ -67,13 +67,15 @@ npm/composer scripts, etc.) and reports what it uses.
 - `db_update:`        # e.g. `make database-update` (empty if not applicable)
 - `db_diff:`          # command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL)
 - `frontend_test:`    # e.g. `make test-frontend` (empty if no frontend)
-- `review_depth:`     # how much of the review panel runs, scaled by work size, in `/flow:*:review`. `proportional` (default) | `full`.
+- `review_depth:`     # how much of the review panel runs AND at what effort, scaled by work size + risk, in `/flow:*:review`. `proportional` (default) | `full`.
                       #   proportional → XS: only the built-in `code-review` (medium effort), no panel. S: built-in `code-review` (high) plus
                       #                  the panel ONLY if the diff touches a sensitive surface (auth/authorization, secrets, payments/billing,
                       #                  personal/sensitive data, a public API/contract shape, or a DB migration/schema change); otherwise built-in only.
-                      #                  M/L: full panel. Keeps trivial changes fast without giving up depth where it matters.
-                      #   full         → always run the built-in `code-review` (high) + the full panel regardless of size (pre-0.7 behavior).
-                      # Empty = `proportional`.
+                      #                  M: built-in (high) + full panel. L: built-in (xhigh) + full panel. A sensitive surface raises the built-in
+                      #                  one effort tier (medium→high→xhigh→max) and forces the panel — risk, not just size, buys depth.
+                      #   full         → always run the built-in `code-review` (xhigh) + the full panel regardless of size (pre-0.7 behavior).
+                      # Empty = `proportional`. Effort ladder low<medium<high<xhigh<max applies where the tool exposes it (Claude Code); adapters
+                      # for other tools read "higher effort" as maximum thoroughness for L-sized or sensitive-surface work.
 - `review_skill:`     # orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below.
 - `reviewers:`        # if `review_skill` is empty: list of agents that run in parallel as a review panel (one per line with `- `). Empty with no skill = only the built-in `code-review`.
 

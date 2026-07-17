@@ -19,7 +19,7 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 Launch **both** over the fix scope against the base (committed + uncommitted working tree) and **consolidate their findings into a single deduplicated report**:
 
-1. **Integrated review**: run a full pass over the local diff looking for correctness bugs + simplification/efficiency issues, at high effort. If the tool has a built-in review skill or command, use it; otherwise perform the review yourself.
+1. **Integrated review**: run a full pass over the local diff looking for correctness bugs + simplification/efficiency issues, at high effort — **escalated to the maximum thoroughness the tool supports when `meta.json.size` is L or the diff touches a sensitive surface** (auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change). If the tool has a built-in review skill or command, use it (at its highest effort tier for those cases); otherwise perform the review yourself.
 2. **`quality.review_skill` from FLOW.md**: invoke it as a skill, passing `03-investigation.md` and `04-fix.md` as context. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those sub-agents in parallel as a review panel. If both are empty, rely on the integrated review already run in step 1.
 
 Deduplicate overlaps (correctness/simplification flagged by both — count once). Fix-specific focus beyond the generic analysis:

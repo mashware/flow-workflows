@@ -19,16 +19,18 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 Scope for every reviewer below: the fix against the base (committed + uncommitted working tree).
 
-### 2.0 Resolve review depth (scale to the work size)
-Read `quality.review_depth` from `FLOW.md` (`proportional` | `full`; empty → `proportional`) and `meta.json.size`. A minimal fix does not need a full specialized panel:
+### 2.0 Resolve review depth (scale to the work size and the risk)
+Read `quality.review_depth` from `FLOW.md` (`proportional` | `full`; empty → `proportional`) and `meta.json.size`. A minimal fix does not need a full specialized panel; the riskiest fixes earn the top effort tiers. The built-in `code-review` exposes an effort ladder **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage):
 
-- **`full`** (any size): built-in `code-review` (high) + the project panel. Pre-0.7 behavior; skip the tiering below.
-- **`proportional`** (default), by size:
+- **`full`** (any size): built-in `code-review` (**xhigh**) + the project panel. Pre-0.7 behavior; skip the tiering below.
+- **`proportional`** (default), base effort by size:
   - **XS**: built-in `code-review` **only**, at **medium** effort. No project panel.
   - **S**: built-in `code-review` at **high** effort. Project panel **only if** the diff touches a **sensitive surface** (auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change); otherwise built-in only.
-  - **M** / **L**: built-in `code-review` (high) + the project panel.
+  - **M**: built-in `code-review` (**high**) + the project panel.
+  - **L**: built-in `code-review` (**xhigh**) + the project panel.
+- **Sensitive-surface bump** (proportional, any size): if the diff touches a sensitive surface, **raise the built-in effort one tier** (medium→high→xhigh→**max**) and always run the panel — so an XS/S security or migration fix gets a far deeper pass than its line count suggests.
 
-Record in `06-review.md` which tier ran and why. Note fixes skew XS/S, so most fixes get the built-in pass alone.
+Record in `06-review.md` which tier and effort ran and why. Note fixes skew XS/S, so most fixes get the built-in pass alone — but a sensitive-surface fix escalates regardless of size.
 
 ### 2.1 Launch and consolidate
 Launch the reviewers selected in §2.0 and **consolidate their findings into a single deduplicated report**:
@@ -87,7 +89,7 @@ Use the `quality` commands from FLOW.md; if empty, auto-discover:
 # Fix review {TICKET}
 
 ## Summary
-- Review tier: <full | proportional — which reviewers ran and why, per §2.0>
+- Review tier: <full | proportional — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
 - Agents launched: …
 - Blockers: N
 - Suggestions: M
