@@ -18,7 +18,7 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 Launch **both** over the scope of the fix against the base (committed + uncommitted working tree) and **consolidate their findings into a single deduplicated report**:
 
-1. **Built-in code-review** (if available in the environment). Single pass over the local diff: correctness bugs + simplification/efficiency, at high effort.
+1. **Built-in code-review** (if available in the environment). Single pass over the local diff: correctness bugs + simplification/efficiency, at high effort — **escalated to the maximum thoroughness the tool supports when `meta.json.size` is L or the diff touches a sensitive surface** (auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change).
 2. **Skill `quality.review_skill` from FLOW.md**: invoke it if available. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those agents in parallel (or sequentially) as a review panel. If both are empty, use the built-in code-review (already launched above).
 
 Deduplicate overlaps (correctness/simplification flagged by both; count once). Fix-specific focus on top of the generic analysis:

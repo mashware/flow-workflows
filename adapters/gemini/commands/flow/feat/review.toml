@@ -18,7 +18,7 @@ Mandatory review phase. **`/flow:feat:ship` is not run without passing through h
 
 Launch **both** over the same scope and **consolidate their findings into a single deduplicated report**. Scope: the complete feature work against the base branch (committed + working tree, because commits are opt-in and there may be uncommitted changes).
 
-1. **Built-in code-review** (if available in the environment). Single pass over the local diff: correctness bugs + reuse/simplification/efficiency, at high effort.
+1. **Built-in code-review** (if available in the environment). Single pass over the local diff: correctness bugs + reuse/simplification/efficiency, at high effort — **escalated to the maximum thoroughness the tool supports when `meta.json.size` is L or the diff touches a sensitive surface** (auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change).
 2. **Project panel**: read `quality.review_skill` from `FLOW.md`.
    - If `review_skill` has a value: invoke that skill, passing `03-design.md` as additional context. Scope: `git diff <git.default_base>...HEAD`; if there are uncommitted working tree changes, make sure they are included.
    - If `review_skill` is empty but `quality.reviewers` has entries: launch each agent in that list in parallel (or sequentially) as a panel, with the same context and scope.

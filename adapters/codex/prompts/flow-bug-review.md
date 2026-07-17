@@ -15,7 +15,7 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 Launch **both** over the fix scope against the base (committed + uncommitted working tree) and **consolidate their findings into a single deduplicated report**:
 
-1. **Correctness review**: one pass over the local diff: correctness bugs + simplification/efficiency, at high effort.
+1. **Correctness review**: one pass over the local diff: correctness bugs + simplification/efficiency, at high effort — **escalated to the maximum thoroughness the tool supports when `meta.json.size` is L or the diff touches a sensitive surface** (auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change). If Codex has a code review tool configured, use it (at its highest effort tier for those cases); otherwise perform the review directly.
 2. **Skill `quality.review_skill` from FLOW.md**: invoke it as `<review_skill> branch`. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those subagents in parallel as a review panel. If both are empty, the review in point 1 already covers this pass.
 
 Deduplicate overlaps. Specific fix focus in addition to the generic analysis:

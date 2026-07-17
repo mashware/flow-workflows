@@ -19,16 +19,18 @@ Mandatory review phase. **`/flow:feat:ship` cannot run without passing through h
 
 Scope for every reviewer below: the full feature work against the base branch (committed + working tree, because commits are opt-in and there may be uncommitted changes).
 
-### 2.0 Resolve review depth (scale to the work size)
-Read `quality.review_depth` from `FLOW.md` (`proportional` | `full`; empty → `proportional`) and `meta.json.size`. This decides **what §2.1 launches** — a handful of changed lines does not need a full specialized panel, and running one over a tiny diff is almost pure latency:
+### 2.0 Resolve review depth (scale to the work size and the risk)
+Read `quality.review_depth` from `FLOW.md` (`proportional` | `full`; empty → `proportional`) and `meta.json.size`. This decides **what §2.1 launches and at which effort** — a handful of changed lines does not need a full specialized panel, and running one over a tiny diff is almost pure latency; conversely, the riskiest work should buy the most thorough pass. The built-in `code-review` exposes an effort ladder **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage, may surface uncertain ones):
 
-- **`full`** (any size): run both the built-in `code-review` (high effort) and the project panel. This is the pre-0.7 behavior; skip the tiering below.
-- **`proportional`** (default), by size:
+- **`full`** (any size): run both the built-in `code-review` (**xhigh** effort — do not skimp) and the project panel. This is the pre-0.7 behavior; skip the tiering below.
+- **`proportional`** (default), base effort by size:
   - **XS**: built-in `code-review` **only**, at **medium** effort. Do **not** launch the project panel (`review_skill`/`reviewers`).
-  - **S**: built-in `code-review` at **high** effort. Launch the project panel **only if** the diff touches a **sensitive surface** — authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, or a DB migration/schema change. If it does not, the built-in `code-review` alone is the review.
-  - **M** / **L**: built-in `code-review` (high) + the full project panel (as below).
+  - **S**: built-in `code-review` at **high** effort. Launch the project panel **only if** the diff touches a **sensitive surface** (see below). If it does not, the built-in `code-review` alone is the review.
+  - **M**: built-in `code-review` (**high**) + the full project panel.
+  - **L**: built-in `code-review` (**xhigh**) + the full project panel.
+- **Sensitive-surface bump** (proportional, any size): if the diff touches a **sensitive surface** — authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, or a DB migration/schema change — **raise the built-in effort one tier** (medium→high→xhigh→**max**) and always run the panel. So an S/M change on a sensitive surface runs at **xhigh**, and an **L change on a sensitive surface runs at `max`**. Risk, not just line count, is what earns the top tiers.
 
-Record in `06-review.md` which tier ran and why (e.g. "S, no sensitive surface → built-in only").
+Record in `06-review.md` which tier and effort ran and why (e.g. "L + DB migration → built-in at `max` + panel").
 
 ### 2.1 Launch and consolidate
 Launch the reviewers selected in §2.0 and **consolidate their findings into a single deduplicated report**:
@@ -181,7 +183,7 @@ Write `.claude/work/<TICKET>/06-review.md`:
 # Code review <TICKET>
 
 ## Summary
-- Review tier: <full | proportional — which reviewers ran and why, per §2.0>
+- Review tier: <full | proportional — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
 - Agents launched: …
 - Completeness rounds (M/L): N
 - Critical findings (block ship): N
