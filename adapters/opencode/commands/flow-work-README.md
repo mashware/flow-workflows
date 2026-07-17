@@ -63,6 +63,7 @@ If the file does not exist or a key is empty, each command auto-discovers the va
       "title": "…",
       "size": "S",
       "status": "pending" | "in_progress" | "merged" | "closed" | "superseded",
+      "phases_done": ["build", "review", "validate"],
       "wave": 1,
       "depends_on": [],
       "lines_est": 120,
@@ -92,7 +93,7 @@ If the file does not exist or a key is empty, each command auto-discovers the va
 
 `/flow-feat-start {TICKET}` → `/flow-feat-brainstorm` → `/flow-feat-design` → `/flow-feat-plan` → `/flow-feat-build` → `/flow-feat-review` → `/flow-feat-validate` → `/flow-feat-ship`
 
-For M/L with multiple MR/PRs, the `build → review → validate → ship` block repeats for each MR/PR in the plan. The `meta.json.mrs` array tracks the state.
+For M/L with multiple MR/PRs, the `build → review → validate → ship` block repeats for each MR/PR in the plan. The `meta.json.mrs` array tracks the state. **Each MR/PR earns its own `build`/`review`/`validate`**, recorded in its `mrs[]` entry's `phases_done` — so `/flow-feat-review`, `/flow-feat-validate` and `/flow-feat-ship` gate on *this* MR/PR's progress, not the work-level `phases_done`. This is deliberate: without it, once the first MR/PR completed review/validate the work-level list would satisfy `ship`'s gate for every later MR/PR, letting a train MR/PR ship unreviewed just because an earlier sibling was reviewed.
 
 ## Full `/flow-bug-*` flow
 

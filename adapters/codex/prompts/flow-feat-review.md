@@ -8,7 +8,7 @@ Mandatory review phase. **`/flow-feat-ship` cannot run without passing through h
 
 ## 1. Pre-flight
 
-- Load `meta.json`. Require that `build` is in `phases_done`. If not, send the user to `/flow-feat-build` and stop.
+- Load `meta.json`. Require that `build` is in `phases_done`. **In a multi-MR/PR work** (`meta.json.mrs` has >1 entry) require `build` in the **current `in_progress` MR/PR's** own `phases_done` (its `mrs[]` entry), not the work-level list — a previous MR/PR's `build` does not count. If not, send the user to `/flow-feat-build` and stop.
 - Verify that `git diff` has real changes. If not, warn and stop.
 
 ## 2. Invoke the code reviews
@@ -165,5 +165,5 @@ Write `.claude/work/<TICKET>/06-review.md`:
 ## 9. Close
 
 - If there are blockers: **do not advance `phase`**. Leave `phase = "build"` and the user resolves them.
-- If no blockers: `phase = "review"`, add to `phases_done`.
+- If no blockers: `phase = "review"`, add to `phases_done`. **In a multi-MR/PR work**, also add `review` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — this is exactly what `/flow-feat-ship §1` gates on per MR/PR, so without it the ship gate would pass on a stale sibling's review.
 - Summarize findings and next step for the user.

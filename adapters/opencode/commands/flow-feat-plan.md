@@ -87,12 +87,14 @@ Add to `meta.json` the `mrs` array with the agreed plan:
 
 ```json
 "mrs": [
-  { "n": 1, "title": "…", "size": "S", "status": "pending", "wave": 1, "depends_on": [], "lines_est": 120, "files_est": 6 },
-  { "n": 2, "title": "…", "size": "M", "status": "pending", "wave": 2, "depends_on": [1], "lines_est": 350, "files_est": 14 }
+  { "n": 1, "title": "…", "size": "S", "status": "pending", "phases_done": [], "wave": 1, "depends_on": [], "lines_est": 120, "files_est": 6 },
+  { "n": 2, "title": "…", "size": "M", "status": "pending", "phases_done": [], "wave": 2, "depends_on": [1], "lines_est": 350, "files_est": 14 }
 ]
 ```
 
 `n` follows the execution order (topological): `depends_on` only ever references a **lower** `n`, and `wave` groups MRs/PRs that can run in parallel. `/flow-feat-build §1` reads `depends_on` to pick the next **startable** MR/PR and to tell the user which ones can go in parallel; keep both fields accurate whenever the plan is edited or renumbered.
+
+Each entry starts with an empty **`phases_done`**: it tracks the phases (`build`/`review`/`validate`) completed **for that MR/PR specifically**, so the gates in `/flow-feat-review §1`, `/flow-feat-validate §1` and `/flow-feat-ship §1` judge *this* MR/PR — a sibling's review never satisfies a new MR/PR's gate. Leave it `[]` for every seeded entry.
 
 Estimates are **indicative**, not contractual. `/flow-feat-build` uses them as a gauge: if real work exceeds `lines_est` by +50% or `files_est + 2`, it triggers the "cut or continue" question (see §C of build).
 
