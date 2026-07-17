@@ -1,6 +1,6 @@
 # flow adapter for Gemini CLI
 
-This adapter brings the 24 commands of the `flow` plugin (`/flow:feat:*`, `/flow:bug:*`, `/flow:work:*`, `/flow:*`, `/flow:save-knowledge`) to the **Gemini CLI** format.
+This adapter brings the 25 commands of the `flow` plugin (`/flow:feat:*`, `/flow:bug:*`, `/flow:work:*`, `/flow:*`, `/flow:save-knowledge`) to the **Gemini CLI** format.
 
 The commands are a format adapter, not a reimplementation: the logic and prose are identical to the original plugin. What changes is the target file format and the translation of Claude Code-specific primitives. See `PRIMITIVES.md` for full details.
 
@@ -59,6 +59,7 @@ After copying, the structure looks like this:
     │   ├── resume.toml         → /flow:work:resume
     │   ├── status.toml         → /flow:work:status
     │   ├── abandon.toml        → /flow:work:abandon
+    │   ├── respond.toml        → /flow:work:respond
     │   ├── watch.toml          → /flow:work:watch
     │   └── try.toml            → /flow:work:try
     ├── init.toml               → /flow:init
