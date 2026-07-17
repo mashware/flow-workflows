@@ -8,8 +8,8 @@ Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squashed p
 
 ## 1. Pre-flight
 
-- Load `meta.json`. Require `review` in `phases_done`. For `size` other than `XS`, also require `validate`.
-- If not met, refuse and send the user to the missing step.
+- Load `meta.json`. Require `review` in `phases_done`; for `size` other than `XS`, also require `validate`. **In a multi-MR/PR work** (`meta.json.mrs` has >1 entry) check the **current `in_progress` MR/PR's** own `phases_done` (its `mrs[]` entry), NOT the work-level list — a previous MR/PR's `review`/`validate` does **not** satisfy this gate. This is the guard that stops a train MR/PR from shipping unreviewed just because an earlier sibling was reviewed; the work-level list accumulates and would otherwise pass every later MR/PR for free.
+- If not met, refuse and send the user to the missing step (for a multi-MR/PR work, the missing step is `/flow-feat-review` or `/flow-feat-validate` **for this MR/PR**).
 - Check there are no blocking TODO or FIXME added on this branch (`git diff --unified=0 <git.default_base>...HEAD | grep -E '^\+.*(TODO|FIXME)'`). If any exist, list them and ask whether to continue.
 
 ## 2. Draft title and description (without sending anything yet)

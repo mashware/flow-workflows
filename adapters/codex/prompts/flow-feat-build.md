@@ -203,5 +203,5 @@ Note the result in `05-implementation.md` under "## Contract verification":
 
 ## 5. Close
 
-- Update `meta.json`: `phase = "build"`, add to `phases_done`.
+- Update `meta.json`: `phase = "build"`, add to `phases_done`. **If multi-MR/PR build, also add `build` to the current `in_progress` MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates (`/flow-feat-review §1`, `/flow-feat-validate §1`, `/flow-feat-ship §1`) read.
 - Summarize for the user in bullets: touched files (high level), pending items, **§4.2 result (contracts verified)**, and next command: `/flow-feat-review`.

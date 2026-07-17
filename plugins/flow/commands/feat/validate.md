@@ -12,7 +12,7 @@ Verify the feature is complete: test coverage, edge cases, performance, regressi
 
 ## 1. Pre-flight
 
-- Load `meta.json`. Require `review` in `phases_done`. If missing, send to `/flow:feat:review`.
+- Load `meta.json`. Require `review` in `phases_done`. **In a multi-MR/PR work** (`meta.json.mrs` has >1 entry) require `review` in the **current `in_progress` MR/PR's** own `phases_done` (its `mrs[]` entry), not the work-level list — a previous MR/PR's `review` does not count. If missing, send to `/flow:feat:review`.
 - If `size` is `XS`, this phase may be skipped (warn and continue with `/flow:feat:ship`).
 
 ## 2. Work
@@ -99,4 +99,4 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 ## 7. Close
 
 - **Do not advance `phase`** if any of these holds: tests are red, regressions are found, or **any acceptance criterion is `unproven`** (no test demonstrably asserts it and it was not manually confirmed). The criterion→test mapping is part of the gate, not just a report — the same "do not advance on red" rule. The user resolves the gap (add the missing test, fix the implementation, or finish the manual verification) and returns to `/flow:feat:validate`.
-- If the suite is green **and** every acceptance criterion is `proven-by-test` or `proven-manually`: `phase = "validate"`, add to `phases_done`. Suggest `/flow:feat:ship`.
+- If the suite is green **and** every acceptance criterion is `proven-by-test` or `proven-manually`: `phase = "validate"`, add to `phases_done`. **In a multi-MR/PR work**, also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow:feat:ship §1` gates on. Suggest `/flow:feat:ship`.

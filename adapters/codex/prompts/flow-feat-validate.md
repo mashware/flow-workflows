@@ -8,7 +8,7 @@ Verifies the feature is complete: test coverage, edge cases, performance, regres
 
 ## 1. Pre-flight
 
-- Load `meta.json`. Require `review` in `phases_done`. If not, send to `/flow-feat-review`.
+- Load `meta.json`. Require `review` in `phases_done`. **In a multi-MR/PR work** (`meta.json.mrs` has >1 entry) require `review` in the **current `in_progress` MR/PR's** own `phases_done` (its `mrs[]` entry), not the work-level list — a previous MR/PR's `review` does not count. If not, send to `/flow-feat-review`.
 - If `size` is `XS`, this phase may be skipped (warn and continue with `/flow-feat-ship`).
 
 ## 2. Work
@@ -63,4 +63,4 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 ## 5. Close
 
 - If tests are red or regressions remain, **do not advance `phase`**. The user resolves them and returns to `/flow-feat-validate`.
-- If all green: `phase = "validate"`, add to `phases_done`. Suggest `/flow-feat-ship`.
+- If all green: `phase = "validate"`, add to `phases_done`. **In a multi-MR/PR work**, also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow-feat-ship §1` gates on. Suggest `/flow-feat-ship`.

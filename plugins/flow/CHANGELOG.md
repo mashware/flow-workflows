@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.14.0 — per-MR/PR review/validate gate (train shortcut closed)  ·  2026-07-17
+
+### The ship gate is now per-MR/PR, not per-work
+`/flow:feat:ship` refused to publish unless `review` (and, above `XS`, `validate`) had run — but it checked the **work-level** `phases_done`, a single list per ticket. In a multi-MR/PR feature that list accumulates and never resets, so once the **first** MR/PR completed review/validate the gate passed **for free** on every later MR/PR. A train MR/PR could ship unreviewed just because an earlier sibling had been reviewed — precisely the shortcut the flow exists to prevent, and it bit exactly on the MR/PR that carried a defect.
+
+Now each `mrs[]` entry carries its **own** `phases_done`:
+
+- `/flow:feat:build`, `/flow:feat:review` and `/flow:feat:validate` record `build`/`review`/`validate` into the **current `in_progress` MR/PR's** entry, and their pre-flights require the previous phase on **that** entry.
+- `/flow:feat:ship §1` gates on the current MR/PR's own `phases_done` when the work has more than one MR/PR — a sibling's review no longer satisfies it.
+- `/flow:feat:plan` seeds every entry with `phases_done: []`; a hot-cut in `/flow:feat:build §2.3` inserts the new entry the same way.
+
+Single-MR/PR works (all `XS`/`S`, and the whole `bug` flow) are unaffected — they keep using the work-level list.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.13.0...v0.14.0
+
 ## v0.13.0 — ticket-less start + `/flow:news`  ·  2026-07-17
 
 ### `start` from a conversation, no ticket required
@@ -24,6 +39,8 @@ A **SessionStart hook** (`notify-update.sh`) also surfaces a one-line nudge the 
 
 ### Discoverability
 `plugin.json` now carries `homepage`/`repository`, and this `CHANGELOG.md` ships with the plugin — so users updating from the marketplace have a path to the notes.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.12.0...v0.13.0
 
 ## v0.12.0 — review effort ladder scales to xhigh/max by size + risk  ·  2026-07-17
 

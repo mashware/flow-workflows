@@ -137,7 +137,7 @@ If either is exceeded, **pause** and ask the user (options, in this order):
 
 0. **If there are uncommitted changes** in the working tree: warn the user and ask them to decide before cutting.
 1. Identify a cut point: the last work-in-progress commit where the piece is coherent and mergeable.
-2. Edit `meta.json.mrs`: the current MR/PR keeps its `n`, `title`, `wave` and `depends_on`, adjust `lines_est` and `files_est` to the real numbers, stays `in_progress`. Insert a new entry with the next `n`, `title` describing what remains, `status: "pending"`, `depends_on: [n_current]`, `wave` = one after the current one. If you renumber later entries, update their `depends_on` references so none points to a higher `n` than its own.
+2. Edit `meta.json.mrs`: the current MR/PR keeps its `n`, `title`, `wave` and `depends_on`, adjust `lines_est` and `files_est` to the real numbers, stays `in_progress`. Insert a new entry with the next `n`, `title` describing what remains, `status: "pending"`, `phases_done: []` (a fresh MR/PR earns its own review/validate), `depends_on: [n_current]`, `wave` = one after the current one. If you renumber later entries, update their `depends_on` references so none points to a higher `n` than its own.
 3. Edit `04-mr-plan.md`: split the original entry in two.
 4. Note in `05-implementation.md` under "Hot cut": date, reason, what stays and what moves to the next one.
 5. **Don't rewrite history with `git rebase`**: work-in-progress commits that belong to the next MR/PR stay on the current branch and will be moved with `git cherry-pick` when the time comes.
@@ -234,5 +234,5 @@ If there were no copied contracts (design said "none"), skip this step and recor
 ## 5. Close
 
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
-- If it's a multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will move to `merged` when `/flow-feat-ship` confirms the merge.
+- If it's a multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will move to `merged` when `/flow-feat-ship` confirms the merge. **Also add `build` to that MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates read.
 - Summarize to the user in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and next command: `/flow-feat-review`.

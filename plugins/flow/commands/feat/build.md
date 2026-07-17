@@ -146,7 +146,7 @@ If either is exceeded, **pause** and ask the user with `AskUserQuestion` (option
 1. Identify a cut point: the last WIP commit where the piece is coherent and mergeable (a closed sub-goal: "endpoint and DTO done", "migration applied", "flow X tests green"). Do not cut in the middle of a change.
 2. Edit `meta.json.mrs`:
    - The current MR/PR keeps `n`, `title`, `wave` and `depends_on`, adjust `lines_est` and `files_est` to actuals, and stays `in_progress`.
-   - Insert a new one with the next `n` (renumbering subsequent ones if any), `title` describing what remains, `status: "pending"`, `depends_on: [n_current]` (the remainder needs the cut piece first), `wave` = one after the current one, and new `lines_est` and `files_est` (indicative). If you renumber subsequent entries, **update their `depends_on` references accordingly** so no `depends_on` points to a higher `n` than its own.
+   - Insert a new one with the next `n` (renumbering subsequent ones if any), `title` describing what remains, `status: "pending"`, `phases_done: []` (a fresh MR/PR earns its own review/validate), `depends_on: [n_current]` (the remainder needs the cut piece first), `wave` = one after the current one, and new `lines_est` and `files_est` (indicative). If you renumber subsequent entries, **update their `depends_on` references accordingly** so no `depends_on` points to a higher `n` than its own.
 3. Edit `04-mr-plan.md`: split the original entry in two, keeping the standalone-mergeable justification for both halves.
 4. Note in `05-implementation.md` under "Hot cut": date, reason, what stays and what moves to the next one.
 5. **Do not rewrite history with `git rebase`**: the WIP commits that belong to the next MR/PR stay in the current branch. When the time comes to build the next one, start from a new branch over the base, and those commits are transferred with `git cherry-pick` or equivalent. This is documented and executed in `/flow:feat:ship` or when starting the next `/flow:feat:build`.
@@ -245,5 +245,5 @@ If there were no copied contracts (design said "none"), skip this step and recor
 ## 5. Close
 
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
-- If multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will become `merged` when `/flow:feat:ship` confirms the merge.
+- If multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will become `merged` when `/flow:feat:ship` confirms the merge. **Also add `build` to that MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates read.
 - Summarize to the user in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and next command: `/flow:feat:review`.
