@@ -1,0 +1,41 @@
+description = "Show what changed in the flow plugin since the version you last saw"
+
+prompt = """
+# `/flow:news {{args}}`
+
+Show the user what is new in the `flow` plugin. Reads the changelog bundled with the install and prints the entries between the version they last saw and the installed one. Read-only, except for a small "last seen" marker so the next run starts where this one ended.
+
+## 1. Locate the data
+
+- **Changelog**: read `~/.claude/flow/CHANGELOG.md` (the installer copies it there). Each shipped version is a section headed `## vX.Y.Z …`; the top may carry an `## [Unreleased] …` block — **ignore it** here, it is not a shipped version.
+- **Installed version**: there is no `plugin.json` on this adapter. Treat the **newest shipped `## vX.Y.Z` header** in the changelog as the installed version.
+- **Last-seen marker**: `~/.claude/flow/news-last-seen` (one line, e.g. `v0.11.0`). Missing dir/file → first run.
+
+If `~/.claude/flow/CHANGELOG.md` is missing (running outside a normal install), fall back to the release list on the remote:
+
+- With GitHub CLI: `gh release list --repo mashware/flow-workflows` and `gh release view vX.Y.Z --repo mashware/flow-workflows` for the notes.
+- With GitLab CLI: `glab release list --repo mashware/flow-workflows`.
+
+If neither `gh` nor `glab` is available, tell the user briefly and point them to <https://github.com/mashware/flow-workflows/releases>, then stop.
+
+## 2. Decide the range from `{{args}}`
+
+- **empty** → every shipped entry strictly newer than the last-seen version, up to and including the installed one. **First run** (no marker) → show only the installed version's entry and mention `/flow:news all` for the full history.
+- **`vX.Y.Z`** → every entry newer than that version.
+- **`N`** (an integer) → the last `N` shipped entries.
+- **`all`** → every entry in the changelog.
+
+Compare versions by **semver** (numeric `major.minor.patch`), never string order (`v0.9.0` < `v0.10.0`).
+
+## 3. Show
+
+Print the matching sections **newest-first**, each with its header and notes, lightly reflowed for the terminal (do not dump raw markdown noise — keep it readable). If nothing matches (already current), say: *"You're on the latest — `vX.Y.Z`, nothing new since you last checked."* End with a one-line pointer to the full GitHub Releases (<https://github.com/mashware/flow-workflows/releases>) for the richest notes.
+
+## 4. Update the marker
+
+If `{{args}}` was **empty** (the "catch me up" case), write the installed version to `~/.claude/flow/news-last-seen` (create the dir if needed) so the next no-arg run starts from here. If `{{args}}` was an explicit query (`vX.Y.Z`, `N`, or `all` — ad-hoc lookups), **do not move the marker**.
+
+## Note — pull-only on this adapter
+
+There is no SessionStart auto-notify hook on the adapters — the proactive "new version" nudge is Claude Code-only. Here `/flow:news` is **on demand**: run it whenever you want to catch up.
+"""
