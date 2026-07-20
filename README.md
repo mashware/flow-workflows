@@ -103,6 +103,7 @@ a review with high-severity findings.
 |---|---|
 | `/flow:init` | Wizard that generates this repo's `FLOW.md` (auto-detects, asks the minimum) |
 | `/flow:config` | Show the effective `FLOW.md` config: what is set, what is empty (and its fallback), plus validation |
+| `/flow:work:green` | **CI-green loop** (between `ship` and `merge`) — the open MR/PR's pipeline is red; fetch failing jobs, triage, fix at the root, push; never green-washes (see below) |
 | `/flow:work:respond` | **Review loop** (between `ship` and `merge`) — triage the open MR/PR threads, debate, implement the agreed changes, reply; never resolves threads (see below) |
 | `/flow:work:watch` | **Post-deploy watcher** — monitors observability after a deploy, flags regressions (see below) |
 | `/flow:work:status` | Summary of all open work items in `.claude/work/` |
@@ -110,6 +111,18 @@ a review with high-severity findings.
 | `/flow:work:try` | Point the main checkout at a branch to test it (then `--back`), re-syncing the env per `git.worktree_resync` |
 | `/flow:work:abandon` | Close a work item without shipping (discarded feature, non-bug…) |
 | `/flow:save-knowledge` | Consolidate the branch's findings into the `domain-memory` store |
+
+## CI-green loop (`/flow:work:green`)
+
+The window between `ship` and `merge` carries two signals, and each has its own loop. `/flow:work:green`
+handles the **machine** one: the open MR/PR's CI pipeline is **red**. It fetches the failing jobs and
+their logs (via `gh`/`glab`), **triages** each one (lint/style · test failure · type/build · flaky/infra ·
+quality-gate), and fixes it **at the root** — delegating to the flow's sub-agents and reproducing locally
+with your `quality.*` commands so it does not burn CI cycles guessing. Pushes and reruns are **hard gates**
+you confirm, and it **never green-washes**: no blind reruns, no disabling or skipping a check to force
+green (the machine analog of `respond` never resolving a thread — a green must mean the code is actually
+correct). Because reviewers often wait for green, this usually runs before `respond`. Repeatable (one run
+per red pipeline, logged to `09-ci.md`), for both feat and bug MR/PRs.
 
 ## Review loop (`/flow:work:respond`)
 
