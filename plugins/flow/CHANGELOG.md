@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.15.0 — `/flow:work:green` — the CI-green loop between ship and merge  ·  2026-07-20
+
+### The pipeline half of the between-ship-and-merge window
+`/flow:work:respond` covered the **human** signal in an open MR/PR (review threads). But the same window carries a **machine** signal `respond` never touched: the CI pipeline going **red** — lint, tests, type-check, build. A red pipeline can happen with **zero** review comments (where `respond` just stops), and green is usually a *precondition* for review anyway. Different signal, different loop.
+
+New `/flow:work:green [mr-iid-or-url]`:
+
+- **Fetch** the latest pipeline for the branch/MR and its failing jobs + logs via `git.cli` (`glab ci` / `gh pr checks` + `gh run view --log-failed`).
+- **Triage** each job into lint/style · test failure · type/build · flaky/infra · quality-gate, pulling the recorded design "why" so a test failing on the *old* behavior is told apart from a real regression.
+- **Fix at the root** — delegating to the flow's `agents`, reproducing locally with your `quality.*` commands (`style_fix`/`test`/`static_analysis`…) so it does not burn CI cycles, with the review gate on non-trivial diffs.
+- **Hard gates** on every push and rerun, plus the cardinal rule: it **never green-washes** — no blind reruns, no disabling/skipping a check or loosening a threshold to force green. That is the machine analog of `respond` never resolving a thread: a green must mean the code is actually correct.
+
+Cross-cutting (feat or bug), repeatable, logged to `09-ci.md`; does not advance `meta.json.phase`. `respond` now glances at the pipeline and nudges you to run `green` first when CI is red. **No new FLOW.md keys** — it reuses `git.*`, `quality.*`, `agents`, `autonomy.mode`, `domain_memory.*`. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+### Comment discipline when writing code
+The code-writing commands (`/flow:feat:build`, `/flow:bug:fix`, and now `/flow:work:green` / `/flow:work:respond`) now carry an explicit rule: add a comment only for a non-obvious *why* (a constraint, the reason for a workaround, a subtle invariant), never to narrate what the code already says, matching the surrounding file's comment density. And the ticket ID, task/step number, or "for MR #N" **never** go into a code comment — that traceability belongs in the commit, branch and MR/PR, where it stays accurate, not in the source, where it rots. Stated as a principle in the work README and enforced at each editing step. Mirrored across the adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.14.0...v0.15.0
+
 ## v0.14.0 — per-MR/PR review/validate gate (train shortcut closed)  ·  2026-07-17
 
 ### The ship gate is now per-MR/PR, not per-work

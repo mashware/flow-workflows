@@ -77,6 +77,8 @@ Without this copy, do not proceed to §2.1.
 
 Load the project skills (see `FLOW.md` section `conventions`).
 
+**Comment discipline.** Add a comment only when it earns its place: to explain a *why* the code cannot (a non-obvious constraint, a workaround and its reason, a subtle invariant). Do not narrate *what* the code already states, do not restate the design, and match the surrounding file's comment density — an over-commented change reads as noise and rots as the code moves on. **Never write the ticket ID, task/step number, or "for MR #N" into a code comment**: that traceability belongs in the commit, branch and MR/PR, not in the source. A comment that only makes sense to someone reading this MR/PR today does not belong in the code.
+
 **If in a multi-MR/PR build**: limit yourself to what the current MR/PR covers per `04-mr-plan.md`. Any code belonging to a later MR/PR is scope creep; cut it or isolate it behind a feature flag / dead code temporarily per the plan. If it cannot be isolated, pause and return to `/flow:feat:plan` to cut it.
 
 Choose execution mode:

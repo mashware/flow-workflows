@@ -41,6 +41,7 @@ Save the brief at the start of `04-fix.md`.
 
 - Apply the minimal fix targeting the finding from `03-investigation.md` (or the diagnosis if you skipped investigate).
 - If it touches a sensitive area (authentication, payments, sensitive data), consult the `agents.architecture` agent from FLOW.md point-by-point to confirm the correct layer; if empty, check directly against `conventions` in FLOW.md.
+- **Comment discipline**: comment only a non-obvious *why*; never narrate what the code says; match the file's comment density. **Never put the ticket ID or "fix for #N" in a code comment** — that lives in the commit/branch/MR-PR, not the source.
 
 **Commit confirmation**: the agent **does not `git commit` on its own** during `/flow-bug-fix`. After completing each step (or the entire fix if it's a single step), report a summary (files, lines, validation suggestion) and wait for your decision: commit the work in progress now, wait for you to validate, or continue without a commit. Without your explicit confirmation, changes stay in the working tree so you can test the fix manually before it's recorded in history.
 
