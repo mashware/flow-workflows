@@ -68,7 +68,12 @@ Each thread → **reply-only** (A/F, D-held, E) → §7; **code-change** (B/C, D
 - **Design-invalidation first**: contradicts `03-design.md` → update it before editing; large → return to `/flow:feat:build`/`/flow:bug:fix`.
 - **Delegate** edits to the flow's sub-agents (FLOW.md `agents`); follow repo conventions, keep `build`'s comment discipline (no ticket IDs / "for MR #N" in the source).
 - **Commits are user opt-in**: report a summary; do not commit on your own.
-- **Re-run the review gate for non-trivial changes** (`quality.review_skill`/built-in `code-review`) on this round's diff; high-severity blocks the push.
+
+### 6.1 Review gate — same ladder as `/flow:feat:review` (do not shortcut it)
+In-review edits are **not** exempt because they are "small": this is where a wrong primitive or an over-engineered mechanism slips in under pressure, and it lands in an MR/PR already under human eyes — a low-quality fix produces the *next* round of comments. The round's diff passes the **same gate as `/flow:feat:review`**, scaled to the round:
+- **Trivial rounds** (only nitpicks, no new classes/wiring) → one built-in `code-review` pass over the round's diff; skip the rest.
+- **Non-trivial rounds** (beyond nitpicks, or introducing new architectural pieces) → run `/flow:feat:review`'s machinery **scoped to this round's diff**: **§2.0 depth ladder** (effort by round size + sensitive-surface bump, panel when selected), **§4 over-engineering/YAGNI** + **§5.5 idiom/primitive audit (blind to the design's rationale)** — the two that catch this loop's failure mode (extracting a class/mechanism to "answer a comment" that a reviewer then flags as the wrong primitive; §5.5 **always** runs when the round introduces new pieces, regardless of size), **§5 contract check** (if `05-implementation.md` lists contracts and the round touches shape construction), **§7 local gates** (`style_fix`/`static_analysis`/`test_one`). **Lightweight mode** (no `03-design.md`): skip §5, §4 judges YAGNI against the code itself; **§5.5 still runs**.
+- **Blocker rule**: high-severity blocks the push. If a fix reopens the debated approach, loop back to §4 to re-agree before editing again. Record tier/effort and findings in `08-feedback.md`.
 
 ### 6.2 Push (hard gate)
 Show what will be pushed, confirm. Anti-deploy lock: HEAD ≠ `git.default_base`, upstream points to the branch itself. `git push` to the existing branch.

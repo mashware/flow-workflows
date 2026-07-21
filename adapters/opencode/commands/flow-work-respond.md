@@ -70,7 +70,12 @@ Each thread → one bucket: **reply-only** (A/F, D-held, E) → §7; **code-chan
 - **Design-invalidation first**: if a change contradicts `03-design.md`, update that artifact before editing; for a large change prefer returning to `/flow-feat-build`/`/flow-bug-fix`.
 - **Delegate** the edits to the flow's expert sub-agents (per FLOW.md `agents`); follow repo conventions, keep `build`'s comment discipline (no ticket IDs / "for MR #N" in the source).
 - **Commits are user opt-in**: report a summary (files, lines); do not `git commit` on your own.
-- **Re-run the review gate for non-trivial changes**: run `quality.review_skill` (or built-in `code-review`) on this round's diff before pushing; high-severity blocks the push.
+
+### 6.1 Review gate — same ladder as `/flow-feat-review` (do not shortcut it)
+In-review edits are **not** exempt because they are "small": this is where a wrong primitive or an over-engineered mechanism slips in under pressure, and it lands in an MR/PR already under human eyes — a low-quality fix produces the *next* round of comments. So the round's diff passes the **same gate as `/flow-feat-review`**, scaled to the round:
+- **Trivial rounds** (only nitpicks, no new classes/wiring) → one built-in `code-review` pass over the round's diff is enough; skip the rest.
+- **Non-trivial rounds** (beyond nitpicks, or introducing new architectural pieces) → run `/flow-feat-review`'s machinery **scoped to this round's diff**: its **§2.0 depth ladder** (effort by round size + sensitive-surface bump, panel when selected), its **§4 over-engineering/YAGNI** and **§5.5 idiom/primitive audit (blind to the design's rationale)** — the two that catch this loop's failure mode (extracting a class/mechanism to "answer a comment" that a reviewer then flags as the wrong primitive; §5.5 **always** runs when the round introduces new pieces, regardless of size), its **§5 contract check** (if `05-implementation.md` lists contracts and the round touches shape construction), and its **§7 local gates** (`style_fix`, `static_analysis`, `test_one`). **Lightweight mode** (no `03-design.md`): skip §5, §4 judges YAGNI against the code itself; **§5.5 still runs** (it needs no artifact).
+- **Blocker rule**: high-severity blocks the push until addressed. If a fix reopens the debated approach, loop back to §4 to re-agree before editing again. Record tier/effort and findings in `08-feedback.md`.
 
 ### 6.2 Push (hard gate)
 Show what will be pushed and confirm. Anti-deploy lock: HEAD must not be `git.default_base` and its upstream must point to the branch itself. `git push` to the existing branch (the MR/PR already exists).
