@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.16.0 — `/flow:work:respond` gets the full review ladder  ·  2026-07-21
+
+### Closing the quality gap in the review loop
+`/flow:work:respond` implements code changes agreed in an MR/PR review round, but its quality gate was a **single** built-in `code-review` (or `review_skill`) pass — a fraction of what `/flow:feat:review` runs. So the exact place where a wrong primitive or an over-engineered mechanism slips in under pressure ("just extract it to a class to answer the comment") had the **weakest** gate in the whole flow, and the result went straight into an MR/PR already under human eyes — producing the *next* round of comments instead of closing the thread. The risk was inverted: highest-risk edits, flimsiest check.
+
+`respond §6` now runs the **same ladder as `/flow:feat:review`**, scoped to the round's diff:
+
+- **Trivial rounds** (nitpicks only, no new classes/wiring) keep the single `code-review` pass — no added latency.
+- **Non-trivial rounds** run the review machinery scoped to the round: the **§2.0 depth ladder** (effort by size + sensitive-surface bump, panel when selected), the **§4 over-engineering / YAGNI audit**, the **§5.5 idiom / primitive audit (blind to the design's rationale)** — the two that catch exactly this loop's failure mode, with §5.5 **always** running when the round introduces new architectural pieces regardless of size — the **§5 contract check**, and the **§7 local gates** (`style_fix` / `static_analysis` / `test_one`).
+- **Lightweight mode** (no `03-design.md`) degrades cleanly: §5 is skipped, §4 judges YAGNI against the code itself, and §5.5 runs unchanged (it needs no artifact). A blocker fix that reopens the debated approach loops back to §4 to re-agree the stance before editing again, instead of silently re-patching.
+
+**No new FLOW.md keys** — it reuses the `quality.*` and `agents` keys the flow already needs. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.15.0...v0.16.0
+
 ## v0.15.0 — `/flow:work:green` — the CI-green loop between ship and merge  ·  2026-07-20
 
 ### The pipeline half of the between-ship-and-merge window
