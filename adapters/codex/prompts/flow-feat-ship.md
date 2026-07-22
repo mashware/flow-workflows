@@ -156,6 +156,8 @@ Update `meta.json` based on the scenario:
 
 **C) The plan changed and this MR/PR is out of scope**: mark the entry as `superseded` with `note` pointing to the new MR/PR.
 
+**Cross-repo reminder**: if `meta.json.related_repos` has any entry not `done`, call it out explicitly now — this is the moment the other side is usually forgotten. For each such entry: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow-feat-start <TICKET>` (or `/flow-bug-start`)"*. flow does not touch or scan the other repo; it only reminds, and this is not a hard gate.
+
 Summarize for the user: ticket, MR/PR URL, changed files, tests added. Ask whether they want to keep the `.claude/work/<TICKET>/` folder or archive it — only if `phase = "done"`.
 
 If `phase = "done"` and `meta.json.worktree` is not null, the branch's worktree is no longer needed once the MR/PR is merged: offer to remove it (from the main checkout) with `git worktree remove <worktree>` (`--force` only if it still has changes the user confirms discarding). Do not remove it before the MR/PR is merged, or without confirmation.

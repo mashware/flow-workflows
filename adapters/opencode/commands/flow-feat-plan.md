@@ -110,6 +110,10 @@ Valid statuses:
 
 `/flow-feat-build` moves `pending` → `in_progress`. `/flow-feat-ship` moves `in_progress` → `merged` when it confirms the merge, or to `closed` if discarded. If after a build the split needs to be revised, go back to `/flow-feat-plan`, mark the old entry as `superseded`, and add the new ones.
 
+### Cross-repo entries
+
+If a slice of the plan lands in **another repo**, it is not one of *this* repo's `mrs` — record it in `meta.json.related_repos` (`{ "repo", "scope", "status": "pending" }`) instead, so `/flow-feat-ship` reminds you to open the work there. Keep `mrs` to the MRs/PRs of this repo.
+
 ## 5. Is the size still correct?
 
 If while splitting you find that there's really only 1 small MR/PR (≤ 50 lines, no migrations), reclassify to `S` and warn the user. If on the other hand you get 5+ large MRs/PRs, consider upgrading to `L`. Confirm with the user before changing `meta.json.size`.

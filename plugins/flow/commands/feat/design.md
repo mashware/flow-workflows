@@ -209,6 +209,10 @@ Design is when the real complexity of the work becomes visible (migrations, cros
 - If confirmed, update `meta.json.size` and note in `meta.json.notes`.
 - **Consequences**: moving from M to L activates the full flow. Moving from M to S removes `/flow:feat:plan` from the path. Explicitly inform the user of the flow change.
 
+## 7.5 Cross-repo scope (refine)
+
+Design is where a repo the conversation missed often surfaces (this change needs a consumer, a client, or a shared contract updated elsewhere). If `## Modules/layers affected` points at another repo, **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending" }`); if a repo listed at `start` turns out not to be needed, drop it. flow only records it — the reminder fires at `/flow:feat:ship`.
+
 ## 8. Domain findings staging
 
 If `domain_memory.enabled` is `true` in `FLOW.md`: review the decision table (ADR-light) and the challenges to detect **non-obvious domain decisions** — things a future reader of the repo could not deduce just by reading the code. Typical examples:

@@ -149,5 +149,6 @@ With a "all threads resolved before merge" policy, the MR/PR cannot be merged or
 
 - Update `meta.json`: `phase = "done"`, add `ship` to `phases_done`.
 - Summarize: ticket, MR/PR URL, regression test added.
+- **Cross-repo reminder**: if `meta.json.related_repos` has any entry not `done`, call it out now — for each: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow:bug:start <TICKET>` (or `/flow:feat:start`)"*. flow does not touch the other repo; it only reminds, and this is not a hard gate.
 - Ask whether to archive `.claude/work/<TICKET>/` to `.claude/work/_archive/`.
 - If `meta.json.worktree` is not null, offer to remove the worktree once the MR/PR is merged: `git worktree remove <worktree>` (`--force` only if it still has changes the user confirms discarding). Not before merge, not without confirmation.

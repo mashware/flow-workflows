@@ -40,6 +40,7 @@ From the conversation held with the user in this session — the user spotted so
 - **Reproduction / trigger** — the steps or condition seen to cause it.
 - **Initial clues** — stack traces, logs, traces, dead-letter workers mentioned while investigating.
 - **What you already found together** — conclusions reached in the investigation so far (capture verbatim; this is real progress, don't lose it).
+- **Repos affected** — if the fix spans more than one repo, list each *other* repo and the one-line slice it needs. Only when the conversation points to another project; omit otherwise.
 - **Estimated size** — `XS|S|M|L` with one line (confirmed in §2).
 
 If there is **not enough conversation** to draft from, don't fabricate: ask the user for a one-line symptom (or a ticket id) and build from that.
@@ -54,11 +55,17 @@ Show the draft to the user and let them confirm or adjust **before writing anyth
 Creating a tracker issue is an **outward-facing action → always ask, in every autonomy mode** (like the MR/PR gate; never automatic):
 
 - If `tracker.tool` is not `none`, ask the user (numbered options, recommended default first) whether to create the real issue from this draft.
-  - **Yes** → create it with the tool's native command, best-effort (`gh issue create`, `glab issue create`, the `acli`/`linear` create command; if unclear, ask the user to create it and paste the id). Capture the id. **From here the run is in ticket mode**: identifier = that id, work dir `.claude/work/<id>/`, branch named from the real id. If creation fails, warn and fall back to local-only with the slug.
+  - **Yes** → create it with the tool's native command, best-effort (`gh issue create`, `glab issue create`, the `acli`/`linear` create command; if unclear, ask the user to create it and paste the id). If §1.5.1 found **repos affected**, include them in the body under a short "Repos affected" heading, so the multi-repo scope is recorded in the tracker for the whole team, not only in the local `meta.json`. Capture the id. **From here the run is in ticket mode**: identifier = that id, work dir `.claude/work/<id>/`, branch named from the real id. If creation fails, warn and fall back to local-only with the slug.
   - **No** → local-only: identifier stays the slug, no issue created.
 - If `tracker.tool` is `none` or empty, skip the offer and proceed local-only with the slug.
 
 Record the outcome for `meta.json` (§4): `draft_from_conversation: true`, and `tracker_issue` = the created id/url or `null`.
+
+## 1.6 Cross-repo scope
+
+Some fixes span more than one repo (a backend fix plus its consumer, a shared contract plus its clients). flow is per-repo — the work dir lives only here — so if the fix touches other repos and it is not recorded, the other side is silently forgotten after `ship`.
+
+If there are signals of multi-repo scope (the ticket mentions another project, the conversation settled that a change is needed elsewhere), **ask once**: does this fix also touch other repos? For each one, capture `repo` (the sibling project name) and a one-line `scope`, and record them in `meta.json.related_repos` (§4). **Silent by default**: if there is no signal, do not ask. flow only **notes and reminds** — it never touches or scans the other repo.
 
 ## 2. Classify size
 
@@ -104,11 +111,14 @@ If the current branch is not the main base, ask the user for the base (`git.defa
   "phases_done": ["context"],
   "draft_from_conversation": false,
   "tracker_issue": null,
+  "related_repos": [],
   "started_at": "...",
   "updated_at": "...",
   "notes": ""
 }
 ```
+
+Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending" }` per *other* repo the fix touches; leave `[]` for a single-repo fix.
 
 `.claude/work/$ARGUMENTS/01-context.md`:
 ```markdown
