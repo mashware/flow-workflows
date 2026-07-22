@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.18.0 — `FLOW.md` is personal config: gitignore it, don't commit it  ·  2026-07-22
+
+### "Team config, not secrets" was only half right
+`FLOW.md` was documented as committable team config. But it mixes three different natures: **repo facts** (tracker, quality commands, conventions — genuinely shared), **your machine's environment** (`domain_memory.enabled`, which `agents.*` exist on *your* box, worktree paths), and **your flow tastes** (`autonomy.mode`, `assignee`, `review_depth`, per-command `notes`). Committing it as-is imposes one developer's preferences on everyone who clones and assumes their machine has the same tools installed — the same `FLOW.md` on another box can point at agents or an MCP that isn't there.
+
+So `FLOW.md` is now treated as **personal config, not team config**:
+
+- `/flow:init` no longer says "can be committed". It explains the file is personal, holds **no secrets**, and — if `FLOW.md` isn't already git-ignored — **offers to add it to `.gitignore`** (a confirmed edit, since it touches a tracked file).
+- The `FLOW.template.md` header and the README say the same, and point you to gitignore it.
+- Escape hatch preserved: a team that deliberately wants to share the repo-fact subset can still commit it by hand.
+
+Documentation + `/flow:init` behavior only — no command logic or FLOW.md keys changed. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.17.1...v0.18.0
+
 ## v0.17.1 — `/flow:work:daily` stops nagging about threads you already answered  ·  2026-07-22
 
 ### The signal was "unresolved", and it should have been "awaiting *you*"

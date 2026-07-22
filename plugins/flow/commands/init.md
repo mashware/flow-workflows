@@ -64,6 +64,15 @@ the user does not want to fix (each command already degrades gracefully on an em
 
 ## 5. Close
 
-Summarize on screen: what was configured and what was left **empty (= auto-discover)**. Remind
-the user that `FLOW.md` can be committed (it is team config, not secrets). Suggest the next step:
-`/flow:feat:start` or `/flow:work:status`.
+Summarize on screen: what was configured and what was left **empty (= auto-discover)**.
+
+`FLOW.md` is **personal config, not team config**: it mixes repo facts (tracker, quality commands,
+conventions) with your own flow preferences (autonomy mode, the tools/agents you have installed,
+review depth, assignee) — what one developer wants differs from the next, and the same file on
+another machine may reference agents or an MCP that isn't there. It holds **no secrets** (those
+stay in your credential store), but it should not be committed. So: if `FLOW.md` is not already
+git-ignored, **offer to add it to `.gitignore`** (append a `FLOW.md` line) — this edits a tracked
+file, so confirm before writing. A team that wants to share the repo-fact subset can still commit
+it deliberately.
+
+Then suggest the next step: `/flow:feat:start` or `/flow:work:status`.

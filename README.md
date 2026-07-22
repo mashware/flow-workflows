@@ -182,6 +182,10 @@ quality commands (test/lint/static-analysis/DB), role→agent map, code-review p
 the observability profile for the watcher. Run `/flow:config` to see your effective config at a glance. **Anything left empty is auto-detected or asked for** — a
 repo with no `FLOW.md` still works, just with more questions. Run `/flow:init` to generate it, or
 copy [`plugins/flow/examples/FLOW.template.md`](plugins/flow/examples/FLOW.template.md) by hand.
+`FLOW.md` is **personal config, not team config** — it mixes repo facts with your own flow
+preferences (autonomy, the tools/agents you have installed, review depth, assignee), so **add it to
+your `.gitignore`**; `/flow:init` offers to. It holds no secrets. A team that wants to share the
+repo-fact subset can commit it deliberately.
 
 ## Structure
 
