@@ -30,7 +30,8 @@ What the team is asking of you **right now**. Resolve the CLI from `git.cli` (or
 - **Your open MRs/PRs**: `glab mr list --author=@me` / `gh pr list --author @me`.
 - **Awaiting your review**: `glab mr list --reviewer=@me` / `gh pr list --search "review-requested:@me"`.
 - **CI red** on your MRs/PRs → flag it (links to `/flow:work:green`).
-- **Unresolved review threads** on your MRs/PRs → flag it (links to `/flow:work:respond`).
+- **Threads that need *your* reply** — those whose **latest comment is not yours** (someone left you something unanswered), fetched per open MR/PR (`glab api .../merge_requests/:iid/discussions` · `gh api` review threads) and compared against your identity (`git.assignee` / `@me`). This — **not** the raw *unresolved* count — is the signal for `/flow:work:respond`: because `/flow:work:respond` **never resolves** threads, a thread you already answered stays unresolved until the reviewer closes it, so counting *unresolved* would flag your own answered threads forever.
+- **Threads awaiting the reviewer** — unresolved but whose latest comment **is yours** (you replied; the ball is in the reviewer's court): **informational only**, never an action for you.
 
 Degrade: if `git.cli` is empty / not installed / unauthenticated / times out, skip this layer and print one line, e.g. `(forge unavailable: gh not authenticated)`. The term MR/PR follows `git.request_term`.
 
@@ -49,7 +50,7 @@ The briefing's value is in the *joins* — turn them into concrete, **suggested*
 
 - Ticket assigned to you with **no local work** → suggest `/flow:feat:start <TICKET>` or `/flow:bug:start <TICKET>`.
 - Local work `done`/`ship` but its ticket is still open in the tracker → divergence to close out.
-- Local work whose branch has an open MR/PR with **CI red** → `/flow:work:green`; with **unresolved threads** → `/flow:work:respond`.
+- Local work whose branch has an open MR/PR with **CI red** → `/flow:work:green`; with **threads awaiting your reply** (latest comment not yours) → `/flow:work:respond`.
 - A ticket's **priority was raised** while you were on something else → call out the possible refocus.
 - Uncommitted local changes not reflected in any log/artifact → nudge toward the relevant phase.
 
@@ -69,12 +70,16 @@ Today
   <what to resume + what the forge/tracker asks of you, ordered by urgency>
 
 Blockers / attention
-  <CI red · reviews awaiting you · divergences · raised priorities — or "none">
+  <CI red · reviews awaiting you (latest comment not yours) · divergences · raised priorities — or "none">
+
+Awaiting others (optional)
+  <threads you already answered, waiting on the reviewer — informational, not yours to act on>
 
 Next: <2-4 concrete flow commands>
 ```
 
 - Keep it scannable prose, not a raw dump. Mark degraded sources inline so the user knows what was **not** checked (e.g. a trailing `(tracker unavailable)` line).
+- **Blockers is only what *you* must act on.** Threads you already answered (waiting on the reviewer) go in *Awaiting others*, never in Blockers — omit that block when empty.
 - If there are no local works and no external items, say so plainly and suggest `/flow:feat:start` or `/flow:bug:start`.
 
 ## 6. "Last seen" marker (the only write)
