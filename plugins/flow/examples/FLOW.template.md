@@ -4,7 +4,13 @@ Configuration for the `flow` plugin for this repository. The `/flow:*` commands 
 file in their step 0. Delete what does not apply; **empty or absent = auto-discover or
 default behavior** (each command states what it does when a value is missing).
 
-Place it at the repo root (can be committed: it is team config, not secrets).
+Place it at the repo root. This is **personal config, not team config** — it mixes repo facts
+(tracker, quality commands, conventions) with your own flow preferences (autonomy mode, the
+tools/agents you have installed, review depth, assignee), so what one developer wants differs from
+the next and the same file on another machine may point at agents or an MCP that isn't there. It
+holds **no secrets** (those stay in your credential store), but **add `FLOW.md` to your
+`.gitignore`** — `/flow:init` offers to do this for you. A team that wants to share the repo-fact
+subset can still commit it deliberately.
 
 ## tracker
 How tickets are identified and read.
