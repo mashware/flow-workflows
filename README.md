@@ -58,8 +58,9 @@ A bug:
 ```
 
 You don't have to memorize the order — `/flow:work:status` shows every open work item and its
-next step, and `/flow:work:resume` picks up the work tied to your current branch. Type `/flow` (or
-`/`) for autocomplete.
+next step, and `/flow:work:resume` picks up the work tied to your current branch. Coming back after
+a break? `/flow:work:daily` gives you a Scrum-style standup across everything (local + forge +
+tracker). Type `/flow` (or `/`) for autocomplete.
 
 **Autonomy.** By default each phase stops at every decision and, at the end, *proposes* the next
 command as a one-click confirmation — you accept to advance, it is never typed for you
@@ -106,6 +107,7 @@ a review with high-severity findings.
 | `/flow:work:green` | **CI-green loop** (between `ship` and `merge`) — the open MR/PR's pipeline is red; fetch failing jobs, triage, fix at the root, push; never green-washes (see below) |
 | `/flow:work:respond` | **Review loop** (between `ship` and `merge`) — triage the open MR/PR threads, debate, implement the agreed changes, reply; never resolves threads (see below) |
 | `/flow:work:watch` | **Post-deploy watcher** — monitors observability after a deploy, flags regressions (see below) |
+| `/flow:work:daily` | **Work assistant** — a Scrum-style daily standup across all your work (local + forge + tracker); ask it a question or get the full briefing (see below) |
 | `/flow:work:status` | Summary of all open work items in `.claude/work/` |
 | `/flow:work:resume` | Resume the work tied to the current branch and suggest the next step |
 | `/flow:work:try` | Point the main checkout at a branch to test it (then `--back`), re-syncing the env per `git.worktree_resync` |
@@ -153,6 +155,23 @@ Before it starts it shows you a **monitoring plan** (which signals, which querie
 thresholds) so you can confirm or adjust. What it watches comes from the `observability` profile
 in `FLOW.md`; if that's empty it auto-discovers the services, dashboards and monitors. State lives
 in `monitor.md`, so on harnesses without in-session scheduling it also works driven by cron.
+
+## Work assistant (`/flow:work:daily`)
+
+Come back the next morning and ask *"what was I working on?"*. `/flow:work:daily` is the Scrum-style
+daily standup: it combines **three sources** — your **local** work state (`.claude/work/` + git),
+the **forge** (your open MRs/PRs, the ones awaiting your review, red CI, unresolved threads, via
+`gh`/`glab`), and the **tracker** (tickets assigned to you, priority changes, via your `tracker.tool`) —
+and where those sources *cross* it turns the result into concrete suggested commands: a ticket
+assigned to you with no local work → `/flow:feat:start`; a red pipeline → `/flow:work:green`; open
+threads → `/flow:work:respond`.
+
+Run it with no arguments for a **three-block briefing** (yesterday · today · blockers) or pass a
+**question** (`/flow:work:daily what's left on the payment work?`) to have it answer just that.
+Unlike `/flow:work:status` (a technical control table) and `/flow:work:resume` (one branch), it is
+cross-cutting and narrative. **Read-only** — its only write is a "last seen" marker (like
+`/flow:news`), and every external source is **best-effort**: if a CLI is missing or unauthenticated
+it degrades and tells you what it couldn't check, never blocking.
 
 ## Configuration: `FLOW.md`
 

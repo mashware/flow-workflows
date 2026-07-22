@@ -39,6 +39,7 @@ Workflows are invoked as custom prompts with the `/` prefix:
 | `/flow-bug-review` | Code review of the fix |
 | `/flow-bug-postmortem` | Lessons learned (M/L) |
 | `/flow-bug-ship` | Commit, push, MR/PR of the fix |
+| `/flow-work-daily [question]` | Work assistant — Scrum-style daily standup across all your work (local + forge + tracker) |
 | `/flow-work-status` | Overview of all open work |
 | `/flow-work-resume` | Resume work on the current branch |
 | `/flow-work-try {BRANCH}` | Point the main checkout at a branch to test it (`--back` to return), re-syncing per FLOW.md |

@@ -67,6 +67,7 @@ Each `mrs[]` entry carries its own `phases_done` (e.g. `["build", "review", "val
 
 ## Cross-cutting commands
 
+- `/flow-work-daily [question]` — your **work assistant**, the Scrum-style daily standup. Read-only, cross-cutting. Combines three sources — **local** (`.claude/work/` + git), **forge** (your open MRs/PRs, reviews awaiting you, red CI, unresolved threads via `git.cli`), and **tracker** (tickets assigned to you, priority changes via `tracker.tool`) — and where they cross, suggests concrete commands (ticket without local work → `/flow-feat-start`; red CI → `/flow-work-green`; open threads → `/flow-work-respond`). No argument → a *yesterday · today · blockers* briefing; a question → answers just that. Every external source is best-effort (degrades with a one-line note, never blocks); the only write is a "last seen" marker, like `/flow-news`. Complements `status` (technical table) and `resume` (one branch).
 - `/flow-work-status` — shows all work items in `.claude/work/`, current phase and divergence with git.
 - `/flow-work-resume` — detects the current branch, opens `meta.json`, recaps, and suggests the next step.
 - `/flow-work-watch {TICKET} [30m]` — post-deployment monitoring: observes the observability platform scoped to the change, comparing against a baseline, and alerts on regressions. In Codex, runs ONE cycle and exits; state lives in `monitor.md`. To repeat it, use OS cron + `codex exec "/flow-work-watch {TICKET}"` or the Codex app Automations.

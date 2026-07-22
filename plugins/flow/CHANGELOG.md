@@ -5,6 +5,28 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.17.0 — `/flow:work:daily` — your work assistant (the Scrum-style standup)  ·  2026-07-22
+
+### The morning question the flow couldn't answer
+You come back the next day and ask *"what was I working on?"*. Until now the flow had two half-answers: `/flow:work:status` (a technical control table — phases, MRs, artifact↔git divergence) and `/flow:work:resume` (the current branch, one work). Neither is the thing you actually want in the morning — a **cross-cutting, narrative catch-up** — and, more importantly, **both are blind to everything outside `.claude/work/`**. A ticket assigned to you overnight, a priority bumped while you were heads-down, an MR/PR awaiting *your* review, a pipeline that went red — none of that lives locally, so the flow never surfaced it.
+
+New `/flow:work:daily [question]` — read-only, cross-cutting, combining **three sources**:
+
+- **Local** (`.claude/work/` + git): what you were on, what was left mid-way, ordered by recency.
+- **Forge** (via `git.cli`): your open MRs/PRs, the ones **awaiting your review**, **red CI**, and **unresolved threads**.
+- **Tracker** (via `tracker.tool`): tickets **assigned to you**, **priority changes**, status drift.
+
+The value is where the sources **cross**, turned into concrete *suggested* commands (never auto-run): a ticket assigned to you with **no local work** → `/flow:feat:start`; a local work in `done` whose ticket is still open → a divergence to close; **red CI** → `/flow:work:green`; **open threads** → `/flow:work:respond`; a **raised priority** → a possible refocus.
+
+- **No argument** → a three-block briefing (*yesterday · today · blockers*) + a short list of next commands.
+- **A question** (`/flow:work:daily what's left on the payment work?`) → answers just that, from the same sources.
+- **Every external source is best-effort**: if a CLI is missing/unauthenticated or slow, it degrades with a one-line note (`(forge unavailable: …)`) and **never blocks** — the same discipline the flow already applies to `domain-memory`.
+- **Read-only**, with a single documented exception: a `~/.claude/flow/daily-last-seen` marker (exactly like `/flow:news`) so *"since last session"* is precise across sessions.
+
+**No new FLOW.md keys** — it reuses `tracker.tool`/`tracker.view`/`tracker.prefix` and `git.host`/`git.cli`/`git.assignee` the flow already needs. Scoped to the current repo (flow is per-repo). Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.16.0...v0.17.0
+
 ## v0.16.0 — `/flow:work:respond` gets the full review ladder  ·  2026-07-21
 
 ### Closing the quality gap in the review loop
