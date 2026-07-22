@@ -72,11 +72,16 @@ If the file does not exist or a key is empty, each command auto-discovers the va
       "note": "reason if closed/superseded; empty otherwise"
     }
   ],
+  "related_repos": [
+    { "repo": "sibling-project", "scope": "what's needed there", "status": "pending" | "in_progress" | "done" }
+  ],
   "started_at": "2026-05-11T10:00:00Z",
   "updated_at": "2026-05-11T11:30:00Z",
   "notes": "free field the user can edit"
 }
 ```
+
+`related_repos` records the **other repos a task touches** (flow is per-repo, so without this the work in a sibling project is forgotten). Captured at `/flow-feat-start` / `/flow-bug-start` §cross-repo, refined at `design`/`plan`, reminded at `ship`, and shown by `daily`/`resume`/`status`. flow only notes and reminds — it never scans or touches the other repo. `[]` for a single-repo task.
 
 ## Shortcuts by size
 

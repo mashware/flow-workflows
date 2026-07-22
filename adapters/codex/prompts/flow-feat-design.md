@@ -167,6 +167,10 @@ If what comes out of `03-design.md` doesn't fit `meta.json.size`:
 - If confirmed, update `meta.json.size` and note in `meta.json.notes`.
 - **Consequences**: going from M to L activates the full flow. Going from M to S removes `/flow-feat-plan` from the path. Explicitly warn the user of the flow change.
 
+## 7.5 Cross-repo scope (refine)
+
+Design is where a repo the conversation missed often surfaces (this change needs a consumer, a client, or a shared contract updated elsewhere). If `## Affected modules/layers` points at another repo, **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending" }`); if a repo listed at `start` turns out not to be needed, drop it. flow only records it — the reminder fires at `/flow-feat-ship`.
+
 ## 8. Domain knowledge staging
 
 If `domain_memory.enabled` is `true` in `FLOW.md`: review the decisions table (ADR-light) and challenges to detect **non-obvious domain decisions** — things a future reader of the repo could not deduce from reading only the code.

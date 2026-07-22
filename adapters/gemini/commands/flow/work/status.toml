@@ -21,10 +21,13 @@ Shows an overview of works in progress and detects divergences between artifacts
   Updated:     <date>
   Phases done: context, design, build…
   MR/PRs:      2/4 merged · MR/PR #3 in_progress · MR/PR #4 pending
+  Cross-repo:  <meta.related_repos entries not "done", as "repo: scope">   (line only if any)
   Pending:     <suggested next command>
 ```
 
 The term "MR" or "PR" is read from `git.request_term` in FLOW.md; if empty, use "MR/PR".
+
+The `Cross-repo:` line is only printed if `meta.json.related_repos` has entries not `done`; show each as `<repo>: <scope>`. It flags that a **sibling repo still has a pending part** of this task. flow only surfaces what's recorded — it never scans or touches the other repo.
 
 The `MR/PRs:` line is only printed if `meta.json.mrs` exists and has >0 entries. Format:
 - Summary: `<merged>/<total> merged`.

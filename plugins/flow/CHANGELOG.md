@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.19.0 — cross-repo scope: flow stops forgetting the other project  ·  2026-07-22
+
+### The other repo fell off the map
+flow is **per-repo**: the `.claude/work/<TICKET>/` lives in the repo where you start. But plenty of tasks span two projects (a backend change plus its consumer, an API plus its client). Since the debate and the ticket usually start in one repo, the slice that belongs to the *other* repo was recorded **nowhere** — you'd `ship` the first part and the second was silently forgotten. `/flow:work:daily` (v0.17) was per-repo too, so it couldn't catch it either.
+
+New `related_repos` field in `meta.json` (`[{ "repo", "scope", "status": "pending"|"in_progress"|"done" }]`), woven through the flow:
+
+- **Capture** — `/flow:feat:start` and `/flow:bug:start` add a **Cross-repo scope** step: if signals point to another repo (the ticket names it, the conversation settles it), they ask once and record it. **Silent by default** — no signal, no question. `/flow:feat:design` and `/flow:feat:plan` refine the list when the design reveals a repo the conversation missed (a plan slice that lands in another repo goes to `related_repos`, not to this repo's `mrs`).
+- **Recorded in the ticket too** — in **ticket-less** mode, when flow drafts and creates the issue, the *repos affected* go in the issue body, so the multi-repo scope lives in the tracker for the whole team, not only in the local `meta.json`.
+- **Remind** — `/flow:feat:ship` and `/flow:bug:ship` call out any non-`done` entry after creating the MR/PR ("the `<repo>` part still needs `<scope>` → start the work there"). `/flow:work:daily`, `/flow:work:resume` and `/flow:work:status` surface them.
+
+flow **only notes and reminds** — it never scans or touches the sibling repo (that would break the per-repo model). No new FLOW.md keys. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.18.0...v0.19.0
+
 ## v0.18.0 — `FLOW.md` is personal config: gitignore it, don't commit it  ·  2026-07-22
 
 ### "Team config, not secrets" was only half right

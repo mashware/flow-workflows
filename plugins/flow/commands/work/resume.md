@@ -25,6 +25,7 @@ Current phase:  <phase>
 Phases done:    <list>
 Last updated:   <updated_at>
 Notes:          <meta.notes>
+Cross-repo:     <meta.related_repos entries not "done", as "repo: scope"; or "—">
 ```
 
 The ticket format follows `tracker.prefix` from FLOW.md; if empty, show it as it appears in `meta.json`.
@@ -43,5 +44,7 @@ Then a **5-line summary** synthesizing all available artifacts (`01-context.md` 
 ## 4. Next step
 
 Suggest the concrete command based on `phase` and `size`. If the current phase was interrupted (e.g., `build` with an empty artifact), suggest rerunning it with `/flow:feat:build` or `/flow:bug:fix`.
+
+If `meta.json.related_repos` has entries not `done`, remind the user that a **sibling repo still has a pending part** (`<repo>: <scope>`) — suggest starting the work there (`/flow:feat:start <TICKET>` in that repo). flow only reminds; it does not scan or touch the other repo.
 
 Do not advance on your own. The user decides.

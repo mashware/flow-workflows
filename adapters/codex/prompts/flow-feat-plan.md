@@ -104,6 +104,10 @@ Valid statuses:
 | `closed` | MR/PR closed without merging (rejected, discarded). Requires `note` with reason. |
 | `superseded` | Replaced by a later MR/PR. Requires `note` pointing to the replacement. |
 
+### Cross-repo entries
+
+If a slice of the plan lands in **another repo**, it is not one of *this* repo's `mrs` — record it in `meta.json.related_repos` (`{ "repo", "scope", "status": "pending" }`) instead, so `/flow-feat-ship` reminds you to open the work there. Keep `mrs` to the MRs/PRs of this repo.
+
 ## 5. Is the size still right?
 
 If when splitting you find it actually results in 1 single small MR/PR (≤ 50 lines, no migrations), reclassify to `S` and flag it. If on the other hand 5+ large MRs/PRs emerge, consider bumping to `L`. Confirm with the user before changing `meta.json.size`.

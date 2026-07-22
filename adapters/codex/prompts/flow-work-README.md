@@ -40,11 +40,16 @@ If the file doesn't exist or a key is empty, each command auto-discovers the val
   "phase": "context" | "brainstorm" | "design" | "plan" | "build" | "review" | "validate" | "ship" | "diagnose" | "investigate" | "fix" | "postmortem" | "done" | "abandoned",
   "phases_done": ["context", ...],
   "mrs": [...],
+  "related_repos": [
+    { "repo": "sibling-project", "scope": "what's needed there", "status": "pending" | "in_progress" | "done" }
+  ],
   "started_at": "2026-05-11T10:00:00Z",
   "updated_at": "2026-05-11T11:30:00Z",
   "notes": "free field"
 }
 ```
+
+`related_repos` records the **other repos a task touches** (flow is per-repo, so without this the work in a sibling project is forgotten). Captured at `/flow-feat-start` / `/flow-bug-start` §cross-repo, refined at `design`/`plan`, reminded at `ship`, and shown by `daily`/`resume`/`status`. flow only notes and reminds — it never scans or touches the other repo. `[]` for a single-repo task.
 
 Each `mrs[]` entry carries its own `phases_done` (e.g. `["build", "review", "validate"]`). **In a multi-MR/PR work each MR/PR earns its own `build`/`review`/`validate`**, recorded in that entry — so `/flow-feat-review`, `/flow-feat-validate` and `/flow-feat-ship` gate on *this* MR/PR's progress, not the work-level `phases_done`. This is deliberate: without it, once the first MR/PR completed review/validate the work-level list would satisfy `ship`'s gate for every later MR/PR, letting a train MR/PR ship unreviewed just because an earlier sibling was reviewed.
 

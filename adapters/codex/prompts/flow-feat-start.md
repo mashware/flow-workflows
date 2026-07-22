@@ -36,6 +36,7 @@ From the conversation held with the user in this session, distil a draft ticket 
 - **Provisional acceptance criteria** — what "done" looks like, as far as the conversation settled it.
 - **Decisions already closed while talking** — the conclusions you reached together; capture them verbatim so they aren't lost.
 - **Open questions / risks** — what's still undecided.
+- **Repos affected** — if the work spans more than one repo, list each *other* repo and the one-line slice of work it needs. Only when the conversation actually points to another project; omit otherwise.
 - **Estimated size** — `XS|S|M|L` with one line of justification (confirmed in §4).
 
 If there's **not enough conversation** to draft from (e.g. `start` was invoked cold), don't fabricate: ask the user for a one-line description (or a ticket id) and build the draft from that.
@@ -50,9 +51,9 @@ Show the draft to the user and let them confirm or adjust **before writing anyth
 Creating a tracker issue is an **outward-facing action → always ask, in every autonomy mode** (like the MR/PR gate; never automatic):
 
 - If `tracker.tool` is not `none`, ask the user (numbered options, recommended default first) whether to create the real issue in the tracker from this draft.
-  - **Yes** → create it with the tool's native command, best-effort:
-    - `gh` → `gh issue create --title "<title>" --body "<summary + criteria>"`
-    - `glab` → `glab issue create --title "<title>" --description "<summary + criteria>"`
+  - **Yes** → create it with the tool's native command, best-effort. If §2.5.1 found **repos affected**, include them in the body under a short "Repos affected" heading — so the multi-repo scope is recorded in the tracker for the whole team, not only in the local `meta.json`:
+    - `gh` → `gh issue create --title "<title>" --body "<summary + criteria + repos affected>"`
+    - `glab` → `glab issue create --title "<title>" --description "<summary + criteria + repos affected>"`
     - `acli` (Jira) / `linear` → the tool's create command; if it's unclear, ask the user to create it and paste the id.
 
     Capture the returned identifier. **From here the run is in ticket mode**: the identifier becomes that id, the work dir is `.claude/work/<id>/`, and branch naming uses the real id (so the branch is registered as a linked branch of the issue when it is created). If creation fails, warn and fall back to local-only with the slug.
@@ -74,6 +75,14 @@ Before classifying size, identify any open questions that affect the design and 
 If there are questions, **ask them all at once** (max 4, the most blocking ones). Don't invent or assume. If everything is clear, continue.
 
 Answers are noted in `01-context.md` under "Decisions clarified in /flow-feat-start".
+
+## 3.5 Cross-repo scope
+
+Some tasks span more than one repo (a backend change plus its consumer, an API plus its client). flow is per-repo — the work dir lives only here — so if the task touches other repos and it is not recorded, the other side is silently forgotten after `ship`.
+
+If there are signals of multi-repo scope (the ticket mentions another project, the conversation settled that work is needed elsewhere), **ask once**: does this task also touch other repos? For each one, capture `repo` (the sibling project name) and a one-line `scope`, and record them in `meta.json.related_repos` (§6). **Silent by default**: if there is no signal, do not ask.
+
+flow only **notes and reminds** — it never touches or scans the other repo. When you get to that side you start a normal work there with the same ticket. `/flow-feat-design` and `/flow-feat-plan` refine this list if the design reveals a repo the conversation missed.
 
 ## 4. Classify size
 
@@ -159,6 +168,7 @@ Create `.claude/work/$ARGUMENTS/`:
   "phases_done": ["context"],
   "draft_from_conversation": false,
   "tracker_issue": null,
+  "related_repos": [],
   "started_at": "<ISO8601 now>",
   "updated_at": "<ISO8601 now>",
   "notes": ""
@@ -166,6 +176,8 @@ Create `.claude/work/$ARGUMENTS/`:
 ```
 
 In ticket-less mode (§2.5) set `draft_from_conversation: true` and `tracker_issue` to the created issue id/url (or `null` if local-only). In ticket mode leave both at their defaults above.
+
+Populate `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending" }` per *other* repo the task touches; leave `[]` for a single-repo task.
 
 ### `01-context.md`
 Structure:

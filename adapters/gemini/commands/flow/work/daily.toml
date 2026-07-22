@@ -22,6 +22,7 @@ Your **work assistant**: the Scrum-style daily standup. Answers *"what was I wor
 - Order works by `updated_at` (most recent first). The most recently touched is the *"what were we on?"* answer.
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.
 - Per work, gather: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending** — synthesized from the most recent artifact(s) (`NN-*.md`) and `meta.notes`, not re-derived from code.
+- **Cross-repo parts**: read `meta.json.related_repos`; any entry not `done` means a *sibling repo* still needs work. Surface only what's recorded — flow never scans or opens the other repo.
 
 ## 2. Forge layer (best-effort, via `git.cli`)
 
@@ -52,6 +53,7 @@ The briefing's value is in the *joins* — turn them into concrete, **suggested*
 - Local work `done`/`ship` but its ticket is still open in the tracker → divergence to close out.
 - Local work whose branch has an open MR/PR with **CI red** → `/flow:work:green`; with **threads awaiting your reply** (latest comment not yours) → `/flow:work:respond`.
 - A ticket's **priority was raised** while you were on something else → call out the possible refocus.
+- A work with `related_repos` entries not `done` → the **other repo's part is still open**: surface it (`<repo>: <scope>`) and suggest starting the work there (`/flow:feat:start <TICKET>` in that repo). flow only reminds; it never scans the sibling.
 - Uncommitted local changes not reflected in any log/artifact → nudge toward the relevant phase.
 
 Suggest only. The user decides.

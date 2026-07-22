@@ -173,6 +173,16 @@ cross-cutting and narrative. **Read-only** — its only write is a "last seen" m
 `/flow:news`), and every external source is **best-effort**: if a CLI is missing or unauthenticated
 it degrades and tells you what it couldn't check, never blocking.
 
+## Cross-repo tasks
+
+flow is per-repo, but tasks often aren't (a backend change plus its consumer, an API plus its
+client). `/flow:feat:start` and `/flow:bug:start` ask — only when there's a signal — whether the
+task touches other repos and record them in `meta.json.related_repos`; `design`/`plan` refine the
+list. When you `ship`, flow reminds you of the part still pending in the sibling repo, and
+`/flow:work:daily`, `resume` and `status` keep it visible so the other project doesn't fall off the
+map. flow only **notes and reminds** — it never scans or touches the other repo. In ticket-less
+mode the affected repos also go into the issue flow drafts, so the scope is recorded in the tracker.
+
 ## Configuration: `FLOW.md`
 
 A file at the repo root describes your conventions: issue tracker, git host and CLI, optional
