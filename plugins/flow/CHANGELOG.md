@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.17.1 — `/flow:work:daily` stops nagging about threads you already answered  ·  2026-07-22
+
+### The signal was "unresolved", and it should have been "awaiting *you*"
+The first cut of `/flow:work:daily` flagged every **unresolved** review thread as *"go respond"*. But on both GitLab and GitHub a thread stays unresolved until the **reviewer** closes it — and `/flow:work:respond` **never resolves threads** by design (that call is the reviewer's). So a thread you already answered stays unresolved forever, and the daily kept telling you to respond to MRs you'd already handled. Real report from the field: `!9707` was fully answered, yet the briefing still put it under *"respond today"*.
+
+The forge layer now keys off the right signal — **whose comment is last**:
+
+- **Threads whose latest comment is *not* yours** (someone left you something unanswered) → the real `/flow:work:respond` signal, fetched per open MR/PR (`glab api …/discussions` · `gh api` review threads) and compared against `git.assignee` / `@me`.
+- **Threads you already answered** (unresolved, but the last word is yours — waiting on the reviewer) → moved to a separate **Awaiting others** line, **informational only**, never in *Blockers*. *Blockers* is now strictly what **you** must act on.
+
+No new FLOW.md keys; a `patch`. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.17.0...v0.17.1
+
 ## v0.17.0 — `/flow:work:daily` — your work assistant (the Scrum-style standup)  ·  2026-07-22
 
 ### The morning question the flow couldn't answer
