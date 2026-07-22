@@ -119,6 +119,7 @@ Both are cross-cutting (feat or bug) and repeat once per round until the MR/PR i
 
 ## Cross-cutting commands
 
+- `/flow:work:daily [question]` — your **work assistant**, the Scrum-style daily standup. Read-only, cross-cutting. Combines three sources — **local** (`.claude/work/` + git), **forge** (your open MRs/PRs, reviews awaiting you, red CI, unresolved threads via `git.cli`), and **tracker** (tickets assigned to you, priority changes via `tracker.tool`) — and where they cross, suggests concrete commands (ticket without local work → `/flow:feat:start`; red CI → `/flow:work:green`; open threads → `/flow:work:respond`). No argument → a *yesterday · today · blockers* briefing; a question → answers just that. Every external source is best-effort (degrades with a one-line note, never blocks); the only write is a "last seen" marker, like `/flow:news`. Complements `status` (technical table) and `resume` (one branch) — it does not replace them.
 - `/flow:work:status` — shows all works in `.claude/work/`, current phase, and divergence with git.
 - `/flow:work:resume` — detects the current branch, reads `meta.json`, recaps, and suggests the next step.
 - `/flow:work:try <branch>` / `/flow:work:try --back` — point the main checkout at a branch to test it against this checkout's environment, then return; re-syncs per `git.worktree_resync` in FLOW.md. Generic (no project Makefile needed); complements worktrees.

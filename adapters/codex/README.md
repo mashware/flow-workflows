@@ -24,6 +24,7 @@ adapters/codex/
 │   ├── flow-bug-postmortem.md
 │   ├── flow-bug-ship.md
 │   ├── flow-work-README.md
+│   ├── flow-work-daily.md
 │   ├── flow-work-resume.md
 │   ├── flow-work-status.md
 │   ├── flow-work-try.md
@@ -99,6 +100,9 @@ cp /path/to/adapters/codex/AGENTS.md /root/of/your/repo/AGENTS.md
 
 # Resume where you left off
 /flow-work-resume
+
+# Morning standup across all your work (local + forge + tracker)
+/flow-work-daily
 
 # See all open work
 /flow-work-status

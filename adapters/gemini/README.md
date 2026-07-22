@@ -56,6 +56,7 @@ After copying, the structure looks like this:
     │   └── postmortem.toml     → /flow:bug:postmortem
     ├── work/
     │   ├── README.toml         → /flow:work:README
+    │   ├── daily.toml          → /flow:work:daily
     │   ├── resume.toml         → /flow:work:resume
     │   ├── status.toml         → /flow:work:status
     │   ├── abandon.toml        → /flow:work:abandon
@@ -162,6 +163,9 @@ State between cycles (monitored surface, baseline, approved plan) is persisted i
 
 # Resume work after a break
 /flow:work:resume
+
+# Morning standup across all your work (local + forge + tracker)
+/flow:work:daily
 ```
 
 ---

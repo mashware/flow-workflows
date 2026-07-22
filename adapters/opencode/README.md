@@ -108,6 +108,7 @@ Once installed, invoke them with `/` in opencode:
 | Command | Description |
 |---------|-------------|
 | `/flow-work-README` | Guide to the flow system |
+| `/flow-work-daily` | Work assistant — Scrum-style daily standup across all your work (local + forge + tracker) |
 | `/flow-work-status` | Overview of all open work items |
 | `/flow-work-resume` | Resume work on the current branch |
 | `/flow-work-abandon` | Close a work item without shipping |
