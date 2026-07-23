@@ -46,6 +46,11 @@ Light checks — report problems, never change anything:
 - **Coherence**: `git.worktree` is `ask`/`always` but `git.worktree_path` empty → note the default
   `.worktrees/{branch}` will be used. `git.host` and `git.cli` disagree → flag. `domain_memory.enabled` is
   `true` but the MCP isn't available this session → note the domain steps will be skipped.
+- **Tracker transitions**: if any of `tracker.start_cmd` / `done_cmd` / `abandon_cmd` is set but `tracker.tool`
+  is `none`/empty → flag (there is no ticket to move). If `start_cmd` references `{ASSIGNEE}` but both
+  `tracker.assignee` and `git.assignee` are empty → note the token won't substitute. If `git.host` is
+  `github`/`gitlab` and `done_cmd` is set → note it is usually redundant with `Closes #N` auto-close (harmless,
+  but the merge already closes the issue). These `*_cmd` run best-effort and never block.
 
 ## 4. Close
 

@@ -135,6 +135,7 @@ With the "all threads resolved before merge" policy, the MR/PR cannot be merged 
 ## 4. Close
 
 - Update `meta.json`: `phase = "done"`, add `ship` to `phases_done`.
+- **Tracker: move to done.** When `phase` reaches `done` and `tracker.tool` is not `none`/empty, `tracker.done_cmd` is set, and `meta.json.ticket` is a **real tracker id**: run `tracker.done_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contract as `/flow:bug:start §4.5`: **best-effort, idempotent, gated** (ask once in `autonomy.mode: manual`; automatic in `guided`/`auto`); failure or already-done ticket → warn and continue, never block. **Leave `tracker.done_cmd` empty on GitHub/GitLab** — `Closes #N` already auto-closes on merge; this is for Jira/Linear-style trackers.
 - Summary: ticket, MR/PR URL, regression test added.
 - **Cross-repo reminder**: if `meta.json.related_repos` has any entry not `done`, call it out now — for each: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow:bug:start <TICKET>` (or `/flow:feat:start`)"*. flow does not touch the other repo; it only reminds, and this is not a hard gate.
 - Ask whether they want to archive `.claude/work/<TICKET>/` to `.claude/work/_archive/`.
