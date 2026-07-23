@@ -226,6 +226,12 @@ Structure:
 
 In ticket-less mode, fill `## Ticket` and `## Acceptance criteria` from the §2.5 synthesized draft, put the conversation's closed decisions under `## Decisions clarified in /flow:feat:start`, and add one line noting the work was synthesized from conversation and whether a tracker issue was created (id) or it is local-only.
 
+## 6.5 Tracker: move to in progress
+
+Move the ticket to "in progress" and assign it so it does not sit stale in the backlog while you work. **Only** if `tracker.tool` is not `none`/empty, `tracker.start_cmd` is set, and `meta.json.ticket` is a **real tracker id** (in ticket-less local-only mode there is no ticket — skip silently; but if §2.5.4 created a real issue, the run is now in ticket mode and this applies to that id).
+
+Run `tracker.start_cmd` substituting `{TICKET}` = `meta.json.ticket` and `{ASSIGNEE}` = `tracker.assignee` (or `git.assignee` if the former is empty; if both are empty and the command needs `{ASSIGNEE}`, run only the transition part you can and warn). Moving a ticket is an **outward-facing action**: in `autonomy.mode: manual` ask once with `AskUserQuestion` before running; in `guided`/`auto` run it automatically and record it in `01-context.md`. It is **best-effort and idempotent** — if the command fails or the ticket is already in that state, warn in one line and continue; **never block** the flow. If `tracker.start_cmd` is empty, do nothing.
+
 ## 7. Close
 
 Summarize to the user in 2-3 lines:

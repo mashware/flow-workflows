@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.21.0 — flow moves your tickets: in-progress on start, done on ship, won't-do on abandon  ·  2026-07-23
+
+### Tickets sat stale in the backlog while the work was already flowing
+flow read the tracker but never wrote to it, so the ticket stayed in "To Do" while you were mid-feature and stayed "open" after you shipped — you had to move it by hand, or it rotted. Now flow can drive the ticket's state through the work, keeping the plugin **stack-agnostic**: you give it the commands, it runs them.
+
+New **optional** `tracker` keys in `FLOW.md` (empty = current behavior, nothing runs):
+
+- `start_cmd` — run on `/flow:feat:start` & `/flow:bug:start` to move the ticket to **in progress** and assign it (`{TICKET}` and `{ASSIGNEE}` substituted).
+- `done_cmd` — run on ship **when the work actually completes** (`phase` reaches `done`, i.e. the completing MR/PR is merged) to move it to **done**. Tied to real completion, **not** to archiving the folder — so a shelved-but-not-shipped work never gets marked done.
+- `abandon_cmd` — run on `/flow:work:abandon` to move the ticket to **won't-do / cancelled**, never "done".
+- `assignee` — the tracker account for `{ASSIGNEE}` (falls back to `git.assignee`).
+
+The three transitions are **best-effort, idempotent, and gated**: outward-facing, so they ask before running in `autonomy.mode: manual` and run automatically in `guided`/`auto`; a failure or an already-in-state ticket warns and continues — **never blocks** the flow. They only run in ticket mode with a real tracker id.
+
+- **GitHub/GitLab leave `done_cmd` empty** — `Closes #N` in the MR/PR body already auto-closes the issue on merge; the transitions are for trackers that don't move from git (Jira, Linear). `/flow:config` flags the redundancy and other incoherences (transition set but `tool: none`, `{ASSIGNEE}` with no assignee).
+- **`/flow:init`** offers the transition commands with Jira/Linear defaults **only** when the tracker is `acli`/`linear`.
+
+Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.20.0...v0.21.0
+
 ## v0.20.0 — work folders carry a slug: you can tell them apart on disk  ·  2026-07-23
 
 ### `.claude/work/MT-1234/` told you nothing when you had five of them open
