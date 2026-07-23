@@ -82,6 +82,7 @@ Do not decide on your own — ask.
   - `phases_done` is not modified (it reflects what was actually done).
   - `notes` += abandonment reason.
   - `updated_at` updated.
+- **Tracker: move to won't-do** (never "done" — this work did not ship). Only if `tracker.tool` is not `none`/empty, `tracker.abandon_cmd` is set, and `meta.json.ticket` is a **real tracker id** (skip for local-only slugs). Run `tracker.abandon_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contract as `/flow-feat-start §6.5`: **best-effort, idempotent, gated** (ask once in `autonomy.mode: manual`; automatic in `guided`/`auto`); failure or already-in-state ticket → warn and continue, never block. If `tracker.abandon_cmd` is empty, do nothing (the ticket stays as-is; the user closes it by hand if they want).
 - Move the folder to `.claude/work/_archive/` **keeping its directory name** (`_archive/<work-dir>/`, where `<work-dir>` is the folder located in §1 — e.g. `<TICKET>-<slug>`) so it does not appear in `/flow-work-status` as pending.
 - Report to the user: ticket abandoned, reason, what was done with the branch.
 

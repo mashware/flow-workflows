@@ -156,6 +156,8 @@ Update `meta.json` based on the scenario:
 
 **C) The plan changed and this MR/PR is out of scope**: mark the entry as `superseded` with `note` pointing to the new MR/PR.
 
+**Tracker: move to done.** Only when this ship sets `phase = "done"` (single MR/PR merged, or the last of a train — never on an intermediate train MR/PR), and only if `tracker.tool` is not `none`/empty, `tracker.done_cmd` is set, and `meta.json.ticket` is a **real tracker id**. `phase = "done"` already implies the completing MR/PR was confirmed merged, so this fires at genuine completion — not at the archive prompt later in this section. Run `tracker.done_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contract as `/flow-feat-start §6.5`: **best-effort, idempotent, gated** (in `autonomy.mode: manual` ask once before running; in `guided`/`auto` run automatically); failure or already-done ticket → warn in one line and continue, never block. **On GitHub/GitLab leave `tracker.done_cmd` empty** — the `Closes #N` in the MR/PR body (§2) already auto-closes the issue on merge, so this step is for trackers that do not transition from git (Jira, Linear).
+
 **Cross-repo reminder**: if `meta.json.related_repos` has any entry not `done`, call it out explicitly now — this is the moment the other side is usually forgotten. For each such entry: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow-feat-start <TICKET>` (or `/flow-bug-start`)"*. flow does not touch or scan the other repo; it only reminds, and this is not a hard gate.
 
 Summarize for the user: ticket, MR/PR URL, changed files, tests added. Ask whether they want to keep the `.claude/work/<TICKET>/` folder or archive it — only if `phase = "done"`.
