@@ -17,7 +17,13 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 - Verify you are in the correct repo.
 - **Determine the mode** from `$ARGUMENTS`: non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
-- Once the identifier is known, if `.claude/work/<identifier>/meta.json` exists, suggest `/flow:work:resume`. In ticket-less mode run this check right after the slug is decided in §1.5.
+- Once the identifier is known, check whether this work already exists: in ticket mode, glob both `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; in ticket-less mode, `.claude/work/<slug>/meta.json`. If one exists, suggest `/flow:work:resume`. In ticket-less mode run this check right after the slug is decided in §1.5.
+
+**Work directory naming.** The work lives in `.claude/work/<work-dir>/`. `meta.json.ticket` stays the **pure identifier** (the real ticket id, or the slug in ticket-less local-only) — it feeds the tracker view, the issue link, and `{TICKET}` in the branch. The **directory name** adds a human-readable slug so several concurrent works are told apart on disk:
+- **ticket mode** → `<TICKET>-<slug>`, where `<slug>` is a short English kebab-case slug (≤5 words) derived from the symptom — the **same** slug used for the branch in §3.
+- **ticket-less local-only** → `<slug>` (there the identifier already *is* the slug; no suffix).
+
+Derive the slug **once** — after the symptom is known (§1), or in §1.5.2 for ticket-less — and reuse it for both the branch (§3) and the directory (§4). Existing works created before this convention are named just `<TICKET>`; they keep working because every other command locates the work by matching `meta.json.branch`, not by the directory name.
 
 ## 1. Gather context
 
@@ -46,7 +52,7 @@ From the conversation held with the user in this session — the user spotted so
 If there is **not enough conversation** to draft from, do not fabricate: ask the user for a one-line symptom (or a ticket id) and build from that.
 
 ### 1.5.2 Slug
-Derive a short English kebab-case slug (≤5 words) from the symptom. This is the work identifier: the work lives in `.claude/work/<slug>/` and, in local-only mode, names the branch. Run the §0 "already exists" check now against `<slug>`.
+Derive a short English kebab-case slug (≤5 words) from the symptom. This is the work identifier: the work lives in `.claude/work/<slug>/` and, in local-only mode, names the branch. It is also the `<slug>` reused by §3/§4. Run the §0 "already exists" check now against `<slug>`.
 
 ### 1.5.3 Confirm the draft
 Show the draft to the user and let them confirm or adjust **before writing anything**. This replaces having to say "create a task with what we found".
@@ -97,10 +103,13 @@ If the current branch is not the main base, ask for the base with `AskUserQuesti
 
 ## 4. Write artifacts
 
-`.claude/work/$ARGUMENTS/meta.json`:
+Create the work directory following the §0 naming: `.claude/work/<TICKET>-<slug>/` in ticket mode, `.claude/work/<slug>/` in ticket-less local-only mode.
+
+`<work-dir>/meta.json`:
 ```json
 {
   "ticket": "<identifier: $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
+  "slug": "<the §0/§1.5.2 kebab-case slug; equals `ticket` in ticket-less local-only>",
   "type": "bug",
   "title": "<symptom from tracker, or synthesized in §1.5>",
   "branch": "<branch created in §3>",
@@ -120,7 +129,7 @@ If the current branch is not the main base, ask for the base with `AskUserQuesti
 
 Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending" }` per *other* repo the fix touches; leave `[]` for a single-repo fix.
 
-`.claude/work/$ARGUMENTS/01-context.md`:
+`<work-dir>/01-context.md`:
 ```markdown
 # Bug context {TICKET}
 

@@ -32,7 +32,7 @@ If `domain_memory.enabled` is `true`, call `search_knowledge` with the ticket na
 
 ## 1. Pre-flight and T0
 
-- Resolve the ticket from `$ARGUMENTS`. If there is a work `meta.json` in `.claude/work/<TICKET>/`, read it **as a hint, not as ground truth**.
+- Resolve the ticket from `$ARGUMENTS`. If there is a work for it in `.claude/work/` (glob `<TICKET>/` and `<TICKET>-*/`, or match `meta.json.ticket`), read its `meta.json` **as a hint, not as ground truth**.
 - **Confirm WHAT is being deployed — do not assume from `meta.json`.** Cross-check with the **actual deployment event** and ask the user which MR/PR or commit is being deployed if there is any ambiguity.
 - **When to start / wait for the deployment.** If the code is **not yet live in production**, poll until the deployment appears. If the pipeline fails (deployment down): **abort monitoring** and alert.
 - **T0 = when the version starts serving.** The most precise source is the "first seen" event for the service in the observability platform. If that is not available, ask the user for the time and assume `now` with a warning.
@@ -49,7 +49,7 @@ Read the ticket diff (`git diff <base>...HEAD`, or the MR/PR) and extract **what
 - Database tables or queries touched.
 - Custom metrics or logs emitted by the change.
 
-Write this to `.claude/work/<TICKET>/monitor.md` under "Monitored surface". If you cannot determine it precisely, say so and monitor at the service level.
+Write this to `<work-dir>/monitor.md` (the work dir resolved in §1, e.g. `.claude/work/<TICKET>-<slug>/`; if none was found, `.claude/work/<TICKET>/`) under "Monitored surface". If you cannot determine it precisely, say so and monitor at the service level.
 
 ## 3. Signal sources and discovery (once)
 
@@ -122,7 +122,7 @@ After the cycle: update `monitor.md` (accumulated state, to avoid repeating aler
 
 ## 7. Close (when `T_end` is reached or at the user's request)
 
-Write the summary to `.claude/work/<TICKET>/monitor.md` and deliver it to the user:
+Write the summary to the same `<work-dir>/monitor.md` (resolved in §1) and deliver it to the user:
 
 - Monitored surface and covered axes vs **not** covered (due to missing instrumentation).
 - Baseline used.

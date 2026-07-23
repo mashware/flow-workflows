@@ -11,12 +11,12 @@ Show an overview of work in progress and detect divergences between artifacts an
 ## 1. List work items
 
 - `ls -1 .claude/work/` (ignore `_archive`).
-- For each folder matching the ticket pattern, read its `meta.json`.
+- Read the `meta.json` of **every** folder (folders are now named `<TICKET>-<slug>` or, for ticket-less/local works, `<slug>`; older ones are just `<TICKET>`). Identify each work by its `meta.json.ticket`, not by the folder name.
 
 ## 2. For each work item, show
 
 ```
-<TICKET> [feat|bug] [XS|S|M|L]  ⏵ <current phase>
+<TICKET> — <title> [feat|bug] [XS|S|M|L]  ⏵ <current phase>
   Branch:      <branch>           [✓ active | ⚠ not current]
   Started:     <date>
   Updated:     <date>
@@ -71,8 +71,8 @@ If the branch in meta.json **is the current one**:
 
 ## 4. Orphaned work items
 
-- If there are local branches matching the ticket pattern with no `.claude/work/<TICKET>/` folder: report it.
-- If there are `.claude/work/<TICKET>/` folders whose branch no longer exists locally: ask whether to archive.
+- If there are local branches with the ticket pattern but no matching work folder (`.claude/work/<TICKET>/` or `.claude/work/<TICKET>-*/`, matched via `meta.json.ticket`/`branch`): warn about it.
+- If there are work folders whose branch no longer exists locally: ask whether to archive.
 
 The branch pattern is inferred from `git.branch_pattern` in FLOW.md; if empty, look for branches whose name matches the pattern `<prefix>XXXXX-*` or orphaned `.claude/work/` folders.
 
