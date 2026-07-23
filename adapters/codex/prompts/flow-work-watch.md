@@ -19,7 +19,7 @@ If `domain_memory.enabled` is `true`, query `search_knowledge` with the ticket n
 
 ## 1. Pre-flight and T0
 
-- Resolve the ticket from `$ARGUMENTS`. If there's a `meta.json` for the work in `.claude/work/<TICKET>/`, read it **as a hint, not as truth**.
+- Resolve the ticket from `$ARGUMENTS`. If there's a work for it in `.claude/work/` (glob `<TICKET>/` and `<TICKET>-*/`, or match `meta.json.ticket`), read its `meta.json` **as a hint, not as truth**.
 - **Confirm WHAT is being deployed**. Cross-reference with the actual deployment event and recent merges. If there's any ambiguity about which MR/PR or commit is deploying, **ask the user** before continuing.
 - **If `monitor.md` already exists for this ticket** (previous cycle): read it and jump directly to §5 — the pre-flight, surface, sources, baseline, and **approved plan** are already there. Don't repeat discovery or ask for confirmation again.
 - Check if the new version is live. If it hasn't deployed yet, wait (poll every ~2-3 min) until the deployment appears. If the pipeline fails, **abort the monitoring** and flag it.
@@ -35,7 +35,7 @@ Read the ticket diff (`git diff <base>...HEAD`) and extract **what it touched**:
 - Database tables or queries touched.
 - Custom metrics or logs emitted by the change.
 
-Write it in `.claude/work/<TICKET>/monitor.md` under "Monitored surface".
+Write it in `<work-dir>/monitor.md` (the work dir resolved in §1, e.g. `.claude/work/<TICKET>-<slug>/`; if none was found, `.claude/work/<TICKET>/`) under "Monitored surface".
 
 ## 3. Signal sources and discovery (once)
 
@@ -90,7 +90,7 @@ After the cycle: update `monitor.md` (accumulated state, to avoid repeating aler
 
 ## 7. Close (when `T_fin` is reached or at user request)
 
-Write the summary to `.claude/work/<TICKET>/monitor.md` and give it to the user:
+Write the summary to the same `<work-dir>/monitor.md` (resolved in §1) and give it to the user:
 
 - Monitored surface and covered axes vs **not** covered.
 - Baseline used.

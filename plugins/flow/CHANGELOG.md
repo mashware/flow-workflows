@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.20.0 — work folders carry a slug: you can tell them apart on disk  ·  2026-07-23
+
+### `.claude/work/MT-1234/` told you nothing when you had five of them open
+In ticket mode the work folder was named just `<TICKET>` (`MT-1234`), so with several works in flight at once you couldn't tell which was which without opening each `meta.json`. Ticket-less works already had a readable slug; ticket mode didn't.
+
+Now the folder is named `<TICKET>-<slug>` (e.g. `MT-1234-fix-login-validation`), reusing the **same** slug already derived for the branch — so branch and folder read alike. `meta.json` gains a `slug` field, and `meta.json.ticket` stays the **pure identifier** that feeds the tracker view, the issue link and `{TICKET}` in the branch — the id is never polluted with the slug.
+
+- **`/flow:feat:start` & `/flow:bug:start`** — derive the slug once and name the directory `<TICKET>-<slug>` (ticket mode) or `<slug>` (ticket-less local-only). The "already exists" check globs both `<TICKET>/` and `<TICKET>-*/`.
+- **Backwards compatible** — works created before this are still named `<TICKET>` and keep working: every other command locates a work by matching `meta.json.branch`/`ticket`, not by the folder name. `/flow:work:watch`, `/flow:work:status` and `/flow:work:abandon` were adjusted to glob/match instead of assuming the exact `<TICKET>` path, and `status` now shows the title next to the ticket.
+
+Docs/command-logic only — no new FLOW.md keys, still stack-agnostic. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.19.0...v0.20.0
+
 ## v0.19.0 — cross-repo scope: flow stops forgetting the other project  ·  2026-07-22
 
 ### The other repo fell off the map

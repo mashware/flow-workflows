@@ -27,7 +27,7 @@ If `domain_memory.enabled` is `true`, call `search_knowledge` with the ticket na
 
 ## 1. Pre-flight and T0
 
-- Resolve the ticket from `$ARGUMENTS`. If there is a `meta.json` for the work in `.claude/work/<TICKET>/`, read it **as a hint, not as truth**.
+- Resolve the ticket from `$ARGUMENTS`. If there is a work for it in `.claude/work/` (glob `<TICKET>/` and `<TICKET>-*/`, or match `meta.json.ticket`), read its `meta.json` **as a hint, not as truth**.
 - **Confirm WHAT is being deployed — do not assume it from `meta.json`.** A ticket may have multiple MR/PRs, and the work artifact may be stale or describe something else. Cross-reference with the **actual deploy event** (e.g., `get_change_stories` if the platform supports it) and recent merges, and **ask the user with `AskUserQuestion` which MR/PR or commit is deploying** if there is any ambiguity. The surface (§2) is scoped to **that** change, not to whatever the artifact says.
 - **When to start / wait for the deploy.** The right time to monitor is when the code **is live in production**, not at merge (merge ≠ deployed; the pipeline still has to build and deploy). The user may launch this **right after the merge** — in that case **wait for the deploy yourself**:
   - Check whether the new version is already live (using the `observability.deploy_detect` mechanism from FLOW.md; if empty, use `get_change_stories` for the service or other deploy indicators).
@@ -51,7 +51,7 @@ Read the ticket diff (`git diff <base>...HEAD`, or the MR/PR) and extract **what
 - Database tables or queries touched.
 - Custom metrics or logs emitted by the change.
 
-Write it to `.claude/work/<TICKET>/monitor.md` under "Monitored surface". If you cannot determine it precisely, say so and monitor at service level (coarser, more noise).
+Write it to `<work-dir>/monitor.md` (the work dir resolved in §1, e.g. `.claude/work/<TICKET>-<slug>/`; if none was found, `.claude/work/<TICKET>/`) under "Monitored surface". If you cannot determine it precisely, say so and monitor at service level (coarser, more noise).
 
 ## 3. Signal sources and discovery (once)
 
@@ -128,7 +128,7 @@ After each cycle: update `monitor.md` (accumulated state, to avoid repeating ale
 
 ## 7. Close (when reaching `T_end` or at the user's request)
 
-Write the summary to `.claude/work/<TICKET>/monitor.md` and present it to the user:
+Write the summary to the same `<work-dir>/monitor.md` (resolved in §1) and present it to the user:
 
 - Monitored surface and axes covered vs **not** covered (due to lack of instrumentation).
 - Baseline used.

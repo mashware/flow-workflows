@@ -78,7 +78,7 @@ Don't make the decision alone — ask.
   - `phases_done` is not touched.
   - `notes` += abandonment reason.
   - `updated_at` updated.
-- Move the folder to `.claude/work/_archive/<TICKET>/`.
+- Move the folder to `.claude/work/_archive/` **keeping its directory name** (`_archive/<work-dir>/`, where `<work-dir>` is the folder located in §1 — e.g. `<TICKET>-<slug>`) so it doesn't appear in `/flow-work-status` as pending.
 - Summarize for the user: abandoned ticket, reason, what was done with the branch.
 
 ## Recovery
