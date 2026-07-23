@@ -21,6 +21,18 @@ How tickets are identified and read.
                       #   Jira:   `acli jira workitem view {TICKET}`
                       #   GitHub: `gh issue view {TICKET}`
                       #   GitLab: `glab issue view {TICKET}`
+- `assignee:`         # tracker username/account for the `{ASSIGNEE}` token in the commands below. Empty = fall back to `git.assignee`.
+- `start_cmd:`        # optional, run when a work STARTS (`/flow:feat:start`, `/flow:bug:start`) to move the ticket to "in progress" and/or assign it. `{TICKET}` and `{ASSIGNEE}` substituted; chain two calls with `&&`. Empty = do not transition on start. e.g.:
+                      #   Jira: `acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}`
+- `done_cmd:`         # optional, run when a work SHIPS and is merged (`phase` reaches `done`) to move the ticket to "done". `{TICKET}` substituted. Empty = do not transition. **Leave empty on GitHub/GitLab** — the `Closes #N` in the MR/PR body already auto-closes the issue on merge. e.g.:
+                      #   Jira: `acli jira workitem transition {TICKET} "Done"`
+- `abandon_cmd:`      # optional, run when a work is ABANDONED (`/flow:work:abandon`) to move the ticket to a cancelled / won't-do state. `{TICKET}` substituted. Empty = do not transition. e.g.:
+                      #   Jira: `acli jira workitem transition {TICKET} "Won't Do"`
+                      #
+                      # The three `*_cmd` transitions are **best-effort, idempotent, and gated**: outward-facing, so
+                      # they are asked before running in `autonomy.mode: manual` and run automatically in `guided`/`auto`;
+                      # a failure or an already-in-state ticket warns and continues, never blocks. They run only in
+                      # ticket mode with a real tracker id (skipped for ticket-less / local-only works).
 
 ## git
 Branch and Pull/Merge Request conventions.
