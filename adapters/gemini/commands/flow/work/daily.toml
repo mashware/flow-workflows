@@ -31,6 +31,7 @@ What the team is asking of you **right now**. Resolve the CLI from `git.cli` (or
 - **Your open MRs/PRs**: `glab mr list --author=@me` / `gh pr list --author @me`.
 - **Awaiting your review**: `glab mr list --reviewer=@me` / `gh pr list --search "review-requested:@me"`.
 - **CI red** on your MRs/PRs → flag it (links to `/flow:work:green`).
+- **Cannot merge** — the forge's own verdict, *not* the pipeline: conflicts with the base, behind base, still a draft, approvals missing (`detailed_merge_status`/`has_conflicts` on GitLab · `mergeable`/`mergeStateStatus`/`reviewDecision` on GitHub). A green MR/PR can be unmergeable, so flag it separately, naming the reason. Conflicts / behind-base → `/flow:work:green`; draft and approvals are yours or the reviewers' to clear.
 - **Threads that need *your* reply** — those whose **latest comment is not yours** (someone left you something unanswered), fetched per open MR/PR (`glab api .../merge_requests/:iid/discussions` · `gh api` review threads) and compared against your identity (`git.assignee` / `@me`). This — **not** the raw *unresolved* count — is the signal for `/flow:work:respond`: because `/flow:work:respond` **never resolves** threads, a thread you already answered stays unresolved until the reviewer closes it, so counting *unresolved* would flag your own answered threads forever.
 - **Threads awaiting the reviewer** — unresolved but whose latest comment **is yours** (you replied; the ball is in the reviewer's court): **informational only**, never an action for you.
 
@@ -51,7 +52,7 @@ The briefing's value is in the *joins* — turn them into concrete, **suggested*
 
 - Ticket assigned to you with **no local work** → suggest `/flow:feat:start <TICKET>` or `/flow:bug:start <TICKET>`.
 - Local work `done`/`ship` but its ticket is still open in the tracker → divergence to close out.
-- Local work whose branch has an open MR/PR with **CI red** → `/flow:work:green`; with **threads awaiting your reply** (latest comment not yours) → `/flow:work:respond`.
+- Local work whose branch has an open MR/PR with **CI red or an unmergeable state** (conflicts, behind base) → `/flow:work:green`; with **threads awaiting your reply** (latest comment not yours) → `/flow:work:respond`.
 - A ticket's **priority was raised** while you were on something else → call out the possible refocus.
 - A work with `related_repos` entries not `done` → the **other repo's part is still open**: surface it (`<repo>: <scope>`) and suggest starting the work there (`/flow:feat:start <TICKET>` in that repo). flow only reminds; it never scans the sibling.
 - Uncommitted local changes not reflected in any log/artifact → nudge toward the relevant phase.

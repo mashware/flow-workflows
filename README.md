@@ -104,7 +104,7 @@ a review with high-severity findings.
 |---|---|
 | `/flow:init` | Wizard that generates this repo's `FLOW.md` (auto-detects, asks the minimum) |
 | `/flow:config` | Show the effective `FLOW.md` config: what is set, what is empty (and its fallback), plus validation |
-| `/flow:work:green` | **CI-green loop** (between `ship` and `merge`) — the open MR/PR's pipeline is red; fetch failing jobs, triage, fix at the root, push; never green-washes (see below) |
+| `/flow:work:green` | **Mergeable loop** (between `ship` and `merge`) — the open MR/PR cannot merge: red pipeline, conflicts, or another blocker; triage, fix at the root, push; never green-washes (see below) |
 | `/flow:work:respond` | **Review loop** (between `ship` and `merge`) — triage the open MR/PR threads, debate, implement the agreed changes, reply; never resolves threads (see below) |
 | `/flow:work:watch` | **Post-deploy watcher** — monitors observability after a deploy, flags regressions (see below) |
 | `/flow:work:daily` | **Work assistant** — a Scrum-style daily standup across all your work (local + forge + tracker); ask it a question or get the full briefing (see below) |
@@ -114,17 +114,23 @@ a review with high-severity findings.
 | `/flow:work:abandon` | Close a work item without shipping (discarded feature, non-bug…) |
 | `/flow:save-knowledge` | Consolidate the branch's findings into the `domain-memory` store |
 
-## CI-green loop (`/flow:work:green`)
+## Mergeable loop (`/flow:work:green`)
 
 The window between `ship` and `merge` carries two signals, and each has its own loop. `/flow:work:green`
-handles the **machine** one: the open MR/PR's CI pipeline is **red**. It fetches the failing jobs and
-their logs (via `gh`/`glab`), **triages** each one (lint/style · test failure · type/build · flaky/infra ·
-quality-gate), and fixes it **at the root** — delegating to the flow's sub-agents and reproducing locally
-with your `quality.*` commands so it does not burn CI cycles guessing. Pushes and reruns are **hard gates**
-you confirm, and it **never green-washes**: no blind reruns, no disabling or skipping a check to force
-green (the machine analog of `respond` never resolving a thread — a green must mean the code is actually
-correct). Because reviewers often wait for green, this usually runs before `respond`. Repeatable (one run
-per red pipeline, logged to `09-ci.md`), for both feat and bug MR/PRs.
+handles the **machine** one: the open MR/PR **cannot be merged**. It reads both halves of that state via
+`gh`/`glab` — the failing pipeline jobs **and** the forge's own merge verdict (conflicts, branch behind
+base, draft, approvals missing, unresolved threads) — because a pipeline can be perfectly green on an
+MR/PR that is impossible to merge, and reporting *that* as done is its own kind of lie. It then **triages**
+every blocker (lint/style · test failure · type/build · flaky/infra · quality-gate · conflict · human) and
+fixes at the root the ones that are machine-fixable, delegating to the flow's sub-agents and reproducing
+locally with your `quality.*` commands so it does not burn CI cycles guessing. **Conflicts** are treated as
+a code decision, not a git chore: it merges the base into the branch (no history rewrite, no force-push by
+default) and resolves each conflict on its merits, reading what the base changed and what your design
+intended. Human blockers it never works around — it names them and routes them (threads → `respond`).
+Pushes, reruns and any base integration are **hard gates** you confirm, and it **never green-washes**:
+no blind reruns, no disabling or skipping a check, no "resolving" a conflict by discarding the other side.
+Because reviewers wait for a green, mergeable MR/PR, this usually runs before `respond`. Repeatable (one
+run per round of blockers, logged to `09-ci.md`), for both feat and bug MR/PRs.
 
 ## Review loop (`/flow:work:respond`)
 
@@ -160,11 +166,11 @@ in `monitor.md`, so on harnesses without in-session scheduling it also works dri
 
 Come back the next morning and ask *"what was I working on?"*. `/flow:work:daily` is the Scrum-style
 daily standup: it combines **three sources** — your **local** work state (`.claude/work/` + git),
-the **forge** (your open MRs/PRs, the ones awaiting your review, red CI, unresolved threads, via
-`gh`/`glab`), and the **tracker** (tickets assigned to you, priority changes, via your `tracker.tool`) —
-and where those sources *cross* it turns the result into concrete suggested commands: a ticket
-assigned to you with no local work → `/flow:feat:start`; a red pipeline → `/flow:work:green`; open
-threads → `/flow:work:respond`.
+the **forge** (your open MRs/PRs, the ones awaiting your review, red CI, MRs/PRs that cannot merge,
+unresolved threads, via `gh`/`glab`), and the **tracker** (tickets assigned to you, priority changes, via
+your `tracker.tool`) — and where those sources *cross* it turns the result into concrete suggested
+commands: a ticket assigned to you with no local work → `/flow:feat:start`; a red pipeline or a conflicted
+branch → `/flow:work:green`; open threads → `/flow:work:respond`.
 
 Run it with no arguments for a **three-block briefing** (yesterday · today · blockers) or pass a
 **question** (`/flow:work:daily what's left on the payment work?`) to have it answer just that.
