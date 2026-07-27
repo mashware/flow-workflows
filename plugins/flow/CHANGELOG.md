@@ -5,6 +5,32 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.22.0 — `/flow:work:green` means *mergeable*, not just a green pipeline  ·  2026-07-27
+
+### A green pipeline on an MR you cannot merge, reported as "you're good to go"
+`/flow:work:green` only ever looked at the CI pipeline. So on an MR with **conflicts** it fetched the jobs, saw them green, and stopped — telling you everything was fine about a request that was impossible to merge. Conflicts, a branch behind base, a forgotten draft, missing approvals: none of it was in the command's field of view.
+
+Now the command reads **both halves** of the state, every round:
+
+- **The forge's own merge verdict** (§2.1) — `detailed_merge_status`, `has_conflicts`, `draft`, `blocking_discussions_resolved`, `approvals_left` on GitLab · `mergeable`, `mergeStateStatus`, `reviewDecision` on GitHub. `UNKNOWN`/`checking` is **not** an answer: both forges compute mergeability asynchronously, so it re-queries before concluding anything and never reports "no conflicts" from an unknown verdict.
+- **The pipeline** (§2.2) — unchanged: failing jobs, logs, blocking vs allowed-failure.
+
+And it decides on the **combination**: pipeline green but blockers remaining is no longer "green, you're good" — it reports the green, lists the blockers, and keeps working.
+
+Two new triage categories join lint/test/type/flaky/gate:
+
+- **C — conflict / behind base.** Treated as a **code decision, not a git chore**: it merges the base into the branch (**default `git merge`** — no history rewrite, no force-push, review comments stay anchored; rebase only if you ask, with `--force-with-lease`) and resolves each conflict **on its merits**, reading what the base changed *and* what `03-design.md` intended. Generated artifacts (lockfiles, snapshots) get **regenerated**, not hand-edited. Then it verifies **wider than the conflict** — the full local gate — because a marker-free merge can still be semantically broken. Cannot resolve on the merits? `git merge --abort` and hand it back with the question.
+- **H — human blocker.** Draft, approvals missing, unresolved threads: **never worked around**. It names the blocker, says what is needed and from whom, and routes it (threads → `/flow:work:respond`). The closing summary lists the H blockers still standing.
+
+**New hard gates**: integrating the base (any `merge`/`rebase` of the base branch, and any force-push it implies) always asks, in every mode. And green-washing now explicitly covers conflicts — no `--ours`/`--theirs` shortcut, no discarding the base's side to make the red go away.
+
+- **`/flow:work:daily`** gained the same signal: an MR/PR that **cannot merge** is flagged separately from red CI, with the reason.
+- **`/flow:work:respond`** nudges toward `green` for conflicts too, not just a red pipeline.
+
+Mirrored across the opencode / Codex CLI / Gemini CLI adapters. **No new FLOW.md keys.**
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.21.0...v0.22.0
+
 ## v0.21.0 — flow moves your tickets: in-progress on start, done on ship, won't-do on abandon  ·  2026-07-23
 
 ### Tickets sat stale in the backlog while the work was already flowing
