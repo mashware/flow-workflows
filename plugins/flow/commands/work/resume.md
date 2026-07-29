@@ -45,6 +45,6 @@ Then a **5-line summary** synthesizing all available artifacts (`01-context.md` 
 
 Suggest the concrete command based on `phase` and `size`. If the current phase was interrupted (e.g., `build` with an empty artifact), suggest rerunning it with `/flow:feat:build` or `/flow:bug:fix`.
 
-If `meta.json.related_repos` has entries not `done`, remind the user that a **sibling repo still has a pending part** (`<repo>: <scope>`) — suggest starting the work there (`/flow:feat:start <TICKET>` in that repo). flow only reminds; it does not scan or touch the other repo.
+If `meta.json.related_repos` has entries not `done`, remind the user that a **sibling repo still has a pending part** (`<repo>: <scope>`, plus `contract not handed over` if that entry's `contract_handoff` is `pending`) — suggest starting the work there (`/flow:feat:start <TICKET>` in that repo). flow only reminds; it does not scan or touch the other repo.
 
 Do not advance on your own. The user decides.

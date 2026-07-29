@@ -89,7 +89,9 @@ Consolidate the outputs in `.claude/work/<TICKET>/03-design.md`:
 - Online migrations:
 
 ## External contracts
-<If this change touches a surface consumed from outside (another repo, another module, a deployed client, a worker, a migration referenced by name, a metric/dashboard, a domain event, an HTTP route), declare each contract as a literal here, not in prose. Any contract left in prose is ambiguous and will be a source of failures during build. If there is no external surface, write "none" and move on.>
+<If this change touches a surface consumed from outside (another repo, another module, a deployed client, a worker, a migration referenced by name, a metric/dashboard, a domain event, an HTTP route), declare each contract as a literal here, not in prose. Any contract left in prose is ambiguous and will be a source of failures during build. If there is no external surface, write "none" and move on.
+
+**Contracts received from another repo are not re-decided here.** If `01-context.md` has a `## Contracts received` section (`/flow-feat-start` §3.6), copy those contracts in **as-is**, marked `received from <repo>`. They are an input to this design, not an output of it: the other side may already be merged or deployed against them. If one looks wrong, raise it with that side — do not quietly design a better version, or the ticket ships two contracts and the disagreement surfaces at integration instead of here.>
 
 ### Contract N: <short description — e.g. "HTTP 402 quota_exceeded">
 - **Type**: HTTP response body | header | route | domain event | DB column | metric | other.
@@ -104,7 +106,7 @@ Consolidate the outputs in `.claude/work/<TICKET>/03-design.md`:
   Event:  ResourceWasCreated { resourceId, createdAt, userHash }
   Metric: resource.created — tags: [plan, status]
   ```
-- **Known consumer**: <consumer name + path where it reads this contract, if known>
+- **Known consumer**: <consumer name + path where it reads this contract, if known. If the consumer is one of the repos in `meta.json.related_repos`, **name it exactly as that entry's `repo`** — `/flow-feat-ship` §6 uses this field to decide which contracts to hand to which sibling, so an unnamed consumer forces the handoff to fall back to asking the user.>
 - **Pattern deviation**: <if this contract does NOT follow how similar controllers/events/etc. in the repo do it, STATE IT EXPLICITLY here: "the other controllers return X, this one does NOT follow that pattern, it returns Y because Z">.
 
 ### Contract N+1: …
@@ -189,7 +191,9 @@ The design phase is when the real complexity of the work becomes visible (migrat
 
 ## 7.5 Cross-repo scope (refine)
 
-Design is where a repo the conversation missed often surfaces (this change needs a consumer, a client, or a shared contract updated elsewhere). If `## Modules/layers affected` points at another repo, **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending" }`); if a repo listed at `start` turns out not to be needed, drop it. flow only records it — the reminder fires at `/flow-feat-ship`.
+Design is where a repo the conversation missed often surfaces (this change needs a consumer, a client, or a shared contract updated elsewhere). If `## Modules/layers affected` points at another repo, **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending", "contract_handoff" }`); if a repo listed at `start` turns out not to be needed, drop it. flow only records it — the reminder fires at `/flow-feat-ship`.
+
+This is also where `contract_handoff` gets its real value, because the contracts now exist: per entry, set it to `pending` if any contract in §"External contracts" names that repo as consumer, or `none` if the sibling's work touches nothing declared here. A `pending` is what makes `/flow-feat-ship` §6 offer the handoff; marking `none` on a repo that *does* consume a contract is exactly the silence this is meant to break.
 
 ## 8. Staging domain findings
 
@@ -199,9 +203,11 @@ If `domain_memory.enabled` is `true` in `FLOW.md`: review the decisions table (A
 - "We coupled A with B because legal/tax requirements mandate that..."
 - "The handler is intentionally non-idempotent because the domain allows it and it simplifies the flow."
 
+**Evidence before staging.** Every finding carries one line of **evidence** — what you checked and against what. A finding is a claim about how *this project* behaves and will be read months later as settled fact by someone who will not re-derive it, so an unverified one is worse than none, because it is believed. **Claims about what the code does** are verified against `git.default_base` from `FLOW.md` — never your working branch, and never a train/integration branch: diffing against the parent shows your siblings' changes as though they were the baseline, so "the code already handles X" can be true where you stand and false on the default base. **Claims about generated output** — a query the ORM builds, a serialized payload, a rendered template, a resolved config — are verified against the output **actually produced**: dump it, log it, execute it. Reading the builder and predicting what it emits is precisely how a confident, wrong finding gets written down. If you cannot produce that line, **do not stage the finding**: say it did not survive verification and move on.
+
 **Silence by default**: if there is nothing non-obvious, do not ask. If there are 1+ findings with a clear signal:
 
-- Call `mcp__domain-memory__stage_finding` with the finding and context. One call per finding.
+- Call `mcp__domain-memory__stage_finding` with the finding, its evidence line, and context. One call per finding.
 - Briefly notify the user: "Staged X domain finding(s) to consolidate in `/flow-feat-ship`".
 
 Do not invoke `save_knowledge` here — the final save is in `/flow-feat-ship` with a prior `read_staging`. If `domain_memory.enabled` is `false` or empty, skip silently.

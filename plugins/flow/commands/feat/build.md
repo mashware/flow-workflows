@@ -79,6 +79,8 @@ Load the project skills (see `FLOW.md` section `conventions`).
 
 **Comment discipline.** Add a comment only when it earns its place: to explain a *why* the code cannot (a non-obvious constraint, a workaround and its reason, a subtle invariant). Do not narrate *what* the code already states, do not restate the design, and match the surrounding file's comment density — an over-commented change reads as noise and rots as the code moves on. **Never write the ticket ID, task/step number, or "for MR #N" into a code comment**: that traceability belongs in the commit, branch and MR/PR, not in the source. A comment that only makes sense to someone reading this MR/PR today does not belong in the code.
 
+**Borrowed code carries its reason.** When you lift a structure from another file in the repo — a `catch` block, a guard clause, a mapper, a config stanza, a test setup — you are importing decisions made for *that* file's situation, not for yours. Before keeping it, name under "Decisions made during implementation" in `05-implementation.md` where it came from and **what makes it apply here**: the exception it catches is actually thrown on this path, the guard's precondition can actually be false here, the mapped field actually exists on this shape. If you cannot name that reason, do not copy it — write what this code needs or leave it out. Borrowed-and-plausible is the most expensive kind of line to put in a diff: it reads as deliberate, so a reviewer spends real attention before discovering it was never chosen at all. This is the same anti-drift rule as §2.0bis, applied to code instead of contracts.
+
 **If in a multi-MR/PR build**: limit yourself to what the current MR/PR covers per `04-mr-plan.md`. Any code belonging to a later MR/PR is scope creep; cut it or isolate it behind a feature flag / dead code temporarily per the plan. If it cannot be isolated, pause and return to `/flow:feat:plan` to cut it.
 
 Choose execution mode:
@@ -207,7 +209,7 @@ As larger pieces are completed:
 
 - Run `quality.style_fix` from `FLOW.md` to fix style; if empty, auto-discover (e.g. from Makefile or npm scripts).
 - Run `quality.static_analysis` from `FLOW.md` when a piece is stable; if empty, auto-discover.
-- If tests were added, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover.
+- If tests were added, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover. **A filtered run is judged by how many tests it executed, never by its exit code.** Almost every runner exits `0` when the filter matches nothing (`OK, 0 tests`, `No tests ran`, `no tests to run`, `0 passed`), so a typo in `{FILTER}`, a renamed test class, or a test living in a suite the filter never reaches are all indistinguishable from green. Read the executed count **and** the executed test names from the output: if the count is `0`, or the tests you just wrote are not among the names, **the run did not happen** — treat it as a failure, fix the filter, run again. If the runner reports no count, drop the filter and run the whole test file. In "Relevant commands executed", record the count you actually saw, not just the command — "green" without a number is not evidence that anything ran.
 
 Do not do code review here — that is `/flow:feat:review`.
 

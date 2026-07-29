@@ -41,7 +41,7 @@ If the file doesn't exist or a key is empty, each command auto-discovers the val
   "phases_done": ["context", ...],
   "mrs": [...],
   "related_repos": [
-    { "repo": "sibling-project", "scope": "what's needed there", "status": "pending" | "in_progress" | "done" }
+    { "repo": "sibling-project", "scope": "what's needed there", "status": "pending" | "in_progress" | "done", "contract_handoff": "none" | "pending" | "published → <location>" }
   ],
   "started_at": "2026-05-11T10:00:00Z",
   "updated_at": "2026-05-11T11:30:00Z",
@@ -50,6 +50,8 @@ If the file doesn't exist or a key is empty, each command auto-discovers the val
 ```
 
 `related_repos` records the **other repos a task touches** (flow is per-repo, so without this the work in a sibling project is forgotten). Captured at `/flow-feat-start` / `/flow-bug-start` §cross-repo, refined at `design`/`plan`, reminded at `ship`, and shown by `daily`/`resume`/`status`. flow only notes and reminds — it never scans or touches the other repo. `[]` for a single-repo task.
+
+`contract_handoff` tracks whether that sibling was told **what shape to build against** — a different question from `status` (whether its work is done). `none` — it consumes no contract declared here. `pending` — it consumes one and the literal hasn't been handed over. `published → <location>` — the literal contracts were published where that side reads them (normally the tracker ticket; `/flow-feat-ship` §6). It earns its place because `scope` is one line of prose while the contract is a literal shape: a sibling that knows *that* it must expose an endpoint but not the exact payload, error codes or route will invent them, and the invention only surfaces at integration. Picked up by the sibling's own `/flow-feat-start` §3.6.
 
 Each `mrs[]` entry carries its own `phases_done` (e.g. `["build", "review", "validate"]`). **In a multi-MR/PR work each MR/PR earns its own `build`/`review`/`validate`**, recorded in that entry — so `/flow-feat-review`, `/flow-feat-validate` and `/flow-feat-ship` gate on *this* MR/PR's progress, not the work-level `phases_done`. This is deliberate: without it, once the first MR/PR completed review/validate the work-level list would satisfy `ship`'s gate for every later MR/PR, letting a train MR/PR ship unreviewed just because an earlier sibling was reviewed.
 

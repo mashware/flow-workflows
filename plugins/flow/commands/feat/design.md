@@ -101,7 +101,9 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 - Online migrations:
 
 ## External contracts
-<If this change touches a surface consumed from outside (another repo, another module, a deployed client, a worker, a migration referenced by name, a metric/dashboard, a domain event, an HTTP route), declare **each contract as a literal** here, not in prose. Any contract left in prose is ambiguous and will be a source of failures at build time. If there is no external surface, write "none" and move on.>
+<If this change touches a surface consumed from outside (another repo, another module, a deployed client, a worker, a migration referenced by name, a metric/dashboard, a domain event, an HTTP route), declare **each contract as a literal** here, not in prose. Any contract left in prose is ambiguous and will be a source of failures at build time. If there is no external surface, write "none" and move on.
+
+**Contracts received from another repo are not re-decided here.** If `01-context.md` has a `## Contracts received` section (`/flow:feat:start` §3.6), copy those contracts into this section **as-is** and mark them `received from <repo>`. They are an input to the design, not an output of it: the other side may already be merged or deployed against them. If one looks wrong, raise it with that side — do not quietly design a better version, because the result is two repos shipping two contracts for one ticket, and the disagreement surfaces at integration instead of here.>
 
 ### Contract N: <short description — e.g. "HTTP 402 quota_exceeded">
 - **Type**: HTTP response body | header | route | domain event | DB column | metric | other.
@@ -116,7 +118,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
   Event: ResourceWasCreated { resourceId, createdAt, userHash }
   Metric: resource.created — tags: [plan, status]
   ```
-- **Known consumer**: <consumer name + path where it reads this contract, if known>
+- **Known consumer**: <consumer name + path where it reads this contract, if known. If the consumer is one of the repos in `meta.json.related_repos`, **name it exactly as that entry's `repo`** — `/flow:feat:ship` §6.3 uses this field to decide which contracts to hand over to which sibling, so an unnamed consumer means the handoff has to fall back to asking the user.>
 - **Pattern deviation**: <if this contract does NOT follow how other similar controllers/events/etc. in the repo do it, ANNOUNCE it explicitly here: "the other controllers return X, this one does NOT follow that pattern, it returns Y because Z">.
 
 ### Contract N+1: …
@@ -211,7 +213,9 @@ Design is when the real complexity of the work becomes visible (migrations, cros
 
 ## 7.5 Cross-repo scope (refine)
 
-Design is where a repo the conversation missed often surfaces (this change needs a consumer, a client, or a shared contract updated elsewhere). If `## Modules/layers affected` points at another repo, **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending" }`); if a repo listed at `start` turns out not to be needed, drop it. flow only records it — the reminder fires at `/flow:feat:ship`.
+Design is where a repo the conversation missed often surfaces (this change needs a consumer, a client, or a shared contract updated elsewhere). If `## Modules/layers affected` points at another repo, **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending", "contract_handoff" }`); if a repo listed at `start` turns out not to be needed, drop it. flow only records it — the reminder fires at `/flow:feat:ship`.
+
+This is also where `contract_handoff` gets its real value, because the contracts now exist: for each entry, set it to `pending` if any contract in §"External contracts" names that repo as its consumer, or `none` if the sibling's work touches nothing declared here (a UI-only change, an independent migration). A `pending` here is what makes `/flow:feat:ship` §6.3 offer the handoff; leaving it `none` on a repo that does consume a contract is exactly the silence this is meant to break.
 
 ## 8. Domain findings staging
 
@@ -221,9 +225,16 @@ If `domain_memory.enabled` is `true` in `FLOW.md`: review the decision table (AD
 - "We coupled A with B because legal/fiscal requirements demand that..."
 - "The handler is intentionally non-idempotent because the domain allows it and simplifies the flow."
 
+**Evidence before staging.** Every finding carries one line of **evidence** — what you checked and against what — recorded with it in the call. A finding is a claim about how *this project* behaves, and it will be read months from now as settled fact by someone who will not re-derive it; an unverified finding is worse than no finding, because it is believed. Two rules on what counts:
+
+- **Claims about what the code does** are verified against `git.default_base` from `FLOW.md` — not against your working branch, and **never against a train/integration branch**. On a stacked branch, diffing against the parent shows your siblings' changes as though they were the baseline, so "the code already handles X" can be true where you are standing and false on the default base, which is the only place the claim will matter.
+- **Claims about generated output** — a query the ORM builds, a serialized payload, a rendered template, a resolved config — are verified against the output **actually produced**: dump it, log it, execute it. Reading the builder and predicting what it emits is precisely how a confident, wrong finding gets written down.
+
+If you cannot produce that line for a finding, **do not stage it**: tell the user it did not survive verification and move on. A finding withdrawn here costs nothing; one that lands in the store wrong gets trusted.
+
 **Silence by default**: if there is nothing non-obvious, do not ask. If there are 1+ findings with a clear signal:
 
-- Call `mcp__domain-memory__stage_finding` with the finding and the context. One call per finding.
+- Call `mcp__domain-memory__stage_finding` with the finding, its evidence line, and the context. One call per finding.
 - Briefly inform the user: "Staged X domain finding(s) to consolidate in `/flow:feat:ship`".
 
 Do not invoke `save_knowledge` here — the final save is in `/flow:feat:ship` with a prior `read_staging`. If `domain_memory.enabled` is `false` or empty, skip without notifying.

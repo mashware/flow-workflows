@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.24.0 — The contract crosses to the other repo, and green means a count  ·  2026-07-29
+
+### One epic, two repos, and four incidents that turned out to be two holes
+The case behind this release: an epic delivered across a backend and its MCP consumer, six MRs on an integration branch. Four things went wrong, and grouping them cut the list in half.
+
+**The literal contracts never reached the other repo.** `related_repos` was already well wired — captured at `start`, refined at `design`, reminded at `ship`, surfaced by `daily`/`resume`/`status`. But it carried `{repo, scope, status}`: *that* a sibling has pending work, never *against what shape*. Meanwhile the contracts themselves live in `03-design.md`, inside **git-ignored** `.claude/work/`. So the most expensive artifact of the whole flow died with the session while the cheapest — `scope`, one line of prose — was the only half that crossed. The consuming repo then started from a ticket saying "expose an endpoint", and invented the routes, payload keys and error codes that had already been decided. `design` even had a **`Known consumer`** field for exactly this, and nothing read it.
+
+Now the handoff is symmetric, because publishing without a reader fixes nothing. `/flow:feat:ship` §6.3 offers to publish the **literal** contracts — only the ones whose `Known consumer` names that sibling — to the anchor both sides already share: the tracker ticket (fallback to a versioned file when there is no tracker). Mandatory preview in **every** autonomy mode, like the MR/PR preview: it publishes prose the whole team reads. Acceptance criteria and ADRs deliberately do **not** cross — they are this repo's *how*, and in the sibling's ticket they bury what matters. On the receiving end, `/flow:feat:start` **§3.6** picks that block up into `01-context.md` as **received, not negotiable**, and `design` carries it in verbatim instead of re-deriving it. When a ticket points at another repo with *no* published contract, `start` now says so out loud — an absent contract is otherwise invisible, and what fills the silence is invention that reads like knowledge. New `contract_handoff` per entry in `meta.json.related_repos` (`none` / `pending` / `published → <location>`), so "never handed over" is something `status`/`daily`/`resume` show you rather than something you remember. `bug:ship` gets the same handoff for a fix that *changes* a consumed surface — worse than a new contract, since the sibling has working code and no reason to suspect the shape moved.
+
+**The other three incidents were one failure wearing three hats: accepting a plausible signal as a verified one.** A test that never ran because the filter did not match. A `catch` copied from a neighbouring file without checking it applied. And two domain findings reported that turned out false once checked against `origin/master` and against the generated DQL. Three places where flow took the cheap signal:
+
+- **Green is a count, not an exit code.** `build` §4 said "run them individually with `quality.test_one`" and trusted the exit status — but nearly every runner exits `0` when a filter matches nothing (`OK, 0 tests`, `No tests ran`). A typo, a renamed class or a test outside the filtered suite was indistinguishable from a pass, and *more* convincing than silence, because a command ran and succeeded. The run is now judged by the executed **count and names**: zero, or your new tests absent, is a failure. No count reported → drop the filter and run the whole file.
+- **Borrowed code carries its reason.** §2.0bis protected against pattern drift for *contracts* only, so a lifted `catch` fell outside the perimeter. `build` §2.1 now asks, for any structure taken from another file, what makes it apply *here* — the exception is actually thrown on this path, the guard's precondition can actually be false. If you cannot name it, do not copy it. Borrowed-and-plausible reads as deliberate, so a reviewer spends real attention before finding it was never chosen.
+- **Evidence before staging.** `design` §8 called `stage_finding` with no evidence requirement at all — odd, since §7 already made the *challenger* verify its findings. A finding is now staged with one line of evidence, and two rules on what counts: claims about the code are checked against `git.default_base`, **never a train/integration branch** (diffing against the parent shows your siblings' work as if it were the baseline), and claims about generated output are checked against the output **actually produced**, not predicted from reading the builder. No evidence line → the finding is withdrawn, not stored. An unverified finding is worse than none, because it gets believed.
+
+Deliberately untouched: the `review` panel, which **caught** the two mistakes that got through. The lesson was to make detection cheaper upstream, not to thicken the net that already worked.
+
+Mirrored across the opencode / Codex CLI / Gemini CLI adapters. **No new FLOW.md keys**, no new phase, no extra agent — one new `meta.json` field and one new numbered section.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.23.0...v0.24.0
+
 ## v0.23.0 — The review panel runs whole, and a settled decision never fences off the reviewer  ·  2026-07-29
 
 ### A full flow, a green suite, and a human reviewer still found four things
