@@ -62,7 +62,7 @@ Each blocker → **auto-fix** (L, trivial Y); **code-fix** (T regression, Y, som
 - **Design-invalidation first**: a test proving the *design* wrong → update `03-design.md` before editing; large → `/flow-feat-build`/`/flow-bug-fix`.
 - **Delegate** edits to the flow's sub-agents (`agents`); follow repo conventions, keep `build`'s comment discipline (no ticket IDs / "for MR #N" in the source).
 - **Reproduce/verify locally (tight loop)**: re-run the failing check with the matching `quality` command before pushing (L → `style_fix`; T → `test`/`test_one`/`frontend_test`; Y → `static_analysis`); empty → auto-discover; un-reproducible locally → say so, fall back to remote verify.
-- **Review gate for non-trivial code-fixes** (`quality.review_skill`/built-in `code-review`) on this round's diff; high-severity blocks the push.
+- **Review gate for non-trivial code-fixes** (`quality.review_skill`/built-in `code-review`) on this round's diff. Pass the diagnosis as context, never as a scope exclusion (*"the cause was X"*, not *"skip X"*); high-severity blocks the push.
 - **Commits are user opt-in**: report a summary; do not commit on your own.
 
 **5.C Integrate the base and resolve conflicts (C)** — before the other buckets, only after the hard gate:

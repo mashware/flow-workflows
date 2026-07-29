@@ -36,14 +36,14 @@ Record in `06-review.md` which tier and effort ran and why. Note fixes skew XS/S
 Launch the reviewers selected in §2.0 and **consolidate their findings into a single deduplicated report**:
 
 1. **Built-in `code-review`** (the Claude Code one, no prefix), at the effort resolved in §2.0. Single pass over the local diff: correctness issues + simplification/efficiency.
-2. **Project panel** (only when §2.0 selected it): skill `quality.review_skill` from FLOW.md, invoked as `<review_skill> branch`. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those agents in parallel as a review panel. If both are empty, the built-in `code-review` above is the whole review.
+2. **Project panel** (only when §2.0 selected it): skill `quality.review_skill` from FLOW.md, invoked as `<review_skill> branch`. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those agents in parallel as a review panel. If both are empty, the built-in `code-review` above is the whole review. Launch the panel **as defined** — whole roster, no subset, no substitutions; if an agent cannot run, record it in §7 `Agents launched` with the reason.
 
 Deduplicate overlaps (correctness/simplification flagged by both; count once). Specific focus for the fix beyond generic analysis:
 - The change must genuinely resolve the problem from `02-diagnose.md` / `03-investigation.md`.
 - There must be no expanded scope (hidden refactor). If there is, list it.
 - The regression test from `05-validation.md` must cover the case.
 
-Pass as context: `03-investigation.md` and `04-fix.md`. **But treat their justifications as hypotheses, not axioms**: the root cause and the contracts are truth, yet any *"why I chose this approach"* prose in `04-fix.md` is a claim to test against the code — do not bless a choice merely because the fix rationalized it in writing.
+Pass as context: `03-investigation.md` and `04-fix.md`. **But treat their justifications as hypotheses, not axioms**: the root cause and the contracts are truth, yet any *"why I chose this approach"* prose in `04-fix.md` is a claim to test against the code — do not bless a choice merely because the fix rationalized it in writing. Same for the briefs you write: a settled decision is context (*"this is decided; what consequences does it have?"*), never a scope exclusion.
 
 ## 2.2 Idiom / primitive audit (only if the fix introduces new architectural pieces)
 
@@ -53,7 +53,7 @@ A minimal fix rarely adds new classes — but when it does (a new service, handl
 
 Only what the skill in §2 does not already cover. Launch additionally in parallel if applicable:
 
-- DB / queries → `agents.performance` agent from FLOW.md; if empty, use `Agent general-purpose` with a performance role in the prompt.
+- DB / queries, or a repeated call that leaves the process (external API, HTTP, cache, filesystem) → `agents.performance` agent from FLOW.md; if empty, use `Agent general-purpose` with a performance role in the prompt. Ask what **each failed iteration** sets off downstream, not just what the happy path costs.
 - Workers / dead-letter queue → `agents.queues` agent from FLOW.md to confirm the fix prevents recurrence; if empty, use `Agent general-purpose` with a messaging role in the prompt.
 
 ## 4. Over-engineering audit (fit + YAGNI)
@@ -90,7 +90,7 @@ Use the `quality` commands from FLOW.md; if empty, auto-discover:
 
 ## Summary
 - Review tier: <full | proportional — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
-- Agents launched: …
+- Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Blockers: N
 - Suggestions: M
 

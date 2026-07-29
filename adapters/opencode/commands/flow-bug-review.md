@@ -20,14 +20,14 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 Launch **both** over the fix scope against the base (committed + uncommitted working tree) and **consolidate their findings into a single deduplicated report**:
 
 1. **Integrated review**: run a full pass over the local diff looking for correctness bugs + simplification/efficiency issues, at high effort — **escalated to the maximum thoroughness the tool supports when `meta.json.size` is L or the diff touches a sensitive surface** (auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change). If the tool has a built-in review skill or command, use it (at its highest effort tier for those cases); otherwise perform the review yourself.
-2. **`quality.review_skill` from FLOW.md**: invoke it as a skill, passing `03-investigation.md` and `04-fix.md` as context. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those sub-agents in parallel as a review panel. If both are empty, rely on the integrated review already run in step 1.
+2. **`quality.review_skill` from FLOW.md**: invoke it as a skill, passing `03-investigation.md` and `04-fix.md` as context. If `quality.review_skill` is empty and `quality.reviewers` has entries, launch those sub-agents in parallel as a review panel. If both are empty, rely on the integrated review already run in step 1. Launch the panel **as defined** — whole roster, no subset, no substitutions; if a sub-agent cannot run, record it in the output's `Sub-agents launched` with the reason.
 
 Deduplicate overlaps (correctness/simplification flagged by both — count once). Fix-specific focus beyond the generic analysis:
 - The change must actually resolve the problem described in `02-diagnose.md` / `03-investigation.md`.
 - There must be no scope creep (hidden refactor). If there is, list it.
 - The regression test in `05-validation.md` must cover the case.
 
-`03-investigation.md` and `04-fix.md` are passed as context, **but treat their justifications as hypotheses, not axioms**: the root cause and the contracts are truth, yet any *"why I chose this approach"* prose in `04-fix.md` is a claim to test against the code — do not bless a choice merely because the fix rationalized it in writing.
+`03-investigation.md` and `04-fix.md` are passed as context, **but treat their justifications as hypotheses, not axioms**: the root cause and the contracts are truth, yet any *"why I chose this approach"* prose in `04-fix.md` is a claim to test against the code — do not bless a choice merely because the fix rationalized it in writing. Same for the briefs you write: a settled decision is context (*"this is decided; what consequences does it have?"*), never a scope exclusion.
 
 ## 2.2 Idiom / primitive audit (only if the fix introduces new architectural pieces)
 
@@ -37,7 +37,7 @@ A minimal fix rarely adds new classes — but when it does (a new service, handl
 
 Only what the skill in §2 does not already cover. Launch additionally in parallel if applicable:
 
-- DB / queries → sub-agent from `agents.performance` in FLOW.md; if empty, use a general-purpose sub-agent with a performance role in the prompt.
+- DB / queries, or a repeated call that leaves the process (external API, HTTP, cache, filesystem) → sub-agent from `agents.performance` in FLOW.md; if empty, use a general-purpose sub-agent with a performance role in the prompt. Ask what **each failed iteration** sets off downstream, not just what the happy path costs.
 - Workers / failure queue → sub-agent from `agents.queues` in FLOW.md to confirm the fix prevents recurrence; if empty, use a general-purpose sub-agent with a messaging role in the prompt.
 
 ## 4. Over-engineering audit (fit + YAGNI)
@@ -73,7 +73,7 @@ Use the commands from `quality` in FLOW.md; if empty, auto-discover:
 # Fix review {TICKET}
 
 ## Summary
-- Sub-agents launched: …
+- Sub-agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if the depth ladder selected no panel>
 - Blockers: N
 - Suggestions: M
 

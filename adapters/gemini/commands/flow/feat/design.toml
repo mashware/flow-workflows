@@ -38,7 +38,7 @@ Launch **in parallel** (or sequentially) the subagents that apply based on the f
 - **Always**: `agents.architecture` agent (or generic agent if empty in FLOW.md) with the assignment to propose: the module it lives in, new or modified entities/value objects, CQRS commands/queries (if applicable), events, repositories.
 - **If it touches DB**: `agents.persistence` agent (or generic agent if empty) with the assignment to propose mappings, necessary migrations, indexes, and the appropriate entity manager.
 - **If it touches API/HTTP**: `agents.api` agent (or generic agent if empty) with the assignment to define the endpoint, DTO, route, security, and response format (planning only, no implementation).
-- **If it touches performance-critical paths or hot paths**: `agents.performance` agent (or generic agent if empty) to anticipate N+1 or load risks.
+- **If it touches performance-critical paths or hot paths**: `agents.performance` agent (or generic agent if empty) to anticipate N+1, repeated out-of-process calls, or load risks.
 - **If it touches security (authentication, payments, sensitive data)**: `agents.security` agent (or generic agent if empty) with the assignment to list threats and mitigations for the proposed design.
 
 For each area, use the agent defined in `agents.<role>` in `FLOW.md`; if that field is empty, use a generic agent with the role in the prompt.
