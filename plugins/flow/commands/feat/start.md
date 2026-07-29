@@ -92,7 +92,18 @@ Some tasks span more than one repo (a backend change plus its consumer, an API p
 
 If there are signals of multi-repo scope (the ticket mentions another project, the conversation settled that work is needed elsewhere), **ask once with `AskUserQuestion`**: does this task also touch other repos? For each one, capture `repo` (the sibling project name) and a one-line `scope`, and record them in `meta.json.related_repos` (§6). **Silent by default**: if there is no signal, do not ask.
 
-flow only **notes and reminds** — it never touches or scans the other repo. When you get to that side you start a normal work there with the same ticket. `/flow:feat:design` and `/flow:feat:plan` refine this list if the design reveals a repo the conversation missed.
+flow only **notes and reminds** — it never touches or scans the other repo. When you get to that side you start a normal work there with the same ticket. `/flow:feat:design` and `/flow:feat:plan` refine this list if the design reveals a repo the conversation missed. Record each entry's `contract_handoff` as `pending` when that repo will consume a surface decided here, or `none` when it will not — `/flow:feat:design` §7.5 confirms it once the contracts are actually declared.
+
+## 3.6 Cross-repo contract intake
+
+The mirror of §3.5: this time *you* are the consuming side. When the ticket was already delivered on another repo, the shape you must build against was decided there — and re-deciding it here is how two repos ship two different contracts for one ticket.
+
+While reading the ticket (§2), look for a **published contract block** (what `/flow:feat:ship` §6.3 posts from the other side: literal payloads, routes, error codes, event shapes). If there is one:
+
+- Copy it **verbatim** into `01-context.md` under `## Contracts received`, naming the source (ticket comment, file path in the sibling repo). Copy, do not paraphrase — the same rule as `/flow:feat:build` §2.0bis, for the same reason: a paraphrased contract is a *new* contract.
+- Treat it as **received, not negotiable**. `/flow:feat:design` carries it into §"External contracts" as-is instead of re-deriving it. If it looks wrong, that is a conversation with the other side, not a local edit: the emitting repo may already be merged or deployed against it, so a unilateral "improvement" here just breaks integration more quietly. If it does change, it changes on both sides.
+
+If the ticket points at another repo and there is **no** published contract, say so in one line — *"the `<repo>` side is referenced but no contract was published; the literal shapes will have to be confirmed with that side, not assumed"* — and record it in `01-context.md` under the same heading. Naming the gap is the whole point: an absent contract is invisible otherwise, and what fills the silence is invention that looks like knowledge. **Silent by default**: no cross-repo signal in the ticket → skip this section entirely, no note.
 
 ## 4. Classify size
 
@@ -197,7 +208,7 @@ Create the work directory following the §1 naming: `.claude/work/<TICKET>-<slug
 
 In ticket-less mode (§2.5) set `draft_from_conversation: true` and `tracker_issue` to the created issue id/url (or `null` if local-only). In ticket mode leave both at their defaults above.
 
-Populate `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending" }` per *other* repo the task touches; leave `[]` for a single-repo task.
+Populate `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the task touches; leave `[]` for a single-repo task.
 
 ### `01-context.md`
 Structure:
@@ -212,6 +223,9 @@ Structure:
 
 ## Relevant domain knowledge
 <domain-memory hits with one bullet per finding, or "no findings">
+
+## Contracts received
+<only if §3.6 applied. Either the contract block copied verbatim from the other side (with its source), or the one-line note that another repo is referenced and no contract was published. Omit the whole section when there is no cross-repo signal.>
 
 ## Repo state at start
 - Branch: <name>

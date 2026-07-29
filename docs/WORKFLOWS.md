@@ -160,7 +160,22 @@ client. The part living in the sibling project is the part that gets forgotten.
   `meta.json.related_repos`.
 - `design` and `plan` refine that list as the shape of the work becomes clear.
 - `ship` reminds you of the part still pending in the sibling repo.
-- `daily`, `resume` and `status` keep it visible so it doesn't fall off the map.
+- `ship` also **hands over the contract**, which is the part a reminder alone never fixes. Your
+  literal contracts live in `03-design.md`, inside git-ignored `.claude/work/` — so they die with
+  the session and never reach the other repo, which starts from `scope`: one line of prose. It
+  then invents the routes, payload keys and error codes you already decided, and the disagreement
+  surfaces at integration. So when a sibling consumes a surface declared here, `ship` offers to
+  publish those **literal** shapes to the shared anchor both sides already have — the tracker
+  ticket — after showing you the exact text. Acceptance criteria and ADRs don't cross: they're
+  this repo's *how*.
+- The consuming side picks it up: `/flow:feat:start` §3.6 copies a published contract block into
+  `01-context.md` as **received, not negotiable**, and `design` carries it in verbatim instead of
+  re-deriving it. If it looks wrong, that's a conversation with the other side — designing a
+  better version locally just ships two contracts for one ticket. And when a ticket points at
+  another repo with *no* published contract, `start` says so out loud, because an absent contract
+  is otherwise invisible and gets filled in with invention that reads like knowledge.
+- `daily`, `resume` and `status` keep it visible so it doesn't fall off the map — including
+  `contract not handed over`, so a pending handoff is something you see rather than remember.
 - In ticket-less mode the affected repos also go into the issue drafts, so the scope is recorded
   in the tracker rather than only on your disk.
 

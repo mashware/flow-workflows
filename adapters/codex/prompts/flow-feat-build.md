@@ -71,6 +71,8 @@ Load the project skills (see `FLOW.md` section `conventions`).
 
 **Comment discipline**: comment only a non-obvious *why* (a constraint, the reason for a workaround, a subtle invariant), never narrate what the code already says or restate the design, and match the file's comment density. **Never put the ticket ID, task/step number, or "for MR #N" in a code comment** — that lives in the commit/branch/MR-PR, not the source, where it just rots.
 
+**Borrowed code carries its reason.** When you lift a structure from another file in the repo — a `catch` block, a guard clause, a mapper, a config stanza, a test setup — you are importing decisions made for *that* file's situation, not for yours. Before keeping it, name under "Decisions made during implementation" where it came from and **what makes it apply here**: the exception it catches is actually thrown on this path, the guard's precondition can actually be false here. If you cannot name that reason, do not copy it — write what this code needs or leave it out. Borrowed-and-plausible is the most expensive kind of line to put in a diff: it reads as deliberate, so a reviewer spends real attention before discovering it was never chosen. Same anti-drift rule as §2.0bis, applied to code instead of contracts.
+
 **If in a multi-MR/PR build**: limit yourself to what the current MR/PR touches per `04-mr-plan.md`. Any code that belongs to a later MR/PR is scope expansion; cut it or isolate it behind a feature flag / temporary dead code per the plan.
 
 Decide execution mode:
@@ -175,7 +177,7 @@ As larger pieces are completed:
 
 - Run `quality.style_fix` from `FLOW.md` to fix style; if empty, auto-discover.
 - Run `quality.static_analysis` from `FLOW.md` when a piece is stable; if empty, auto-discover.
-- If you added tests, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover.
+- If you added tests, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover. **A filtered run is judged by how many tests it executed, never by its exit code.** Almost every runner exits `0` when the filter matches nothing (`OK, 0 tests`, `No tests ran`, `0 passed`), so a typo in `{FILTER}`, a renamed test class, or a test in a suite the filter never reaches are indistinguishable from green. Read the executed count **and** the executed names: if the count is `0`, or the tests you just wrote are not among them, **the run did not happen** — treat it as a failure, fix the filter, run again. If the runner reports no count, drop the filter and run the whole test file. Record the count you actually saw, not just the command.
 
 ## 4.1 Is the design still valid?
 

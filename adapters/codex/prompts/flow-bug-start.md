@@ -123,7 +123,7 @@ Create the work directory following the §0 naming: `.claude/work/<TICKET>-<slug
 }
 ```
 
-Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending" }` per *other* repo the fix touches; leave `[]` for a single-repo fix.
+Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the fix touches; leave `[]` for a single-repo fix. Use `pending` only when the fix **changes a surface that sibling consumes** (a payload key, an error code, a route, an event shape); a fix that leaves the contract untouched is `none`.
 
 `<work-dir>/01-context.md`:
 ```markdown
