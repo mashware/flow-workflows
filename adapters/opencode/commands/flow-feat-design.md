@@ -39,7 +39,7 @@ Launch in **parallel** the subagents appropriate for the feature and project typ
 - **Always**: architecture subagent tasked with proposing: which module it lives in, new or modified entities/value objects, CQRS commands/queries (if applicable), events, repositories.
 - **If it touches DB**: persistence subagent tasked with proposing mappings, required migrations, indexes, and the appropriate entity manager.
 - **If it touches API/HTTP**: API subagent tasked with defining the endpoint, DTO, route, security, and response format (planning only, not implementation).
-- **If it touches critical performance or high-traffic paths**: performance subagent to flag N+1 or load risks.
+- **If it touches critical performance or high-traffic paths**: performance subagent to flag N+1, repeated out-of-process calls, or load risks.
 - **If it touches security (authentication, payments, sensitive data)**: security subagent tasked with listing threats and mitigations in the proposed design.
 
 Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists), and the "What already exists" section in its prompt. Explicit instructions in the assignment:

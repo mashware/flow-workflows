@@ -107,7 +107,7 @@ another plugin) — this only states **which** one to invoke, it does not create
 - `architecture:`   # design/layers/architecture
 - `persistence:`    # DB/ORM/mappings/migrations/queries
 - `api:`            # endpoints/DTOs/routes/HTTP contracts
-- `performance:`    # N+1, indexes, hot paths, load
+- `performance:`    # N+1, indexes, hot paths, out-of-process calls, load
 - `queues:`         # queues, dead-letter, workers
 - `security:`       # threats, authentication, sensitive data
 - `frontend:`       # components/UI

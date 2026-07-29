@@ -219,6 +219,10 @@ Risk buys depth, not just size.
 
 `full` always runs the built-in reviewer at xhigh plus the whole panel, whatever the size.
 
+When the panel runs, it runs **whole**: its members own categories the rest of the flow does not
+revisit, so a skipped one leaves that category with no owner. The review artifact records **ran vs
+defined** (`N/M`, plus who did not run and why) — a partial panel is visible before the MR/PR opens.
+
 The effort ladder applies where the harness exposes it (Claude Code); the opencode/Gemini/Codex
 adapters read "higher effort" as maximum thoroughness for L-sized or sensitive work.
 
@@ -231,6 +235,9 @@ Role → agent map for the steps that delegate to a specialist (`design`, `inves
 
 `architecture` · `persistence` · `api` · `performance` · `queues` · `security` · `frontend` ·
 `frontend_test` · `testing`
+
+`performance` is not only a database role: it also covers repeated calls that leave the process
+(external API, HTTP, cache, filesystem) and what each *failed* iteration sets off downstream.
 
 The agents must already exist and be discoverable on your machine (`~/.claude/agents`,
 `.agents/agents` in the repo, or another plugin) — this only states **which** one to invoke, it

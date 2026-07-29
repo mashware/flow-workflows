@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.23.0 — The review panel runs whole, and a settled decision never fences off the reviewer  ·  2026-07-29
+
+### A full flow, a green suite, and a human reviewer still found four things
+The case that motivated this release: the whole flow ran on a read-time endpoint that called an external API **inside a loop** over up to 100 items, with a per-item `catch` that returned `null`. Suite green, static analysis clean, MR opened. A human reviewer then found four problems — three of them hanging off that same loop. Every failed iteration published a message to a queue *and* emitted an event that enqueued one job per item downstream; 100 sequential external calls in a synchronous request had no cap; and the generic `catch` swallowed all of it. Three fixes, none of which invents a new phase.
+
+**Performance stopped meaning "database".** The reinforcement trigger in `review` §3 was literally *"DB / heavy queries"*, and `validate` §2's brief was a closed list of persistence patterns (N+1, indexes, unbounded queries, flush in a loop). A change that touches no database fell outside that vocabulary entirely. Both now cover **any repeated call that leaves the process** — external API, HTTP, cache, filesystem — and, more importantly, ask what **each failed iteration sets off downstream**: what it publishes, enqueues, disables or logs, and whether N failures multiply it. The cost of the happy path was never the whole question. Same widening in `design`'s performance pass, `bug:review` §3, and the `performance` role in `FLOW.template.md`.
+
+**A decision already taken is context for the reviewer, never a scope exclusion.** §2.2 already warned against inheriting `03-design.md`'s rationalizations — but only for the artifact handed to reviewers. Nothing stopped the *conductor* from turning a design decision into a veto inside the agent's own prompt ("this cost is accepted, don't report it, look for something else"), which is the same pathology through the other door — and it silently excludes everything hanging off the vetoed topic. §2.2 now covers the briefs you write: *"X is decided — tell me what consequences it has that we have not seen"*, never *"do not report X"*. The rule reaches every place that briefs a reviewer — `bug:review` §2.1, `work:respond` §6.1, `work:green` §5 — and it is deliberately narrow: don't fence the reviewer off, not doubt everything.
+
+**A panel that runs at 2-of-6 says so in the artifact.** `quality.review_skill` / `quality.reviewers` define a roster whose members own whole categories that the rest of the flow explicitly does not revisit — so a skipped reviewer is a category with no owner at all. `Agents launched:` was free text and never asked what *should* have run. §2.1 now says to launch the panel **as defined** — whole roster, no hand-picked subset, no substitutions — and the output field asks for **ran vs defined** (`N/M`, naming who did not run and why, and any substitution). A partial panel is now visible in `06-review.md`, before the MR/PR opens.
+
+Mirrored across the opencode / Codex CLI / Gemini CLI adapters. **No new FLOW.md keys**, no new phase, no extra agent.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.22.0...v0.23.0
+
 ## v0.22.0 — `/flow:work:green` means *mergeable*, not just a green pipeline  ·  2026-07-27
 
 ### A green pipeline on an MR you cannot merge, reported as "you're good to go"

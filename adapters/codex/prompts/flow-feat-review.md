@@ -21,6 +21,8 @@ Launch **both** over the same scope and **consolidate their findings into a sing
    - If `review_skill` is empty but `quality.reviewers` has entries: launch each subagent from that list in parallel as a panel, with the same context and scope.
    - If both are empty: step 1 already covers this pass; don't launch anything additional.
 
+   Launch the panel **as defined** — the whole roster, no hand-picked subset, no substitutions. Its members own whole categories the rest of the flow explicitly does not repeat later, so a missing one is a category with no owner at all. If a reviewer genuinely cannot run, declare it: record it in the output's `Reviewers launched` with the reason.
+
 The two overlap on correctness and simplification: deduplicate those findings (count them once).
 
 ## 2.2 Design truth vs design rationale (don't inherit rationalizations)
@@ -31,11 +33,13 @@ The two overlap on correctness and simplification: deduplicate those findings (c
 
 Don't bless a choice merely because the design rationalized it in prose. **A plausible written justification is the single most common way a wrong idiom survives review**: the reviewer reads "respects X", checks that X is indeed respected, and never asks whether that was the right tool at all. Treat every "Why" as a claim to test against the code, not a reason to stop looking.
 
+**This applies to the briefs you write, too.** A decision already taken goes to the reviewer as **context**, never as a scope exclusion: *"X is decided — tell me what consequences it has that we have not seen"*, never *"do not report X"*. Excluding a topic also excludes everything that hangs off it, which is where the consequences live.
+
 ## 3. Reinforcements by area
 
 Only what the §2 skill does **not** already cover. If the feature touches specific areas, additionally launch **in parallel**:
 
-- DB / heavy queries → use the `agents.performance` agent from `FLOW.md` on the changed files; if empty, skip this reinforcement.
+- DB / heavy queries, or **any repeated call that leaves the process** (external API, HTTP, cache, filesystem) → use the `agents.performance` agent from `FLOW.md` on the changed files; if empty, skip this reinforcement. Have it cover what **each failed iteration** sets off downstream — what it publishes, enqueues, disables or logs — not just the cost of the happy path.
 - Workers / message queues → use the `agents.queues` agent from `FLOW.md` to verify there's no `flush()` in a loop and that workers are registered per the project convention; if empty, skip this reinforcement.
 - Frontend → if there are changes to UI code, use the `agents.frontend` agent from `FLOW.md`; if there are also affected frontend tests, use `agents.frontend_test` as well; if either is empty, skip that reinforcement.
 
@@ -126,7 +130,7 @@ Write `.claude/work/<TICKET>/06-review.md`:
 # Code review <TICKET>
 
 ## Summary
-- Reviewers launched: …
+- Reviewers launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if the depth ladder selected no panel>
 - Completeness rounds (M/L): N
 - Critical findings (block ship): N
 - Suggestion findings: M

@@ -39,7 +39,7 @@ Launch the appropriate subagents **in parallel** based on the feature and projec
 - **Always**: `agents.architecture` agent (or `Agent general-purpose` if empty) tasked with proposing: module where it lives, new or modified entities/value objects, CQRS commands/queries (if applicable), events, repositories.
 - **If it touches DB**: `agents.persistence` agent (or `Agent general-purpose` if empty) tasked with proposing mappings, required migrations, indexes, and appropriate entity manager.
 - **If it touches API/HTTP**: `agents.api` agent (or `Agent general-purpose` if empty) tasked with defining endpoint, DTO, route, security, and response format (planning only, no implementation).
-- **If it touches critical performance or hot paths**: `agents.performance` agent (or `Agent general-purpose` if empty) to anticipate N+1 or load risks.
+- **If it touches critical performance or hot paths**: `agents.performance` agent (or `Agent general-purpose` if empty) to anticipate N+1, repeated out-of-process calls, or load risks.
 - **If it touches security (authentication, payments, sensitive data)**: `agents.security` agent (or `Agent general-purpose` if empty) tasked with listing threats and mitigations for the proposed design.
 
 For each area, use the agent defined in `agents.<role>` in `FLOW.md`; if that field is empty, use `Agent general-purpose` with the role in the prompt.
