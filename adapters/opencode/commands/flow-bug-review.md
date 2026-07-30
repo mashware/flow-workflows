@@ -104,3 +104,4 @@ Use the commands from `quality` in FLOW.md; if empty, auto-discover:
 
 - With blockers: `phase` stays at `validate`. Iterate.
 - Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/flow-bug-postmortem` (M/L) or `/flow-bug-ship` (XS/S).
+- **Autonomy handoff.** Only without blockers — with blockers, stop in every mode. For **M/L**: in `manual`, propose `/flow-bug-postmortem` as a question; in `guided`/`auto`, **chain into it automatically** in this same turn. For **XS/S** the next step is `ship`, which pushes and opens the MR/PR — a hard gate in **every** mode: stop and propose `/flow-bug-ship` as a question, never chaining into it.

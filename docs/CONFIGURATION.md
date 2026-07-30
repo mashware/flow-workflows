@@ -167,13 +167,23 @@ How much the flow advances on its own versus stopping to ask you.
 
 **Hard gates stop and ask in every mode, no exceptions:**
 
-- any push, or opening an MR/PR
+- any push, or opening an MR/PR — so `validate` and `bug:review` never chain into `ship`: the
+  unattended run deliberately ends there, with `ship` proposed for you to confirm
 - creating a branch when the base is ambiguous
 - DB schema changes and migrations
 - a review that came back with high-severity findings
+- the **business brief** before any code is written (`feat:build` §2, `bug:fix` §2) — the last
+  point where the scope can be fixed before there is a diff to argue with
 
 Whatever a phase decided on its own is written into that phase's artifact, so `guided`/`auto`
 stay auditable after the fact.
+
+**What the mode does to commits.** During `feat:build` and `bug:fix`, the step's changes are always
+reported before anything is recorded; the mode decides who says "commit". `manual` — you do, per
+step, and nothing is committed without your word. `guided` — asked once at the first step, then
+applied for the rest of the build. `auto` — the agent commits each step's WIP and keeps going;
+choosing `auto` *is* the commit authorization, and it covers only WIP commits on the work branch,
+never a push.
 
 ---
 

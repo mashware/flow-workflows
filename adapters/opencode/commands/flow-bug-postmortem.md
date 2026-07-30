@@ -77,3 +77,4 @@ If `domain_memory.enabled` is false or empty, skip this block without notice.
 
 - Update `meta.json`: `phase = "postmortem"`, add to `phases_done`.
 - Suggest `/flow-bug-ship`. If the postmortem produced prevention actions, propose opening separate tickets (they are not handled in this flow).
+- **Autonomy handoff — stops in every mode, `auto` included.** `/flow-bug-ship` pushes and opens the MR/PR, a hard gate in every mode: stop here and propose it as a question instead of chaining into it.

@@ -46,7 +46,7 @@ Rules for writing it:
 - **"Does NOT include" is mandatory**: even if it seems redundant with `04-mr-plan.md`, repeating it here fixes the scope. If you do not know what to put, the plan is wrong.
 - 3-5 bullets in each list. More is noise.
 
-**Ask the user with `AskUserQuestion`** whether the brief reflects what they expect:
+**Ask the user with `AskUserQuestion`** whether the brief reflects what they expect — **in every autonomy mode, `auto` included**. This one is deliberate, not an oversight: it is the last point where the scope can be corrected before there is a diff to argue with, and scope creep is invisible in code review once it is mixed in with everything else. Options:
 - **Yes, proceed** → start building.
 - **No, something is extra or missing** → the user clarifies, adjust the brief, and ask again. **Do not touch code** until the brief is confirmed.
 
@@ -90,9 +90,13 @@ Choose execution mode:
 
 Use `TaskCreate` to track the steps from the design's implementation plan. Mark each step `in_progress` when starting and `completed` when done — do not batch.
 
-### 2.2 Checkpoints (local commits on user confirmation)
+### 2.2 Checkpoints (local commits, gated by `autonomy.mode`)
 
-**Hard rule**: the agent **does not run `git commit` on its own** during `/flow:feat:build`. Commits are **opt-in from the user** — without your explicit confirmation, changes stay in the working tree so you can validate them first (test the UI, run the flow, read the diff).
+The step's changes are **always reported before anything is recorded**. Who decides the commit is what changes with the mode from the preamble:
+
+- **`manual`** — the agent **does not run `git commit` on its own**. Commits are **opt-in from the user**: without your explicit confirmation, changes stay in the working tree so you can validate them first (test the UI, run the flow, read the diff).
+- **`guided`** — ask **once**, at the first step, and apply that answer to the rest of this build; record it in `05-implementation.md`. Do not re-ask per step.
+- **`auto`** — commit the step's WIP yourself and continue, without asking. **Invoking a flow command with `autonomy.mode: auto` is the explicit authorization** the system rule (*never commit unless the user asks*) requires — the same reasoning that makes the commits in `/flow:feat:ship` authorized, because that is the command's stated purpose. It authorizes **only** WIP commits on the work branch: push and MR/PR creation remain hard gates in every mode.
 
 **After completing each `TaskCreate` step**, the agent:
 
@@ -104,8 +108,8 @@ Use `TaskCreate` to track the steps from the design's implementation plan. Mark 
      Diff: +<add> / -<del> lines
      Suggested validation: <e.g. "run the unit test command for Foo" or "open the UI at /section">
    ```
-3. **Does not commit**. Waits for you to say what to do. Options:
-   - **"Commit now"** or **"OK, continue"** → agent runs `git add <files from step> && git commit -m "WIP <TICKET>: <step>" --no-verify` and continues with the next step.
+3. **Then, per mode**: in `guided`/`auto`, run `git add <files from step> && git commit -m "WIP <TICKET>: <step>" --no-verify` (per the rule above) and start the next step without pausing. In `manual`, **do not commit** — wait for the user to say what to do. Options:
+   - **"Commit now"** or **"OK, continue"** → agent runs the same `git add … && git commit …` and continues with the next step.
    - **"Wait, I'll validate"** → agent stays still. You validate at your own pace. When you return, decide commit or adjustment.
    - **"Something needs to change"** → agent adjusts. The step's commit stays pending until you give OK.
    - **"Continue without committing, we'll group later"** → agent starts the next step without committing. Changes accumulate in the working tree (risk: if a hot cut occurs per §2.3, there are fewer clean points).
@@ -116,7 +120,7 @@ Rules for when a commit does happen:
 - These commits are squashed on merge (if `git.squash` is `true`), so they do not need to be pretty — they are just cuttable units.
 - If a step is left halfway (interruption, change of focus) and you ask for a commit, the message has the suffix: `WIP <TICKET>: <step> (partial)`.
 
-**Why this model**: two reasons. (1) You validate locally before anything is committed, so you do not end up with a branch full of commits without having seen the changes running. (2) If you decide to commit occasionally, the WIP commits still serve as cuttable units for §2.3. If you decide not to commit until the end, you lose that granularity — that is your decision, not the agent's.
+**Why this model**: in `manual`, two reasons. (1) You validate locally before anything is committed, so you do not end up with a branch full of commits without having seen the changes running. (2) If you decide to commit occasionally, the WIP commits still serve as cuttable units for §2.3. If you decide not to commit until the end, you lose that granularity — that is your decision, not the agent's. In `guided`/`auto` you traded that step-by-step inspection for an unattended build, and the WIP commits are what you get in exchange: the diff is still all there to read, cut by step, and the branch is never pushed without the §6 gate in `/flow:feat:ship`.
 
 ### 2.3 Size thermometer and hot cut
 
@@ -251,3 +255,4 @@ If there were no copied contracts (design said "none"), skip this step and recor
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
 - If multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will become `merged` when `/flow:feat:ship` confirms the merge. **Also add `build` to that MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates read.
 - Summarize to the user in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and next command: `/flow:feat:review`.
+- **Autonomy handoff.** Apply the `autonomy.mode` from the preamble — the summary is a report, not the end of the flow. In `manual`, stop here and propose `/flow:feat:review` with a single `AskUserQuestion` (recommended option by default); invoke it only if the user confirms, and never make them type it. In `guided`/`auto`, **chain into `/flow:feat:review` automatically** in this same turn, without asking. Do not end the turn leaving the next command as a suggestion: in these modes, "the next command is X" and stopping are contradictory, and the mode already decided which of the two wins.

@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.25.0 — `auto` chains, and choosing `auto` is the commit authorization  ·  2026-07-30
+
+### An unattended mode that stopped at every phase boundary was never unattended
+The report: with `autonomy.mode: auto`, a build ended with *"nothing committed — the 5 files are in the working tree for you to validate first. When you want: commit and `/flow:feat:review`"*. Two stops in one sentence, in the mode whose whole promise is *"chaining phases without pausing"*. Nothing in the plugin had changed — both instructions were months old. What changed is which one wins when a prompt contradicts itself, and the flow contradicted itself in two places.
+
+**A named next command is not a handoff.** The autonomy preamble, repeated at the top of all twelve phase commands, promised that `guided`/`auto` "chain into the recommended next command automatically". But only `feat:start` and `bug:start` said so in their closing section; the other ten closed with *"and next command: `/flow:feat:review`"* and nothing else. A closing line that merely **names** the next command is a specific instruction to stop, and a specific instruction beats a general preamble. So `auto` stalled at every phase boundary while claiming to chain. Every `## Close` now ends with an explicit **autonomy handoff**: `manual` stops and proposes the next command as a one-click confirmation (never leaving you to type it); `guided`/`auto` chain into it **in the same turn**. The exceptions are stated where they apply rather than left to inference — `validate`, `bug:review` (XS/S) and `bug:postmortem` never chain into `ship`, because pushing and opening the MR/PR is a hard gate in every mode, and nothing chains downstream of a red gate (blockers in review, red tests or unproven criteria in validate, unresolved `high` findings in design).
+
+**Choosing `auto` *is* the commit authorization.** `build` §2.2 and `fix` §2.1 carried a *hard rule* with no exception per mode: the agent never commits on its own and **waits** for you at every step. Against `auto` that is not a preference, it is a contradiction — and it is the one the system rule (*never commit unless the user explicitly asks*) reinforces, so it won every time. The rule is now gated by the mode, with the authorization made explicit instead of assumed: `manual` — you decide per step, nothing is committed without your word; `guided` — asked **once** at the first step, then applied for the rest; `auto` — the agent commits each step's WIP and keeps going, because **setting `autonomy.mode: auto` and typing the command is the explicit ask**. Same reasoning that already made the commits in `ship` authorized (it is the command's stated purpose) and the `Workflow` fan-out opt-in valid (typing the command is the authorization). It covers **only** WIP commits on the work branch — push and MR/PR creation stay hard gates in every mode. `work:green` and `work:respond` follow suit: in `guided`/`auto` they commit the round and go straight to the push gate, instead of asking twice for the same round.
+
+**What deliberately still stops in `auto`.** The **business brief** before any code is written (`build` §2, `fix` §2) — it is the last point where the scope can be corrected before there is a diff to argue with, and scope creep is invisible in code review once mixed into everything else. And all of `ship`. An `auto` run now goes from `start` to a validated branch without intervention, and ends where it always should have: asking whether to publish.
+
+Mirrored across the opencode / Codex CLI / Gemini CLI adapters. No new `FLOW.md` keys — this is `autonomy.mode` finally doing what it already documented.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.24.0...v0.25.0
+
 ## v0.24.0 — The contract crosses to the other repo, and green means a count  ·  2026-07-29
 
 ### One epic, two repos, and four incidents that turned out to be two holes

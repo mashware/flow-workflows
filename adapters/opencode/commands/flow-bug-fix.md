@@ -35,7 +35,7 @@ What is NOT touched:
 - <potential regressions that are NOT addressed here>
 ```
 
-**Ask the user** whether this reflects the expected fix:
+**Ask the user** whether this reflects the expected fix — **in every autonomy mode, `auto` included** (a deliberate gate: the last point where the scope can be fixed before there is a diff to argue with):
 - **Yes, go ahead** → apply the fix.
 - **No, something is missing or wrong** → adjust the brief, ask again. Do not touch code until confirmed.
 
@@ -48,7 +48,7 @@ Save the brief at the top of `04-fix.md`. If during implementation the temptatio
 - **Comment discipline**: comment only a non-obvious *why*; never narrate what the code says; match the file's comment density. **Never put the ticket ID or "fix for #N" in a code comment** — that lives in the commit/branch/MR-PR, not the source.
 - Keep the log updated while editing.
 
-**Opt-in commits**: the agent **does not run `git commit` on its own** during `/flow-bug-fix`. After completing each step (or the entire fix if it's a single step), report a summary (files, lines, validation suggestion) and wait for your decision: commit work in progress now, wait until you validate, or continue without committing. Without your explicit confirmation, changes stay in the working tree so you can test the fix manually before it's recorded in the history.
+**Commits follow the mode** (same contract as `/flow-feat-build` §2.2). After each step (or the whole fix if it is one step), **always report** the summary first: files, lines, suggested validation. Then, per mode: **`manual`** — the agent **does not run `git commit` on its own**; wait for the user's decision (commit the work-in-progress now, wait until they validate, or continue without committing), so the fix can be tested by hand before it is recorded in history. **`guided`** — ask **once**, at the first step, and apply that answer for the rest of the fix; record it in `04-fix.md`. **`auto`** — commit the WIP yourself (`git add <files> && git commit -m "WIP <TICKET>: <step>" --no-verify`) and continue without asking; invoking the command in `auto` is the explicit authorization, and it covers **only** WIP commits on the work branch — push and MR/PR creation stay hard gates in every mode.
 
 ## 2.3 Does something arise outside the brief?
 
@@ -110,3 +110,4 @@ If while applying the fix you discover that the **root cause** wasn't what `03-i
 
 - Update `meta.json`: `phase = "fix"`, add to `phases_done`.
 - Suggest next step: `/flow-bug-validate` (S/M/L) or `/flow-bug-review` (XS).
+- **Autonomy handoff.** In `manual`, stop here and propose that command as a question, invoking it only on confirmation. In `guided`/`auto`, **chain into it automatically** in this same turn. Naming the next command and then stopping is only correct in `manual`.

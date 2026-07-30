@@ -168,3 +168,4 @@ Do not invoke `save_knowledge` here — that belongs to the postmortem.
 
 - Update `meta.json`: `phase = "investigate"`, add to `phases_done`.
 - Suggest `/flow:bug:fix`.
+- **Autonomy handoff.** Apply the `autonomy.mode` from the preamble: in `manual`, stop here and propose `/flow:bug:fix` with a single `AskUserQuestion`, invoking it only on confirmation. In `guided`/`auto`, **chain into it automatically** in this same turn. Naming the next command and then stopping is only correct in `manual`.

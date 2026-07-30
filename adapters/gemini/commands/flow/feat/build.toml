@@ -44,7 +44,7 @@ Rules for writing it:
 - **The "does NOT include" is mandatory**: even if it seems redundant with `04-mr-plan.md`, repeating it here fixes the scope. If you do not know what to put, the plan is wrong.
 - 3-5 bullets in each list. More is noise.
 
-**Ask the user directly in text** whether the brief reflects what they expect:
+**Ask the user directly in text** whether the brief reflects what they expect — **in every autonomy mode, `auto` included** (a deliberate gate: the last point where the scope can be fixed before there is a diff to argue with):
 - **Yes, go ahead** → start building.
 - **No, something is extra or missing** → the user clarifies, you adjust the brief and ask again. **Do not touch code** until the brief is confirmed.
 
@@ -88,9 +88,13 @@ Decide execution mode:
 
 Keep a checklist in `05-implementation.md` with the steps from the design's `Implementation plan`. Mark each step as `[in_progress]` when starting and `[done]` when finished — do not batch.
 
-### 2.2 Checkpoints (local commits with user confirmation)
+### 2.2 Checkpoints (local commits, gated by `autonomy.mode`)
 
-**Hard rule**: the agent **does not run `git commit` on its own** during `/flow:feat:build`. Commits are **opt-in by the user** — without your explicit confirmation, changes stay in the working tree so you can validate them first (test the UI, run the flow, read the diff).
+**Commits follow the mode** (from the preamble). The step's changes are **always reported before anything is recorded**; who decides the commit is what changes:
+
+- **`manual`** — the agent **does not run `git commit` on its own**. Without your explicit confirmation, changes stay in the working tree so you can validate them first (try the UI, run the flow, read the diff).
+- **`guided`** — ask **once**, at the first step, and apply that answer for the rest of this build; record it in `05-implementation.md`.
+- **`auto`** — commit the step's WIP yourself and continue, without asking. **Invoking the command with `autonomy.mode: auto` is the explicit authorization** the system rule (*never commit unless the user asks*) requires. It covers **only** WIP commits on the work branch: push and MR/PR creation stay hard gates in every mode.
 
 **After completing each checklist step**, the agent:
 
@@ -102,7 +106,7 @@ Keep a checklist in `05-implementation.md` with the steps from the design's `Imp
      Diff: +<added> / -<removed> lines
      Suggested validation: <e.g. "run the unit test for Foo" or "open the UI at /section">
    ```
-3. **Does not commit**. Waits for you to say what to do. Options:
+3. **Then, per mode**: in `guided`/`auto`, run `git add <step files> && git commit -m "WIP <TICKET>: <step>" --no-verify` and start the next step without pausing. In `manual`, **do not commit** — wait for the user:
    - **"Commit now"** or **"OK, continue"** → agent runs `git add <step files> && git commit -m "WIP <TICKET>: <step>" --no-verify` and continues to the next step.
    - **"Wait, I'll validate"** → agent stays quiet. You validate at your own pace. When you come back, you decide to commit or adjust.
    - **"Something needs changing"** → agent adjusts. The step commit stays pending until you give the OK again.
@@ -249,4 +253,5 @@ If there were no copied contracts (design said "none"), skip this step and recor
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
 - If multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will move to `merged` when `/flow:feat:ship` confirms the merge. **Also add `build` to that MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates read.
 - Summary to the user in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and next command: `/flow:feat:review`.
+- **Autonomy handoff.** In `manual`, stop here and propose `/flow:feat:review` as a question, invoking it only on confirmation. In `guided`/`auto`, **chain into `/flow:feat:review` automatically** in this same turn. Naming the next command and then stopping is only correct in `manual`.
 """

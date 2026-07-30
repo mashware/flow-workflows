@@ -69,7 +69,7 @@ Each thread → one bucket: **reply-only** (A/F, D-held, E) → §7; **code-chan
 
 - **Design-invalidation first**: if a change contradicts `03-design.md`, update that artifact before editing; for a large change prefer returning to `/flow-feat-build`/`/flow-bug-fix`.
 - **Delegate** the edits to the flow's expert sub-agents (per FLOW.md `agents`); follow repo conventions, keep `build`'s comment discipline (no ticket IDs / "for MR #N" in the source).
-- **Commits are user opt-in**: report a summary (files, lines); do not `git commit` on your own.
+- **Commits follow `autonomy.mode`**: always report the summary (files, lines). In `manual`, do **not** `git commit` on your own — the user decides. In `guided`/`auto`, commit the round yourself and go straight to the push gate; the push, and posting any reply, stay hard gates in **every** mode.
 
 ### 6.1 Review gate — same ladder as `/flow-feat-review` (do not shortcut it)
 In-review edits are **not** exempt because they are "small": this is where a wrong primitive or an over-engineered mechanism slips in under pressure, and it lands in an MR/PR already under human eyes — a low-quality fix produces the *next* round of comments. So the round's diff passes the **same gate as `/flow-feat-review`**, scaled to the round:

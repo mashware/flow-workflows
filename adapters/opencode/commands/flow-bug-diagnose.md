@@ -80,3 +80,4 @@ If the diagnosis reveals the failure is trivial (a null check, a typo) and it wa
 
 - Update `meta.json`: `phase = "diagnose"`, add to `phases_done`.
 - Suggest next step: `/flow-bug-investigate` (M/L) or `/flow-bug-fix` (S if the cause is evident).
+- **Autonomy handoff.** In `manual`, stop here and propose that command as a question, invoking it only on confirmation. In `guided`/`auto`, **chain into it automatically** in this same turn. Naming the next command and then stopping is only correct in `manual`.
