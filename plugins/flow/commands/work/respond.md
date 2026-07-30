@@ -93,7 +93,7 @@ Only the **code-change** bucket. Reuse the flow's building mechanics and convent
 
 - **Design-invalidation first.** If any agreed change contradicts `03-design.md`, update that artifact **before** editing code (the design is what `review`/`validate` read; if it lies, everything downstream is based on something false). For a large change, prefer returning to `/flow:feat:build` / `/flow:bug:fix` over an in-review patch.
 - **Delegate the edits** to the same expert sub-agents the flow uses (per FLOW.md `agents`); the conductor stays on judgment. Follow the repo's code conventions, and keep the **comment discipline** of `/flow:feat:build` — comments only for a non-obvious *why*, never a ticket ID or "for MR #N" in the source.
-- **Commits are user opt-in.** After editing, report a summary (files, lines) and let the user decide to commit now or validate first — do **not** `git commit` on your own. (Commits/pushes in §6/§7 count as authorized only once the user confirms the push in §6.2.)
+- **Commits follow `autonomy.mode`.** After editing, **always** report a summary (files, lines). In `manual`, let the user decide to commit now or validate first — do **not** `git commit` on your own. In `guided`/`auto`, commit the round yourself and go straight to the §6.2 push gate: that confirmation is the stop that matters here. The push, and posting any reply in §7, stay hard gates in **every** mode.
 
 ### 6.1 Review gate — same ladder as `/flow:feat:review` (do not shortcut it)
 

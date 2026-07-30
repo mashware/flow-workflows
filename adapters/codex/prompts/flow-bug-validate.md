@@ -53,3 +53,4 @@ Then:
 
 - If a test is red or regressions remain: `phase` stays at `fix`. The user iterates.
 - If all green: `phase = "validate"`, add to `phases_done`. Suggest `/flow-bug-review`.
+- **Autonomy handoff** (only when green — a red gate stops in every mode). In `manual`, propose `/flow-bug-review` as a question; in `guided`/`auto`, **chain into it automatically** in this same turn.

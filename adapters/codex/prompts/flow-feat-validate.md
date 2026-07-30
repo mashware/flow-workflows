@@ -64,3 +64,4 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 
 - If tests are red or regressions remain, **do not advance `phase`**. The user resolves them and returns to `/flow-feat-validate`.
 - If all green: `phase = "validate"`, add to `phases_done`. **In a multi-MR/PR work**, also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow-feat-ship §1` gates on. Suggest `/flow-feat-ship`.
+- **Autonomy handoff — stops in every mode, `auto` included.** `/flow-feat-ship` pushes and opens the MR/PR, a hard gate in every mode, so never chain into it automatically: stop here and propose `/flow-feat-ship` as a question. This is the deliberate end of the unattended run, not a forgotten handoff.

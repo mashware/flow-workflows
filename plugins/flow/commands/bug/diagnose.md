@@ -80,3 +80,4 @@ If the diagnosis reveals the bug is trivial (a null check, a typo) and was class
 
 - Update `meta.json`: `phase = "diagnose"`, add to `phases_done`.
 - Suggest next: `/flow:bug:investigate` (M/L) or `/flow:bug:fix` (S if the cause is evident).
+- **Autonomy handoff.** Apply the `autonomy.mode` from the preamble: in `manual`, stop here and propose that command with a single `AskUserQuestion` (recommended option by default), invoking it only on confirmation. In `guided`/`auto`, **chain into it automatically** in this same turn. Naming the next command and then stopping is only correct in `manual`.

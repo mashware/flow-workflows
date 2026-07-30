@@ -38,7 +38,7 @@ Rules for writing it:
 - **The "does NOT include" is mandatory**: even if it seems redundant with `04-mr-plan.md`, repeating it here fixes the scope. If you don't know what to put, the plan is wrong.
 - 3-5 bullets in each list. More is noise.
 
-**Ask the user** whether the brief reflects what they expect:
+**Ask the user** whether the brief reflects what they expect — **in every autonomy mode, `auto` included** (a deliberate gate: the last point where the scope can be fixed before there is a diff to argue with):
 - **Yes, go ahead** → start building.
 - **No, something is wrong or missing** → user clarifies, you adjust the brief and ask again. **Don't touch code** until the brief is confirmed.
 
@@ -80,9 +80,13 @@ Decide execution mode:
 - **Single thread (XS/S/M)**: implement yourself, step by step, using subagents only as point consultants if blocked: the `agents.architecture` agent from `FLOW.md` for layer questions, and `agents.persistence` for query/mapping questions.
 - **Partial delegation (M/L with clear pieces)**: use subagents for isolated endpoints, and the `agents.testing` agent from `FLOW.md` in parallel to prepare the suite. Pass the entire `03-design.md` in the prompt so they don't invent.
 
-### 2.2 Commit confirmation (user opt-in)
+### 2.2 Checkpoints (local commits, gated by `autonomy.mode`)
 
-**Hard rule**: the agent **does not `git commit` on its own** during `/flow-feat-build`. Commits are **user opt-in** — without explicit confirmation, changes stay in the working tree.
+**Commits follow the mode** (from the preamble). The step's changes are **always reported before anything is recorded**; who decides the commit is what changes:
+
+- **`manual`** — the agent **does not run `git commit` on its own**. Without your explicit confirmation, changes stay in the working tree so you can validate them first (try the UI, run the flow, read the diff).
+- **`guided`** — ask **once**, at the first step, and apply that answer for the rest of this build; record it in `05-implementation.md`.
+- **`auto`** — commit the step's WIP yourself and continue, without asking. **Invoking the command with `autonomy.mode: auto` is the explicit authorization** the system rule (*never commit unless the user asks*) requires. It covers **only** WIP commits on the work branch: push and MR/PR creation stay hard gates in every mode.
 
 **After completing each step**, the agent:
 
@@ -93,7 +97,7 @@ Decide execution mode:
      Diff: +<added> / -<removed> lines
      Suggested validation: <e.g. "run the unit test command for Foo">
    ```
-2. **Does not commit**. Waits for you to decide:
+2. **Then, per mode**: in `guided`/`auto`, run `git add <step files> && git commit -m "WIP <TICKET>: <step>" --no-verify` and start the next step without pausing. In `manual`, **do not commit** — wait for the user:
    - **"Commit now"** or **"OK, continue"** → does `git add <step files> && git commit -m "WIP <TICKET>: <step>" --no-verify` and continues.
    - **"Wait, I'll validate"** → stays put. You validate at your own pace.
    - **"Change X"** → adjusts. The step's commit stays pending until you give the OK.
@@ -209,3 +213,4 @@ Note the result in `05-implementation.md` under "## Contract verification":
 
 - Update `meta.json`: `phase = "build"`, add to `phases_done`. **If multi-MR/PR build, also add `build` to the current `in_progress` MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates (`/flow-feat-review §1`, `/flow-feat-validate §1`, `/flow-feat-ship §1`) read.
 - Summarize for the user in bullets: touched files (high level), pending items, **§4.2 result (contracts verified)**, and next command: `/flow-feat-review`.
+- **Autonomy handoff.** In `manual`, stop here and propose `/flow-feat-review` as a question, invoking it only on confirmation. In `guided`/`auto`, **chain into `/flow-feat-review` automatically** in this same turn. Naming the next command and then stopping is only correct in `manual`.

@@ -191,3 +191,4 @@ Write `.claude/work/<TICKET>/06-review.md`:
 - If there are blockers: **don't advance `phase`**. Leave `phase = "build"` and let the user resolve them.
 - If there are no blockers: `phase = "review"`, add to `phases_done`. **In a multi-MR/PR work**, also add `review` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — this is exactly what `/flow-feat-ship §1` gates on per MR/PR, so without it the ship gate would pass on a stale sibling's review.
 - Summarize findings and next step to the user.
+- **Autonomy handoff** — only with no blockers and no unresolved high-severity findings; either one stops the flow in every mode. In `manual`, propose `/flow-feat-validate` as a question; in `guided`/`auto`, **chain into `/flow-feat-validate` automatically** in this same turn. Never chain into `/flow-feat-ship` from here, in any mode.

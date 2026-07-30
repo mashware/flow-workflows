@@ -124,3 +124,4 @@ If while splitting you find that there's really only 1 small MR/PR (≤ 50 lines
 - Show the user the summary table and ask for approval.
 - If changes are requested, edit the artifact and `meta.json.mrs` before proceeding.
 - Suggest `/flow-feat-build` to start the first MR/PR.
+- **Autonomy handoff.** Approving the split is a genuine decision point: in `manual` and `guided`, ask for it. In `auto`, record the plan as accepted and **chain into `/flow-feat-build` automatically** in this same turn.

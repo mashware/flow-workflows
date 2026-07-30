@@ -56,4 +56,5 @@ From `03-investigation.md` there may be "areas with similar risk". Do not fix th
 
 - If test is red or there are regressions: `phase` stays at `fix`. The user iterates.
 - If green: `phase = "validate"`, add to `phases_done`. Suggest `/flow:bug:review`.
+- **Autonomy handoff** (only when green — a red gate stops in every mode). In `manual`, propose `/flow:bug:review` as a question; in `guided`/`auto`, **chain into it automatically** in this same turn.
 """

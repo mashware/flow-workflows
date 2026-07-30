@@ -160,3 +160,4 @@ After reviewing the options, assess whether `meta.json.size` still matches the r
 
 - Update `meta.json`: `phase = "brainstorm"`, add to `phases_done`, update `updated_at`.
 - Show the user the options and ask them to choose (or request adjustments) **before** moving to `/flow:feat:design`. If they choose one, record it in `meta.json.notes`.
+- **Autonomy handoff.** Choosing between options is a genuine decision point, so in `manual` and `guided` ask for the choice and only then move on. In `auto`, pick the recommended option, **record the choice and why in `meta.json.notes`** and **chain into `/flow:feat:design` automatically** in this same turn — that is what `auto` was asked for. In `manual`, propose the next command with a single `AskUserQuestion` instead of leaving it written for the user to type.

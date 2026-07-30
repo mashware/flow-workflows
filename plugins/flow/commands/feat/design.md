@@ -247,3 +247,4 @@ Do not invoke `save_knowledge` here — the final save is in `/flow:feat:ship` w
 - Next step by size:
   - **XS / S**: suggest `/flow:feat:build` (1 single MR/PR, no need to plan splitting).
   - **M / L**: suggest `/flow:feat:plan` to decide how to split the work into independently mergeable MRs/PRs before implementing.
+- **Autonomy handoff.** Reviewing the design is a genuine decision point, so in `manual` and `guided` ask for the review before advancing. In `auto`, record the design as accepted in the artifact and **chain into the command for the size automatically** in this same turn. In `manual`, propose that command with a single `AskUserQuestion` (recommended option by default) rather than leaving it as a written suggestion. Unresolved `high`-severity findings in §8 stop the flow in **every** mode — do not chain over them.
