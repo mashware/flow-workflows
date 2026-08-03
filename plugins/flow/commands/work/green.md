@@ -22,6 +22,25 @@ Extract from `git`: `host` (`gitlab`|`github`), `cli` (`glab`|`gh`; empty → in
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout. `manual` — stop at every decision point; propose the next action with a single `AskUserQuestion`. `guided` — resolve low-risk, unambiguous decisions yourself with the recommended default and record the choice in `09-ci.md` instead of asking (e.g. a pure formatter auto-fix); still ask at genuine decision points. `auto` — as `guided`, plus auto-resolve the remaining decision points with sensible (recorded) defaults. **Hard gates — ALWAYS stop and ask, in every mode, no exceptions:** (1) **any push** (§6); (2) creating/switching a branch, or DB schema changes/migrations, if a fix requires them; (3) **re-triggering a pipeline or job on the remote** (it consumes CI resources and is an outward action); (4) **integrating the base branch** — any `git merge`/`git rebase` of `git.default_base` into the branch, and any history rewrite or force-push it implies (§5.C); (5) **green-washing — NEVER, in any mode:** do not rerun a failed check hoping it passes, never disable, skip, `@skip`/`xit`, loosen a threshold, or delete a test/lint rule to make the pipeline green, and never resolve a conflict by blindly taking one side (`--ours`/`--theirs`, `checkout --theirs`, discarding the base's changes) — a conflict is resolved by understanding both sides. Rule of thumb for everything else: ask only when a decision is irreversible/costly, ambiguous and not settled by the ticket + design + domain-memory, or a hard gate; otherwise take the sensible default and record it.
 
+**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a `Workflow`, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
+
+**Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
+
+```
+<TICKET> · <size> · phase <phase> · MR #<n> of <N>
+Plan: <k> of <N> shipped — #1 <url/id> <state> · #2 <state> · #3–#N pending
+Now: <one line — what just finished>
+I need: <one line — the decision or action you need from them, or "nothing, continuing with X">
+```
+
+Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never from memory. Drop the `MR #<n> of <N>` and `Plan:` lines when the work has no `mrs`. After the header, **at most ~10 lines of body**, and only what could change a decision the user might take. Everything else goes to the phase artifact, which is where it stays useful.
+
+**Out of the chat, into the artifact**: narrating your own process or your own mistakes, correcting your subagents' reports, bookkeeping (directory names, how you located `meta.json`), and anything a previous stop already said. **Subagent completion or idle notifications never earn a turn of their own** — absorb them into the next real stop.
+
+**Zero-context rule.** Write for someone who just sat down. The first mention of a code identifier (class, method, constant, error code) carries 4–6 words of what it is — not `fromStored()` but "`fromStored()`, the method that rehydrates a stored token". Never cite a section number (`§4.2`) without naming what it is. No jargon the user has not used first.
+
+**If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose: in `manual` it hides among the text, and in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve the menu, it is not a question — it is a decision you take and record.
+
 ## 1. Pre-flight — locate the work and the MR/PR
 
 - Identify the current branch and its work folder `.claude/work/<TICKET>/` (via `meta.json`, matching `branch`). If there is **no** work folder (MR opened outside the flow), run in **lightweight mode**: skip `meta.json`/artifact reads, warn the user once that there is no recorded design rationale to draw on, and keep going — the triage and fix loop still work.

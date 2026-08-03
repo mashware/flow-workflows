@@ -8,6 +8,25 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command with a single `AskUserQuestion` (the recommended next step as the default option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
+**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a `Workflow`, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
+
+**Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
+
+```
+<TICKET> · <size> · phase <phase> · MR #<n> of <N>
+Plan: <k> of <N> shipped — #1 <url/id> <state> · #2 <state> · #3–#N pending
+Now: <one line — what just finished>
+I need: <one line — the decision or action you need from them, or "nothing, continuing with X">
+```
+
+Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never from memory. Drop the `MR #<n> of <N>` and `Plan:` lines when the work has no `mrs`. After the header, **at most ~10 lines of body**, and only what could change a decision the user might take. Everything else goes to the phase artifact, which is where it stays useful.
+
+**Out of the chat, into the artifact**: narrating your own process or your own mistakes, correcting your subagents' reports, bookkeeping (directory names, how you located `meta.json`), and anything a previous stop already said. **Subagent completion or idle notifications never earn a turn of their own** — absorb them into the next real stop.
+
+**Zero-context rule.** Write for someone who just sat down. The first mention of a code identifier (class, method, constant, error code) carries 4–6 words of what it is — not `fromStored()` but "`fromStored()`, the method that rehydrates a stored token". Never cite a section number (`§4.2`) without naming what it is. No jargon the user has not used first.
+
+**If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose: in `manual` it hides among the text, and in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve the menu, it is not a question — it is a decision you take and record.
+
 Implementation phase. Code is written here.
 
 ## 1. Pre-flight
@@ -46,7 +65,9 @@ Rules for writing it:
 - **"Does NOT include" is mandatory**: even if it seems redundant with `04-mr-plan.md`, repeating it here fixes the scope. If you do not know what to put, the plan is wrong.
 - 3-5 bullets in each list. More is noise.
 
-**Ask the user with `AskUserQuestion`** whether the brief reflects what they expect — **in every autonomy mode, `auto` included**. This one is deliberate, not an oversight: it is the last point where the scope can be corrected before there is a diff to argue with, and scope creep is invisible in code review once it is mixed in with everything else. Options:
+**Ask the user with `AskUserQuestion`** whether the brief reflects what they expect — **in every autonomy mode, `auto` included**. This one is deliberate, not an oversight: it is the last point where the scope can be corrected before there is a diff to argue with, and scope creep is invisible in code review once it is mixed in with everything else.
+
+Because in `guided`/`auto` this is one of the only two stops per MR/PR, it carries the **full stop header** from the Reporting preamble above it — ticket, size, phase, `MR #<n> of <N>`, plan state — followed by the brief. In a 7-MR/PR work the brief alone is unreadable: "#3 of 7, two shipped" is what tells the user where they are before they judge the scope. Options:
 - **Yes, proceed** → start building.
 - **No, something is extra or missing** → the user clarifies, adjust the brief, and ask again. **Do not touch code** until the brief is confirmed.
 
@@ -108,7 +129,7 @@ The step's changes are **always reported before anything is recorded**. Who deci
      Diff: +<add> / -<del> lines
      Suggested validation: <e.g. "run the unit test command for Foo" or "open the UI at /section">
    ```
-3. **Then, per mode**: in `guided`/`auto`, run `git add <files from step> && git commit -m "WIP <TICKET>: <step>" --no-verify` (per the rule above) and start the next step without pausing. In `manual`, **do not commit** — wait for the user to say what to do. Options:
+3. **Then, per mode**: in `guided`/`auto`, run `git add <files from step> && git commit -m "WIP <TICKET>: <step>" --no-verify` (per the rule above) and start the next step without pausing — **the step summary above is a report, not a question**, so do not append "shall I commit and move on?" to it in these modes; that stop is in the never-ask block of the preamble. In `manual`, **do not commit** — wait for the user to say what to do. Options:
    - **"Commit now"** or **"OK, continue"** → agent runs the same `git add … && git commit …` and continues with the next step.
    - **"Wait, I'll validate"** → agent stays still. You validate at your own pace. When you return, decide commit or adjustment.
    - **"Something needs to change"** → agent adjusts. The step's commit stays pending until you give OK.
@@ -254,5 +275,5 @@ If there were no copied contracts (design said "none"), skip this step and recor
 
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
 - If multi-MR/PR build, leave the current MR/PR as `in_progress` in `meta.json.mrs`; it will become `merged` when `/flow:feat:ship` confirms the merge. **Also add `build` to that MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates read.
-- Summarize to the user in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and next command: `/flow:feat:review`.
+- Report to the user **following the stop header** from the Reporting preamble, then in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**. The next command is `/flow:feat:review` — in `guided`/`auto` you are about to run it in this same turn, so say that in the `I need:` line ("nothing, chaining into review"), never as a question.
 - **Autonomy handoff.** Apply the `autonomy.mode` from the preamble — the summary is a report, not the end of the flow. In `manual`, stop here and propose `/flow:feat:review` with a single `AskUserQuestion` (recommended option by default); invoke it only if the user confirms, and never make them type it. In `guided`/`auto`, **chain into `/flow:feat:review` automatically** in this same turn, without asking. Do not end the turn leaving the next command as a suggestion: in these modes, "the next command is X" and stopping are contradictory, and the mode already decided which of the two wins.

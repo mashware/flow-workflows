@@ -175,8 +175,29 @@ How much the flow advances on its own versus stopping to ask you.
 - the **business brief** before any code is written (`feat:build` §2, `bug:fix` §2) — the last
   point where the scope can be fixed before there is a diff to argue with
 
+**And the symmetric list — never asked in `guided`/`auto`.** A gate that always stops is only half
+the contract; without the other half, `auto` degrades into `manual` one reasonable-looking question
+at a time. These are decided, recorded and left behind:
+
+- **flow mechanics** — whether to launch a panel, challengers or a skeptic filter, how many
+  reviewers, inline vs subagent: a call on cost and latency, which is the agent's to make
+- **WIP commits** on the work branch
+- **continuing to the next MR/PR of a train** when `train_chain` resolves to `always` — and in
+  particular never offering to *wait for the merge*, which only `train_chain: wait` asks for
+- **size confirmation** — the estimate is recorded and `brainstorm`/`plan` reclassify it later
+- **anything already decided and recorded** in the artifacts or `meta.json.notes`. Only new
+  evidence contradicting the premise reopens a settled decision, and then the evidence leads
+
 Whatever a phase decided on its own is written into that phase's artifact, so `guided`/`auto`
 stay auditable after the fact.
+
+**How a stop reads.** Independent of the mode, every stop opens with a fixed header — ticket, size,
+phase, `MR #n of N`, the plan state from `meta.json.mrs`, one line of what just finished and one
+line of what is needed from you — and then at most ~10 lines of body. The rest goes to the phase
+artifact. Two things stay out of the chat entirely: the agent narrating its own process or
+mistakes, and subagent completion notices, which never get a turn of their own. The fewer stops a
+mode produces, the more each one has to carry: in `auto` there are only two per MR/PR (the brief
+and `ship`), and everything between them ran while you were looking elsewhere.
 
 **What the mode does to commits.** During `feat:build` and `bug:fix`, the step's changes are always
 reported before anything is recorded; the mode decides who says "commit". `manual` — you do, per

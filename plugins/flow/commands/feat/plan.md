@@ -8,6 +8,25 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command with a single `AskUserQuestion` (the recommended next step as the default option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
+**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a `Workflow`, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
+
+**Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
+
+```
+<TICKET> · <size> · phase <phase> · MR #<n> of <N>
+Plan: <k> of <N> shipped — #1 <url/id> <state> · #2 <state> · #3–#N pending
+Now: <one line — what just finished>
+I need: <one line — the decision or action you need from them, or "nothing, continuing with X">
+```
+
+Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never from memory. Drop the `MR #<n> of <N>` and `Plan:` lines when the work has no `mrs`. After the header, **at most ~10 lines of body**, and only what could change a decision the user might take. Everything else goes to the phase artifact, which is where it stays useful.
+
+**Out of the chat, into the artifact**: narrating your own process or your own mistakes, correcting your subagents' reports, bookkeeping (directory names, how you located `meta.json`), and anything a previous stop already said. **Subagent completion or idle notifications never earn a turn of their own** — absorb them into the next real stop.
+
+**Zero-context rule.** Write for someone who just sat down. The first mention of a code identifier (class, method, constant, error code) carries 4–6 words of what it is — not `fromStored()` but "`fromStored()`, the method that rehydrates a stored token". Never cite a section number (`§4.2`) without naming what it is. No jargon the user has not used first.
+
+**If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose: in `manual` it hides among the text, and in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve the menu, it is not a question — it is a decision you take and record.
+
 Delivery planning phase. **No code is written.** Decides how to split the feature into MRs/PRs that can live on their own on the main branch even if the subsequent ones never land.
 
 ## 1. Pre-flight
@@ -121,7 +140,13 @@ If when splitting you find that there is really just 1 small MR/PR (≤ 50 lines
 ## 6. Close
 
 - Update `meta.json`: `phase = "plan"`, add `plan` to `phases_done`.
-- Show the user the summary table and ask for approval.
+- **Show the plan the way it will be executed**, not just as a list. The user has to be able to see, without decoding two columns, what runs at the same time and what waits for what. So print the wave line first, then the table:
+
+  ```
+  Wave 1: #1 ∥ #2  (in parallel, start now) → Wave 2: #3 → Wave 3: #4 ∥ #5 ∥ #6 ∥ #7
+  ```
+
+  `∥` = no dependency between them, they can be built in parallel or as a train; `→` = the next wave waits for the previous one to merge. Then the table with `#`, wave, `depends_on`, title and estimate. One line for the split rationale. Nothing else — the risks and the discarded alternatives are in the artifact for whoever wants them.
 - If they request changes, edit the artifact and `meta.json.mrs` before advancing.
 - Suggest `/flow:feat:build` to start the first MR/PR.
 - **Autonomy handoff.** Approving the split is a genuine decision point, so in `manual` and `guided` ask for it before advancing. In `auto`, record the plan as accepted in `04-mr-plan.md` and **chain into `/flow:feat:build` automatically** in this same turn. In `manual`, propose it with a single `AskUserQuestion` instead of leaving it as a written suggestion.

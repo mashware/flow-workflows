@@ -57,8 +57,10 @@ Light checks — report problems, never change anything:
   but the merge already closes the issue). These `*_cmd` run best-effort and never block.
 - **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and, at the
   end, proposes the next command as a one-click confirmation — never runs it without confirming). If set, echo the mode and remind that the hard gates (push/MR-PR,
-  ambiguous-base branch creation, DB/migrations, high-severity review findings) still stop and ask in
-  every mode. An unrecognized value → flag it and state that `manual` will be assumed.
+  ambiguous-base branch creation, DB/migrations, high-severity review findings, the business brief) still
+  stop and ask in every mode, and that in `guided`/`auto` the flow never asks about its own mechanics
+  (panels, reviewer count), WIP commits, continuing a train, size confirmation, or anything already
+  decided. An unrecognized value → flag it and state that `manual` will be assumed.
 
 ## 4. Close
 

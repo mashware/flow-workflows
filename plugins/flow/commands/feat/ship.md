@@ -8,6 +8,25 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command with a single `AskUserQuestion` (the recommended next step as the default option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
+**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a `Workflow`, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
+
+**Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
+
+```
+<TICKET> · <size> · phase <phase> · MR #<n> of <N>
+Plan: <k> of <N> shipped — #1 <url/id> <state> · #2 <state> · #3–#N pending
+Now: <one line — what just finished>
+I need: <one line — the decision or action you need from them, or "nothing, continuing with X">
+```
+
+Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never from memory. Drop the `MR #<n> of <N>` and `Plan:` lines when the work has no `mrs`. After the header, **at most ~10 lines of body**, and only what could change a decision the user might take. Everything else goes to the phase artifact, which is where it stays useful.
+
+**Out of the chat, into the artifact**: narrating your own process or your own mistakes, correcting your subagents' reports, bookkeeping (directory names, how you located `meta.json`), and anything a previous stop already said. **Subagent completion or idle notifications never earn a turn of their own** — absorb them into the next real stop.
+
+**Zero-context rule.** Write for someone who just sat down. The first mention of a code identifier (class, method, constant, error code) carries 4–6 words of what it is — not `fromStored()` but "`fromStored()`, the method that rehydrates a stored token". Never cite a section number (`§4.2`) without naming what it is. No jargon the user has not used first.
+
+**If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose: in `manual` it hides among the text, and in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve the menu, it is not a question — it is a decision you take and record.
+
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
 ## 1. Pre-flight
@@ -207,7 +226,7 @@ First identify the **next startable MR/PR**: the `pending` one with the lowest `
 - **Parallel sibling** (does not depend on the current MR/PR — e.g. same wave, or a different independent chain) → it is **not** part of this train: base = `git.default_base`, `stacked_on` = null. Do not stack an independent MR/PR on an unrelated branch just because it is built next.
 
 - **`ask`**: ask with `AskUserQuestion` — "Continue now with the next MR/PR (#\<n\> «\<title\>»), based on \<its base branch per the rule above\>?". If **no** → stop and recommend `/flow:feat:build`. If **yes** → continue as in `always`.
-- **`always`**: continue automatically; record the decision in the artifact, do not prompt.
+- **`always`**: continue automatically; record the decision in the artifact, **do not prompt** — not as "shall I start #\<n\>?", and above all not as "shall I wait for #\<n-1\> to merge?". Offering the wait is offering an option the configuration already ruled out: `wait` is the only value that holds the train, and it is not the one in play. This is listed in the never-ask block of the preamble for a reason — it is the stop that most often turns a configured train back into a manual one.
 
 To continue (both `ask`→yes and `always`):
 1. Create the next branch following `/flow:feat:start §5` rules with the **base chosen above** (explicit base, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow:feat:start §5.5` (base = the same). If it is a train (depends on the current one), record `stacked_on` = current branch in `meta.json`; if it is a parallel sibling, leave `stacked_on` = null.
@@ -218,7 +237,7 @@ This continuation is **not** a hard gate: creating a stacked branch on an explic
 
 ### 6.3 Summary and cleanup
 
-Summarize to the user: ticket, MR/PR URL, changed files, added tests. In multi-delivery, also indicate remaining entries per `meta.json.mrs`.
+Report to the user **following the stop header** from the Reporting preamble: ticket, MR/PR URL, changed files, added tests. In a multi-delivery work this is the stop where the plan state matters most, so the `Plan:` line is **mandatory** here and lists **every** entry with its real state — shipped with its URL, reviewed but not pushed, pending — read from `meta.json.mrs`. "MR #2 done" without "2 of 7, and #3 unlocks when #1 merges" is the information the user is missing when they come back to this pane.
 
 **Cross-repo reminder**: if `meta.json.related_repos` has any entry not `done`, call it out explicitly now — this is the moment the other side is usually forgotten. For each such entry: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow:feat:start <TICKET>` (or `/flow:bug:start`)"*. flow does not touch or scan the other repo; it only reminds, and this is not a hard gate.
 
