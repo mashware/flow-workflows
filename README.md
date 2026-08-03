@@ -16,8 +16,16 @@ asks at the real ones.
 What makes that safe is that the autonomy dial never moves the **hard gates**. In *every* mode,
 including `auto`, flow stops and asks before: any push or MR/PR, creating a branch on an ambiguous
 base, a DB schema change or migration, and shipping a review that came back with high-severity
-findings. Commits during `build` are yours to authorize too — it leaves the work in your tree so
-you can read the diff first. It goes alone; it doesn't go behind your back.
+findings. In `manual`, commits during `build` are yours to authorize too — it leaves the work in your
+tree so you can read the diff first. It goes alone; it doesn't go behind your back.
+
+The dial cuts both ways, and that half matters just as much: `guided`/`auto` **never** ask about the
+flow's own machinery — whether to launch a review panel, how many reviewers, WIP commits, continuing
+to the next MR/PR of a train, or anything already decided and written down. Otherwise `auto` decays
+into `manual` one reasonable-looking question at a time. And because those modes stop rarely, **every
+stop opens with where you are** — ticket, phase, `MR #3 of 7`, what each MR/PR is waiting on, what
+just finished, and the one thing it needs from you — before any prose. You are coming back to a pane
+you left; the flow has read everything and you have read none of it.
 
 **Stack-agnostic**: nothing is hardcoded. Each repo is configured with a `FLOW.md` at its root
 (tracker, git host, test commands, review agents, observability…). Anything you leave empty is

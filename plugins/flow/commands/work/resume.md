@@ -23,10 +23,14 @@ Print to the user in brief format:
 Resuming <TICKET> [feat|bug] [size]
 Current phase:  <phase>
 Phases done:    <list>
+MR/PRs:         <k>/<N> merged · #3 in_progress · #4–#7 pending      (line only if meta.json.mrs exists)
+Waves:          Wave 1: #1 ∥ #2 → Wave 2: #3 → Wave 3: #4 ∥ #5      (line only if the entries carry `wave`)
 Last updated:   <updated_at>
 Notes:          <meta.notes>
 Cross-repo:     <meta.related_repos entries not "done", as "repo: scope"; or "—">
 ```
+
+The `MR/PRs:` and `Waves:` lines are read from `meta.json.mrs` (same format as `/flow:work:status §2`), and they are the point of this recap in a multi-delivery work: after a break, "which one am I on and how many are left" is the first thing lost. `∥` = can run in parallel, `→` = waits for the previous wave to merge.
 
 The ticket format follows `tracker.prefix` from FLOW.md; if empty, show it as it appears in `meta.json`.
 

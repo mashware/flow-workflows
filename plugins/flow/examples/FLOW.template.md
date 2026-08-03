@@ -73,6 +73,10 @@ How much the flow advances on its own vs. stopping to ask you.
                       # HARD GATES stop and ask in EVERY mode, no exceptions: any push or MR/PR (ship),
                       # branch creation with an ambiguous base, DB schema changes/migrations, and a review
                       # with high-severity findings.
+                      # NEVER ASKED in guided/auto (decided, recorded, left behind): flow mechanics
+                      # (panels, challengers, how many reviewers), WIP commits, continuing a train when
+                      # train_chain resolves to `always`, size confirmation, and anything already decided
+                      # and recorded — only new contradicting evidence reopens a settled decision.
 
 ## quality
 Repo commands for quality gates. **Empty = the command auto-discovers** (Makefile,

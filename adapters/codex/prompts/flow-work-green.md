@@ -13,6 +13,25 @@ From `git`: `host`, `cli` (`glab`|`gh`; empty → from `host`), `request_term`, 
 
 **Autonomy** (`autonomy.mode`: `manual`|`guided`|`auto`; empty = `manual`): `manual` stops at every decision point; `guided` resolves low-risk unambiguous ones with the recorded default; `auto` also auto-resolves the rest. **Hard gates — always ask, every mode:** (1) any push (§6); (2) branch/DB schema changes a fix needs; (3) re-triggering a pipeline/job on the remote; (4) **integrating the base** — any `git merge`/`git rebase` of `git.default_base` into the branch and any history rewrite/force-push it implies (§5.C); (5) **green-washing — NEVER:** no rerun-hoping, no disabling/skipping/loosening/deleting a test or lint rule to force green, no resolving a conflict by blindly taking one side (`--ours`/`--theirs`, discarding the base's changes).
 
+**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a subagent panel, challengers or a skeptic filter, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
+
+**Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
+
+```
+<TICKET> · <size> · phase <phase> · MR #<n> of <N>
+Plan: <k> of <N> shipped — #1 <url/id> <state> · #2 <state> · #3–#N pending
+Now: <one line — what just finished>
+I need: <one line — the decision or action you need from them, or "nothing, continuing with X">
+```
+
+Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never from memory. Drop the `MR #<n> of <N>` and `Plan:` lines when the work has no `mrs`. After the header, **at most ~10 lines of body**, and only what could change a decision the user might take. Everything else goes to the phase artifact, which is where it stays useful.
+
+**Out of the chat, into the artifact**: narrating your own process or your own mistakes, correcting your subagents' reports, bookkeeping (directory names, how you located `meta.json`), and anything a previous stop already said. **Subagent completion notices never earn a turn of their own** — absorb them into the next real stop.
+
+**Zero-context rule.** Write for someone who just sat down. The first mention of a code identifier (class, method, constant, error code) carries 4–6 words of what it is — not `fromStored()` but "`fromStored()`, the method that rehydrates a stored token". Never cite a section number (`§4.2`) without naming what it is. No jargon the user has not used first.
+
+**A question is asked as a question.** Never end a message with one buried in prose: write it as an explicit numbered choice with the recommended option marked, and wait. In `manual` a question hidden in the text is invisible; in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve to be numbered and waited on, it is not a question — it is a decision you take and record.
+
 ## 1. Pre-flight — locate the work and the MR/PR
 - Current branch → work folder `.claude/work/<TICKET>/` (via `meta.json`). No folder → **lightweight mode**: skip artifact reads, warn once, continue.
 - Resolve MR/PR: (1) argument; (2) `meta.json.mrs[]` matching the branch → `url`; (3) query `git.cli` for the branch's open MR/PR (`gh pr view`/`gh pr list --head`, or `glab mr list --source-branch`); (4) several/none → ask, list candidates.
