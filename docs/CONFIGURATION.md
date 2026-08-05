@@ -136,6 +136,10 @@ With `worktree: ask` or `always`, `/flow:feat:start` and `/flow:bug:start` creat
 as a **git worktree** instead of switching your checkout, so several works coexist on disk.
 Git-ignore whatever `worktree_path` points at.
 
+Worktrees accumulate: one per work, and only removed if you say yes at the end of `ship` or
+`abandon`. `/flow:work:clean` is the sweep that clears the ones whose MR/PR already merged —
+along with their branches and their `.claude/work/` folders — after showing you the list.
+
 `worktree_resync` is the other half: `/flow:work:try <branch>` points your **main** checkout at
 someone's branch to test it against this environment, and `--back` returns. The listed commands
 run after each switch so the environment follows the code:

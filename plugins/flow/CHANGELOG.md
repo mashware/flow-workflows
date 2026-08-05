@@ -5,6 +5,32 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.27.0 — The flow sweeps up after itself, and "merged" is a verdict rather than a guess  ·  2026-08-05
+
+### Two repos, 36 worktrees, and 13 of 14 already merged
+The case behind this release: after a few weeks of steady use, two repos of the same project were carrying **22 and 14 git worktrees**. In the smaller one, exactly **one** of the fourteen was still live — the other thirteen were full checkouts of branches whose MR had already merged. The same repo had **16 work folders in `.claude/work/` and zero in `_archive/`**. Nobody had done anything wrong; the plugin simply had no moment at which any of it got cleaned up.
+
+It looked like it did. `/flow:feat:ship` and `/flow:bug:ship` offer to archive the work folder and remove the worktree, `/flow:work:abandon` does the same, and `/flow:work:status` §4 flags folders whose branch is gone. But every one of those is a **prompt at the end of a long command**, easy to answer past — and in a train it never fires at all, because an intermediate MR/PR does not set `phase = "done"` and the branch is the base of the next one. The plugin's whole cleanup story depended on reaching the last question of the one command that asks it, in the one mode where it asks.
+
+### `/flow:work:clean` — the sweep, and what it refuses to do
+The new command takes all three inventories at once — worktrees, local branches, `.claude/work/` folders — joins them on the branch name, and decides each row's fate from evidence rather than from age.
+
+**The evidence is the forge, and it is asked exactly twice.** One call for merged MRs/PRs, one for open, joined locally against the inventory. Twenty worktrees is still two calls, not twenty. A branch in neither list falls through to local checks; absence from a paginated list is not a verdict, and when the sweep cannot cover everything it says so instead of reading as "checked everything".
+
+**`git branch --merged` is the wrong tool and this is where it shows.** A squash-merged branch is an ancestor of nothing: its commits were replaced by one new commit with a different sha, so ancestry-based checks miss every single one. In the repo above, 8 of the 13 finished branches were invisible that way. So when the forge cannot answer, `clean` replays the branch's tree onto its merge-base with `git commit-tree` and asks `git cherry` whether that patch is already upstream — the standard patch-equivalence trick, which catches squashes without needing the forge at all.
+
+**And the refusals, which are most of the design.** `unknown` is never a candidate — silence is not a merge. A worktree with uncommitted changes is protected even when its MR merged (that case gets its own line in the report: the MR went in, the edits never left the checkout). A branch with commits not on the remote is protected. There is no `--force`, ever, and `git branch -D` only runs on a verdict that came from the forge, never on one inferred locally. Work folders are **archived, never deleted**. The remote is never touched — deleting merged remote branches is the forge's job, not a cleanup sweep's. And **`autonomy.mode` does not authorize deletion**: `auto` governs flow mechanics, not the one action in the plugin that can destroy work existing nowhere else, so it confirms the list like every other mode. `--dry-run` shows the whole table and touches nothing.
+
+One row type is deliberately awkward: a work whose `mrs[]` are all merged but whose `phase` never reached `done` — the train whose last `ship` never ran. It is confirmed **individually**, never folded into a bulk yes, and on confirmation `phase` is set before the folder moves, so the archived record does not sit there claiming it is mid-build.
+
+`.claude/work/_archive/` is outside the sweep — that history is often the only record of why something was abandoned. `--purge-archive <N>d` is a separate opt-in pass that only removes folders **already committed to git** (`git log -- <path>` brings them back); untracked ones are the only copy there is, so they are listed with that said out loud rather than deleted.
+
+**`/flow:work:status` §4 and `/flow:work:daily` §4 now surface the residue as a count** and point here — a cheap local check, no extra forge calls, one line at the end and only when there is more than a handful. Neither deletes anything; counting and deciding stay separate. `/flow:feat:ship` says the same thing once per work when shipping an intermediate train MR/PR, at exactly the point where the prompt it *would* have shown does not exist.
+
+**No new `FLOW.md` keys.** Mirrored across the opencode / Codex CLI / Gemini CLI adapters, with the confirmation adapted to a plain numbered choice. Two fixes came along for the ride: the adapter command indexes had been missing `/flow:work:green` since v0.24.0, and `install.sh` now counts the commands it copies instead of printing a hardcoded number that had drifted.
+
+**Full changelog**: https://github.com/mashware/flow-workflows/compare/v0.26.0...v0.27.0
+
 ## v0.26.0 — Every stop says where you are, and `auto` stops asking about itself  ·  2026-08-03
 
 ### 16 questions in four hours, in the mode whose promise is "without pausing"

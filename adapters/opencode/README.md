@@ -113,6 +113,9 @@ Once installed, invoke them with `/` in opencode:
 | `/flow-work-resume` | Resume work on the current branch |
 | `/flow-work-abandon` | Close a work item without shipping |
 | `/flow-work-try <branch>` | Point the main checkout at a branch to test it (and back), re-syncing per FLOW.md |
+| `/flow-work-clean [--dry-run]` | Sweep what finished work left behind: merged worktrees, dead branches, unarchived folders |
+| `/flow-work-respond [mr]` | Review loop — triage the MR/PR threads, debate, implement, reply |
+| `/flow-work-green [mr]` | Mergeable loop — red pipeline, conflicts or behind base: triage, fix at the root, push |
 | `/flow-work-watch <TICKET> [duration]` | Monitor observability after a deployment (one cycle) |
 | `/flow-init` | Generate/update the repo's FLOW.md |
 | `/flow-config` | Show the repo's effective FLOW.md config and validate it |

@@ -73,6 +73,7 @@ If the branch in meta.json **is the current one**:
 
 - If there are local branches with the ticket pattern but no matching work folder (`.claude/work/<TICKET>/` or `.claude/work/<TICKET>-*/`, matched via `meta.json.ticket`/`branch`): warn about it.
 - If there are work folders whose branch no longer exists locally: ask whether to archive.
+- **Residue count** (one line, no per-entry detail): worktrees registered (`git worktree list`, minus the main checkout), work folders with `phase: done` still outside `_archive/`, and prunable worktree registrations (`git worktree prune --dry-run`). If the total is above a handful, print `Residue: <N> worktrees · <N> unarchived done · <N> prunable → /flow:work:clean --dry-run`. This command never deletes anything — `clean` is where that is decided, and it establishes the merged/open verdict properly instead of counting.
 
 The branch pattern is inferred from `git.branch_pattern` in FLOW.md; if empty, look for branches whose name matches the pattern `<prefix>XXXXX-*` or orphaned folders in `.claude/work/`.
 
