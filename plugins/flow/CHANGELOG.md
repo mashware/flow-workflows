@@ -5,6 +5,16 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.27.1 — The first real sweep found three ways to be wrong about a branch  ·  2026-08-05
+
+Running `/flow:work:clean --dry-run` against the two repos from v0.27.0 — 49 and ~120 branches — turned up three defects, all of them the kind that only shows up against a repo with history.
+
+**`@{u}` was the wrong ruler for "not on the remote".** The protected set measured unpushed commits against the configured upstream. But flow creates branches with `git worktree add --no-track`, so a branch that was pushed, reviewed and merged still has **no upstream configured** — and every one of them read as "exists only here" and got protected. In the larger repo that was most of the table: branches whose `origin/<branch>` ref was sitting right there. It now measures against `refs/remotes/origin/<branch>` and only falls back to counting the branch's own commits when there is no remote ref at all.
+
+**A closed MR/PR is not the absence of one.** An MR/PR closed without merging is neither `merged` nor in flight, and the previous version folded it into `unknown` alongside branches that never had an MR/PR. Same non-action, opposite meaning: one says a decision was made about this work, the other says nobody ever looked. `closed` is now its own verdict — never a candidate, always named in the report.
+
+**The 100-MR/PR page is not the whole forge.** In a high-turnover repo most finished branches are older than the list window, and the local patch-equivalence check in §4c misses a squash whose MR/PR absorbed review changes — the patch that landed is no longer the patch on the branch. So when **25 or fewer** branches are still `unknown`, the sweep now asks the forge about each one directly (`--source-branch` / `--head`). That is the one place per-branch queries earn their cost: the list already answered for everything it covers, and what is left is bounded and named. Above 25 it skips the pass and reports how many went unresolved.
+
 ## v0.27.0 — The flow sweeps up after itself, and "merged" is a verdict rather than a guess  ·  2026-08-05
 
 ### Two repos, 36 worktrees, and 13 of 14 already merged

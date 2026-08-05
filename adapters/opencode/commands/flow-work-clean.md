@@ -80,6 +80,8 @@ gh pr list --state open   --limit 100 --json headRefName,number,url
 
 A branch in the merged list → **`merged`**. In the open list → **`open`**. In neither → fall through to (b); don't conclude anything from absence, since the page limit alone can explain it. If the repo turns over more than ~100 MRs/PRs between sweeps, raise the limit or say in the report that older entries weren't covered — a bounded query that silently reads as "checked everything" is exactly the kind of quiet cap this plugin doesn't do.
 
+**A third state the two lists do not show: `closed`.** An MR/PR closed *without* merging means the branch's work was rejected or superseded — which is neither `merged` nor in flight. It is **never a candidate** (the code exists only on that branch), but it isn't the same as having no MR/PR at all, and the report must say which: `MR !9679 closed without merging` tells the user there is a decision behind it, where `no MR/PR, 4 commits of its own` says the opposite.
+
 **(b) Ancestry — reliable when the forge merges with a merge commit.**
 
 ```bash
@@ -100,6 +102,14 @@ git cherry origin/<base> "$synthetic"
 
 **(e) Otherwise** → **`unknown`**. Unmerged work, or work the evidence can't place. Reported, never touched.
 
+**Second pass, bounded.** Branches still `unknown` after (b)–(d) are often just older than the page window in (a) — and (c) misses a squash whose MR/PR absorbed review changes, because the patch that landed is no longer the patch on the branch. If **25 or fewer** branches are still `unknown`, ask the forge about each one directly:
+
+```bash
+glab mr list --source-branch <branch> --all -F json     # GitLab
+gh pr list --head <branch> --state all --json state,number,url   # GitHub
+```
+This is the one place per-branch queries are justified: the list already answered for everything it covers, and what is left is bounded and named. Above 25, skip the pass and report how many branches were left unresolved — don't fire a hundred round trips at the forge, and don't let the omission go unsaid.
+
 Degraded mode: with no forge and no successful fetch, (b)–(d) are judging against a possibly stale `origin/<base>`. Keep the verdicts but mark the whole table `(local evidence only — origin not refreshed)`, and drop `merged, squashed` to `unknown`; the squash check is the one that most needs a current base.
 
 ## 5. The protected set
@@ -111,11 +121,14 @@ Before anything can be a candidate, it must survive all of these. Each is a hard
 | The **current branch** and the **main checkout** | You're standing on it |
 | `<base>` and any long-lived branch (`main`, `master`, `develop`, `staging`, `production`, `release/*`, or whatever the forge reports as protected) | Never candidates, whatever the verdict |
 | A worktree with **uncommitted or staged changes** (`git -C <wt> status --porcelain` non-empty) | Unsaved work, and removing it would need `--force` |
-| A branch with **commits not on the remote** (`git log --oneline @{u}..HEAD`, or `origin/<base>..<branch>` when there's no upstream) and verdict ≠ `merged` | Exists only here |
+| A branch with **commits not on the remote** and verdict ≠ `merged` | Exists only here |
 | Verdict `open` | The MR/PR is live; the branch is in use |
+| Verdict `closed` | The MR/PR was closed unmerged; the code lives only on that branch |
 | Verdict `unknown` | See §0 — unclear evidence isn't permission |
 | A work folder whose `phase` is neither `done` nor `abandoned`, unless §6.C's reconciliation applies | Work in flight |
 | Anything under `.claude/work/` — as **deletion** | This command archives folders; it never deletes them |
+
+"Not on the remote" is measured against **`refs/remotes/origin/<branch>`**, not `@{u}`. This distinction decides most of the table: flow creates branches with `git worktree add --no-track`, so a branch that was pushed and reviewed still has **no configured upstream**, and `@{u}` would report every one of them as unpushed and protect the entire repo for a reason that isn't true. Only when no remote ref exists at all does the count fall back to `origin/<base>..<branch>` — there, "commits of its own" really does mean "nowhere else".
 
 A `merged` branch whose worktree is dirty is a real case and deserves its own line in the report: the MR/PR went in, but there are edits in that checkout that never left it. Say so and leave it alone — that's a decision for the user, not a leftover.
 
@@ -144,6 +157,7 @@ D. Registrations to prune                                               (<N>)
 Left alone                                                              (<N>)
    PROJ-1301-webhook-signing        open MR/PR #430
    PROJ-1288-rate-limit-headers     merged #421, but worktree has uncommitted changes
+   PROJ-1210-batch-import           MR/PR #388 closed without merging
    spike-cache-layer                no MR/PR, 4 commits not on the remote
    .worktrees/PROJ-1090-stale       directory not registered as a worktree
 
