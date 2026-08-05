@@ -28,8 +28,10 @@ adapters/codex/
 │   ├── flow-work-resume.md
 │   ├── flow-work-status.md
 │   ├── flow-work-try.md
+│   ├── flow-work-clean.md
 │   ├── flow-work-abandon.md
 │   ├── flow-work-respond.md
+│   ├── flow-work-green.md
 │   ├── flow-work-watch.md
 │   ├── flow-init.md
 │   ├── flow-config.md

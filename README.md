@@ -141,6 +141,7 @@ The hard gates listed above hold in all three. → [Autonomy reference](docs/CON
 | `/flow:work:status` | Summary of all open work items in `.claude/work/` |
 | `/flow:work:resume` | Resume the work tied to the current branch and suggest the next step |
 | `/flow:work:try` | Point the main checkout at a branch to test it (then `--back`), re-syncing the env per `git.worktree_resync` |
+| `/flow:work:clean` | **Housekeeping** — sweep what finished work left behind: merged worktrees, dead branches, unarchived folders. Never deletes on a guess → [docs](docs/WORKFLOWS.md#housekeeping--flowworkclean) |
 | `/flow:work:abandon` | Close a work item without shipping (discarded feature, non-bug…) |
 | `/flow:save-knowledge` | Consolidate the branch's findings into the `domain-memory` store |
 | `/flow:news` | What changed in the plugin since the version you last saw |

@@ -61,8 +61,10 @@ After copying, the structure looks like this:
     │   ├── status.toml         → /flow:work:status
     │   ├── abandon.toml        → /flow:work:abandon
     │   ├── respond.toml        → /flow:work:respond
+    │   ├── green.toml          → /flow:work:green
     │   ├── watch.toml          → /flow:work:watch
-    │   └── try.toml            → /flow:work:try
+    │   ├── try.toml            → /flow:work:try
+    │   └── clean.toml          → /flow:work:clean
     ├── init.toml               → /flow:init
     ├── config.toml             → /flow:config
     └── save-knowledge.toml     → /flow:save-knowledge

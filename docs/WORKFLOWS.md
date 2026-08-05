@@ -150,6 +150,43 @@ Unlike `/flow:work:status` (a technical control table) and `/flow:work:resume` (
 
 ---
 
+## Housekeeping — `/flow:work:clean`
+
+```
+/flow:work:clean --dry-run     # show what a sweep would do, touch nothing
+/flow:work:clean               # sweep, after showing you the list
+```
+
+Every finished work leaves three things behind: the **worktree** it was built in, the **local
+branch**, and its **`.claude/work/` folder**. Today they're only cleaned up if you say yes at the
+end of `ship` or `abandon` — and in a train that prompt never fires, because an intermediate
+MR/PR doesn't set `phase: done`. Weeks later the repo is carrying full checkouts of branches that
+merged long ago.
+
+`clean` is the periodic sweep. It takes all three inventories at once, decides each branch's fate
+from **the forge's verdict** rather than from age or a guess, and shows you the whole list before
+removing anything.
+
+| Verdict | How it's established | What happens |
+|---|---|---|
+| `merged` | The forge's merged MR/PR list — two calls total, joined locally | Candidate |
+| `merged`, squashed | Same, or a local patch-equivalence check (squash-merged branches are ancestors of nothing, so `git branch --merged` misses every one) | Candidate |
+| `open` | The forge's open list | Left alone |
+| `empty` | Never diverged from the base | Candidate |
+| `unknown` | Anything else | **Left alone** |
+
+What it never does: no `--force`, no `git branch -D` on a locally-inferred verdict, nothing to the
+remote, and it **archives** work folders rather than deleting them. A merged branch whose worktree
+still has uncommitted edits is reported, not removed. And because deletion is the one action that
+can destroy work that exists nowhere else, **`autonomy.mode` does not authorize it** — `auto`
+confirms the list like everyone else.
+
+`.claude/work/_archive/` is outside the sweep; `--purge-archive <N>d` is a separate, opt-in pass
+that only touches folders already committed to git — the untracked ones are the only copy there
+is, so it lists them instead.
+
+---
+
 ## Cross-repo tasks
 
 flow is per-repo, but tasks often aren't — a backend change plus its consumer, an API plus its

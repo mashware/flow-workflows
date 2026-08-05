@@ -57,6 +57,7 @@ The briefing's value is in the *joins* — turn them into concrete, **suggested*
 - A ticket's **priority was raised** while you were on something else → call out the possible refocus.
 - A work with `related_repos` entries not `done` → the **other repo's part is still open**: surface it (`<repo>: <scope>`) and suggest starting the work there (`/flow:feat:start <TICKET>` in that repo). If the entry's `contract_handoff` is `pending`, add that the contract was never handed over — the sibling would start by guessing shapes this repo already decided, so the fix is `/flow:feat:ship` §6.3 on this side first. flow only reminds; it never scans the sibling.
 - Uncommitted local changes not reflected in any log/artifact → nudge toward the relevant phase.
+- **Residue piling up** → `/flow:work:clean`. Cheap local check, no extra forge calls: `git worktree list` (minus the main checkout) against the works you already read. A worktree whose work is `done`, or that no work folder claims at all, is a finished branch still taking up a full checkout — nobody removed it, because `ship` only offers to when it sets `phase: done` and a train's intermediate MR/PR never does. Mention it as one line with the count, at the end of the briefing, and only when there is more than a handful; it is housekeeping, never the headline.
 
 Suggest only. The user decides.
 
