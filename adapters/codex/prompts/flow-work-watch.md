@@ -87,20 +87,22 @@ After the cycle: update `monitor.md` (accumulated state, to avoid repeating aler
 {
   "updated_at": "2026-08-06T16:45:00+02:00",
   "phase": "watching",
+  "stale_after_minutes": 12,
   "header": true,
   "lines": [
     {"text": "Watching after deploy — 18 of 30 min", "style": "title"},
     "",
-    {"text": "Cycle 4 of 6 · green", "style": "ok"},
-    {"text": "p95 checkout 210 ms (baseline 190) · errors flat · queues flat", "style": "dim"},
+    {"ref": "Cycle 4/6", "text": "green", "mark": "info", "style": "ok"},
+    {"ref": "p95", "text": "checkout 210 ms (baseline 190)", "mark": "info"},
+    {"ref": "Rest", "text": "errors flat · queues flat", "mark": "info"},
     "",
-    "Right now: sleeping until the next cycle (~5 min)",
-    {"text": "Next: cycle 5, then the closing summary", "style": "dim"}
+    {"ref": "Now", "text": "sleeping until the next cycle (~5 min)", "mark": "info"},
+    {"ref": "Next", "text": "cycle 5, then the closing summary", "mark": "info"}
   ]
 }
 ```
 
-The verdict line carries the cycle's colour as its style — `ok` for 🟢, `warn` for 🟡, `error` for 🔴 — and a red cycle adds an `accent` line naming what it needs from the user (the escalation interrupts them anyway; the panel is what they see if they were not looking at the chat). `header: true` means ticket, type, phase and age are already drawn — never repeat them. Under ~14 lines, `updated_at` from the real clock (`date -Iseconds`) with local offset. A stale `updated_at` here means the watch loop died, which is exactly what the user needs to be able to see.
+The verdict line is the exception to "never `style` on a marked line": its colour *is* the verdict — `ok` for 🟢, `warn` for 🟡, `error` for 🔴. A red cycle adds a `wait`-marked line naming what it needs from the user (the escalation interrupts them anyway; the panel is what they see if they were not looking at the chat). `header: true` means ticket, type, phase and age are already drawn — never repeat them. Under ~14 lines, `updated_at` from the real clock (`date -Iseconds`) with local offset. Set `stale_after_minutes` to roughly twice the cycle interval: the panel's default of 30 minutes would let a dead loop pass for a live one through five missed cycles, and a watcher that has stopped watching is precisely what has to be visible here.
 
 > **Scheduling in Codex**: auto-rescheduling (`ScheduleWakeup`) does not exist in this adapter. After reporting the cycle, tell the user how much monitoring time is left (T_fin − now) and remind them to re-invoke the command or use cron for the next cycle.
 

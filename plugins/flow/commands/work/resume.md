@@ -82,18 +82,17 @@ The user keeps a panel open per work, fed by `.claude/work/<work>/panel.json`. A
   "lines": [
     {"text": "<work title>", "style": "title"},
     "",
-    {"text": "#1 batch read sources        MR open", "style": "ok"},
-    {"text": "https://gitlab.com/…/merge_requests/9977", "style": "dim", "indent": 3},
-    {"text": "#2 per-message grouping      built, no MR yet"},
-    {"text": "#3–#6 channel map · use case · detail · route", "style": "dim"},
+    {"ref": "#1", "text": "batch read sources", "mark": "wait", "link": "https://gitlab.com/…/merge_requests/9977"},
+    {"ref": "#2", "text": "per-event counters", "mark": "current"},
+    {"ref": "#3–#6", "text": "channel map · use case · detail · route", "mark": "pending"},
     "",
-    "Right now: nothing running — resumed, waiting for you to pick the next step",
-    {"text": "Next: /flow:feat:build", "style": "dim"},
+    {"ref": "Now", "text": "nothing running — just resumed", "mark": "info"},
+    {"ref": "Next", "text": "/flow:feat:build", "mark": "info"},
+    {"ref": "Decision", "text": "run the next step, or leave it for another work", "mark": "wait"},
     "",
-    {"text": "Waiting on you: run the next step or hand it to another work", "style": "accent"},
-    {"text": "sibling-repo still needs the endpoint contract", "style": "warn"}
+    {"text": "sibling-repo still needs the endpoint contract", "mark": "block"}
   ]
 }
 ```
 
-Order and meaning are fixed: the work title; the MR/PR train, one line per `meta.json.mrs[]` entry (`#n`, short title, and its real state as the last column) with the **URL indented under every entry still open** and the not-yet-started ones collapsed into a single `#a–#z` line — never grouped under headings like "done"/"left", since in a train a shipped MR/PR is *open, waiting to merge*, and a heading calling it done states something false where the user is trusting a glance; `Right now:` in prose; `Next:` the command §4 just suggested; `Waiting on you:` in `accent` — after a resume this is always set, because nothing is running and the next move is theirs; and `warn` lines for the blockers §4 surfaced (a sibling repo whose `contract_handoff` is `pending`, a red pipeline, an unmerged dependency). `phase` is the phase you are resuming into, which `meta.json.phase` does not yet say — write it. `header: true` means the panel already draws ticket, type, age and phase — never repeat them in `lines`. Under ~14 lines, and each line short enough **not to wrap** (~55 characters): a wrapped line loses its column and its continuation does not inherit `indent`. Every fact from `meta.json` and the artifacts, never from memory; `updated_at` from the real clock (`date -Iseconds`) with the local offset; written in the language the work's artifacts use. Omit the train block when the work has no `mrs`.
+Order and meaning are fixed: the work title; the MR/PR train, one entry per `meta.json.mrs[]` (`ref` `#n`, short title, the `mark` for its real state — `done` merged, `current` running, `wait` open and waiting on someone else, `pending` not started — and `link` for the ones with a URL), with the not-yet-started ones collapsed into a single `#a–#z` line; `Right now:` in prose; `Next:` the command §4 just suggested; `Waiting on you:` in `accent` — after a resume this is always set, because nothing is running and the next move is theirs; and `warn` lines for the blockers §4 surfaced (a sibling repo whose `contract_handoff` is `pending`, a red pipeline, an unmerged dependency). `phase` is the phase you are resuming into, which `meta.json.phase` does not yet say — write it. `header: true` means the panel already draws ticket, type, age and phase — never repeat them in `lines`. Blank lines separate alignment blocks, so the train aligns with the train and the labels below with each other. Under ~14 lines; the panel wraps and aligns continuations, so brevity is about saying less, not measuring columns. Every fact from `meta.json` and the artifacts, never from memory; `updated_at` from the real clock (`date -Iseconds`) with the local offset; written in the language the work's artifacts use. Omit the train block when the work has no `mrs`.
