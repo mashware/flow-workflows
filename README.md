@@ -182,17 +182,16 @@ stream; the question you actually have is a state, and with three works in fligh
 this one on, is it waiting for me, and what's its link"* shouldn't need scrolling or asking:
 
 ```
-PROJ-123 feat·M ⏵ build                              15h ago   ← drawn from meta.json
+PROJ-123 feat·M ⏵ validate                           15h ago   ← drawn by the reader
 Billing retry window
 
-Done   #1 batch read sources         merged
-       #2 per-message grouping       in review
-         https://gitlab.com/…/merge_requests/127
-Now    #3 channel mapping            building
-Left   #4 use case · #5 HTTP route · #6 contract
+#1 batch read sources        MR open
+   !9977 ↗
+#2 per-message grouping      validating
+#3–#6 channel map · use case · detail · route
 
-Right now: grouping opens and clicks per message
-Next: review → validate → ship
+Right now: unit suite and the test agent over #2
+Next: ship #2 — needs your confirmation
 
 Waiting on you: confirm the MR/PR body before I create it
 sibling-repo still needs the endpoint contract
@@ -203,7 +202,9 @@ never colours — the reader owns the palette. Two properties make it trustworth
 **whole**, so it is never half of an old state and half of a new one; and it is written **before** a
 long stretch rather than after it, with an honest `updated_at` — a file written only on success
 keeps showing as finished a step that in fact died halfway, whereas a stale timestamp is something
-the reader can flag. Writing it is optional: a work without one still resolves from `meta.json`.
+the reader can flag. It also carries the phase it is *running*, not the one `meta.json` records —
+that field only advances when a phase closes, so a header drawn from it says `build` for as long as
+`validate` takes. Writing the file is optional: a work without one still resolves from `meta.json`.
 Full schema in [`commands/work/README.md`](plugins/flow/commands/work/README.md#paneljson-schema).
 
 ## Configuration: `FLOW.md`

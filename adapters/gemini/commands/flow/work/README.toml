@@ -99,15 +99,15 @@ Sits next to `meta.json` in each work folder. `meta.json` is the *state machine*
 ```json
 {
   "updated_at": "2026-08-06T16:45:00+02:00",
+  "phase": "validate",
   "header": true,
   "lines": [
     {"text": "Expose a thread's tracking state and events", "style": "title"},
     "",
-    {"text": "Done   #1 batch read sources         merged", "style": "ok"},
-    {"text": "       #2 per-message grouping       in review"},
-    {"text": "https://gitlab.com/…/merge_requests/127", "style": "dim", "indent": 7},
-    {"text": "Now    #3 channel mapping            building"},
-    {"text": "Left   #4 use case · #5 HTTP route · #6 contract", "style": "dim"},
+    {"text": "#1 batch read sources        MR open", "style": "ok"},
+    {"text": "https://gitlab.com/…/merge_requests/9977", "style": "dim", "indent": 3},
+    {"text": "#2 per-message grouping      built, no MR yet"},
+    {"text": "#3–#6 channel map · use case · detail · route", "style": "dim"},
     "",
     "Right now: grouping opens and clicks per message",
     {"text": "Next: review → validate → ship", "style": "dim"},
@@ -118,12 +118,15 @@ Sits next to `meta.json` in each work folder. `meta.json` is the *state machine*
 }
 ```
 
-- **`lines`** — one entry per line. A bare string is a plain line; an object takes `style` and `indent`. An empty string is a blank line. The reader wraps to its width and crops to its height, so these are sentences, not measured columns.
+- **`lines`** — one entry per line. A bare string is a plain line; an object takes `style` and `indent`. An empty string is a blank line. The reader wraps to its width and crops to its height, so a line that overflows is not truncated — it takes two ragged lines and loses its alignment.
 - **`style`** — `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Semantic names, not colours: the reader owns the palette and stays right if the theme changes.
-- **`header`** — `true` (the default) lets the reader draw its own top line with ticket, type, phase and age from `meta.json`. Those four therefore never belong in `lines`. `false` hands full control of every line to the writer.
+- **`header`** — `true` (the default) lets the reader draw its own top line with ticket, type, phase and age. Those four therefore never belong in `lines`. `false` hands full control of every line to the writer.
+- **`phase`** — the phase being executed **right now**. It exists because `meta.json.phase` only advances when a phase *closes*, so for as long as a phase runs it still names the previous one, and a header drawn from it reads `build` while the body says "validating". The reader prefers this field when present and falls back to `meta.json` when absent.
 - **`updated_at`** — local ISO-8601 with offset, taken from the real clock at write time and never carried over from the previous version. It is what lets a reader distinguish a live summary from one whose author died mid-step and flag the difference instead of showing a stale snapshot as current.
 
-**Contents, in this fixed order** so that several works read alike side by side: the work title; the MR/PR train (one line per `meta.json.mrs[]` entry — `#n`, short title, state — with the URL indented under each entry still open, and the block omitted entirely when the work has no `mrs`); `Right now:`; `Next:`; `Waiting on you:` in `accent`, only when the flow is genuinely parked on the user; then `warn` blockers. Around 14 lines is the ceiling.
+**Contents, in this fixed order** so that several works read alike side by side: the work title; the MR/PR train (one line per `meta.json.mrs[]` entry — `#n`, short title, and its real state as the last column — with the URL indented under each entry still open, the not-yet-started ones collapsed into one `#a–#z` line, and the block omitted entirely when the work has no `mrs`); `Right now:`; `Next:`; `Waiting on you:` in `accent`, only when the flow is genuinely parked on the user; then `warn` blockers. Around 14 lines is the ceiling, and each line has to be short enough **not to wrap** (~55 characters): a wrapped line loses its column, and its continuation does not inherit `indent`.
+
+**No headings over the train.** Grouping the entries under `Done` / `Now` / `Left` is the obvious layout and it is wrong here: in a train an MR/PR that has shipped is *open, waiting to merge*, so `Done  #1 …  MR open` contradicts itself in the one place the user is trusting at a glance. The state column already says it.
 
 **Who writes it.** The 18 phase commands, from the shared Reporting preamble — in pre-flight, before every stop, before any long unattended stretch, and at their close. Plus the two `ship` commands the instant an MR/PR URL exists, `plan` when the train is first populated, `resume` (which rebuilds it after a break — the moment it is most likely to be stale), `watch` on every monitoring cycle, and `abandon` with a terminal state before archiving. The read-only commands — `status`, `daily`, `config`, `news` — never write it. `clean` archives the folder with the panel inside it.
 

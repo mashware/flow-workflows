@@ -120,6 +120,7 @@ After the cycle: update `monitor.md` (accumulated state, to avoid repeating aler
 ```json
 {
   "updated_at": "2026-08-06T16:45:00+02:00",
+  "phase": "watching",
   "header": true,
   "lines": [
     {"text": "Watching after deploy — 18 of 30 min", "style": "title"},

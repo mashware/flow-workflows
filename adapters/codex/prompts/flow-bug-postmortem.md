@@ -34,18 +34,18 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 ```json
 {
   "updated_at": "2026-08-06T16:45:00+02:00",
+  "phase": "validate",
   "header": true,
   "lines": [
     {"text": "Expose a thread's tracking state and events", "style": "title"},
     "",
-    {"text": "Done   #1 batch read sources         merged", "style": "ok"},
-    {"text": "       #2 per-message grouping       in review"},
-    {"text": "https://gitlab.com/…/merge_requests/127", "style": "dim", "indent": 7},
-    {"text": "Now    #3 channel mapping            building"},
-    {"text": "Left   #4 use case · #5 HTTP route · #6 contract", "style": "dim"},
+    {"text": "#1 batch read sources        MR open", "style": "ok"},
+    {"text": "https://gitlab.com/…/merge_requests/9977", "style": "dim", "indent": 3},
+    {"text": "#2 per-message grouping      validating"},
+    {"text": "#3–#6 channel map · use case · detail · route", "style": "dim"},
     "",
-    "Right now: grouping opens and clicks per message",
-    {"text": "Next: review → validate → ship", "style": "dim"},
+    "Right now: unit suite and the test agent over #2",
+    {"text": "Next: ship #2 — needs your confirmation", "style": "dim"},
     "",
     {"text": "Waiting on you: confirm the MR/PR body before I create it", "style": "accent"},
     {"text": "sibling-repo still needs the endpoint contract", "style": "warn"}
@@ -53,11 +53,11 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 }
 ```
 
-**What goes in, in this order.** (1) The work title. (2) The MR/PR train — one line per `meta.json.mrs[]` entry (`#n`, short title, state), with the **URL indented underneath every entry that is still open**, because chasing you for a link is the single most common thing the user has to ask for; omit the whole block when the work has no `mrs`. (3) `Right now:` — one line of prose on what is actually running, the one fact `meta.json` cannot hold. (4) `Next:` — what follows. (5) `Waiting on you:` in `accent`, **only** when the flow is parked on a decision of theirs, naming that decision. (6) Blockers in `warn`: a sibling repo whose `contract_handoff` is `pending` (from `related_repos`), a red pipeline, a dependency that has not merged. Styles are semantic — `normal` `dim` `title` `accent` `ok` `warn` `error` — the panel owns the palette.
+**What goes in, in this order.** (1) The work title. (2) The MR/PR train — one line per `meta.json.mrs[]` entry, `#n`, short title, and **its real state as the last column**, with the **URL indented underneath every entry that is still open**, because chasing you for a link is the single most common thing the user has to ask for; the ones not started yet collapse into a single `#a–#z` line; omit the block entirely when the work has no `mrs`. **Never group the entries under headings like "done" / "left"**: in a train an MR/PR that has shipped is *open, waiting to merge*, and a heading that calls it done states something false in the one place the user is trusting at a glance. The state column says it; nothing above it needs to. (3) `Right now:` — one line of prose on what is actually running, the one fact `meta.json` cannot hold. (4) `Next:` — what follows. (5) `Waiting on you:` in `accent`, **only** when the flow is parked on a decision of theirs, naming that decision. (6) Blockers in `warn`: a sibling repo whose `contract_handoff` is `pending` (from `related_repos`), a red pipeline, a dependency that has not merged. Styles are semantic — `normal` `dim` `title` `accent` `ok` `warn` `error` — the panel owns the palette.
 
 **When to write it.** (a) In pre-flight, as soon as `meta.json` is loaded. (b) Immediately **before** every stop header above. (c) **Before** any stretch that will run long without stopping — a subagent fan-out, a full test suite, a CI poll — never after: a panel written only when a step succeeds keeps showing as finished a step that in fact died halfway, and a truthful `updated_at` is what lets the panel flag that instead. (d) Wherever `## Close` updates `meta.json`.
 
-**Rules.** `header: true` means ticket, type, phase and age are already drawn by the panel — never repeat them in `lines`. Keep it under ~14 lines, and write sentences rather than measured columns: the panel wraps to its width and crops to its height. Every fact comes from `meta.json` and the artifacts, never from memory — an invented MR/PR state, read at a glance and trusted, is worse than a blank panel. Set `updated_at` from the real clock (`date -Iseconds`), local offset included; never carry over the previous value. No work folder (the lightweight mode of `respond`/`green`) → nothing to write, and that is fine.
+**Rules.** `phase` is **the phase you are running right now**, which is not `meta.json.phase` until you close: that field only advances at the end, so a panel that reads the phase from it shows the previous one for as long as this one lasts. Write it on every panel. `header: true` means ticket, type, age — and the phase, from `phase` when present — are already drawn by the panel; never repeat them in `lines`. Keep it under ~14 lines, and keep **each line short enough not to wrap** (~55 characters is the safe width): a wrapped line loses its column and its continuation does not inherit `indent`, so it is better to say less than to say it in two ragged lines. Every fact comes from `meta.json` and the artifacts, never from memory — an invented MR/PR state, read at a glance and trusted, is worse than a blank panel. Set `updated_at` from the real clock (`date -Iseconds`), local offset included; never carry over the previous value. Write in the language the work's artifacts are written in — the panel is read by the same person who reads them. No work folder (the lightweight mode of `respond`/`green`) → nothing to write, and that is fine.
 
 - Load `meta.json`. Require `review` in `phases_done`.
 - If `size` is `XS`, suggest jumping to `/flow-bug-ship`.

@@ -5,6 +5,18 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.29.1 — The header said `build` while the body said "validating"  ·  2026-08-06
+
+First run of the panel against a real work, three fixes it earned in the first ten minutes.
+
+**The header was a phase behind.** `meta.json.phase` only advances when a phase *closes*, so a reader drawing the phase from it shows `build` for as long as `validate` takes — with the panel body, one line below, saying "validating". `panel.json` now carries its own **`phase`**: the phase being executed right now. The reader prefers it when present and falls back to `meta.json` when absent, so it costs older works nothing.
+
+**"Done  #1 …  MR open" contradicted itself.** Grouping the train under `Done` / `Now` / `Left` is the obvious layout and it is wrong for the way flow actually ships: in a train an MR/PR that has shipped is *open, waiting to merge*, not done, and in a four-MR train almost nothing is merged until the end. A heading that calls it done states something false in the one place the user is trusting at a glance. The headings are gone; each entry carries its real state as its last column, and the not-yet-started ones collapse into a single `#a–#z` line — which also buys back the height the URLs need.
+
+**Lines were written long enough to wrap.** The reader wraps rather than truncates, so an overflowing line takes two ragged lines and its continuation does not inherit `indent` — the column breaks and a trailing `#2` ends up alone. The rule is now explicit: each line short enough not to wrap (~55 characters), and say less rather than say it in two lines.
+
+Also: the panel is written **in the language the work's artifacts use**, which was left implicit and produced one panel in English over a Spanish work.
+
 ## v0.29.0 — Every stop is a file too, so something other than the chat can answer "where is this?"  ·  2026-08-06
 
 ### The chat is a stream; the question is a state
