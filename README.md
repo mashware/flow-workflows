@@ -185,20 +185,23 @@ this one on, is it waiting for me, and what's its link"* shouldn't need scrollin
 PROJ-123 feat·M ⏵ validate                           15h ago   ← drawn by the reader
 Billing retry window
 
-#1 batch read sources        MR open
-   !9977 ↗
-#2 per-message grouping      validating
-#3–#6 channel map · use case · detail · route
+ ⏸ #1     batch read sources                         !9977 ↗
+ ▶ #2     per-event and per-recipient counters
+ · #3–#6  channel map · use case · detail · route
 
-Right now: unit suite and the test agent over #2
-Next: ship #2 — needs your confirmation
+ › Now       unit suite and the test agent over #2
+ › Next      ship #2
+ ⏸ Decision  confirm the MR/PR body before I create it
 
-Waiting on you: confirm the MR/PR body before I create it
-sibling-repo still needs the endpoint contract
+ ⚠ sibling-repo still needs the endpoint contract
 ```
 
-The file is a list of lines with **semantic** styles (`title` `dim` `accent` `ok` `warn` `error`),
-never colours — the reader owns the palette. Two properties make it trustworthy: it is overwritten
+The file is a list of lines, and each one says **what it is** rather than how to draw it: a `mark`
+(`done` `current` `pending` `wait` `block` `info`) picks the symbol and colour, a `ref` is the label
+the reader aligns into a column, and `link` is a field — never a URL pasted into the text — that the
+reader shortens, makes clickable and pins to the right. Blank lines separate alignment blocks, so
+the MR/PR train and the labels below it don't drag each other wide. Styles stay semantic
+(`title` `dim` `ok` `warn` `error`), never colours — the reader owns the palette. Two properties make it trustworthy: it is overwritten
 **whole**, so it is never half of an old state and half of a new one; and it is written **before** a
 long stretch rather than after it, with an honest `updated_at` — a file written only on success
 keeps showing as finished a step that in fact died halfway, whereas a stale timestamp is something

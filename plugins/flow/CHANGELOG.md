@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.30.0 — The line says what it *is*; the panel decides how to draw it  ·  2026-08-06
+
+The reader gained a vocabulary, and writing against it turns out to be both simpler and more honest than the columns flow was hand-building in v0.29.1.
+
+**`mark` replaces the state column.** Each line declares what it is — `done` · `current` · `pending` · `wait` (shipped or asked, now waiting on someone else) · `block` · `info` — and the panel picks the symbol and the colour. That kills the last place where flow was making a presentation decision it had no business making, and it fixes the v0.29.1 compromise honestly: an open MR/PR is `wait`, not "done" and not "in progress", which is exactly what it is in a train.
+
+**`ref` need not be a number.** `#1` and `#3–#6`, but equally `Now`, `Next`, `Decision` — the panel aligns them into a column either way, so the labels below the train get the same treatment as the train. Widths are computed **per block**, and blocks are separated by blank lines, so the two groups no longer drag each other wide. Blank lines are now load-bearing.
+
+**`link` is a field, not text.** The panel shortens the URL to `!9977 ↗`, makes it clickable and pins it right, or hangs it underneath when it does not fit. flow no longer writes a raw 60-character URL on its own indented line, which is what the v0.29.0 layout did.
+
+**`stale_after_minutes`** raises the 30-minute staleness threshold for a stretch known to run long. `/flow:work:watch` sets it to about twice its cycle interval: the default would let a dead monitoring loop pass for a live one through five missed cycles, and a watcher that has stopped watching is precisely what has to be visible.
+
+**One correction to v0.29.1.** The "keep every line under ~55 characters" rule was written from a misread screenshot: the reader *does* align a wrapped line's continuation under its text. Length is now a matter of saying less, not of measuring columns — the rule is gone.
+
 ## v0.29.1 — The header said `build` while the body said "validating"  ·  2026-08-06
 
 First run of the panel against a real work, three fixes it earned in the first ten minutes.
