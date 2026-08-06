@@ -27,6 +27,36 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 
 **If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose: in `manual` it hides among the text, and in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve the menu, it is not a question — it is a decision you take and record.
 
+**Live panel — the same stop, written to disk.** The user typically has several works in flight at once and a panel open per work, so "where is this one at?" is a question they should never have to type at you. Whenever the state such a panel would show changes, overwrite `.claude/work/<work>/panel.json` **whole** (never patch it) with a snapshot built from `meta.json` plus what you know right now:
+
+```json
+{
+  "updated_at": "2026-08-06T16:45:00+02:00",
+  "header": true,
+  "lines": [
+    {"text": "Expose a thread's tracking state and events", "style": "title"},
+    "",
+    {"text": "Done   #1 batch read sources         merged", "style": "ok"},
+    {"text": "       #2 per-message grouping       in review"},
+    {"text": "https://gitlab.com/…/merge_requests/127", "style": "dim", "indent": 7},
+    {"text": "Now    #3 channel mapping            building"},
+    {"text": "Left   #4 use case · #5 HTTP route · #6 contract", "style": "dim"},
+    "",
+    "Right now: grouping opens and clicks per message",
+    {"text": "Next: review → validate → ship", "style": "dim"},
+    "",
+    {"text": "Waiting on you: confirm the MR/PR body before I create it", "style": "accent"},
+    {"text": "sibling-repo still needs the endpoint contract", "style": "warn"}
+  ]
+}
+```
+
+**What goes in, in this order.** (1) The work title. (2) The MR/PR train — one line per `meta.json.mrs[]` entry (`#n`, short title, state), with the **URL indented underneath every entry that is still open**, because chasing you for a link is the single most common thing the user has to ask for; omit the whole block when the work has no `mrs`. (3) `Right now:` — one line of prose on what is actually running, the one fact `meta.json` cannot hold. (4) `Next:` — what follows. (5) `Waiting on you:` in `accent`, **only** when the flow is parked on a decision of theirs, naming that decision. (6) Blockers in `warn`: a sibling repo whose `contract_handoff` is `pending` (from `related_repos`), a red pipeline, a dependency that has not merged. Styles are semantic — `normal` `dim` `title` `accent` `ok` `warn` `error` — the panel owns the palette.
+
+**When to write it.** (a) In pre-flight, as soon as `meta.json` is loaded. (b) Immediately **before** every stop header above. (c) **Before** any stretch that will run long without stopping — a subagent fan-out, a full test suite, a CI poll — never after: a panel written only when a step succeeds keeps showing as finished a step that in fact died halfway, and a truthful `updated_at` is what lets the panel flag that instead. (d) Wherever `## Close` updates `meta.json`.
+
+**Rules.** `header: true` means ticket, type, phase and age are already drawn by the panel — never repeat them in `lines`. Keep it under ~14 lines, and write sentences rather than measured columns: the panel wraps to its width and crops to its height. Every fact comes from `meta.json` and the artifacts, never from memory — an invented MR/PR state, read at a glance and trusted, is worse than a blank panel. Set `updated_at` from the real clock (`date -Iseconds`), local offset included; never carry over the previous value. No work folder (the lightweight mode of `respond`/`green`) → nothing to write, and that is fine.
+
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
 ## 1. Pre-flight
@@ -173,6 +203,8 @@ If `git.assignee` is not empty in `FLOW.md`, assign to that user. If `git.squash
 
 If the `commit-push-pr` skill is not available, commit and push manually and create the MR/PR with the `git.cli` CLI from `FLOW.md` — always with the content already confirmed in §3.
 
+**Record the URL the moment it exists**: write it into this MR/PR's `meta.json.mrs` entry and refresh `panel.json` (per the Reporting preamble) right here, before §4.2 and before anything else can fail. The link is the thing the user most often has to come and ask you for, and until it is in those two files it exists only in this turn's scrollback.
+
 ### 4.2 Pre-deploy thread (deployment gate)
 **Only if `git.predeploy_gate` is active and the branch has pre-deploy SQL** (§2). After creating the MR/PR, open **a single resolvable/blocking thread** with **all** the consolidated SQL, using the `git.host`/`git.cli` host:
 - **GitLab**: `glab api "projects/<repo-url-encoded>/merge_requests/<iid>/discussions" -f body="..."` (creates a resolvable thread).
@@ -209,6 +241,8 @@ If `domain_memory.enabled` is `false` or empty, skip without notifying.
 
 **C) The plan changed and this MR/PR is no longer needed**:
 - If coming here because the plan was rethought: mark the entry as `superseded` with `note` pointing to the new MR/PR.
+
+In every scenario, refresh `panel.json` from the updated `meta.json`. When this ship sets `phase = "done"`, say so in the panel in plain words (`ok`: nothing left here) and drop the `Waiting on you:` line — a finished work whose panel still reads "building" is the one misreading that costs the user a whole morning of looking in the wrong place.
 
 ### 6.1.1 Tracker: move to done
 

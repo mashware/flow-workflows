@@ -34,6 +34,36 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 
 **If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose: in `manual` it hides among the text, and in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve the menu, it is not a question — it is a decision you take and record.
 
+**Live panel — the same stop, written to disk.** The user typically has several works in flight at once and a panel open per work, so "where is this one at?" is a question they should never have to type at you. Whenever the state such a panel would show changes, overwrite `.claude/work/<work>/panel.json` **whole** (never patch it) with a snapshot built from `meta.json` plus what you know right now:
+
+```json
+{
+  "updated_at": "2026-08-06T16:45:00+02:00",
+  "header": true,
+  "lines": [
+    {"text": "Expose a thread's tracking state and events", "style": "title"},
+    "",
+    {"text": "Done   #1 batch read sources         merged", "style": "ok"},
+    {"text": "       #2 per-message grouping       in review"},
+    {"text": "https://gitlab.com/…/merge_requests/127", "style": "dim", "indent": 7},
+    {"text": "Now    #3 channel mapping            building"},
+    {"text": "Left   #4 use case · #5 HTTP route · #6 contract", "style": "dim"},
+    "",
+    "Right now: grouping opens and clicks per message",
+    {"text": "Next: review → validate → ship", "style": "dim"},
+    "",
+    {"text": "Waiting on you: confirm the MR/PR body before I create it", "style": "accent"},
+    {"text": "sibling-repo still needs the endpoint contract", "style": "warn"}
+  ]
+}
+```
+
+**What goes in, in this order.** (1) The work title. (2) The MR/PR train — one line per `meta.json.mrs[]` entry (`#n`, short title, state), with the **URL indented underneath every entry that is still open**, because chasing you for a link is the single most common thing the user has to ask for; omit the whole block when the work has no `mrs`. (3) `Right now:` — one line of prose on what is actually running, the one fact `meta.json` cannot hold. (4) `Next:` — what follows. (5) `Waiting on you:` in `accent`, **only** when the flow is parked on a decision of theirs, naming that decision. (6) Blockers in `warn`: a sibling repo whose `contract_handoff` is `pending` (from `related_repos`), a red pipeline, a dependency that has not merged. Styles are semantic — `normal` `dim` `title` `accent` `ok` `warn` `error` — the panel owns the palette.
+
+**When to write it.** (a) In pre-flight, as soon as `meta.json` is loaded. (b) Immediately **before** every stop header above. (c) **Before** any stretch that will run long without stopping — a subagent fan-out, a full test suite, a CI poll — never after: a panel written only when a step succeeds keeps showing as finished a step that in fact died halfway, and a truthful `updated_at` is what lets the panel flag that instead. (d) Wherever `## Close` updates `meta.json`.
+
+**Rules.** `header: true` means ticket, type, phase and age are already drawn by the panel — never repeat them in `lines`. Keep it under ~14 lines, and write sentences rather than measured columns: the panel wraps to its width and crops to its height. Every fact comes from `meta.json` and the artifacts, never from memory — an invented MR/PR state, read at a glance and trusted, is worse than a blank panel. Set `updated_at` from the real clock (`date -Iseconds`), local offset included; never carry over the previous value. No work folder (the lightweight mode of `respond`/`green`) → nothing to write, and that is fine.
+
 - Load `meta.json`. Require `review` in `phases_done` (and `validate` if `size` ≥ S, and `postmortem` if `size` is L).
 - If not, refuse and redirect to the missing step.
 
@@ -159,6 +189,8 @@ Only here — with the content approved in §2 — invoke `Skill commit-commands
 
 Assign to `git.assignee` from FLOW.md (if empty, unassigned). Enable squash according to `git.squash`.
 
+**Record the URL the moment it exists**: write it into `meta.json` (the `mrs` entry if there is one) and refresh `panel.json` (per the Reporting preamble) right here, before §3.2 and before anything else can fail. The link is the thing the user most often has to come and ask you for, and until it is in those two files it exists only in this turn's scrollback.
+
 ### 3.2 Pre-deploy thread (deployment gate)
 **Only if `git.predeploy_gate` is active and the fix has pre-deploy SQL** (§1). After creating the MR/PR, open **a single resolvable/blocking thread** with all the consolidated SQL, using the host from `git.host`/`git.cli` (GitLab: `glab api ".../merge_requests/<iid>/discussions"`; GitHub: review conversation with required resolution). Body: the SQL block under "Pre-deploy: run this SQL on the server BEFORE deploying" + "Resolve only after running it in production".
 
@@ -166,7 +198,7 @@ With a "all threads resolved before merge" policy, the MR/PR cannot be merged or
 
 ## 4. Close
 
-- Update `meta.json`: `phase = "done"`, add `ship` to `phases_done`.
+- Update `meta.json`: `phase = "done"`, add `ship` to `phases_done`. Refresh `panel.json` from it: say in plain words that the fix is shipped (`ok`) and drop the `Waiting on you:` line — a finished work whose panel still reads "fixing" is the one misreading that costs the user a whole morning of looking in the wrong place.
 - **Tracker: move to done.** When `phase` reaches `done` and `tracker.tool` is not `none`/empty, `tracker.done_cmd` is set, and `meta.json.ticket` is a **real tracker id**: run `tracker.done_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contract as `/flow:bug:start §4.5`: **best-effort, idempotent, gated** (ask once in `autonomy.mode: manual`; automatic in `guided`/`auto`); failure or already-done ticket → warn and continue, never block. **Leave `tracker.done_cmd` empty on GitHub/GitLab** — `Closes #N` already auto-closes on merge; this is for Jira/Linear-style trackers.
 - Summarize: ticket, MR/PR URL, regression test added.
 - **Cross-repo reminder**: if `meta.json.related_repos` has any entry not `done`, call it out now — for each: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow:bug:start <TICKET>` (or `/flow:feat:start`)"*. flow does not touch the other repo; it only reminds, and this is not a hard gate.

@@ -115,6 +115,26 @@ Over the window `[last cycle, now]`, scoped to the surface. **Default thresholds
 
 After the cycle: update `monitor.md` (accumulated state, to avoid repeating alerts and to have the final summary). If more cycles are pending (T_end not reached), the state persists in `monitor.md` for the next scheduled cycle.
 
+**Refresh the live panel on every cycle** (only when the work has a `<work-dir>`). This command monitors while the user is elsewhere, so the panel is the only place they can see it is still watching and what it currently thinks. Overwrite `.claude/work/<work>/panel.json` **whole**:
+
+```json
+{
+  "updated_at": "2026-08-06T16:45:00+02:00",
+  "header": true,
+  "lines": [
+    {"text": "Watching after deploy — 18 of 30 min", "style": "title"},
+    "",
+    {"text": "Cycle 4 of 6 · green", "style": "ok"},
+    {"text": "p95 checkout 210 ms (baseline 190) · errors flat · queues flat", "style": "dim"},
+    "",
+    "Right now: sleeping until the next cycle (~5 min)",
+    {"text": "Next: cycle 5, then the closing summary", "style": "dim"}
+  ]
+}
+```
+
+The verdict line carries the cycle's colour as its style — `ok` for 🟢, `warn` for 🟡, `error` for 🔴 — and a red cycle adds an `accent` line naming what it needs from the user (the escalation interrupts them anyway; the panel is what they see if they were not looking at the chat). `header: true` means ticket, type, phase and age are already drawn — never repeat them. Under ~14 lines, `updated_at` from the real clock (`date -Iseconds`) with local offset. A stale `updated_at` here means the watch loop died, which is exactly what the user needs to be able to see.
+
 ## 6. Escalation
 
 - **🔴 RED in any cycle** → **interrupt and alert immediately**. Provide the specific signal, evidence (query/trace/log), and the correlation with the change. Offer `/flow-bug-start` — and it is **there**, in `/flow-bug-investigate`, where sub-agents fan out (hypothesis sweep) to find the root cause. The monitoring cycle does not investigate; it escalates.
@@ -131,6 +151,8 @@ Write the summary to the same `<work-dir>/monitor.md` (resolved in §1) and deli
 - **Honest limits**: does not cover slow leaks (that take longer than the window) or regressions that require a specific input not exercised during those minutes. This is an early warning net, not a guarantee.
 
 If `domain_memory.enabled` is `true`, run `stage_finding` with the relevant findings (measured baselines, low-traffic signals, error patterns) for the staging of this branch.
+
+Write the final verdict to `panel.json` too, and say the window is closed (`Right now: nothing — the watch window is over`) so the panel does not read as still monitoring. On 🔴, leave the `accent` line pointing at the bug flow.
 
 ## Appendix: `observability` profile format in FLOW.md
 

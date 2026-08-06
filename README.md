@@ -154,6 +154,7 @@ ticket-less work) so concurrent works are told apart at a glance:
 ```
 .claude/work/PROJ-123-billing-retry-window/
 ├── meta.json              # source of truth: phase, size, branch, MR/PRs, related repos
+├── panel.json             # live state for an external reader (see below)
 ├── 01-context.md          # start:      ticket, size, branch, first questions
 ├── 02-brainstorm.md       # brainstorm: options, angles, risks
 ├── 03-design.md           # design:     architecture + ADR-light + external contracts
@@ -172,6 +173,38 @@ A bug writes `02-diagnose.md`, `03-investigation.md`, `04-fix.md`, `05-validatio
 Each phase reads the previous artifacts instead of starting from scratch — that's the whole point.
 They are **hand-editable**: rewrite `03-design.md` and the next phase respects it. `meta.json` is
 the state, and without it commands refuse to continue rather than guess.
+
+### `panel.json` — the work, readable from outside the chat
+
+Every stop the flow makes in the chat is also written to `panel.json`, so a reader that is not the
+chat — a terminal pane, a status bar, a dashboard — can show where a work stands. The chat is a
+stream; the question you actually have is a state, and with three works in flight *"which MR/PR is
+this one on, is it waiting for me, and what's its link"* shouldn't need scrolling or asking:
+
+```
+PROJ-123 feat·M ⏵ build                              15h ago   ← drawn from meta.json
+Billing retry window
+
+Done   #1 batch read sources         merged
+       #2 per-message grouping       in review
+         https://gitlab.com/…/merge_requests/127
+Now    #3 channel mapping            building
+Left   #4 use case · #5 HTTP route · #6 contract
+
+Right now: grouping opens and clicks per message
+Next: review → validate → ship
+
+Waiting on you: confirm the MR/PR body before I create it
+sibling-repo still needs the endpoint contract
+```
+
+The file is a list of lines with **semantic** styles (`title` `dim` `accent` `ok` `warn` `error`),
+never colours — the reader owns the palette. Two properties make it trustworthy: it is overwritten
+**whole**, so it is never half of an old state and half of a new one; and it is written **before** a
+long stretch rather than after it, with an honest `updated_at` — a file written only on success
+keeps showing as finished a step that in fact died halfway, whereas a stale timestamp is something
+the reader can flag. Writing it is optional: a work without one still resolves from `meta.json`.
+Full schema in [`commands/work/README.md`](plugins/flow/commands/work/README.md#paneljson-schema).
 
 ## Configuration: `FLOW.md`
 

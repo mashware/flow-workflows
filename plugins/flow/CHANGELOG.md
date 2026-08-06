@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.29.0 — Every stop is a file too, so something other than the chat can answer "where is this?"  ·  2026-08-06
+
+### The chat is a stream; the question is a state
+Three works in flight, each in its own pane, and the question you actually have about any of them is always the same: which MR/PR is this on, how many are left, is it waiting for me, and what is the link. All of it is already known — `meta.json` has the train, the states and the URLs — and none of it is *readable* without scrolling back through a session or typing the question at the agent. So the agent gets asked for the link to an MR/PR it opened forty minutes ago, which is the clearest sign that the state was never anywhere you could look.
+
+flow already had the shape of the answer. The **Reporting** preamble fixes what a stop looks like — ticket, size, phase, `MR #n of N`, the plan state, one line of what just finished, one line of what is needed from you. That header is written into the chat and then scrolls away.
+
+### `panel.json`
+Every phase command now writes that same state to `.claude/work/<work>/panel.json`, a small file any external reader can poll — a terminal pane, a status bar, a dashboard. It carries the MR/PR train read from `meta.json.mrs` with the **URLs of the ones still open**, one line of prose on what is running right now, what comes next, an `accent` line when the flow is parked on a decision of yours, and `warn` lines for blockers: a sibling repo whose `contract_handoff` is still `pending`, a red pipeline, a dependency that has not merged.
+
+Lines carry **semantic** styles — `normal` `dim` `title` `accent` `ok` `warn` `error` — never colours, so the reader owns the palette and stays right when the theme changes. `header: true` (the default) lets the reader draw ticket, type, phase and age itself from `meta.json`, which is why those four never appear in the lines.
+
+**Two properties make it trustworthy rather than decorative.** It is overwritten **whole**, never patched, so it can never be half of an old state and half of a new one. And it is written **before** a long stretch — a subagent fan-out, a full test suite, a CI poll — rather than after it, with an honest `updated_at` taken from the real clock: a file written only when a step succeeds keeps showing as finished a step that in fact died halfway, and that is the failure mode a panel makes *worse* than no panel. Written beforehand, a stale timestamp is something the reader can flag instead.
+
+### Where it is written
+In pre-flight, before every stop, before any long unattended stretch, and at each `## Close` — the four points where the Reporting preamble already governs what the user is told. Plus the places that hold something the generic rule cannot know: `/flow:feat:ship` and `/flow:bug:ship` write the MR/PR URL into `meta.json` **and** the panel the instant it exists, before the pre-deploy thread and before anything else can fail; `/flow:feat:plan` gives the panel its train when the split is first recorded; `/flow:work:resume` rebuilds it after a break, which is when it is most likely to be lying; `/flow:work:watch` refreshes it every monitoring cycle, since an unattended watcher is otherwise invisible; and `/flow:work:abandon` leaves a terminal state before archiving. The read-only commands — `status`, `daily`, `config`, `news` — never write it.
+
+**Optional by construction**: a work that has never written one still resolves from `meta.json` alone, so nothing needs migrating and older works keep displaying. **No new `FLOW.md` keys**, no new phase, no new agent — one new file per work and one paragraph in a preamble that already existed. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
 ## v0.28.0 — A ticket is its thread too, and a thread you could not read says so  ·  2026-08-06
 
 ### The contract was published, and the other repo never saw it

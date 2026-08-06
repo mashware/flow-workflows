@@ -31,6 +31,36 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 
 **A question is asked as a question.** Never end a message with one buried in prose: write it as an explicit numbered choice with the recommended option marked, and wait. In `manual` a question hidden in the text is invisible; in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve to be numbered and waited on, it is not a question — it is a decision you take and record.
 
+**Live panel — the same stop, written to disk.** The user typically has several works in flight at once and a panel open per work, so "where is this one at?" is a question they should never have to type at you. Whenever the state such a panel would show changes, overwrite `.claude/work/<work>/panel.json` **whole** (never patch it) with a snapshot built from `meta.json` plus what you know right now:
+
+```json
+{
+  "updated_at": "2026-08-06T16:45:00+02:00",
+  "header": true,
+  "lines": [
+    {"text": "Expose a thread's tracking state and events", "style": "title"},
+    "",
+    {"text": "Done   #1 batch read sources         merged", "style": "ok"},
+    {"text": "       #2 per-message grouping       in review"},
+    {"text": "https://gitlab.com/…/merge_requests/127", "style": "dim", "indent": 7},
+    {"text": "Now    #3 channel mapping            building"},
+    {"text": "Left   #4 use case · #5 HTTP route · #6 contract", "style": "dim"},
+    "",
+    "Right now: grouping opens and clicks per message",
+    {"text": "Next: review → validate → ship", "style": "dim"},
+    "",
+    {"text": "Waiting on you: confirm the MR/PR body before I create it", "style": "accent"},
+    {"text": "sibling-repo still needs the endpoint contract", "style": "warn"}
+  ]
+}
+```
+
+**What goes in, in this order.** (1) The work title. (2) The MR/PR train — one line per `meta.json.mrs[]` entry (`#n`, short title, state), with the **URL indented underneath every entry that is still open**, because chasing you for a link is the single most common thing the user has to ask for; omit the whole block when the work has no `mrs`. (3) `Right now:` — one line of prose on what is actually running, the one fact `meta.json` cannot hold. (4) `Next:` — what follows. (5) `Waiting on you:` in `accent`, **only** when the flow is parked on a decision of theirs, naming that decision. (6) Blockers in `warn`: a sibling repo whose `contract_handoff` is `pending` (from `related_repos`), a red pipeline, a dependency that has not merged. Styles are semantic — `normal` `dim` `title` `accent` `ok` `warn` `error` — the panel owns the palette.
+
+**When to write it.** (a) In pre-flight, as soon as `meta.json` is loaded. (b) Immediately **before** every stop header above. (c) **Before** any stretch that will run long without stopping — a subagent fan-out, a full test suite, a CI poll — never after: a panel written only when a step succeeds keeps showing as finished a step that in fact died halfway, and a truthful `updated_at` is what lets the panel flag that instead. (d) Wherever `## Close` updates `meta.json`.
+
+**Rules.** `header: true` means ticket, type, phase and age are already drawn by the panel — never repeat them in `lines`. Keep it under ~14 lines, and write sentences rather than measured columns: the panel wraps to its width and crops to its height. Every fact comes from `meta.json` and the artifacts, never from memory — an invented MR/PR state, read at a glance and trusted, is worse than a blank panel. Set `updated_at` from the real clock (`date -Iseconds`), local offset included; never carry over the previous value. No work folder (the lightweight mode of `respond`/`green`) → nothing to write, and that is fine.
+
 - Load `meta.json`. Require `fix` in `phases_done`.
 - If `size` is `XS`, suggest skipping to `/flow-bug-review` unless the user insists.
 - If the fix was developed in a worktree (`meta.json.worktree` not null), offer it once so the user can test this branch against the main environment: "run `/flow-work-try <meta.branch>` (switches the main checkout and re-syncs per `git.worktree_resync`); `/flow-work-try --back` to return." Suggest it, don't run it yourself.
