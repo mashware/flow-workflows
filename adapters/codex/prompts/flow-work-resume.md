@@ -61,3 +61,31 @@ Suggest the specific command based on `phase` and `size`. If the current phase w
 If `meta.json.related_repos` has entries not `done`, remind the user that a **sibling repo still has a pending part** (`<repo>: <scope>`, plus `contract not handed over` if that entry's `contract_handoff` is `pending`) — suggest starting the work there (`/flow-feat-start <TICKET>` in that repo). flow only reminds; it does not scan or touch the other repo.
 
 Do not advance automatically. The user decides.
+
+## 5. Rebuild the live panel
+
+The user keeps a panel open per work, fed by `.claude/work/<work>/panel.json`. A resume is exactly when that file is most likely to be lying: the last session ended mid-phase, or died, or predates the panel entirely. You have just rebuilt the true state from `meta.json`, git and the ticket — write it out. Overwrite the file **whole**:
+
+```json
+{
+  "updated_at": "2026-08-06T16:45:00+02:00",
+  "header": true,
+  "lines": [
+    {"text": "<work title>", "style": "title"},
+    "",
+    {"text": "Done   #1 batch read sources         merged", "style": "ok"},
+    {"text": "       #2 per-message grouping       in review"},
+    {"text": "https://gitlab.com/…/merge_requests/127", "style": "dim", "indent": 7},
+    {"text": "Now    #3 channel mapping            building"},
+    {"text": "Left   #4 use case · #5 HTTP route · #6 contract", "style": "dim"},
+    "",
+    "Right now: nothing running — resumed, waiting for you to pick the next step",
+    {"text": "Next: the command suggested above", "style": "dim"},
+    "",
+    {"text": "Waiting on you: run the next step or hand it to another work", "style": "accent"},
+    {"text": "sibling-repo still needs the endpoint contract", "style": "warn"}
+  ]
+}
+```
+
+Order and meaning are fixed: the work title; the MR/PR train one line per `meta.json.mrs[]` entry (`#n`, short title, state) with the **URL indented under every entry still open**; `Right now:` in prose; `Next:` the command just suggested; `Waiting on you:` in `accent` — after a resume this is always set, because nothing is running and the next move is theirs; and `warn` lines for the blockers surfaced above (a sibling repo whose `contract_handoff` is `pending`, a red pipeline, an unmerged dependency). `header: true` means the panel already draws ticket, type, phase and age — never repeat them in `lines`. Under ~14 lines, sentences rather than measured columns (the panel wraps and crops), every fact from `meta.json` and the artifacts and never from memory, and `updated_at` from the real clock (`date -Iseconds`) with the local offset. Omit the train block when the work has no `mrs`.

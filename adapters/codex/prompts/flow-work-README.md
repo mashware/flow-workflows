@@ -28,6 +28,7 @@ If the file doesn't exist or a key is empty, each command auto-discovers the val
 - **Commits follow the autonomy mode**: during `/flow-feat-build` and `/flow-bug-fix`, the step's changes are **always reported before anything is recorded**; the mode decides who says "commit". `manual` — the agent **does not run `git commit` on its own**, you decide per step (commit now, validate locally first, or continue without committing). `guided` — asked once at the first step, then applied for the rest. `auto` — the agent commits each step's WIP and keeps going. The system rule *"never commit unless the user explicitly asks"* is honoured, not bypassed: **setting `autonomy.mode: auto` and typing the command is the explicit authorization**, the same reasoning that makes the commits in `/flow-feat-ship` / `/flow-bug-ship` authorized. It covers **only** WIP commits on the work branch — push and MR/PR creation stay hard gates in every mode.
 - **A named next command is not a handoff**: every phase command ends with an explicit **autonomy handoff** — in `manual` it stops and proposes the next command as a question; in `guided`/`auto` it **chains into it in the same turn**. It is written into each closing section, not only in the shared preamble, because a closing line that merely names the next command is a specific instruction to stop, and the specific instruction wins. Deliberate exceptions: `ship` is never chained into (it pushes and opens the MR/PR — a hard gate in every mode), and neither is anything downstream of a red gate (blockers in review, red tests in validate, unresolved `high` findings in design).
 - **Mandatory code review**: `/flow-feat-ship` cannot proceed and `/flow-bug-postmortem` cannot close without passing through `/*-review`.
+- **The stop is also written to disk**: every stop header has a twin in `.claude/work/<work>/panel.json`, a small state file an external reader (a terminal pane, a status bar, a dashboard) can poll to show where a work stands. It exists because the chat is a *stream* and the question the user actually has is a *state*: with three works in flight, "which MR/PR is this one on, is it waiting for me, and what is its link" is not something they should have to scroll for or type at the agent. The panel carries the MR/PR train read from `meta.json.mrs` with the **URLs of the ones still open**, one line of prose on what is running right now, what comes next, an `accent` line when the flow is parked on a decision of theirs, and `warn` lines for blockers — a sibling repo whose `contract_handoff` is `pending`, a red pipeline, a dependency that has not merged. Two properties make it trustworthy rather than decorative. It is **overwritten whole, never patched**, so it can never be half of an old state and half of a new one. And it is written **before** a long stretch rather than after it, with an honest `updated_at`: a file written only on success keeps showing as finished a step that in fact died halfway, whereas a stale timestamp is something the reader can call out. See the `panel.json` schema below.
 
 ## `meta.json` schema
 
@@ -55,6 +56,41 @@ If the file doesn't exist or a key is empty, each command auto-discovers the val
 `contract_handoff` tracks whether that sibling was told **what shape to build against** — a different question from `status` (whether its work is done). `none` — it consumes no contract declared here. `pending` — it consumes one and the literal hasn't been handed over. `published → <location>` — the literal contracts were published where that side reads them (normally the tracker ticket; `/flow-feat-ship` §6). It earns its place because `scope` is one line of prose while the contract is a literal shape: a sibling that knows *that* it must expose an endpoint but not the exact payload, error codes or route will invent them, and the invention only surfaces at integration. Picked up by the sibling's own `/flow-feat-start` §3.6.
 
 Each `mrs[]` entry carries its own `phases_done` (e.g. `["build", "review", "validate"]`). **In a multi-MR/PR work each MR/PR earns its own `build`/`review`/`validate`**, recorded in that entry — so `/flow-feat-review`, `/flow-feat-validate` and `/flow-feat-ship` gate on *this* MR/PR's progress, not the work-level `phases_done`. This is deliberate: without it, once the first MR/PR completed review/validate the work-level list would satisfy `ship`'s gate for every later MR/PR, letting a train MR/PR ship unreviewed just because an earlier sibling was reviewed.
+
+## `panel.json` schema
+
+Sits next to `meta.json` in each work folder. `meta.json` is the *state machine*; `panel.json` is the *view* — what a reader outside the chat needs to answer "where is this one at?" in a glance. It is optional: a work that never writes it still resolves from `meta.json` alone, which is how older works keep displaying.
+
+```json
+{
+  "updated_at": "2026-08-06T16:45:00+02:00",
+  "header": true,
+  "lines": [
+    {"text": "Expose a thread's tracking state and events", "style": "title"},
+    "",
+    {"text": "Done   #1 batch read sources         merged", "style": "ok"},
+    {"text": "       #2 per-message grouping       in review"},
+    {"text": "https://gitlab.com/…/merge_requests/127", "style": "dim", "indent": 7},
+    {"text": "Now    #3 channel mapping            building"},
+    {"text": "Left   #4 use case · #5 HTTP route · #6 contract", "style": "dim"},
+    "",
+    "Right now: grouping opens and clicks per message",
+    {"text": "Next: review → validate → ship", "style": "dim"},
+    "",
+    {"text": "Waiting on you: confirm the MR/PR body before I create it", "style": "accent"},
+    {"text": "sibling-repo still needs the endpoint contract", "style": "warn"}
+  ]
+}
+```
+
+- **`lines`** — one entry per line. A bare string is a plain line; an object takes `style` and `indent`. An empty string is a blank line. The reader wraps to its width and crops to its height, so these are sentences, not measured columns.
+- **`style`** — `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Semantic names, not colours: the reader owns the palette and stays right if the theme changes.
+- **`header`** — `true` (the default) lets the reader draw its own top line with ticket, type, phase and age from `meta.json`. Those four therefore never belong in `lines`. `false` hands full control of every line to the writer.
+- **`updated_at`** — local ISO-8601 with offset, taken from the real clock at write time and never carried over from the previous version. It is what lets a reader distinguish a live summary from one whose author died mid-step and flag the difference instead of showing a stale snapshot as current.
+
+**Contents, in this fixed order** so that several works read alike side by side: the work title; the MR/PR train (one line per `meta.json.mrs[]` entry — `#n`, short title, state — with the URL indented under each entry still open, and the block omitted entirely when the work has no `mrs`); `Right now:`; `Next:`; `Waiting on you:` in `accent`, only when the flow is genuinely parked on the user; then `warn` blockers. Around 14 lines is the ceiling.
+
+**Who writes it.** The 18 phase commands, from the shared Reporting preamble — in pre-flight, before every stop, before any long unattended stretch, and at their close. Plus the two `ship` commands the instant an MR/PR URL exists, `plan` when the train is first populated, `resume` (which rebuilds it after a break — the moment it is most likely to be stale), `watch` on every monitoring cycle, and `abandon` with a terminal state before archiving. The read-only commands — `status`, `daily`, `config`, `news` — never write it. `clean` archives the folder with the panel inside it.
 
 ## Shortcuts by size
 

@@ -121,6 +121,26 @@ Over the window `[last cycle, now]`, scoped to the surface. **Default thresholds
 
 After each cycle: update `monitor.md` (accumulated state, to avoid repeating alerts and to have the final summary) and **reschedule with `ScheduleWakeup`** (~270-300s, or the chosen interval) passing the same `/flow:work:watch {PREFIX}XXXXX` until reaching `T_end`. If the observability platform fails or is slow, do not break: retry in the next cycle.
 
+**Refresh the live panel every cycle** (only when the work has a `<work-dir>`; §1 resolved it). This command runs unattended for half an hour or more while the user is elsewhere, so the panel is the only place they can see it is still watching and what it currently thinks. Overwrite `.claude/work/<work>/panel.json` **whole**:
+
+```json
+{
+  "updated_at": "2026-08-06T16:45:00+02:00",
+  "header": true,
+  "lines": [
+    {"text": "Watching after deploy — 18 of 30 min", "style": "title"},
+    "",
+    {"text": "Cycle 4 of 6 · green", "style": "ok"},
+    {"text": "p95 checkout 210 ms (baseline 190) · errors flat · queues flat", "style": "dim"},
+    "",
+    "Right now: sleeping until the next cycle (~5 min)",
+    {"text": "Next: cycle 5, then the closing summary", "style": "dim"}
+  ]
+}
+```
+
+The verdict line carries the cycle's colour as its style — `ok` for 🟢, `warn` for 🟡, `error` for 🔴 — and a red cycle adds an `accent` line naming what it needs from the user (§6 is interrupting them anyway; the panel is what they see if they were not looking at the chat). `header: true` means ticket, type, phase and age are already drawn — never repeat them. Under ~14 lines, `updated_at` from the real clock (`date -Iseconds`) with local offset. A stale `updated_at` here means the watch loop died, which is exactly what the user needs to be able to see.
+
 ## 6. Escalation
 
 - **🔴 RED in any cycle** → **interrupt and alert immediately**, do not wait to exhaust the window. Give the specific signal, evidence (query/trace/log), and the correlation with the change. Offer `/flow:bug:start` — and it is **there**, in `/flow:bug:investigate`, where the multi-agent fan-out (hypothesis sweep) runs for root cause. The polling loop does not investigate; it escalates.
@@ -135,6 +155,8 @@ Write the summary to the same `<work-dir>/monitor.md` (resolved in §1) and pres
 - Final verdict: 🟢 / 🟡 / 🔴, with highlighted signals and their evidence.
 - **Evidence strength**: if the surface had low traffic (§4), the 🟢 is worth little — say so explicitly ("green, but the flow barely executed during the window: weak evidence"). Do not sell a zero-traffic green as a guarantee.
 - **Honest limits**: does not cover slow leaks (which take longer than the window) or regressions that require specific input not exercised during those minutes. This is a first-hour safety net, not a guarantee.
+
+Write the final verdict to `panel.json` too, and say the window is closed (`Right now: nothing — the watch window is over`) so the panel does not read as still monitoring. On 🔴, leave the `accent` line pointing at `/flow:bug:start`.
 
 If `domain_memory.enabled` is `true`, run `stage_finding` with relevant findings (measured baselines, low-traffic signals, error patterns) for the staging of this branch.
 
