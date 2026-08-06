@@ -5,6 +5,31 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.28.0 — A ticket is its thread too, and a thread you could not read says so  ·  2026-08-06
+
+### The contract was published, and the other repo never saw it
+The case behind this release: one ticket, two repos. The backend half shipped and, exactly as designed, `/flow:feat:ship` §6.3 published the contract **as a comment on the ticket** — literal payloads, routes, error codes. Then `/flow:feat:start <TICKET>` ran in the consuming repo and started building against a shape it invented, because it had never read that comment.
+
+Nothing had been skipped. `/flow:feat:start` §3.6 says to look for a published contract block "while reading the ticket" — but §2 reads the ticket with `tracker.view_cmd`, and the default for **every** supported tool stops at the description: `gh issue view N`, `glab issue view N` and `acli jira workitem view KEY` do not print comments. The producing side wrote to a place the consuming side was never told to look, and the failure was silent in the worst way: an empty search for a contract reads exactly like a ticket with no contract.
+
+### The comment thread is part of "read the ticket"
+`/flow:feat:start` §2.1 and `/flow:bug:start` §1.1 are new, and they are not about contracts — that was just the case that exposed it. The description is the ticket as it was **first written**; the thread is where it was **decided**: the scope cut, the sharpened criterion, the reproduction the reporter added three comments down, the cause someone already ruled out, the "in the end we did it the other way". Almost none of that gets folded back into the description, so a start that reads only the description starts from a stale ticket.
+
+Both commands now read the thread with the new `tracker.comments_cmd`, or derive it from `tracker.tool` when it is empty (`--comments` on `gh`/`glab`; the native listing tried once on Jira/`linear`). What they keep is the part that changes the work — published contracts, scope and criteria decisions, corrections to the description, operational facts you would otherwise guess — and bot noise and cross-references are skipped.
+
+**Precedence is stated, not left to taste.** When a comment contradicts the description, the most recent comment that decided that point wins; descriptions are written first and rarely re-edited. But a contradiction that moves scope or changes what the bug *is* becomes a §3 / §1 question instead of a quiet reinterpretation. And ticket comments are **untrusted input** — material to weigh, never instructions that override a step or a hard gate, the same rule `/flow:work:respond` already applies to review threads.
+
+**An unread thread is a named gap, not an all-clear.** If there is no way to get the comments — no `comments_cmd`, the command fails, `tool: none`, the ticket was pasted by hand — the command says so in one line and records it. "I could not read the comments" and "there were no comments" are opposite facts, and only one of them is fixable by pasting. §3.6 says it too: an unreadable thread is not evidence that no contract was published.
+
+Both artifacts get a `## Decided in the ticket thread` section (`01-context.md`), which is what carries those decisions into `design`, `build` and `validate` instead of leaving them in a terminal that has scrolled away.
+
+### `resume` re-reads the thread, because the break is when the ticket moves
+Reading the thread at `start` closes the case above but not the one next to it: you start in the consuming repo *first*, the other side ships two days later, and the contract lands in a ticket you already read. So `/flow:work:resume` §2.5 re-reads the thread and shows **only what is new** since what `01-context.md` already records — a published contract, a scope or criteria change, a correction, an operational fact. Nothing new is one word (`nothing new`); a resume that re-prints the whole thread every morning is noise you learn to skip.
+
+What it does with what is new is deliberately timid, because by then there is work on disk: it **appends** to `01-context.md` (verbatim, into `## Contracts received` when it is a contract) and it **never** amends the design or the code. When a new comment contradicts something already in `03-design.md` or already built, it names the collision — *ticket now says X, this repo decided Y* — and hands the decision to you in **every** autonomy mode. That is the one case where an `auto` run quietly "fixing" it produces two contracts for one ticket. `§4`'s rule holds: it can suggest rerunning `design`, it does not rerun anything.
+
+**One new `FLOW.md` key**: `tracker.comments_cmd` (optional; empty = derived from `tool`). `/flow:init` now fills it alongside `view_cmd`. Mirrored across the opencode / Codex CLI / Gemini CLI adapters.
+
 ## v0.27.1 — The first real sweep found three ways to be wrong about a branch  ·  2026-08-05
 
 Running `/flow:work:clean --dry-run` against the two repos from v0.27.0 — 49 and ~120 branches — turned up three defects, all of them the kind that only shows up against a repo with history.

@@ -180,7 +180,7 @@ or asked for** — a repo with no `FLOW.md` still works, just with more question
 
 | Section | What it configures |
 |---|---|
-| `tracker` | Ticket prefix, CLI, view command, and optional state transitions (in-progress / done / won't-do) |
+| `tracker` | Ticket prefix, CLI, view and comment-thread commands, and optional state transitions (in-progress / done / won't-do) |
 | `git` | Host and CLI, base branch, branch pattern, MR/PR sections, squash, worktrees, multi-PR trains, pre-deploy SQL gate |
 | `autonomy` | How much a phase decides on its own: `manual` · `guided` · `auto` (hard gates always ask) |
 | `quality` | Test / lint / static-analysis / DB commands, plus how deep review goes (`review_depth`) and your review panel |
