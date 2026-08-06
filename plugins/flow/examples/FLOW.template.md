@@ -21,6 +21,13 @@ How tickets are identified and read.
                       #   Jira:   `acli jira workitem view {TICKET}`
                       #   GitHub: `gh issue view {TICKET}`
                       #   GitLab: `glab issue view {TICKET}`
+- `comments_cmd:`     # optional, command to read the ticket's COMMENT THREAD. `{TICKET}` substituted. The `view_cmd`s above
+                      # print only the description, and the thread is where scope changes and the contracts published by a
+                      # sibling repo live (`/flow:feat:ship` §6.3 posts them as a comment) — so `start` reads it too. e.g.:
+                      #   GitHub: `gh issue view {TICKET} --comments`
+                      #   GitLab: `glab issue view {TICKET} --comments`
+                      # Empty = derived from `tool` for `gh`/`glab`; for Jira/`linear` the commands try the native way once
+                      # and, if there is none, warn in one line that the thread was not read (never silently assume it was empty).
 - `assignee:`         # tracker username/account for the `{ASSIGNEE}` token in the commands below. Empty = fall back to `git.assignee`.
 - `start_cmd:`        # optional, run when a work STARTS (`/flow:feat:start`, `/flow:bug:start`) to move the ticket to "in progress" and/or assign it. `{TICKET}` and `{ASSIGNEE}` substituted; chain two calls with `&&`. Empty = do not transition on start. e.g.:
                       #   Jira: `acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}`

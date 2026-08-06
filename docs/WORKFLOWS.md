@@ -205,6 +205,13 @@ client. The part living in the sibling project is the part that gets forgotten.
   publish those **literal** shapes to the shared anchor both sides already have — the tracker
   ticket — after showing you the exact text. Acceptance criteria and ADRs don't cross: they're
   this repo's *how*.
+- The consuming side actually looks where it was published: the contract is a **ticket comment**,
+  and `gh issue view N` / `glab issue view N` / `acli jira workitem view KEY` print only the
+  description — so `/flow:feat:start` §2.1 and `/flow:bug:start` §1.1 read the **comment thread**
+  as part of reading the ticket (via `tracker.comments_cmd`, or `--comments` derived from
+  `tracker.tool`). That is not only about contracts: the thread is where scope gets cut, criteria
+  get sharpened and the real reproduction gets pasted. When the thread can't be read, `start` says
+  so in one line — "could not read the comments" and "there were no comments" are opposite facts.
 - The consuming side picks it up: `/flow:feat:start` §3.6 copies a published contract block into
   `01-context.md` as **received, not negotiable**, and `design` carries it in verbatim instead of
   re-deriving it. If it looks wrong, that's a conversation with the other side — designing a
@@ -213,6 +220,10 @@ client. The part living in the sibling project is the part that gets forgotten.
   is otherwise invisible and gets filled in with invention that reads like knowledge.
 - `daily`, `resume` and `status` keep it visible so it doesn't fall off the map — including
   `contract not handed over`, so a pending handoff is something you see rather than remember.
+- And when you started *before* the other side shipped, `/flow:work:resume` §2.5 re-reads the
+  thread and shows only what's new since `01-context.md` was written. It appends, never rewrites:
+  if a new comment contradicts something already in `03-design.md` or already built, it names the
+  collision and hands you the decision in every autonomy mode instead of "fixing" it locally.
 - In ticket-less mode the affected repos also go into the issue drafts, so the scope is recorded
   in the tracker rather than only on your disk.
 

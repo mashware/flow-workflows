@@ -58,6 +58,7 @@ How tickets are identified and read.
 | `prefix` | Ticket prefix, e.g. `PROJ-` | No prefix / free-form ticket |
 | `tool` | `acli` (Jira) · `gh` · `glab` · `linear` · `none` | `none` |
 | `view_cmd` | Command to read a ticket; `{TICKET}` is substituted | Asks you to paste the ticket |
+| `comments_cmd` | Command to read the ticket's **comment thread**; `{TICKET}` substituted | Derived from `tool` (`--comments` on `gh`/`glab`); otherwise `start` warns the thread wasn't read |
 | `assignee` | Tracker account for the `{ASSIGNEE}` token | Falls back to `git.assignee` |
 | `start_cmd` | Run when a work **starts** — move to *in progress*, assign | No transition on start |
 | `done_cmd` | Run when a work **ships and merges** (`phase` reaches `done`) | No transition |
@@ -68,6 +69,19 @@ How tickets are identified and read.
 - view_cmd:  acli jira workitem view {TICKET}
 - start_cmd: acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}
 ```
+
+### Why `comments_cmd` exists
+
+`gh issue view N`, `glab issue view N` and `acli jira workitem view KEY` all stop at the
+description. But the thread is where the ticket is *decided*: a scope cut, a sharpened criterion,
+and — on a multi-repo task — the **contract the sibling repo published when it shipped its half**
+(`/flow:feat:ship` §6.3 posts it as a comment, not as an edit of the description). A `start` that
+reads only the description starts the second repo blind to what the first one already settled.
+
+So `/flow:feat:start` §2.1 and `/flow:bug:start` §1.1 read the thread as part of "read the ticket",
+and `/flow:work:resume` §2.5 re-reads it after a break — showing only what is new — because the
+other repo may have shipped its half while you were away. When the thread cannot be read, all three
+say so in one line instead of assuming there was nothing there.
 
 ### Ticket state transitions
 
