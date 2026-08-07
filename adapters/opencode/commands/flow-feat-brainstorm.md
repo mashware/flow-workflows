@@ -90,6 +90,8 @@ Run 2-3 queries in parallel. Maximum wait time 2 s; if it fails, continue withou
 
 ### 3.A Perspectives panel (parallel subagents)
 
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round. The panel is **proportional** — for **M**, advisors then you synthesize; for **L**, advisors, then the cross-critique round, then you synthesize. Take the first three lenses for M; add `operations` for L or when the feature touches a sensitive surface (authentication/authorization, payments, personal data, public contract, migration). Leave `agents.fanout_tool` empty: it names a harness-specific orchestrator this tool does not have.
+
 Launch several subagents via `@name` (per `agents.architecture` and equivalents in `FLOW.md`, or general-purpose subagents if those fields are empty) in `mode:subagent`, **in parallel without seeing each other** — real diversity. Each subagent generates **one** approach from a distinct lens:
 
 - **Minimum**: the SMALLEST approach that solves the declared use case, nothing more (strict MVP).
@@ -99,7 +101,7 @@ Launch several subagents via `@name` (per `agents.architecture` and equivalents 
 
 For each lens, the subagent receives: the ticket title, the path to `01-context.md`, and the specific lens. No code is written. Report in markdown: what the approach is, modules/layers affected, main risk, why it could be a bad idea.
 
-Once all approaches are received, run a **peer-review round** (the LLM-council step that keeps synthesis from ranking on presentation instead of substance): relaunch the same lens subagents in parallel, now each one **seeing all the approaches**, and ask it to critique the OTHERS from its lens — for each approach the single biggest flaw for THIS project (or "none"), plus which it thinks is strongest and weakest. Grounded in the project; no invented flaws.
+For **L** only, once all approaches are received, run a **peer-review round** (the LLM-council step that keeps synthesis from ranking on presentation instead of substance): relaunch the same lens subagents in parallel, now each one **seeing all the approaches**, and ask it to critique the OTHERS from its lens — for each approach the single biggest flaw for THIS project (or "none"), plus which it thinks is strongest and weakest. Grounded in the project; no invented flaws.
 
 Then **synthesize yourself** (the main agent): rank from best to worst for THIS case (fit in the project + simplicity, not generically), weighing the fatal flaws the peer-review surfaced; state explicitly where the advisors agreed and where they disagreed; and give an initial recommendation with 2-3 lines of justification. If a subagent did not respond, simply omit it.
 

@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.31.0 — 36 agents on a 69-line MR, in a dialect only one harness spoke  ·  2026-08-07
+
+Three steps in the flow widen into several agents — the approach panel in `feat:brainstorm` §3.A, the hypothesis sweep in `bug:investigate` §3.A, the finding verification in `feat:review` §6 / `bug:review` §5. All three were written as calls to Claude Code's **`Workflow` tool**, with its JavaScript DSL embedded in the command files: `export const meta`, `parallel()`, per-agent schemas. Two problems, and the second is the expensive one.
+
+**The plugin claimed to be harness-agnostic and was not.** `Workflow` exists in Claude Code and nowhere else. The three adapters each carried a row in `PRIMITIVES.md` translating it back into "launch N subagents in parallel" — which is what the flow wanted in the first place. The core now says that directly: rounds, briefs, and who synthesizes, in prose. The DSL scripts are gone from the plugin, and `Workflow` is no longer named anywhere in it except as an example of what `agents.fanout_tool` can point at.
+
+**Nothing capped the width.** `review` §6 launched **3 skeptics per finding** with no upper bound, gated only on `size` M/L: 12 findings meant 36 agents, on a diff of any size — and a work *labelled* M ships a 70-line MR/PR often enough. Measured on one real feature, four phases of a single MR came to ~1M tokens across 16 agents. What changed:
+
+- **`agents.fanout_max`** (new, empty → **4**) caps any single parallel round, and **what a cap drops gets said** — a sweep that investigated 4 of 7 hypotheses reports `4/7`, because a silently truncated fan-out reads as full coverage.
+- **The verification gate is narrow now**: size M/L **and** a diff over **150 changed lines** (the real `git diff --stat`, not the recorded size) **and** ≥ 4 **ambiguous** findings — those resting on an assumption about code outside the diff, a runtime behaviour, or an unverified convention. A finding whose defect is visible in the diff is already confirmed and skips the pass. **One** skeptic, not three: this filter's failure mode is cheap, since a wrongly-discarded finding stays recorded in the artifact, whereas three voters multiplied the cost by every finding found.
+- **The panel is proportional**, like `review_depth` already was: for **M**, advisors then synthesis; the cross-critique round runs for **L** only. Three lenses by default, `operations` added for L or a sensitive surface.
+- **The synthesis is no longer a subagent.** Ranking approaches, converging on a root cause, judging findings — that returns to the main agent, which already holds the work's context and writes the artifact. Delegating it cost an agent and a context hop to get markdown copied back. Delegate the gathering, keep the deciding.
+
+**Opting back into heavier orchestration is one line.** `agents.fanout_tool: Workflow` in `FLOW.md` runs the same rounds through Claude Code's tool, with its typed schemas and deterministic phases. Empty is the default and the portable path; a tool named there that the running harness does not expose falls back to plain subagents rather than failing.
+
+`bug:investigate`'s **quarantine boundary** survives the rewrite and is now stated rather than left implicit in a schema: the hypothesis agents are the ones that touch raw logs and traces, they report findings instead of pasting log text, and the agent that decides the root cause never takes raw log content into its own context.
+
+All three adapters were updated to match, including the ones that were already using plain subagents but still spawned a synthesizer agent.
+
 ## v0.30.3 — The hook the last release recommended checked nothing  ·  2026-08-07
 
 v0.30.2 added `script/check.py` and told you to wire it in with `ln -s ../../script/check.py .git/hooks/pre-commit`. Doing exactly that produced `not a git checkout — nothing to check` and a green exit on every commit.

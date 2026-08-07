@@ -161,11 +161,17 @@ The structural review (§2-§3) checks whether the code **respects the design's 
 
 Findings enter the normal flow (§6 verification, then output). **Why blinded**: as in §5, feeding it the design's rationale makes it rationalize the smell away ("ah, it uses the bus to respect bounded contexts") instead of asking whether the bus belonged there at all.
 
-## 6. Adversarial finding verification (optional M/L)
+## 6. Adversarial finding verification (optional)
 
-If `meta.json.size` is **M or L** and the sum of blockers + suggestions from §2-§5 is **≥ 4**, offer the user to filter them with a parallel skeptics panel. If accepted, launch subagents in parallel on each finding (3 skeptics per finding, with a refute-by-default instruction): a finding survives if fewer than 2 skeptics refute it. Discarded ones (≥2 refute them) are noted in the output under "Discarded by verification" with the reason. In **`guided`/`auto`, do not ask** — run the filter and note in the artifact that you did; sending the user off to fix false positives is the worse outcome.
+A filter against over-reporting, not a second review — and the one place a fan-out runs away by multiplication, so the gate is narrow. It needs **all three**: size **M or L**, a diff **over 150 changed lines** (`git diff --stat` against the target branch — the real diff, not the recorded size), and **≥ 4 ambiguous** findings from §2-§5.
 
-Not offered for XS/S or with fewer than 4 findings: the cost doesn't justify it.
+**Ambiguous** means the finding rests on an assumption about code *outside* the diff, on a runtime behaviour, or on an unverified convention. A finding whose defect is visible in the diff is already confirmed — it skips this pass.
+
+When the gate opens, offer the filter; in **`guided`/`auto`, do not ask** — run it and note in the artifact that you did, since sending the user off to fix false positives is the worse outcome. **One** skeptic per ambiguous finding, launched in parallel, capped at `agents.fanout_max` from FLOW.md (empty → **4**), with a refute-by-default instruction: the burden of proof is on the finding, so refute when the evidence is genuinely ambiguous. If more findings are ambiguous than the cap allows, verify the most consequential and mark the rest as unverified. Leave `agents.fanout_tool` empty — it names a harness-specific orchestrator Codex does not have.
+
+A refuted finding is discarded: off the list, into the output under "Discarded by verification" with the reason. One skeptic rather than a voting panel — a wrongly-discarded finding stays visible in the artifact, whereas three voters per finding multiplied cost by every finding found.
+
+Not run for XS/S, small diffs, or fewer than 4 ambiguous findings. When you skip it, say so in one line — skipped and clean are not the same result.
 
 ## 7. Local quality gates
 

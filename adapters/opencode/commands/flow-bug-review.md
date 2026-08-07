@@ -105,9 +105,9 @@ A fix can also sneak in excessive defenses ("while I'm fixing this, I'll add a r
 
 A fix is minimal by design (§4), so here **one** check is enough — no loop. **M/L only**: after consolidating findings from §2-§3, compare `git diff --stat <git.default_base>...HEAD` against what was reviewed. If any changed file in the fix was not examined by any reviewer, give it a targeted pass with the relevant reviewer and merge the findings. If the diff is small (normal for a fix), this resolves in seconds or does not apply.
 
-## 5. Adversarial verification of findings (parallel sub-agents, optional M/L)
+## 5. Adversarial verification of findings (parallel sub-agents, optional)
 
-Same as `/flow-feat-review` §6: if `meta.json.size` is **M or L** and there are **≥ 4** findings across blockers and suggestions, offer the user a filter pass with a parallel panel of skeptics (3 skeptics per finding, refute-by-default, survives if fewer than 2 refute it). Discarded findings are removed from the list and noted in the output under "Discarded by verification" with the reason. Not offered for XS/S or with fewer than 4 findings. In **`guided`/`auto`, do not ask** — run the filter and note in the artifact that you did; sending the user off to fix false positives is the worse outcome.
+Same as `/flow-feat-review` §6 — its gate, ceiling and autonomy rule, unchanged. It needs **all three**: size **M or L**, a diff **over 150 changed lines**, and **≥ 4 ambiguous** findings (resting on an assumption about code outside the diff, on a runtime behaviour, or on an unverified convention — not the ones whose defect is visible in the diff). Then **one** skeptic per ambiguous finding, in parallel, capped at `agents.fanout_max` from `FLOW.md` (empty → 4), refute-by-default. In **`guided`/`auto`, do not ask** — run it and note in the artifact that you did, since sending the user off to fix false positives is the worse outcome. Refuted findings come off the list and go under "Discarded by verification" with the reason. When the gate does not open, say so in one line — skipped and clean are not the same result.
 
 ## 6. Quality gates
 

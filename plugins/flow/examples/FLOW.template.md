@@ -125,6 +125,13 @@ another plugin) — this only states **which** one to invoke, it does not create
 - `frontend_test:`  # frontend tests
 - `testing:`        # backend tests / coverage
 
+Two keys below configure the **parallel fan-out** (approach panel in `brainstorm` §3.A, hypothesis
+sweep in `investigate` §3.A, finding verification in `review`) instead of naming an agent. The
+fan-out runs as plain parallel subagents — the primitive every harness has.
+
+- `fanout_max:`     # max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported
+- `fanout_tool:`    # orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable
+
 ## conventions
 Free text: conventions the commands must respect when writing/reviewing code
 (layers, patterns, prohibitions). Empty = no specific conventions.

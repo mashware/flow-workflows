@@ -8,7 +8,7 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command with a single `AskUserQuestion` (the recommended next step as the default option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
-**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a `Workflow`, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
+**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a parallel fan-out, how wide it goes, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
 
 **Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
 
@@ -88,79 +88,41 @@ Launch 2-3 queries in parallel. Timeout 2 s; if it fails, continue without conte
 - If `meta.json.size` is **M or L**: in **`manual`**, offer the **parallel-approach panel** with `AskUserQuestion` ("Generate options with a parallel multi-agent panel? Higher token cost, less single-line-of-thought bias."). If accepted → §3.A. If declined → §3.B. In **`guided`/`auto`, do not ask** — this is flow mechanics (cost and latency), not a decision about the product: take the panel for M/L, note it in one line of `02-brainstorm.md`, and go to §3.A.
 - If **S** (or the user declined): §3.B directly. The panel is not offered for XS/S — the cost does not justify it.
 
-### 3.A Approach panel (parallel Workflow — LLM-council pattern)
+### 3.A Approach panel (parallel fan-out — LLM-council pattern)
 
-Call the `Workflow` tool. This follows the **LLM-council** shape (Karpathy): independent advisors from different angles → a **cross-critique (peer-review)** round → a chairman synthesizes. The peer-review round is what keeps the chairman from ranking on presentation instead of substance: each advisor sees the full set and attacks the others' reasoning before anyone wins. Base script:
+**Launch the advisors as parallel subagents** — one per lens, in a single round, each blind to the others. This follows the **LLM-council** shape (Karpathy): independent advisors from different angles, then a chairman synthesizes, with a **cross-critique (peer-review)** round in between when the work is large enough to earn it. That middle round is what keeps the chairman from ranking on presentation instead of substance — each advisor sees the full set and attacks the others' reasoning before anyone wins — and it is also the expensive one, which is why it is reserved for **L**.
 
-```js
-export const meta = {
-  name: 'brainstorm-panel',
-  description: 'Parallel approach panel for a feature + peer-review + synthesis',
-  phases: [{ title: 'Approaches' }, { title: 'Peer-review' }, { title: 'Synthesis' }],
-}
-const TICKET = args.ticket
-const LENSES = [
-  { k: 'minimum',    p: 'the SMALLEST approach that solves the declared use case, nothing more (strict MVP)' },
-  { k: 'reuse',      p: 'the approach that MOST reuses existing pieces in the affected module or neighbors' },
-  { k: 'operations', p: 'the most production-solid approach (observability, external integration failure, data at scale)' },
-  { k: 'reframe',    p: 'challenge the premise: what if the problem is solved without building what is requested, or elsewhere?' },
-]
-const OPTION = {
-  type: 'object',
-  properties: {
-    nombre: { type: 'string' }, queEs: { type: 'string' },
-    modulos: { type: 'string' }, riesgo: { type: 'string' }, porQueMala: { type: 'string' },
-  },
-  required: ['nombre', 'queEs', 'modulos', 'riesgo', 'porQueMala'],
-}
-const CRITIQUE = {
-  type: 'object',
-  properties: {
-    strongest: { type: 'string' },   // which approach best fits THIS project, from this lens, and why
-    weakest:   { type: 'string' },   // which is worst and why
-    perApproach: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          nombre:    { type: 'string' },
-          fatalFlaw: { type: 'string' },   // the biggest hole this lens sees, or "none"
-        },
-        required: ['nombre', 'fatalFlaw'],
-      },
-    },
-  },
-  required: ['strongest', 'weakest', 'perApproach'],
-}
-// Round 1 — advisors, blind to each other → real diversity.
-const approaches = (await parallel(LENSES.map(l => () =>
-  agent(
-    `Propose ONE approach to solve ticket ${TICKET} (see project conventions in FLOW.md), from this lens: ${l.p}. ` +
-    `Read .claude/work/${TICKET}/01-context.md for context. Do not write code. Be specific about real project modules and layers.`,
-    { label: `approach:${l.k}`, phase: 'Approaches', schema: OPTION, model: 'sonnet' }
-  )))).filter(Boolean)
-// Round 2 — peer-review. Each advisor now sees ALL approaches and attacks the others from its lens.
-const critiques = (await parallel(LENSES.map(l => () =>
-  agent(
-    `You are the "${l.k}" advisor. Here are ${approaches.length} proposed approaches for ${TICKET}:\n` +
-    `${JSON.stringify(approaches, null, 2)}\n` +
-    `Read .claude/work/${TICKET}/01-context.md. From your lens (${l.p}), critique the OTHER approaches — not your own bias. ` +
-    `For each approach name its single biggest flaw for THIS project (or "none"), and say which is strongest and which weakest. ` +
-    `Be concrete and grounded in the project; do not invent flaws to fill space.`,
-    { label: `peer-review:${l.k}`, phase: 'Peer-review', schema: CRITIQUE, model: 'sonnet' }
-  )))).filter(Boolean)
-// Round 3 — chairman. Synthesizes across proposals AND critiques, surfacing consensus and disagreement.
-const synthesis = await agent(
-  `You are the chairman. Approaches for ${TICKET}:\n${JSON.stringify(approaches, null, 2)}\n\n` +
-  `Peer-review from the advisors:\n${JSON.stringify(critiques, null, 2)}\n\n` +
-  `Read .claude/work/${TICKET}/01-context.md. Rank the approaches from best to worst for THIS case (project fit + simplicity, not generic), ` +
-  `weighing the fatal flaws the peer-review surfaced. State explicitly where the advisors AGREED and where they DISAGREED, ` +
-  `then give an initial recommendation with 2-3 lines of justification. Output markdown.`,
-  { label: 'synthesis', phase: 'Synthesis', model: 'opus' })
-return { approaches, critiques, synthesis }
-```
+**How wide the fan-out goes** — read `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round. The panel is **proportional**, like `review_depth`:
 
-Pass `args: { ticket: "<TICKET>" }`. With the result, fill §4 (each approach → one "Option", the chairman's consensus/disagreement + recommendation → "Initial recommendation"). Fold each approach's surfaced `fatalFlaw` into its "Why it could be a bad idea" line. If an approach came back `null` (agent down), it is already filtered out; if the whole peer-review round comes back empty, the chairman still synthesizes from the approaches alone.
+| Size | Rounds |
+|---|---|
+| M | Advisors → you synthesize |
+| L | Advisors → cross-critique → you synthesize |
+
+**You are the chairman.** The synthesis is not a subagent: you already hold the work's context and you are the one writing `02-brainstorm.md`, so delegating it and copying markdown back adds a hop and loses context. Round 1 (and round 2 for L) are subagents; the ranking is yours.
+
+**Round 1 — advisors (parallel, blind to each other).** One subagent per lens, up to `fanout_max`. For M take the first three lenses; add `operations` for L, or when the feature touches a sensitive surface (authentication/authorization, payments, personal data, public contract, migration):
+
+| Lens | Brief |
+|---|---|
+| `minimum` | The **smallest** approach that solves the declared use case, nothing more (strict MVP) |
+| `reuse` | The approach that **most reuses** existing pieces in the affected module or its neighbours |
+| `reframe` | **Challenge the premise**: what if the problem is solved without building what was asked, or somewhere else? |
+| `operations` | The most production-solid approach (observability, external integration failure, data at scale) |
+
+Each advisor gets this brief, with the lens substituted:
+
+> Propose ONE approach to solve ticket `<TICKET>`, from this lens: `<lens brief>`. Read `.claude/work/<TICKET>/01-context.md` for context and `FLOW.md` for project conventions. Do not write code. Be specific about real modules and layers of this project. Report: name, what it is (one sentence), modules/layers affected, main risk, and why it could be a bad idea. Under 250 words.
+
+**Round 2 — cross-critique (L only, parallel).** Give each advisor the full set of approaches and have it attack the *others* from its own lens:
+
+> You are the "`<lens>`" advisor. These are the approaches proposed for `<TICKET>`: `<the round-1 set>`. Read `.claude/work/<TICKET>/01-context.md`. From your lens (`<lens brief>`), critique the OTHER approaches — not your own. For each one name its single biggest flaw for THIS project, or "none". Then say which is strongest and which weakest, and why. Be concrete and grounded in the project; do not invent flaws to fill space.
+
+**Round 3 — you synthesize.** Rank the approaches best to worst *for this case* (project fit + simplicity, not generic), weighing the fatal flaws the critique surfaced. State explicitly where the advisors **agreed** and where they **disagreed** — the disagreement is the useful part, and it is what a single line of thought never produces.
+
+If `agents.fanout_tool` is set in `FLOW.md`, run these rounds through that tool instead of plain parallel subagents; the rounds, the briefs and the `fanout_max` ceiling do not change. See `docs/CONFIGURATION.md` §`agents`.
+
+With the result, fill §4: each approach → one "Option"; your consensus/disagreement reading + recommendation → "Initial recommendation". Fold each approach's biggest surfaced flaw into its "Why it could be a bad idea" line. **A subagent that comes back empty is dropped, not retried** — synthesize from the ones that answered, and note in `02-brainstorm.md` how many of the launched advisors reported (`N/M`). If the critique round comes back empty, rank from the approaches alone.
 
 ### 3.B Single agent (default case)
 

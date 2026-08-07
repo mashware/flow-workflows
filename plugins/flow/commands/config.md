@@ -41,9 +41,14 @@ Light checks — report problems, never change anything:
 - **CLIs**: for the tools referenced (`tracker.tool`, `git.cli`), check they are installed
   (`command -v gh glab acli tea az …`). Missing → warn that the corresponding step degrades
   (e.g. tracker read → manual paste; MR/PR creation → manual).
-- **Agents**: for each non-empty `agents.*` and `quality.reviewers` / `quality.review_skill`,
+- **Agents**: for each non-empty `agents.*` **role** and `quality.reviewers` / `quality.review_skill`,
   check it is discoverable (`~/.claude/agents`, repo `.agents/agents`, or a plugin). Not found →
-  warn it will fall back to `general-purpose` (or be skipped).
+  warn it will fall back to `general-purpose` (or be skipped). `agents.fanout_max` and
+  `agents.fanout_tool` are **not** roles — do not look for an agent by those names.
+- **Fan-out**: `agents.fanout_max` must be a positive integer; anything else → flag and note the
+  default `4` applies. `agents.fanout_tool` names a harness tool, not an agent: if it is set and
+  this harness does not expose it, note the fan-out falls back to plain parallel subagents (not an
+  error — that is the portable path).
 - **Commands**: for `quality.*` and `git.worktree_resync` entries that look like `make <target>`,
   optionally check the target exists in the `Makefile`; for npm/composer scripts, check they exist.
   Do not run them — only check presence. Unresolvable → flag as "declared but not found".

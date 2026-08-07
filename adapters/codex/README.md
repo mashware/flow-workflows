@@ -128,4 +128,4 @@ See `PRIMITIVES.md` for the full table. The most important points:
 
 - **AskUserQuestion**: no structured UI → questions become plain text.
 - **ScheduleWakeup** (watch autopilot): does not exist in Codex → `/flow-work-watch` runs one cycle and exits; use OS cron or Codex app Automations to repeat it.
-- **Workflow DSL**: parallel orchestration is expressed as natural-language instructions to the agent.
+- **Parallel fan-out**: ports directly — the plugin describes it as parallel subagents, which Codex has. Leave `agents.fanout_tool` empty in `FLOW.md`; `agents.fanout_max` (empty → 4) caps each round.

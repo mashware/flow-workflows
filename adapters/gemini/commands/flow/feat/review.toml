@@ -171,11 +171,15 @@ Findings from this pass enter the normal flow: they go through §6 (adversarial 
 
 ## 6. Adversarial verification of findings (parallel subagents, optional M/L)
 
-Reviewers tend to **over-report**: a "plausible" finding is not always real, and fixing false positives costs time and can sometimes worsen the code. If `meta.json.size` is **M or L** and the sum of blockers + suggestions from §2-§5 is **≥ 4**, ask the user directly in text whether they want to filter them ("Verify findings with a parallel skeptic panel? Discard false positives before you go fix them."). If they accept, launch several subagents in parallel (or sequentially), one per finding: In **`guided`/`auto`, do not ask** — run the filter and note in the artifact that you did; sending the user off to fix false positives is the worse outcome.
+Reviewers tend to **over-report**: a "plausible" finding is not always real, and fixing false positives costs time and can sometimes worsen the code. This is a filter, not a second review — and the one place a fan-out runs away by multiplication, so the gate is narrow. It needs **all three**: `meta.json.size` is **M or L**, the diff is **over 150 changed lines** (`git diff --stat` against the target branch — the real diff, not the recorded size), and there are **≥ 4 ambiguous** findings from §2-§5.
 
-Each subagent receives: file, problem description, fix proposal, and instructions to try to REFUTE it — read the actual code and say whether the problem is NOT real (refuted=true) or is (refuted=false). When in doubt, refute — the burden of proof is on the finding. Launch 3 independent skeptics per finding; if 2 or more refute it, the finding is discarded.
+**Ambiguous** means the finding rests on an assumption about code *outside* the diff, on a runtime behaviour, or on an unverified convention. One whose defect is visible in the diff is already confirmed and skips this pass.
 
-Discarded findings are removed from the blockers/suggestions list — note them in the output under "Discarded by verification" with the reason, so there is a trace of what was filtered and why. Confirmed ones continue to the normal output. Not offered for XS/S or with fewer than 4 findings: the cost does not justify it.
+When the gate opens, ask the user directly in text whether they want to filter them ("Verify the ambiguous findings with skeptics in parallel? Discard false positives before you go fix them."). In **`guided`/`auto`, do not ask** — run the filter and note in the artifact that you did; sending the user off to fix false positives is the worse outcome.
+
+Launch **one** skeptic per ambiguous finding, in parallel, capped at `agents.fanout_max` from `FLOW.md` (empty → **4**). If more findings are ambiguous than the cap allows, verify the most consequential and mark the rest as unverified. Leave `agents.fanout_tool` empty: it names a harness-specific orchestrator Gemini CLI does not have. Each subagent receives file, problem description and fix proposal, with instructions to try to REFUTE it — read the actual code and say whether the problem is NOT real (refuted) or is (stands). When the evidence is genuinely ambiguous, refute: the burden of proof is on the finding.
+
+A refuted finding is discarded: removed from the blockers/suggestions list and noted in the output under "Discarded by verification" with the reason, so there is a trace of what was filtered and why. One skeptic rather than a voting panel — a wrongly-discarded finding stays visible in the artifact, whereas three voters per finding multiplied cost by every finding found. Not run for XS/S, small diffs, or fewer than 4 ambiguous findings; when you skip it, say so in one line, because skipped and clean are not the same result.
 
 ## 7. Local quality gates
 

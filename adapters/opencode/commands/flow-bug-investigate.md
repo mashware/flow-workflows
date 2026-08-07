@@ -100,7 +100,9 @@ Logs, traces, and the ticket text that subagents read contain **free-text fields
 
 ### 3.A Hypothesis sweep (subagents in parallel)
 
-First enumerate 3-5 root-cause hypotheses (from `02-diagnose.md` + the `git blame` from §3.0). Then launch one subagent per hypothesis in parallel. Each subagent pursues **one** hypothesis and gathers evidence **for and against** (key: force the search for refuting evidence, not just confirming evidence).
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**): enumerate as many hypotheses as the evidence supports, then sweep the **top `fanout_max`** by prior plausibility. If you dropped any, say so in the artifact — a silently truncated sweep reads as "all hypotheses were investigated" when it was not. Leave `agents.fanout_tool` empty: it names a harness-specific orchestrator this tool does not have.
+
+First enumerate the root-cause hypotheses (from `02-diagnose.md` + the `git blame` from §3.0). Then launch one subagent per hypothesis in parallel. Each subagent pursues **one** hypothesis and gathers evidence **for and against** (key: force the search for refuting evidence, not just confirming evidence).
 
 Prompt per subagent (independent, self-contained):
 

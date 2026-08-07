@@ -86,7 +86,9 @@ Run 2-3 queries in parallel. Maximum wait time 2s; if it fails, continue without
 
 ### 3.A Approaches panel (subagents in parallel)
 
-Launch **four subagents in parallel** (one per lens), without them seeing each other to ensure genuine diversity, then a fifth that synthesizes and orders the results:
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round. The panel is **proportional** — for **M**, advisors then you synthesize; for **L**, advisors, then the cross-critique round, then you synthesize. Take the first three lenses for M; add `operations` for L or when the feature touches a sensitive surface (authentication/authorization, payments, personal data, public contract, migration). Leave `agents.fanout_tool` empty: it names a harness-specific orchestrator this tool does not have.
+
+Launch **one subagent per lens in parallel**, without them seeing each other to ensure genuine diversity. **You synthesize** — do not spawn a synthesizer agent: you already hold the work's context and write the artifact, so handing the ranking to a subagent costs an agent and loses context.
 
 Lenses:
 - **minimal**: the SMALLEST approach that solves the declared use case, nothing more (strict MVP).
@@ -96,11 +98,11 @@ Lenses:
 
 Each lens agent receives: the ticket, the path to `.claude/work/<TICKET>/01-context.md`, and the lens assigned. Returns: approach name, what it is (one sentence), affected modules/layers, main risk, why it could be a bad idea.
 
-Then run a **peer-review round** (the LLM-council step that keeps synthesis honest): relaunch the four lens agents in parallel, each now **seeing all four approaches**, and have each critique the OTHERS from its lens — for every approach the single biggest flaw for THIS project (or "none"), plus which is strongest and which weakest. Grounded in the project; no invented flaws.
+For **L** only, then run a **peer-review round** (the LLM-council step that keeps synthesis honest): relaunch the lens agents in parallel, each now **seeing all the approaches**, and have each critique the OTHERS from its lens — for every approach the single biggest flaw for THIS project (or "none"), plus which is strongest and which weakest. Grounded in the project; no invented flaws.
 
-The synthesizer agent receives the four approaches **and the four peer-reviews**, orders them from best to worst for THIS case (project fit + simplicity) weighing the surfaced fatal flaws, states where the lenses agreed and where they disagreed, and gives an initial recommendation of 2-3 lines of justification.
+Then **you** order the approaches from best to worst for THIS case (project fit + simplicity), weighing the fatal flaws the critique surfaced, state where the lenses agreed and where they disagreed, and give an initial recommendation with 2-3 lines of justification.
 
-Using the result, fill §4 (each approach → one "Option", the synthesis → "Initial recommendation"). If a subagent fails, simply don't include it.
+Using the result, fill §4 (each approach → one "Option", your ranking → "Initial recommendation"). A subagent that comes back empty is dropped, not retried — note in the artifact how many of the launched advisors reported (`N/M`).
 
 ### 3.B Single agent (default case)
 
