@@ -5,6 +5,18 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.30.2 — A tree that would not load can now say so before the tag does  ·  2026-08-07
+
+v0.30.1 restored a manifest that had been empty for two releases. This adds the check that would have caught it, plus the ones that would catch its neighbours.
+
+There is no CI in this repo and a release is a tag on whatever is in the tree, so `script/check.py` is what stands between a broken tree and a permanent tag. It refuses: an **empty tracked file** (the actual failure — nothing else reads the manifest, so every other check passed while the plugin could not start), a manifest that does not parse or has no `name`/`version`, a **manifest version that disagrees with the newest `CHANGELOG.md` heading** (`/flow:news` reads one and the loader reads the other; when they drift the release notes describe a version nobody is running), a command without frontmatter, a `.toml` that does not parse, an embedded `json` example that does not parse, a `panel.json` example using a `mark`, `style` or inline URL **the reader would not understand**, and a plugin command **missing from any of the three adapters**.
+
+The last two are worth their place because neither breaks anything loudly. An unknown `mark` is not an error in the panel — the line quietly loses its symbol and its column and renders as plain text — and adapter parity is maintained by hand, one file at a time, so the failure mode is a command that silently stops being mirrored rather than one that breaks.
+
+Each check was verified by reintroducing the defect it targets and confirming it fails, which is how the first two versions of the embedded-json check turned out to be worthless: one skipped every block containing an ellipsis (which is all of the panel examples) and the next choked on blocks that quote a single field of a larger object.
+
+No changes to any command — `/flow:*` behaviour is exactly v0.30.0's.
+
 ## v0.30.1 — The manifest was truncated to zero bytes  ·  2026-08-06
 
 `plugins/flow/.claude-plugin/plugin.json` shipped **empty** in v0.29.1 and stayed empty through v0.30.0, so Claude Code could not load the plugin at all: no manifest, no commands.

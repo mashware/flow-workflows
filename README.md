@@ -258,10 +258,28 @@ flow-workflows/
 │   ├── hooks/     (guard against pushing to the main branch)
 │   └── examples/FLOW.template.md
 ├── docs/                               # configuration and workflow reference
+├── script/check.py                     # release preflight (see below)
 └── adapters/
     ├── install.sh
     ├── opencode/  ·  gemini/  ·  codex/
 ```
+
+### Before tagging a release
+
+There is no CI here — a release is a tag on whatever is in the tree — so `script/check.py` is what
+stands between a broken tree and a permanent tag. Run it, or wire it in once:
+
+```bash
+python3 script/check.py
+ln -s ../../script/check.py .git/hooks/pre-commit   # optional
+```
+
+It refuses a tree with an empty tracked file (a zero-byte `plugin.json` shipped in two releases and
+kept the plugin from loading at all), a manifest that does not parse, a manifest version that
+disagrees with the newest `CHANGELOG.md` heading, a command without frontmatter, a `.toml` that does
+not parse, an embedded `json` example that does not parse, a `panel.json` example using a `mark`,
+`style` or inline URL the reader would not understand, and a plugin command missing from any of the
+three adapters. Every one of those is something that has actually shipped or nearly shipped.
 
 ## What it does not ship (on purpose)
 
