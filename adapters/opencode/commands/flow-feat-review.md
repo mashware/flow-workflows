@@ -170,11 +170,23 @@ The structural review (§2-§3) checks whether the code **respects the design's 
 
 Findings from this pass enter the normal flow: they go through §6 (adversarial verification) and into the output like any other. **Why blind**: as in §5, if you feed it the design's rationale it rationalizes the smell away ("ah, it uses the bus to respect bounded contexts") instead of asking whether the bus belonged there at all.
 
-## 6. Adversarial finding verification (parallel sub-agents, optional M/L)
+## 6. Adversarial finding verification (parallel sub-agents, optional)
 
-Reviewers tend to **over-report**: a "plausible" finding isn't always real, and fixing false positives costs time and can worsen the code. If `meta.json.size` is **M or L** and the total of blockers + suggestions from §2-§5 is **≥ 4**, offer the user to filter them ("Want to verify the findings with a panel of skeptics in parallel? Discard false positives before you take them to fix."). If they accept, launch parallel skeptic sub-agents: In **`guided`/`auto`, do not ask** — run the filter and note in the artifact that you did; sending the user off to fix false positives is the worse outcome.
+Reviewers tend to **over-report**: a "plausible" finding isn't always real, and fixing false positives costs time and can worsen the code. This is a filter, not a second review — and it is the one place where a fan-out runs away by multiplication, so the gate is deliberately narrow. All three conditions must hold:
 
-For each finding `{id, file, description, proposal}`, launch 3 independent sub-agents with the same prompt:
+| Condition | Threshold |
+|---|---|
+| Size | `meta.json.size` is **M or L** |
+| Diff | the MR/PR diff is **over 150 changed lines** (`git diff --stat` against the target branch — the real diff, not the recorded size) |
+| Findings | **≥ 4 ambiguous** findings from §2-§5 |
+
+**Only the ambiguous ones get verified.** A finding whose defect is visible in the diff is already confirmed; re-reading it buys nothing. Verify only those resting on an assumption about code *outside* the diff, on a runtime behaviour, or on an unverified convention.
+
+Then offer the filter ("Want to verify the ambiguous findings with skeptics in parallel? Discard false positives before you take them to fix."). In **`guided`/`auto`, do not ask** — run it and note in the artifact that you did; sending the user off to fix false positives is the worse outcome.
+
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**): **one** skeptic per ambiguous finding, in parallel, capped at `fanout_max`. If more findings are ambiguous than the cap allows, verify the most consequential and send the rest through unverified, marked as such. Leave `agents.fanout_tool` empty — it names a harness-specific orchestrator opencode does not have.
+
+For each finding `{id, file, description, proposal}`, launch **one** sub-agent:
 
 > You are a skeptic. Code review finding in the project:
 > File: {file}
@@ -183,7 +195,9 @@ For each finding `{id, file, description, proposal}`, launch 3 independent sub-a
 >
 > Try to REFUTE it: read the actual code and say whether the problem is NOT real (refuted=true) or it is (refuted=false). When in doubt, refute — the burden of proof is on the finding. Be concrete about why.
 
-A finding **survives** if fewer than 2 of the 3 skeptics refute it. **Discarded** findings (≥2 skeptics refute them) are removed from the blockers/suggestions list and noted in the output under "Discarded by verification" with the reason. This is not offered for XS/S or with fewer than 4 findings: the cost doesn't justify it.
+A finding is **discarded** when its skeptic refutes it. Discarded findings come off the blockers/suggestions list and go into the output under "Discarded by verification" with the reason, so there is a trace of what was filtered and why. **One skeptic, not a voting panel**: this filter's failure mode is cheap — a wrongly-discarded finding is recorded in the artifact and stays visible to you — whereas three voters per finding multiplied the cost by every finding found.
+
+Not run for XS/S, for small diffs, or with fewer than 4 ambiguous findings: the cost doesn't justify it. When you skip it, say so in one line — skipped and clean are not the same result.
 
 ## 7. Local quality gates
 

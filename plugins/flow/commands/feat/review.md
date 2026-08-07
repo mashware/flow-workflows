@@ -8,7 +8,7 @@ Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quali
 
 **Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command with a single `AskUserQuestion` (the recommended next step as the default option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
 
-**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a `Workflow`, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
+**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a parallel fan-out, how wide it goes, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
 
 **Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
 
@@ -185,42 +185,33 @@ The structural review (§2-§3) checks whether the code **respects the design's 
 
 Findings from this pass enter the normal flow: they go through §6 (adversarial verification) and into the output like any other. **Why blinded**: as in §5, if you feed it the design's rationale it rationalizes the smell away ("ah, it uses the bus to respect bounded contexts") instead of asking whether the bus belonged there at all.
 
-## 6. Adversarial finding verification (Workflow, optional M/L)
+## 6. Adversarial finding verification (parallel fan-out, optional)
 
-Reviewers tend to **over-report**: a "plausible" finding is not always real, and fixing false positives costs time and can worsen the code. If `meta.json.size` is **M or L** and the sum of blockers + suggestions from §2-§5 is **≥ 4**: in **`manual`**, offer with `AskUserQuestion` to filter them ("Verify findings with a panel of skeptics in parallel? Discards false positives before you go fix them."), and call the `Workflow` tool if accepted. In **`guided`/`auto`, do not ask** — running the filter is flow mechanics, and sending the user to fix false positives is the worse outcome: run it and note in `06-review.md` that you did. The `Workflow` tool:
+Reviewers tend to **over-report**: a "plausible" finding is not always real, and fixing false positives costs time and can make the code worse. This pass is a filter, not a second review — and it is the one place in the flow where an unbounded fan-out is easy to write and expensive to run, so the gate is deliberately narrow.
 
-```js
-export const meta = {
-  name: 'review-verify',
-  description: 'Adversarially verify each review finding in parallel',
-  phases: [{ title: 'Verify' }],
-}
-const FINDINGS = args.hallazgos    // [{id, archivo, descripcion, propuesta}]
-const VERDICT = {
-  type: 'object',
-  properties: {
-    refutado: { type: 'boolean' },
-    motivo: { type: 'string' },
-  },
-  required: ['refutado', 'motivo'],
-}
-const verified = await parallel(FINDINGS.map(h => () =>
-  parallel([0, 1, 2].map(() => () =>
-    agent(
-      `You are a skeptic. Code review finding in the project:\n` +
-      `File: ${h.archivo}\nProblem: ${h.descripcion}\nProposal: ${h.propuesta}\n\n` +
-      `Try to REFUTE it: read the real code and say whether the problem is NOT real (refutado=true) or it is (refutado=false). ` +
-      `When in doubt, refute — the burden of proof is on the finding. Be concrete about why.`,
-      { label: `verify:${h.id}`, phase: 'Verify', schema: VERDICT, model: 'sonnet' }
-    )))
-    .then(votes => {
-      const refuting = votes.filter(Boolean).filter(v => v.refutado).length
-      return { ...h, survives: refuting < 2, refuting }
-    })))
-return { confirmed: verified.filter(h => h.survives), discarded: verified.filter(h => !h.survives) }
-```
+**When it runs.** All three conditions:
 
-Pass `args: { hallazgos: [...] }` with the consolidated findings (short id, file:line, description, proposal). `discarded` ones (≥ 2 skeptics refute them) are removed from the blockers/suggestions list — record them in the output under "Discarded by verification" with the reason, so there is a trace of what was filtered and why. `confirmed` ones continue to the normal output. Not offered for XS/S or with fewer than 4 findings: the cost does not justify it.
+| Condition | Threshold |
+|---|---|
+| Size | `meta.json.size` is **M or L** |
+| Diff | the MR/PR diff is **over 150 changed lines** |
+| Findings | **≥ 4** ambiguous findings across §2-§5 |
+
+The diff condition is what keeps a work *labelled* M from dragging a 70-line MR/PR through a panel of skeptics. Read the real diff (`git diff --stat` against the target branch), not the recorded size.
+
+When all three hold: in **`manual`**, offer it with `AskUserQuestion` ("Verify the ambiguous findings with skeptics in parallel? Discards false positives before you go fix them."). In **`guided`/`auto`, do not ask** — it is flow mechanics, and sending the user off to fix a false positive is the worse outcome: run it and note in `06-review.md` that you did.
+
+**What gets verified — only the ambiguous ones.** A finding whose defect you can see in the diff is already confirmed; sending a skeptic to re-read it buys nothing. Verify only those resting on an assumption about code *outside* the diff, on a runtime behaviour, or on a convention you have not checked. Everything else goes straight to the output.
+
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**). **One skeptic per finding, in parallel, capped at `fanout_max`** — if more than that many findings are ambiguous, verify the `fanout_max` most consequential and send the rest through unverified, marked as such. A finding is discarded when its skeptic refutes it.
+
+> You are a skeptic. This is a code review finding on the project: file `<file:line>`, problem: `<description>`, proposal: `<proposal>`. Try to REFUTE it: read the real code and say whether the problem is NOT real (refuted) or is real (stands). The burden of proof is on the finding — when the evidence is genuinely ambiguous, refute. Be concrete about why, citing what you read.
+
+Refuted findings come off the blockers/suggestions list and go into the output under "Discarded by verification" with the reason, so there is a trace of what was filtered and why. **One skeptic, not three** — the earlier three-voter majority multiplied cost by finding for a filter whose failure mode is cheap: a wrongly-discarded finding is recorded in the artifact and stays visible to you.
+
+If `agents.fanout_tool` is set in `FLOW.md`, run the verification through that tool instead of plain parallel subagents; the gate, the ceiling and the one-skeptic rule do not change. See `docs/CONFIGURATION.md` §`agents`.
+
+Not run for XS/S, for small diffs, or with fewer than 4 ambiguous findings: the cost does not justify it. When you skip it, say so in one line of `06-review.md` — skipped and clean are not the same result.
 
 ## 7. Local quality gates
 
@@ -261,6 +252,8 @@ Write `.claude/work/<TICKET>/06-review.md`:
 
 ## Discarded by adversarial verification
 <only if §6 was run; list of refuted findings with reason, or "not applicable">
+<if the `fanout_max` cap left ambiguous findings unverified, list them here as "unverified (cap)">
+<if §6 did not run, one line saying which condition did not hold — size, diff size, or count>
 
 ## Blockers (must-fix)
 1. [file:line] description + concrete proposal

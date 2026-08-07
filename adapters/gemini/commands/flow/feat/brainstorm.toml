@@ -89,7 +89,9 @@ Launch 2-3 queries in parallel (or sequentially if parallelism is not possible).
 
 ### 3.A Approach panel (parallel subagents)
 
-If the environment has subagents defined in `.gemini/agents/`, launch one per lens in parallel (without seeing each other → real diversity) and a final agent that synthesizes and ranks them. The lenses are:
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round. The panel is **proportional** — for **M**, advisors then you synthesize; for **L**, advisors, then the cross-critique round, then you synthesize. Take the first three lenses for M; add `operations` for L or when the feature touches a sensitive surface (authentication/authorization, payments, personal data, public contract, migration). Leave `agents.fanout_tool` empty: it names a harness-specific orchestrator this tool does not have.
+
+If the environment has subagents defined in `.gemini/agents/`, launch one per lens in parallel (without seeing each other → real diversity); with none configured, run the round sequentially in the same context. **You synthesize and rank** — do not spawn a synthesizer agent: you already hold the work's context and write the artifact, so handing the ranking to a subagent costs an agent and loses context. The lenses are:
 
 - `minimal`: the SMALLEST approach that solves the declared use case, nothing more (strict MVP).
 - `reuse`: the approach that MOST reuses existing pieces in the affected module or neighbors.
@@ -98,11 +100,11 @@ If the environment has subagents defined in `.gemini/agents/`, launch one per le
 
 Each agent receives: the ticket title, path to `01-context.md`, and the instruction to propose ONE approach from its specific lens — real modules/layers of the project, main risk, and why it could be a bad idea. It does not write code.
 
-Then run a **peer-review round** (the LLM-council step that keeps synthesis from ranking on presentation instead of substance): relaunch the lens agents in parallel, each now **seeing all the approaches**, and have each critique the OTHERS from its lens — for every approach the single biggest flaw for THIS project (or "none"), plus which is strongest and which weakest. Grounded in the project; no invented flaws.
+For **L** only, then run a **peer-review round** (the LLM-council step that keeps synthesis from ranking on presentation instead of substance): relaunch the lens agents in parallel, each now **seeing all the approaches**, and have each critique the OTHERS from its lens — for every approach the single biggest flaw for THIS project (or "none"), plus which is strongest and which weakest. Grounded in the project; no invented flaws.
 
-The synthesizer agent receives the approaches **and the peer-reviews**, ranks them from best to worst for THIS case (fit in the project + simplicity) weighing the surfaced fatal flaws, states where the lenses agreed and where they disagreed, and gives an initial recommendation with 2-3 lines of justification.
+Then **you** rank the approaches from best to worst for THIS case (fit in the project + simplicity), weighing the fatal flaws the critique surfaced, state where the lenses agreed and where they disagreed, and give an initial recommendation with 2-3 lines of justification.
 
-If a subagent fails, simply do not include its approach in the result.
+A subagent that comes back empty is dropped, not retried — note in the artifact how many of the launched advisors reported (`N/M`).
 
 ### 3.B Single agent (default)
 

@@ -101,9 +101,9 @@ A fix can also sneak in unnecessary defenses. Review the diff for new defensive 
 
 A fix is minimal by design, so here one check is enough. **M/L only**: after consolidating findings from §2-§3, compare `git diff --stat <git.default_base>...HEAD` against what was reviewed. If any changed file from the fix wasn't looked at by any reviewer, give it a targeted pass and merge any new findings.
 
-## 5. Adversarial finding verification (optional M/L)
+## 5. Adversarial finding verification (optional)
 
-If `meta.json.size` is **M or L** and there are **≥ 4** findings across blockers and suggestions, offer the user to filter them with a parallel skeptics panel (3 skeptics per finding, with a refute-by-default instruction; survives if fewer than 2 refute it). Discarded ones are noted under "Discarded by verification" with the reason. Not offered for XS/S or with fewer than 4 findings. In **`guided`/`auto`, do not ask** — run the filter and note in the artifact that you did; sending the user off to fix false positives is the worse outcome.
+Same as `/flow-feat-review` §6 — its gate, ceiling and autonomy rule, unchanged. It needs **all three**: size **M or L**, a diff **over 150 changed lines**, and **≥ 4 ambiguous** findings (resting on an assumption about code outside the diff, on a runtime behaviour, or on an unverified convention — not the ones whose defect is visible in the diff). Then **one** skeptic per ambiguous finding, in parallel, capped at `agents.fanout_max` from FLOW.md (empty → 4), refute-by-default. In **`guided`/`auto`, do not ask** — run it and note in the artifact that you did, since sending the user off to fix false positives is the worse outcome. Refuted findings go under "Discarded by verification" with the reason. When the gate does not open, say so in one line — skipped and clean are not the same result.
 
 ## 6. Quality gates
 

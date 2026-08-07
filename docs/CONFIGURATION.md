@@ -41,7 +41,7 @@ repo-fact subset can commit it deliberately.
 | [`git`](#git) | Branches, MR/PRs, worktrees, PR trains, pre-deploy gate | Inferred from the remote; conservative defaults |
 | [`autonomy`](#autonomy) | How much a phase decides on its own | `manual` — stops at every decision |
 | [`quality`](#quality) | Test/lint/analysis commands and how deep review goes | Auto-discovered; review is `proportional` |
-| [`agents`](#agents) | Role → specialist agent map | `general-purpose` with the role in the prompt |
+| [`agents`](#agents) | Role → specialist agent map, and how wide the parallel fan-out goes | `general-purpose` with the role in the prompt; fan-out capped at 4 |
 | [`conventions`](#conventions) | Rules the code must respect | No specific conventions |
 | [`notes`](#notes) | Extra mandatory instructions per command | No extra guidance |
 | [`domain_memory`](#domain_memory) | The `domain-memory` MCP | Domain steps are skipped silently |
@@ -292,6 +292,53 @@ The agents must already exist and be discoverable on your machine (`~/.claude/ag
 `.agents/agents` in the repo, or another plugin) — this only states **which** one to invoke, it
 never creates one. An empty role falls back to `general-purpose` with the role in the prompt, or
 skips the step if it was optional.
+
+Two more keys configure the **parallel fan-out** rather than naming an agent:
+
+| Key | What it does | Empty |
+|---|---|---|
+| `fanout_max` | Max subagents launched in one parallel round | `4` |
+| `fanout_tool` | Orchestration tool to run the fan-out through | Plain parallel subagents |
+
+### How wide the fan-out goes (`fanout_max`)
+
+Three steps widen into parallel subagents — the approach panel in `/flow:feat:brainstorm` §3.A,
+the hypothesis sweep in `/flow:bug:investigate` §3.A, and the finding verification in
+`/flow:feat:review` §6 / `/flow:bug:review` §5. `fanout_max` is the ceiling on **one round**, not
+on the command: a panel that runs advisors and then a critique round launches up to `fanout_max` in
+each.
+
+Raise it when you want breadth and are paying for it deliberately. Lower it to `1`-`2` on a repo
+where you would rather the flow stayed cheap. What the ceiling drops is always **reported** — a
+sweep that investigated 4 of 7 hypotheses says so in the artifact, because a silently truncated
+fan-out reads as full coverage when it was not.
+
+The verification gate is the one that used to run away: it is deliberately narrow now, and needs
+size **M/L**, a diff **over 150 changed lines**, and **≥ 4 ambiguous** findings before it opens at
+all. One skeptic per finding, not a voting panel.
+
+**The synthesis is never a subagent.** Ranking approaches, converging on a root cause, judging
+findings — that stays with the main agent, which already holds the work's context and writes the
+artifact. The fan-out gathers; the main agent decides.
+
+### Running the fan-out through a tool (`fanout_tool`)
+
+Empty means plain parallel subagents: the one primitive every harness has, so the flow behaves the
+same on Claude Code, Codex, Gemini and opencode.
+
+Some harnesses also offer heavier orchestration — deterministic phases, typed per-agent schemas,
+resumable runs. Claude Code's `Workflow` tool is one. Name it here and the three fan-out steps run
+through it instead:
+
+```markdown
+## agents
+- fanout_tool: Workflow
+```
+
+The rounds, the briefs and the `fanout_max` ceiling do not change — only the mechanism. **This is
+harness-specific by definition**: a tool named here that the running harness does not have is
+ignored, and the step falls back to plain subagents. Leave it empty unless you know you want the
+extra machinery and the cost that comes with it.
 
 ---
 
