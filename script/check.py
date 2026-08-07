@@ -21,7 +21,22 @@ try:
 except ModuleNotFoundError:                       # Python < 3.11
     tomllib = None
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+def repo_root():
+    """The checkout this script belongs to, however it was invoked.
+
+    Wired as `.git/hooks/pre-commit` the script is reached through a symlink, so
+    `abspath(__file__)` lands in `.git/hooks` and every git command below would
+    run against a directory git does not track — reporting nothing to check and
+    exiting green, which is worse than having no hook at all. Resolve the link
+    first, then ask git where the top of the tree is.
+    """
+    here = os.path.dirname(os.path.realpath(__file__))
+    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=here,
+                         capture_output=True, text=True)
+    return top.stdout.strip() if top.returncode == 0 else os.path.dirname(here)
+
+
+ROOT = repo_root()
 MANIFEST = "plugins/flow/.claude-plugin/plugin.json"
 MARKETPLACE = ".claude-plugin/marketplace.json"
 CHANGELOG = "plugins/flow/CHANGELOG.md"
