@@ -5,6 +5,16 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.30.3 — The hook the last release recommended checked nothing  ·  2026-08-07
+
+v0.30.2 added `script/check.py` and told you to wire it in with `ln -s ../../script/check.py .git/hooks/pre-commit`. Doing exactly that produced `not a git checkout — nothing to check` and a green exit on every commit.
+
+Reached through the symlink, `abspath(__file__)` resolves inside `.git/hooks`, so the script took `.git` for the repo root and ran `git ls-files` against a directory git does not track. Empty list, nothing to check, exit 0 — a hook that guards nothing while looking like it does, which is worse than no hook, because the previous release's own instructions installed it.
+
+It now resolves the symlink and asks `git rev-parse --show-toplevel` where the tree actually starts, falling back to the script's own parent outside a checkout. Verified through all three entry points: as the installed hook, from another working directory, and with a defect reintroduced to confirm it still fails.
+
+No changes to any command.
+
 ## v0.30.2 — A tree that would not load can now say so before the tag does  ·  2026-08-07
 
 v0.30.1 restored a manifest that had been empty for two releases. This adds the check that would have caught it, plus the ones that would catch its neighbours.
