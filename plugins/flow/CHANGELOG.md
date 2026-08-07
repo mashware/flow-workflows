@@ -5,6 +5,14 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.30.1 — The manifest was truncated to zero bytes  ·  2026-08-06
+
+`plugins/flow/.claude-plugin/plugin.json` shipped **empty** in v0.29.1 and stayed empty through v0.30.0, so Claude Code could not load the plugin at all: no manifest, no commands.
+
+The cause was a scripted version bump written as `open(p, "w").write(open(p).read().replace(...))`. Python opens the file for writing — truncating it — before it evaluates the argument that reads it, so the read returned the empty file it had just created. The v0.29.0 bump had done the same edit in two statements and was fine; the one-liner that replaced it was not. Nothing flagged it: the file is not read by any command, only by the loader, and v0.30.0's diff did not list it because by then it was already empty.
+
+Restored from v0.29.0 and versioned 0.30.1. No content changes — `/flow:*` behaviour is exactly v0.30.0's.
+
 ## v0.30.0 — The line says what it *is*; the panel decides how to draw it  ·  2026-08-06
 
 The reader gained a vocabulary, and writing against it turns out to be both simpler and more honest than the columns flow was hand-building in v0.29.1.
