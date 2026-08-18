@@ -77,6 +77,8 @@ Launch **in parallel**:
 
 2. **Performance agent** if the feature touches persistence, repositories, templates on hot paths, controllers with real traffic, or calls anything outside the process inside a loop: use the `agents.performance` agent from `FLOW.md`; if empty, use `Agent general-purpose` with this role. Brief: "Detect N+1, missing indexes, unbounded queries, flush in a loop, per-iteration calls that leave the process (external API, HTTP, cache, filesystem), and heavy synchronous work that should go to a queue. For any call inside a loop that can fail, follow what **each failed iteration** sets off downstream — what it publishes, enqueues, disables or logs — and whether N failures multiply it. Report only actionable findings."
 
+   **A green suite is not a performance result.** The functional test database holds a handful of fixture rows, and at that size the optimizer picks whatever is cheapest for a tiny table — usually not what it picks in production. So a query that passed its tests has proven its **rows**, never its **plan**. If `/flow:feat:review §3.6` left any query verdict as `unresolved`, or the feature has an acceptance criterion about speed or volume, this is where it gets settled: run the measurement of **`/flow:work:query §4`** with the volumes in `data.volumes` (or a data set shaped like them — the distribution matters more than the total), record plan and timings, and gate on the result. If the repo has no `data.*` configuration and the criterion cannot be measured, it does not silently become `proven`: it is `unproven` with the reason, like any other criterion nothing demonstrates.
+
 3. **Full suite**: run `quality.test` from `FLOW.md` in the background; if empty, auto-discover the project's test command and note what you use. If there are frontend changes and `quality.frontend_test` is defined, run it as well.
 
 ## 3. Criteria coverage (S and larger)
@@ -139,6 +141,8 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 
 ## Performance
 - Analysis findings: …
+- Queries measured: <per query — plan, index used, rows read, time (3 runs), and on what data set; "schema only" or "not measured" with the reason when there was no way to run it>
+- Verdicts still unresolved from `06-review.md §Data-access duel`: <list, or "none">
 - Open risks: …
 
 ## Edge cases verified

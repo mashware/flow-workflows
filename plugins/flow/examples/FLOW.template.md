@@ -132,6 +132,38 @@ fan-out runs as plain parallel subagents — the primitive every harness has.
 - `fanout_max:`     # max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported
 - `fanout_tool:`    # orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable
 
+## data
+How this repo lets you look at a query's **plan** instead of arguing about it. Read by
+`/flow:work:query` (the query duel), `/flow:feat:review §3.6`, `/flow:bug:review §3.5`,
+`/flow:work:respond §4.G`, and the measurement in `/flow:feat:validate`. **Every key is optional
+and empty by default**: with the section empty the duel still runs, on the schema alone, and says
+in its verdict what it could not prove — it never reports an unmeasured plan as if it were measured.
+
+These commands run against a **development or throwaway database, never production**. Creating,
+seeding or dropping any database is a hard gate in every autonomy mode.
+
+- `explain_cmd:`      # get a query's execution plan. `{QUERY}` is substituted. e.g.:
+                      #   MySQL over compose: `docker compose exec -T mysql mysql mydb -e "EXPLAIN ANALYZE {QUERY}"`
+                      #   PostgreSQL:         `psql -d mydb -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"`
+                      # Empty = plans cannot be obtained; the duel is schema-only and declares it.
+- `schema_cmd:`       # show a table's REAL definition — column types, lengths, charset/collation, indexes and their
+                      # column order. `{TABLE}` is substituted. This is what settles "is there an index that serves this
+                      # order, in this direction?" and "can this join use an index at all?" — two questions the ORM
+                      # mapping cannot answer, because the mapping is what the code believes, not what the database has. e.g.:
+                      #   MySQL:      `docker compose exec -T mysql mysql mydb -e "SHOW CREATE TABLE {TABLE}"`
+                      #   PostgreSQL: `psql -d mydb -c "\d+ {TABLE}"`
+- `sandbox_cmd:`      # create a THROWAWAY database to measure in, isolated from anything the project uses. Empty = no
+                      # sandbox: measure on the development database (noting its row counts may pick another plan) or stay
+                      # schema-only. e.g. `docker compose exec -T mysql mysql -e "CREATE DATABASE {NAME}"`
+- `seed_cmd:`         # populate the sandbox with a data set shaped like production — the DISTRIBUTION is the point, not the
+                      # total (one key with thousands of rows next to twenty thousand with one; the real batch size; heavy
+                      # columns actually filled). `{NAME}` substituted. Empty = no seeding.
+- `volumes:`          # free text: the real sizes of the hot tables — rows, growth, worst key. The cheapest key in this
+                      # section and worth filling even when the others are empty: it is what stops a reviewer agent from
+                      # arguing against a volume it invented. e.g.:
+                      #   - downloads: ~40M rows, +1.5M/month, worst mail_hash ~3k rows
+                      #   - file_views: ~40M rows, `data` column averages 1KB, p99 21KB
+
 ## conventions
 Free text: conventions the commands must respect when writing/reviewing code
 (layers, patterns, prohibitions). Empty = no specific conventions.

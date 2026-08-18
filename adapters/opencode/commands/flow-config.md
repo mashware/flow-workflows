@@ -17,7 +17,7 @@ the repo's `FLOW.md` (those are the "empty → fallback" rows).
 - Read `FLOW.md` at the repo root. If it doesn't exist, say so, explain that every command still
   works by auto-detecting/asking, and suggest `/flow-init` to generate one. Then, so the output is
   still useful, run §2 treating **every** key as empty (all fallbacks).
-- Parse it by section: `tracker`, `git`, `quality`, `agents`, `conventions`, `notes`,
+- Parse it by section: `tracker`, `git`, `quality`, `agents`, `data`, `conventions`, `notes`,
   `domain_memory`, `observability`.
 
 ## 2. Effective config (per section)
@@ -56,6 +56,7 @@ Light checks — report problems, never change anything:
   `github`/`gitlab` and `done_cmd` is set → note it is usually redundant with `Closes #N` auto-close (harmless,
   but the merge already closes the issue). These `*_cmd` run best-effort and never block.
 
+- **Data access**: `data.explain_cmd`/`schema_cmd`/`sandbox_cmd`/`seed_cmd` are commands, not agents — check the binary or `make` target exists, never run them. An empty `data` section is not an error: note that the query duel runs on the schema alone and declares what it cannot prove. Flag an `explain_cmd`/`schema_cmd` with no `{QUERY}`/`{TABLE}` token (nothing would substitute), and flag **loudly** any of them pointing at what looks like production — these run against a development or throwaway database. If the section is empty while the repo clearly has a database, say what filling `volumes` alone would buy: a reviewer arguing about real row counts instead of invented ones.
 ## 4. Close
 
 - Print a one-line summary: `N keys set, M using fallbacks, K warnings`.

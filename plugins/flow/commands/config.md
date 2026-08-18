@@ -17,8 +17,8 @@ the repo's `FLOW.md` (those are the "empty → fallback" rows).
 - Read `FLOW.md` at the repo root. If it does not exist, say so, explain that every command still
   works by auto-detecting/asking, and suggest `/flow:init` to generate one. Then, so the output is
   still useful, run §2 treating **every** key as empty (all fallbacks).
-- Parse it by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `conventions`, `notes`,
-  `domain_memory`, `observability`.
+- Parse it by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `data`, `conventions`,
+  `notes`, `domain_memory`, `observability`.
 
 ## 2. Effective config (per section)
 
@@ -60,6 +60,16 @@ Light checks — report problems, never change anything:
   `tracker.assignee` and `git.assignee` are empty → note the token won't substitute. If `git.host` is
   `github`/`gitlab` and `done_cmd` is set → note it is usually redundant with `Closes #N` auto-close (harmless,
   but the merge already closes the issue). These `*_cmd` run best-effort and never block.
+- **Data access**: `data.explain_cmd` / `schema_cmd` / `sandbox_cmd` / `seed_cmd` are commands, not
+  agents — check the referenced binary or `make` target exists, never run them. If the whole `data`
+  section is empty, do not flag it as an error: note that the query duel in `/flow:work:query` and
+  `/flow:feat:review §3.6` runs on the schema alone and declares what it cannot prove. If
+  `explain_cmd` or `schema_cmd` is set but has no `{QUERY}` / `{TABLE}` token → flag (nothing would
+  be substituted). If any of them points at what looks like the **production** database, flag it
+  loudly: these run against a development or throwaway database, never a live one. And if the whole
+  section is empty while the repo clearly talks to a database (a migrations directory, an ORM
+  config), say what filling `volumes` alone would buy — a reviewer that argues about real row counts
+  instead of invented ones.
 - **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and, at the
   end, proposes the next command as a one-click confirmation — never runs it without confirming). If set, echo the mode and remind that the hard gates (push/MR-PR,
   ambiguous-base branch creation, DB/migrations, high-severity review findings, the business brief) still

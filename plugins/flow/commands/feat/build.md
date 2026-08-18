@@ -137,6 +137,8 @@ Load the project skills (see `FLOW.md` section `conventions`).
 
 **Borrowed code carries its reason.** When you lift a structure from another file in the repo — a `catch` block, a guard clause, a mapper, a config stanza, a test setup — you are importing decisions made for *that* file's situation, not for yours. Before keeping it, name under "Decisions made during implementation" in `05-implementation.md` where it came from and **what makes it apply here**: the exception it catches is actually thrown on this path, the guard's precondition can actually be false here, the mapped field actually exists on this shape. If you cannot name that reason, do not copy it — write what this code needs or leave it out. Borrowed-and-plausible is the most expensive kind of line to put in a diff: it reads as deliberate, so a reviewer spends real attention before discovering it was never chosen at all. This is the same anti-drift rule as §2.0bis, applied to code instead of contracts.
 
+**A query is written against the schema, not against the mapping.** When you write or change a data-access query — raw SQL, the ORM's query language, a query-builder chain, a repository finder, an aggregate, a bulk write — check **before** you consider it done: the index that will serve its filter *and* its order **in that direction** actually exists (read the schema, not the entity mapping); the bound is real and, if the requirement is "the latest k per key", it is not a global limit; both key columns of every join have the same type, length and charset/collation; no heavy column is read in a pass that only decides which rows survive. Take the shape from the **Access paths** table in `03-design.md`; if what you are writing does not match a row there, that is a design deviation to log, not a detail to absorb. Where `data.explain_cmd` is set in `FLOW.md`, get the plan of the new query now and paste it under "Access paths implemented" in `05-implementation.md` — three lines here save the round trip that `/flow:feat:review §3.6` or a reviewer would otherwise spend. Where it is not set, say the plan is unverified. Do **not** invent an index or a schema change to make your query work: a new index or a collation change is a schema change, a hard gate, and it goes back through the design.
+
 **If in a multi-MR/PR build**: limit yourself to what the current MR/PR covers per `04-mr-plan.md`. Any code belonging to a later MR/PR is scope creep; cut it or isolate it behind a feature flag / dead code temporarily per the plan. If it cannot be isolated, pause and return to `/flow:feat:plan` to cut it.
 
 Choose execution mode:
@@ -247,6 +249,13 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at th
 - Decision: …
   - Why: …
   - Discarded alternative: …
+
+## Access paths implemented
+<one row per query written or changed; omit the section if none. `Plan` is what `data.explain_cmd` returned, or "unverified" when the repo has no way to get one — never a guess.>
+
+| Query (file:line) | Filter · order (direction) · bound | Index it uses | Plan |
+|---|---|---|---|
+| `FooRepository::findBar()` | `a IN (…)` · `b DESC` · 15 per key | `barIdx (a,b)` | backward index scan, 750 rows read |
 
 ## Deviations from design
 - Design said X → did Y because Z

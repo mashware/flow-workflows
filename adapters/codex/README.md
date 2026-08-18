@@ -31,6 +31,7 @@ adapters/codex/
 │   ├── flow-work-clean.md
 │   ├── flow-work-abandon.md
 │   ├── flow-work-respond.md
+│   ├── flow-work-query.md
 │   ├── flow-work-green.md
 │   ├── flow-work-watch.md
 │   ├── flow-init.md

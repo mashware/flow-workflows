@@ -136,6 +136,7 @@ The hard gates listed above hold in all three. → [Autonomy reference](docs/CON
 | `/flow:config` | Show the effective `FLOW.md` config: what is set, what is empty (and its fallback), plus validation |
 | `/flow:work:green` | **Mergeable loop** — the open MR/PR cannot merge (red pipeline, conflicts, behind base): triage, fix at the root, push. Never green-washes → [docs](docs/WORKFLOWS.md#mergeable-loop--flowworkgreen) |
 | `/flow:work:respond` | **Review loop** — triage the MR/PR threads, debate, implement what you agreed, reply. Never resolves threads → [docs](docs/WORKFLOWS.md#review-loop--flowworkrespond) |
+| `/flow:work:query` | **Query duel** — puts a data-access query on trial: fact sheet, blinded challenger, and a verdict settled by its execution plan, never by prose → [docs](docs/WORKFLOWS.md#query-duel--flowworkquery) |
 | `/flow:work:watch` | **Post-deploy watcher** — monitors observability after a deploy, flags regressions, autopiloted → [docs](docs/WORKFLOWS.md#post-deploy-watcher--flowworkwatch) |
 | `/flow:work:daily` | **Work assistant** — Scrum-style standup across local + forge + tracker; ask a question or get the briefing → [docs](docs/WORKFLOWS.md#work-assistant--flowworkdaily) |
 | `/flow:work:status` | Summary of all open work items in `.claude/work/` |

@@ -112,6 +112,8 @@ Launch a general subagent with the assignment: "Investigate the root cause of <s
 
 If performance or concurrency: also launch the `agents.performance` agent from FLOW.md (if empty, general subagent). If the failure involves queues or dead-lettered messages, also launch the `agents.queues` agent (if empty, general subagent). If security: launch the `agents.security` agent from FLOW.md.
 
+   **If the symptom is slowness, a timeout, or a load spike, the root cause is a plan until proven otherwise** — and a plan can change with no line of code changing: a table crossed a size threshold, a key's distribution skewed, an index was dropped, a collation or column type changed under a join, statistics went stale, the batch grew. Run `/flow-work-query` on the queries on the slow path (its fact sheet and its measurement) as one of the hypotheses, with the same for-and-against discipline; its checklist doubles as a hypothesis list. Note which of those causes leave the code untouched: `git blame` cannot find them, so an investigation that only reads commits converges on the wrong thing with high confidence.
+
 ## 4. Output
 
 `.claude/work/<TICKET>/03-investigation.md`:

@@ -91,7 +91,7 @@ Load the relevant skills for the project first (see `FLOW.md` section `conventio
 Launch the appropriate subagents **in parallel** based on the feature and project type:
 
 - **Always**: `agents.architecture` agent (or `Agent general-purpose` if empty) tasked with proposing: module where it lives, new or modified entities/value objects, CQRS commands/queries (if applicable), events, repositories.
-- **If it touches DB**: `agents.persistence` agent (or `Agent general-purpose` if empty) tasked with proposing mappings, required migrations, indexes, and appropriate entity manager.
+- **If it touches DB**: `agents.persistence` agent (or `Agent general-purpose` if empty) tasked with proposing mappings, required migrations, indexes, and appropriate entity manager. **And with filling the "Access paths" table** (see §5): for every read or write the feature needs, the filter, the order **with its direction**, the bound and whether it is per key or global, the expected rows per key, and **the index that supports it** — checked against the schema that exists today, not assumed. An access path with no index behind it is a decision to take here, in writing, not a discovery to make in review: it is far cheaper to add the index to the design than to argue about the query on an open MR/PR.
 - **If it touches API/HTTP**: `agents.api` agent (or `Agent general-purpose` if empty) tasked with defining endpoint, DTO, route, security, and response format (planning only, no implementation).
 - **If it touches critical performance or hot paths**: `agents.performance` agent (or `Agent general-purpose` if empty) to anticipate N+1, repeated out-of-process calls, or load risks.
 - **If it touches security (authentication, payments, sensitive data)**: `agents.security` agent (or `Agent general-purpose` if empty) tasked with listing threats and mitigations for the proposed design.
@@ -136,6 +136,17 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 - New / modified entities: <for each new one, indicate "no equivalent found" or "knowingly duplicated because...">
 - Migrations:
 - Indexes:
+
+### Access paths
+<one row per read or write the feature needs; "N/A — no data access" if it needs none. Fill it from the schema that exists today, and mark as `new` any index the design is asking for. This table is what `/flow:feat:review §3.6` tries the finished query against.>
+
+| Access | Filter | Order (with direction) | Bound | Rows per key (source) | Index that supports it |
+|---|---|---|---|---|---|
+| latest downloads per mail | `mail_hash IN (batch of ≤50)` | `created_at DESC` | 15 **per key** | p50 3, worst 3k (`data.volumes`) | `(mail_hash, created_at)` — exists |
+| … | … | … | … | … | … |
+
+- **Bounds that are per key** never come from a global limit — say here which shape will carry it (one query per key, a union of per-key subqueries, a window function), and leave the choice to be measured in build/review rather than settled by preference now.
+- **Joins across tables**: state the type, length and charset/collation of **both** key columns when they are not obviously identical. A mismatch there silently costs the index, and it is invisible to every test.
 
 ## CQRS / Commands and Queries (if applicable)
 - Commands:
