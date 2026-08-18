@@ -42,6 +42,7 @@ repo-fact subset can commit it deliberately.
 | [`autonomy`](#autonomy) | How much a phase decides on its own | `manual` — stops at every decision |
 | [`quality`](#quality) | Test/lint/analysis commands and how deep review goes | Auto-discovered; review is `proportional` |
 | [`agents`](#agents) | Role → specialist agent map, and how wide the parallel fan-out goes | `general-purpose` with the role in the prompt; fan-out capped at 4 |
+| [`models`](#models) | Which model each kind of step runs with | The step runs with the model you launched the command with |
 | [`data`](#data) | How to read a query's plan and the real size of the hot tables | The query duel runs on the schema alone and says what it could not prove |
 | [`conventions`](#conventions) | Rules the code must respect | No specific conventions |
 | [`notes`](#notes) | Extra mandatory instructions per command | No extra guidance |
@@ -342,6 +343,76 @@ The rounds, the briefs and the `fanout_max` ceiling do not change — only the m
 harness-specific by definition**: a tool named here that the running harness does not have is
 ignored, and the step falls back to plain subagents. Leave it empty unless you know you want the
 extra machinery and the cost that comes with it.
+
+---
+
+## `models`
+
+Which model each kind of step runs with. The section is **optional in full**: an empty or absent
+`models` means every step runs with the model you launched the command with — which is what flow did
+before the section existed.
+
+| Key | Steps it covers |
+|---|---|
+| `study` | `feat:start` · `feat:brainstorm` · `feat:design` · `feat:plan` · `bug:start` · `bug:diagnose` · `bug:investigate` · `bug:postmortem` |
+| `code` | `feat:build` · `bug:fix` · `work:green` · the changes `work:respond` implements |
+| `test` | `feat:validate` · `bug:validate` |
+| `review` | `feat:review` · `bug:review` · `work:query` · `work:respond` thread triage |
+| `workers` | The parallel fan-out rounds only — approach panel, hypothesis sweep, finding skeptics |
+
+Everything not listed (`ship`, `status`, `daily`, `resume`, `try`, `clean`, `abandon`, `watch`)
+inherits, always.
+
+```markdown
+## models
+- study: fable
+- code: opus
+- test: sonnet
+- review: sonnet
+```
+
+The values are **free text passed straight to your harness**. flow does not validate a model name,
+does not rank models, and never picks one for you — it has no opinion on which model is good at
+what, and a plugin that shipped one vendor's tiers as gospel would be wrong on the other harnesses
+it also runs on. A harness that cannot set the model per subagent ignores the value and the step
+says so once.
+
+`workers` exists because a fan-out round is where cost multiplies: four skeptics or five approach
+advisors on one command. Set it below the command's own key to make breadth cheap, or leave it empty
+and the round inherits the key of the command running it.
+
+### The two limits
+
+**An agent cannot switch its own model.** This is the one that decides what the section can promise.
+The flow's steps split in two:
+
+- **What flow launches as a subagent** — the review panel, the tests agent, the challengers, the
+  contract check, the skeptics: here the configured model is applied when the subagent is launched.
+  Nothing is asked of you.
+- **What the main agent performs itself** — reading the ticket, brainstorming, designing, and
+  **writing the code** (`build`/`fix` are single-thread on XS/S/M by design): the model in play is
+  the one you launched the command with, and no instruction inside a command can change that.
+
+So in that second half a configured value is a **statement of intent that the flow reports, not
+enforces**: when it differs from the running model, the phase handoff says it in one line with the
+`/model` command that fixes it, records it in the phase artifact, and continues.
+
+It is deliberately **not** a gate. Model choice is flow mechanics — the same category as how many
+reviewers run or whether a panel opens — and `guided`/`auto` never ask about mechanics. A stop at
+every phase boundary demanding a `/model` would be individually defensible and would collectively
+turn an unattended run back into an attended one, which is exactly the degradation the never-ask
+list in the phase preamble exists to prevent. The artifact keeps the trace, so a build that ran on
+another model than the one configured is something you can see afterwards rather than something you
+had to police in advance.
+
+**A named agent keeps its own model.** If `agents.<role>` points at a real agent, that agent's own
+definition decides its model: you configured it there deliberately, and one setting must not be
+overridden from two places. These keys apply where flow **improvises** the agent — the
+`general-purpose` fallback with the role in the prompt — and to the fan-out workers.
+
+`/flow:config` prints the resolved map, step by step, with who decided each one (the `models` key,
+a named agent's own definition, or inheritance). Which model runs where is something you read, not
+something you infer from this page.
 
 ---
 

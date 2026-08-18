@@ -223,6 +223,7 @@ or asked for** — a repo with no `FLOW.md` still works, just with more question
 | `autonomy` | How much a phase decides on its own: `manual` · `guided` · `auto` (hard gates always ask) |
 | `quality` | Test / lint / static-analysis / DB commands, plus how deep review goes (`review_depth`) and your review panel |
 | `agents` | Role → specialist agent map (architecture, persistence, api, security, frontend, testing…), plus how wide the parallel fan-out goes (`fanout_max`, `fanout_tool`) |
+| `models` | Which model each kind of step runs with — `study` · `code` · `test` · `review` · `workers` (empty = the model you launched the command with) |
 | `conventions` | Rules the code must respect (layers, patterns, prohibitions) |
 | `notes` | Extra mandatory instructions injected per command |
 | `domain_memory` | Whether the [`domain-memory`](https://github.com/mashware/domain-memory) MCP is available |

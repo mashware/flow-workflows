@@ -31,6 +31,11 @@ observability, and the subagent map for YOUR project.
   all three harnesses support them; only the declaration format changes.
 - **Trimmed** (see each adapter's `PRIMITIVES.md`):
   - **`AskUserQuestion`**: none of them have a structured menu UI → becomes a plain text question.
+  - **`models` per subagent**: all three declare a subagent's model in the subagent's own definition,
+    not at the call site → a `models` key is honoured by invoking a subagent declared with that model
+    (each `PRIMITIVES.md` says where). And no harness lets a session switch its own model, so for the
+    steps the conductor performs itself (`study`, and the code in `build`/`fix`) the configured value is
+    reported at the phase handoff and the flow continues — same as on Claude Code.
   - **Autopilot for `/flow:work:watch`**: no in-session re-wakeup → replaced by **OS cron +
     headless execution**. The command runs ONE cycle and exits; state lives in `monitor.md`,
     which each cycle re-reads. It works, but the trigger is external, not the session itself.

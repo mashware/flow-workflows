@@ -13,7 +13,18 @@ repo's `FLOW.md` (those are the "empty → fallback" rows).
 - Read `FLOW.md` at the repo root. If it doesn't exist, say so, explain that every command still works
   by auto-detecting/asking, and suggest `/flow-init` to generate one. Then, so the output is still useful,
   run §2 treating **every** key as empty (all fallbacks).
-- Parse it by section: `tracker`, `git`, `quality`, `agents`, `data`, `conventions`, `notes`, `domain_memory`,
+- Parse it by section: `tracker`, `git`, `quality`, `agents`, `models`, `data`, `conventions`, `notes`, `domain_memory`,
+- **Resolved model map** (only if `models` has any key set): the keys are named by *kind of step*, and
+  which step falls under which key lives inside the commands — so print the mapping resolved, one line
+  per key: the key, its value, and the commands it covers (`study` → start · brainstorm · design · plan
+  · diagnose · investigate · postmortem; `code` → build · fix · green; `test` → validate; `review` →
+  review · query · respond triage; `workers` → the fan-out rounds, inheriting the running command's key
+  when empty). Mark `study` and `code` with a warning: those steps are performed by the conductor
+  itself, which cannot switch its own model, so there the value is **reported at the phase handoff, not
+  enforced**. Say in one line that a subagent named in `agents.*` keeps its own definition's model, and
+  that commands with no key (`ship`, `status`, `daily`, `resume`, `try`, `clean`, `abandon`, `watch`)
+  always inherit. Never flag a model name as invalid or suggest a different one — the values are free
+  text for the harness; only flag a key that is not one of the five.
   `observability`.
 
 ## 2. Effective config (per section)

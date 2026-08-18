@@ -85,3 +85,28 @@ With this, `/flow-feat-design` will launch `@ddd-symfony-architect` for architec
 ## Graceful degradation when a subagent is unavailable
 
 If subagent `@name` does not exist in `agents/`, opencode will report an error. The commands are written with explicit degradation: if the `agents.*` field in `FLOW.md` is empty, a general-purpose subagent with the role described in the prompt is used instead. Therefore the adapter works with no declared subagents — it simply loses the specialization.
+
+---
+
+## `models` in `FLOW.md` — model per kind of step
+
+`FLOW.md` has a `models` section with one key per **kind of step**: `study` (start, brainstorm,
+design, plan, diagnose, investigate, postmortem), `code` (build, fix, green), `test` (validate),
+`review` (review, query, respond triage) and `workers` (the parallel fan-out rounds only). **Every
+key is empty by default, and empty means the step runs with the model the session was launched
+with** — a repo that never fills the section behaves exactly as before. The values are free text
+handed to the harness: flow neither validates nor ranks model names.
+
+How it lands here:
+
+- **Subagent steps** — a subagent's model is set in its own definition (`model:` in `agents/<name>.md`), not at
+  invocation time. To honour a `models` key, declare the subagent you invoke with that model.
+  A subagent named in `agents.<role>` keeps whatever its own definition sets; the `models` keys apply
+  where the command falls back to a general-purpose subagent, and to the fan-out workers.
+- **What the conductor does itself** — reading the ticket, designing, and writing the code in
+  `build`/`fix` (single-thread on XS/S/M): a session cannot switch its own model. There the
+  configured value is **reported, not enforced**: the phase handoff says it in one line (opencode's model picker, `/models`),
+  records it in the phase artifact, and continues. It is deliberately not a gate — model choice is
+  flow mechanics, and `guided`/`auto` never stop for mechanics.
+
+Full reference: `docs/CONFIGURATION.md` §`models` in the repo.

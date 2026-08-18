@@ -132,6 +132,41 @@ fan-out runs as plain parallel subagents — the primitive every harness has.
 - `fanout_max:`     # max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported
 - `fanout_tool:`    # orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable
 
+## models
+Which model each kind of step runs with. **Every key is optional and empty by default = the step runs
+with the model you launched the command with** (today's behavior — the flow changes nothing).
+
+Values are **free text, passed straight to your harness**. flow never validates a model name, never
+ranks them, and never picks one for you: whatever your harness accepts (`opus`, `sonnet`, `fable`,
+`gemini-2.5-pro`, a provider id) is what belongs here. A harness that cannot switch model per
+subagent ignores the value and the step says so once, in one line.
+
+- `study:`    # feat:start, feat:brainstorm, feat:design, feat:plan · bug:start, bug:diagnose,
+              # bug:investigate, bug:postmortem
+- `code:`     # feat:build · bug:fix · work:green (and the changes /flow:work:respond implements)
+- `test:`     # feat:validate · bug:validate
+- `review:`   # feat:review · bug:review · work:query · work:respond (thread triage)
+- `workers:`  # the parallel fan-out rounds ONLY: approach panel (brainstorm §3.A), hypothesis sweep
+              # (investigate §3.A), finding skeptics (review §6 / §5). Empty = falls back to the key
+              # of the command running the round.
+
+Commands not listed above (`ship`, `status`, `daily`, `resume`, `try`, `clean`, `abandon`, `watch`)
+have no key: they inherit, always.
+
+Two limits, stated here because they bound what these keys can promise:
+
+**An agent cannot switch its own model.** In the steps the main agent performs itself — reading the
+ticket, the design, and writing the code in `build`/`fix` (single-thread on XS/S/M) — the model in
+play is the one you launched the command with. When the configured value differs from the running
+model, the phase handoff says it in one line (`/model <value>`) and **continues**: it is flow
+mechanics, so it is never a question in `guided`/`auto` and never a hard gate. It is recorded in the
+phase artifact, so a build that ran on another model than the one configured is traceable afterwards.
+
+**A named agent keeps its own model.** If `agents.<role>` names a real agent, that agent's own
+definition wins — you configured it, and it is not overridden from two places. These keys apply
+where flow *improvises* the agent (`general-purpose` with the role in the prompt) and to the fan-out
+workers. `/flow:config` prints the resolved map (step → model → who decided it).
+
 ## data
 How this repo lets you look at a query's **plan** instead of arguing about it. Read by
 `/flow:work:query` (the query duel), `/flow:feat:review §3.6`, `/flow:bug:review §3.5`,
