@@ -17,7 +17,7 @@ the repo's `FLOW.md` (those are the "empty → fallback" rows).
 - Read `FLOW.md` at the repo root. If it does not exist, say so, explain that every command still
   works by auto-detecting/asking, and suggest `/flow:init` to generate one. Then, so the output is
   still useful, run §2 treating **every** key as empty (all fallbacks).
-- Parse it by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `data`, `conventions`,
+- Parse it by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`, `conventions`,
   `notes`, `domain_memory`, `observability`.
 
 ## 2. Effective config (per section)
@@ -34,6 +34,29 @@ For **every** documented key in `examples/FLOW.template.md`, print one row:
 Group the output by section with a short header each, so it reads as a table/scan, not prose.
 Keep set-vs-empty visually distinguishable (e.g. `✓` vs `·`).
 
+### 2.1 Resolved model map (only if the `models` section exists and has any key set)
+
+`models` is the one section where reading the keys is not enough to know what happens: the keys are
+named by *kind of step*, and which step falls under which key lives inside the commands. Print that
+mapping resolved, so the user reads it instead of inferring it:
+
+```
+study    fable    →  feat:start · brainstorm · design · plan · bug:start · diagnose · investigate · postmortem
+code     opus     →  feat:build · bug:fix · work:green  ⚠ main agent — reported at the handoff, not enforced
+test     sonnet   →  feat:validate · bug:validate
+review   sonnet   →  feat:review · bug:review · work:query · work:respond (triage)
+workers  (empty)  →  fan-out rounds inherit the running command's key
+```
+
+Mark with `⚠` the keys whose steps the **main agent performs itself** (`study`, and `code` for the
+single-thread `build`/`fix` on XS/S/M): there the value is reported at the phase handoff and the flow
+continues, because an agent cannot switch its own model. State that once, plainly — a user who reads
+`code: opus` and assumes it is enforced has been misled by their own config file.
+
+Also state, in one line each: a role set in `agents.*` keeps its own agent definition's model (the
+keys apply where flow improvises the agent and to fan-out workers), and commands with no key
+(`ship`, `status`, `daily`, `resume`, `try`, `clean`, `abandon`, `watch`) always inherit.
+
 ## 3. Validate (flag, do not fix)
 
 Light checks — report problems, never change anything:
@@ -49,6 +72,7 @@ Light checks — report problems, never change anything:
   default `4` applies. `agents.fanout_tool` names a harness tool, not an agent: if it is set and
   this harness does not expose it, note the fan-out falls back to plain parallel subagents (not an
   error — that is the portable path).
+- **Models**: `models.*` values are **free text for the harness** — never flag a model name as invalid, never suggest a "better" one, and never invent a default. Only report: a key that is not one of `study` / `code` / `test` / `review` / `workers` (flag it — it is a typo and will be ignored), and whether this harness can set a model per subagent at all (if it cannot, note that every value degrades to inheritance). If `models.code` is set, note in one line that `build`/`fix` are single-thread on XS/S/M, so there the value is reported at the handoff rather than applied.
 - **Commands**: for `quality.*` and `git.worktree_resync` entries that look like `make <target>`,
   optionally check the target exists in the `Makefile`; for npm/composer scripts, check they exist.
   Do not run them — only check presence. Unresolvable → flag as "declared but not found".

@@ -31,3 +31,28 @@ Solution adopted in `/flow-work-watch`:
 
 ### TaskCreate / TaskStop
 Claude Code's task UI does not exist in Codex. Step tracking is done through the workflow's markdown artifacts (implementation log in `05-implementation.md`, `04-fix.md`) and reports to the user at the end of each step.
+
+---
+
+## `models` in `FLOW.md` — model per kind of step
+
+`FLOW.md` has a `models` section with one key per **kind of step**: `study` (start, brainstorm,
+design, plan, diagnose, investigate, postmortem), `code` (build, fix, green), `test` (validate),
+`review` (review, query, respond triage) and `workers` (the parallel fan-out rounds only). **Every
+key is empty by default, and empty means the step runs with the model the session was launched
+with** — a repo that never fills the section behaves exactly as before. The values are free text
+handed to the harness: flow neither validates nor ranks model names.
+
+How it lands here:
+
+- **Subagent steps** — a subagent's model is set where it is declared (`model = "..."` under `[agents.<name>]` in
+  `config.toml`), not at invocation time. To honour a `models` key, invoke a subagent declared with that model.
+  A subagent named in `agents.<role>` keeps whatever its own definition sets; the `models` keys apply
+  where the command falls back to a general-purpose subagent, and to the fan-out workers.
+- **What the conductor does itself** — reading the ticket, designing, and writing the code in
+  `build`/`fix` (single-thread on XS/S/M): a session cannot switch its own model. There the
+  configured value is **reported, not enforced**: the phase handoff says it in one line (the `--model` flag at launch, or `/model` if your Codex version has it),
+  records it in the phase artifact, and continues. It is deliberately not a gate — model choice is
+  flow mechanics, and `guided`/`auto` never stop for mechanics.
+
+Full reference: `docs/CONFIGURATION.md` §`models` in the repo.
