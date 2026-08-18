@@ -212,8 +212,10 @@ stay auditable after the fact.
 
 **How a stop reads.** Independent of the mode, every stop opens with a fixed header — ticket, size,
 phase, `MR #n of N`, the plan state from `meta.json.mrs`, one line of what just finished and one
-line of what is needed from you — and then at most ~10 lines of body. The rest goes to the phase
-artifact. Two things stay out of the chat entirely: the agent narrating its own process or
+line of what is needed from you — and then at most ~10 lines of body. Those lines are short bullets
+rather than prose, and they are written in the language of what changed for whoever uses the
+software, not of the code that changed: a class name earns a line only when you have to decide about
+it, asked something technical, or named it first. The rest goes to the phase artifact. Two things stay out of the chat entirely: the agent narrating its own process or
 mistakes, and subagent completion notices, which never get a turn of their own. The fewer stops a
 mode produces, the more each one has to carry: in `auto` there are only two per MR/PR (the brief
 and `ship`), and everything between them ran while you were looking elsewhere.
