@@ -42,6 +42,7 @@ repo-fact subset can commit it deliberately.
 | [`autonomy`](#autonomy) | How much a phase decides on its own | `manual` — stops at every decision |
 | [`quality`](#quality) | Test/lint/analysis commands and how deep review goes | Auto-discovered; review is `proportional` |
 | [`agents`](#agents) | Role → specialist agent map, and how wide the parallel fan-out goes | `general-purpose` with the role in the prompt; fan-out capped at 4 |
+| [`data`](#data) | How to read a query's plan and the real size of the hot tables | The query duel runs on the schema alone and says what it could not prove |
 | [`conventions`](#conventions) | Rules the code must respect | No specific conventions |
 | [`notes`](#notes) | Extra mandatory instructions per command | No extra guidance |
 | [`domain_memory`](#domain_memory) | The `domain-memory` MCP | Domain steps are skipped silently |
@@ -339,6 +340,73 @@ The rounds, the briefs and the `fanout_max` ceiling do not change — only the m
 harness-specific by definition**: a tool named here that the running harness does not have is
 ignored, and the step falls back to plain subagents. Leave it empty unless you know you want the
 extra machinery and the cost that comes with it.
+
+---
+
+## `data`
+
+How this repo lets a query be judged on its **execution plan** instead of on an argument about it.
+Read by `/flow:work:query` (the query duel), the data-access pass in `/flow:feat:review` §3.6 and
+`/flow:bug:review` §3.5, the performance objections in `/flow:work:respond` §4.G, and the
+measurement in `/flow:feat:validate`.
+
+**Every key is optional and empty by default.** With the section empty the duel still runs — on the
+schema and the code alone — and its verdict states which points it could not settle. That is the
+whole contract: the flow never reports an unmeasured plan as if it had been measured.
+
+| Key | What it gives you | Empty |
+|---|---|---|
+| `explain_cmd` | A query's execution plan (`{QUERY}` substituted) | No plans; schema-only duel |
+| `schema_cmd` | A table's real definition — types, lengths, charset/collation, indexes and their column order (`{TABLE}` substituted) | Index and collation questions stay unknown |
+| `sandbox_cmd` | Create a throwaway database to measure in (`{NAME}` substituted) | Measure on the dev database, or not at all |
+| `seed_cmd` | Populate it with a data set shaped like production (`{NAME}` substituted) | No seeding |
+| `volumes` | Free text: real sizes of the hot tables — rows, growth, worst key | Reviewer agents argue against volumes they invented |
+
+```markdown
+## data
+- explain_cmd: docker compose exec -T mysql mysql mydb -e "EXPLAIN ANALYZE {QUERY}"
+- schema_cmd: docker compose exec -T mysql mysql mydb -e "SHOW CREATE TABLE {TABLE}"
+- volumes:
+  - downloads: ~40M rows, +1.5M/month, worst mail_hash ~3k rows
+  - file_views: ~40M rows, `data` averages 1KB, p99 21KB
+```
+
+### Why a query needs its own gate
+
+Correctness is visible in the code; cost is not. The cost of a query lives in the plan, and the plan
+depends on facts that appear nowhere in the diff: which index exists, in what column order and
+**direction**, the type and collation of both sides of a join, how many rows a key really has. So a
+panel of reading reviewers approves a query that reads a hundred thousand rows to return fifteen —
+and approves it *faster* when the design wrote down a plausible reason for it. Two failure shapes
+recur, and neither is catchable by reading:
+
+- **A mixed-direction order** (`a ASC, b DESC`) over a single-direction index does not half-use it:
+  it sorts the entire result set.
+- **Join keys with different types or collations** cannot use an index at all — the engine converts
+  one side, usually the big one. Same rows, same order, same green tests; only the plan collapses.
+
+That is also why `schema_cmd` reads the database and not the ORM mapping: the mapping is what the
+code believes, and these two failures live in the gap between that and what the database has.
+
+### `volumes` is the cheapest key here
+
+An adversarial reviewer with no volumes invents them, and an invented volume produces a confident
+argument about a scenario that does not exist — in either direction. One line per hot table (rows,
+growth, worst key) is what makes the duel argue about this project. Fill it even if you never fill
+the commands.
+
+### The gate on measuring
+
+`explain_cmd` and `schema_cmd` are reads: they run when a duel needs them. `sandbox_cmd` and
+`seed_cmd` create and populate a database, which is a **hard gate in every autonomy mode** — the
+flow shows the exact commands and the target name before running them, never points them at a
+database the project uses, and gives you the cleanup command with the result. Point none of these at
+production; a plan measured there is not worth what asking for it costs.
+
+And the corollary that matters most: **the functional test database proves nothing about a plan.**
+With a handful of fixture rows the optimizer picks whatever is cheapest at that size, which is
+usually not what it picks in production. "Not measured" is a legitimate verdict; a plan from the
+test database reported as evidence is not.
 
 ---
 

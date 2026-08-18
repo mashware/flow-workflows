@@ -13,6 +13,7 @@ Run and deduce; show findings to confirm/correct:
 - **Git host and CLI** — from `git remote -v`: `github.com`→github/`gh`/PR; `gitlab.*`→gitlab/`glab`/MR; `bitbucket.org`→bitbucket/PR; `dev.azure.com`→azure/`az`/PR; Gitea/Forgejo→gitea/`tea`; unknown domain (self-hosted)→ask which one and what CLI. Check installed CLI: `command -v gh glab tea az`.
 - **Base branch** — `git symbolic-ref refs/remotes/origin/HEAD` → `origin/main` or `origin/master` (`git.default_base`).
 - **Quality commands** — inspect the repo and propose what's there (empty if none): `Makefile` (targets test/lint/stan/fmt/migrate), `package.json` scripts, `composer.json` (phpunit/phpstan/cs-fixer), pyproject/pytest/ruff/mypy, Cargo, go. If there are schema migrations, propose `quality.db_diff` and raise `git.predeploy_gate`.
+- **Data access** (`data.*`, all optional) — only if the repo talks to a database: find the client and the local stack (a compose service, a `DATABASE_URL`/`DB_*` env var, a `Makefile` target that opens a shell) and propose `data.explain_cmd` and `data.schema_cmd` in the engine's dialect **against the development database** (MySQL over compose: `docker compose exec -T <db> mysql <schema> -e "EXPLAIN {QUERY}"` / `… -e "SHOW CREATE TABLE {TABLE}"`; PostgreSQL: `psql -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"` / `\d+ {TABLE}`). Leave `sandbox_cmd`/`seed_cmd`/`volumes` empty unless the user has something ready; if nothing is detected, leave the section out — the query duel degrades to schema-only and says so.
 - **domain-memory** — is the `domain-memory` MCP configured in `config.toml`? If yes, `domain_memory.enabled: true`.
 
 ## 3. Ask only for what cannot be deduced (in text, listing options; always leave "empty → auto-discover")
@@ -22,6 +23,7 @@ Run and deduce; show findings to confirm/correct:
 - MR/PR sections (`git.request_sections`, or free-form).
 - Pre-deploy brake (`git.predeploy_gate`): do you run SQL manually before deploying? If yes, propose `quality.db_diff`.
 - Agents by role (`agents.*`, `review.*`): optional; empty uses the general subagent. If it has custom agents (`[agents.*]` sections in `config.toml`), collect the names.
+- **Data access** (`data.*`): ask only if a database was detected. Show the `explain_cmd`/`schema_cmd` you found for confirmation and say what they unlock — with them, the query duel settles an index or a collation question with a real plan instead of an argument; without them it still runs on the schema alone and declares what it could not prove. Then ask for **`data.volumes`** (real sizes of the hot tables: rows, growth, worst key): that one line is what stops a reviewer agent from inventing the volume it argues about, and it is worth filling even when the commands are empty. `sandbox_cmd`/`seed_cmd` only for repos that already have a throwaway database; creating or seeding one is a hard gate in every mode.
 - Observability: default **empty = auto-discover** in `work-watch`.
 
 ## 4. Write `FLOW.md`

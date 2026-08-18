@@ -16,6 +16,7 @@ writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
 - **git**: host and CLI (GitHub, GitLab, Bitbucket, Azure, Gitea, self-hosted…), term (MR/PR), default base, branch pattern, assignee, squash, description sections, pre-deploy gate, train chaining (multi-PR stacked branches).
 - **quality**: test/analysis/style/DB commands for the repo (empty = auto-discover).
 - **agents** / **review**: role→agent map and code-review panel.
+- **data**: how to get a query's execution plan and a table's real schema, plus the volumes of the hot tables — what the query duel needs to judge a query on its plan instead of on an argument. Empty = the duel runs on the schema alone and says what it could not prove.
 - **conventions**: code conventions the commands must respect (free text).
 - **domain_memory**: whether the [`domain-memory`](https://github.com/mashware/domain-memory) MCP is active.
 - **observability**: profile for `work:watch` (services, platform, deploy detection, queues). Empty = auto-discover.

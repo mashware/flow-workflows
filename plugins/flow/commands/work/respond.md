@@ -113,6 +113,7 @@ Categories:
 | **D — design debate** | Disagreement on approach/architecture; needs a reasoned position | debate → then code or hold |
 | **E — out of scope** | Valid, but belongs to another ticket | defer with justification (propose a follow-up ticket) |
 | **F — obsolete/done** | Already addressed, or no longer applies | reply pointing to where |
+| **G — data / performance objection** | The reviewer says a query is slow, unbounded, unindexed, or proposes a different query | **measure first** (§4.G), then reply with the plan |
 
 Present a **triage table** to the user: `thread → location → category → proposed action → one-line rationale`. This is the map for the rest of the command. In `manual` mode, let the user re-categorize any row before proceeding.
 
@@ -126,6 +127,23 @@ For each thread, draft the response, but **decide the stance honestly** — do n
   - **The reviewer is right and it changes the design** → say so. If the agreed change contradicts `03-design.md`, flag that this is a *design invalidation*: per the flow's principle, update the design artifact **before** coding (§6 handles it), and if the change is large, recommend routing it back through `/flow:feat:build` (or `/flow:bug:fix`) properly rather than a quick in-review patch.
   - **You hold your ground** → draft the argument citing the why (the constraint, the YAGNI/fit reasoning, the domain fact). A good disagreement reply states the reason and invites the reviewer to counter — it does not just assert.
 - **E** — draft the deferral: why it is out of this MR/PR's scope, and propose opening a follow-up ticket (offer to note it; do not create trackers silently).
+- **G (data / performance)** — see §4.G. Do not draft a position before you have the facts; this is the one category where a well-reasoned reply written too early is worse than no reply.
+
+### 4.G Performance objections are answered with a plan, never with reasoning
+
+**A reasoned reply that has not looked at an execution plan is the most expensive answer this command can produce.** It sounds authoritative, so it costs the reviewer a round trip to push back; it is grounded in the design's own rationale, so it feels verified when nothing was; and when the reviewer turns out to be right, the thread has already burned two rounds and some trust. This is not hypothetical — the objection *"why is the limit in the code and not in the query?"* answered from theory has cost exactly that, twice, in a flow that had every other gate.
+
+So when a thread objects to a query's cost, or proposes a different query:
+
+1. **Run `/flow:work:query`** on the query under discussion **and on the variant the reviewer proposes** — its §2 fact sheet, §3 duel, §4 measurement where the schema cannot settle it. Both variants in the same table, three runs each, with `Keys served` in it: a variant can be the fastest and still answer for 40 of the 50 keys asked, which makes it wrong, not fast.
+2. **Measure the reviewer's variant even when your theory says it is worse** — especially then. If the theory holds, one number closes the thread; if it does not, you found out before they had to insist. And **no dogma**: "N small queries is an N+1" and "one batched query always wins" are both preferences until measured.
+3. **Their objection may be right about the symptom and wrong about the cause** — and that is the most valuable outcome. The bound was the complaint; the lost index was the cost. Lead the reply with what you measured, not with who was right.
+4. **If the real defect predates this MR/PR** (the same shape exists in neighbouring queries, or it is a schema-level mismatch), say so plainly and propose the separate ticket. Predating it is not a reason to bless the diff, and it is not a reason to widen the diff either.
+5. **A trick that fixes a plan ships with its reason.** A cast to align a collation, a hint, a hand-written column order: if it is what you agree on, it carries a comment saying why it is there and what removes it, plus the ticket for the root cause — deleting it turns nothing red, it only turns slow, and no test with fixture rows can hold that line.
+
+**How the reply reads is part of the answer.** One recommendation, in the first sentence. Then the plan or the number that carries it. Then the costs — and only the ones that would change the decision. A reply that agrees, then hedges in three directions, then buries a preference at the end reads as *"I don't know"* and makes the reviewer decide twice; when the honest answer really is "it depends", name the condition and say which way you would go by default. The measurement table belongs in the reply (it is the evidence); the reasoning behind how you built the data set belongs in `08-feedback.md`.
+
+If the repo has no `data.*` configuration and the objection cannot be measured, **say that in the reply** and answer with what the schema does prove — the indexes, the directions, the collations — declaring the rest unverified. "I could not measure this, here is what the schema says" is a defensible reply; a confident one built on neither is not.
 
 Show the drafted replies to the user. **Hard gate: nothing is posted yet.** Per thread the user can: **accept**, **edit** (show the revised draft), or **"I'll handle this one myself"** (skip — you neither reply nor change code for it). Record decisions in `08-feedback.md`.
 
@@ -135,8 +153,8 @@ Show the drafted replies to the user. **Hard gate: nothing is posted yet.** Per 
 
 Collapse the agreed outcomes into a concrete plan for this round. Each thread lands in exactly one bucket:
 
-- **reply-only** (A/F, and D-held, and E) → no code; goes straight to §7.
-- **code-change** (B/C, and D-conceded) → a checklist of edits, each tagged with the thread it answers.
+- **reply-only** (A/F, and D-held, and E, and a **G** whose measurement vindicated the code) → no code; goes straight to §7. A `G` lands here only when a plan or a number says so, never because the argument felt solid.
+- **code-change** (B/C, and D-conceded, and a **G** the measurement decided against) → a checklist of edits, each tagged with the thread it answers.
 - **defer** (E) → the follow-up-ticket note.
 
 If the **code-change** bucket is empty, skip §6 and go to §7. If it contains changes that add **new behavior** (not just tweaks), write the short **business brief** (what the user/system can do after this, what is NOT included) and confirm with `AskUserQuestion` before editing — same gate as `/flow:feat:build`. Pure refactors/style fixes do not need a brief.
@@ -157,6 +175,7 @@ Do **not** treat in-review edits as exempt from the full review because they are
 - **Non-trivial rounds** — anything beyond nitpicks, or that introduces new architectural pieces → run the review machinery of `/flow:feat:review`, **scoped to this round's diff** (not the whole feature), applying:
   - Its **§2.0 depth ladder** — pick the built-in `code-review` effort from the round's diff size (proxying `meta.json.size` when the round is small) plus the **sensitive-surface bump**; launch the project panel (`quality.review_skill` / `quality.reviewers`) when the ladder selects it, **as defined**. And per its **§2.2**: the stance agreed with the user in §4 goes to the reviewer as context, never as a scope exclusion in the prompt.
   - Its **§4 over-engineering / YAGNI audit** and **§5.5 idiom / primitive audit (blind to the design's rationale)** — the two passes that catch exactly this loop's failure mode: extracting a class/interface/mechanism to "answer a comment" that a fresh reviewer then flags as the wrong primitive. **§5.5's trigger — "introduces new architectural pieces" — always runs when that is true, regardless of round size**, because it is the highest-risk case here.
+  - Its **§3.6 data-access duel** whenever the round **added or changed a query** — including a one-line change to an order, a bound or a join, and including a change made to satisfy a reviewer's comment. That is the highest-risk case of all: a query rewritten under review pressure lands in an MR/PR already under human eyes, and if its plan is worse than what it replaced, the next round is about a regression you introduced while agreeing. If §4.G already measured it this round, reuse that table instead of measuring twice.
   - Its **§5 contract verification** when `05-implementation.md` has a "Contracts to respect" section and the round touches shape construction.
   - Its **§7 local gates** — `quality.style_fix`, `quality.static_analysis`, and `quality.test_one` on any tests touched this round.
   - **Lightweight mode** (no work folder / no `03-design.md`): skip §5, and §4 judges YAGNI against the code itself rather than the design's defensive-mechanisms table; **§5.5 still runs unchanged** — it is deliberately blinded to the design, so it needs no artifact.
@@ -177,11 +196,11 @@ After the push (or immediately, for reply-only threads), post the agreed respons
 
 ## 8. Log, loop, and domain knowledge
 
-- **Artifact.** Append this round to `.claude/work/<TICKET>/08-feedback.md` (create it the first round). Per round: the date, and per thread — location, category, decision (reply-only / code-change / defer / held / handled-by-user), the reply posted, and the commit/edit if any. This is the record of the negotiation and what came out of it; a later round reads it to avoid re-litigating settled threads.
+- **Artifact.** Append this round to `.claude/work/<TICKET>/08-feedback.md` (create it the first round). Per round: the date, and per thread — location, category, decision (reply-only / code-change / defer / held / handled-by-user), the reply posted, and the commit/edit if any. **For a `G` thread, the measurement table goes in whole** — variants, plans, timings, keys served, and how the data set was built — plus what stayed unresolved. A measurement recorded only in a reply has to be rebuilt from scratch the next time anyone asks; recorded here, a week later it is still the answer. This is the record of the negotiation and what came out of it; a later round reads it to avoid re-litigating settled threads.
 - **domain-memory.** If `domain_memory.enabled` is `true` and the debate produced a non-obvious "why" worth keeping (a constraint a reviewer surfaced, an integration gotcha, a decision that reversed the design) → `stage_finding` for this branch (silence by default; only on a clear signal). It will be consolidated at `save_knowledge` time.
 - **Loop / close.** If threads remain open awaiting the reviewer, tell the user the ball is in their court and that a later `/flow:work:respond` picks up the next round. When all threads are answered and their code pushed, summarize: threads addressed, code changes made, threads **ready for the user to resolve**, and any follow-up tickets proposed. Once the MR/PR is approved and merged, the normal `/flow:feat:ship §6` / `/flow:bug:ship` close applies (and `/flow:work:watch` for the post-deploy).
 
 ## Notes
 
 - **Scope boundary vs the personal `resolve-mr` skill.** A user may have a private, host-specific skill that only *implements* the code from review comments. This command supersedes it generically: it adds the triage, the debate, the reply loop, and the artifact — and, like it, **never resolves threads**. If such a skill exists and the user prefers it for the code-edit step, §6 can defer to it; the rest of the loop is unchanged.
-- **No new FLOW.md keys.** This command reuses `git.*`, `tracker.*`, `quality.review_skill`, `autonomy.mode`, and `domain_memory.*`. Nothing to configure beyond what the flow already needs.
+- **No FLOW.md keys of its own.** This command reuses `git.*`, `tracker.*`, `quality.review_skill`, `autonomy.mode`, `domain_memory.*`, and — through `/flow:work:query` in §4.G — the optional `data.*` section. With `data.*` empty it still runs: it answers what the schema proves and declares the rest unverified.

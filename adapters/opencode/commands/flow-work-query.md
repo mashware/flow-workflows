@@ -1,0 +1,124 @@
+---
+description: Put a data-access query on trial — schema, indexes, execution plan and measured numbers decide it, never prose
+---
+
+# `/flow-work-query $ARGUMENTS`
+
+**Step 0**: read `FLOW.md` at the repo root for this repo's conventions (`data`, `agents`, `quality`, `git`, `autonomy`). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+
+**A query is not approved by prose, it is approved by its plan.** A query that reads correctly, respects every layer and carries a written justification can still read a hundred thousand rows to return fifteen — and every reviewer that reads the justification instead of the plan will pass it. This command is the adversarial pass that closes that gap: state the facts of the access path, let a challenger attack it, and settle each point with a **plan or a number**, never with an argument. It is **cross-cutting** (feat or bug), **repeatable**, and it does **not** advance `meta.json.phase` — it is an activity, and it runs equally well with no work folder at all.
+
+Other phases invoke this mechanics rather than repeating it: `/flow-feat-review` and `/flow-bug-review` (the data-access duel over the diff), `/flow-work-respond` (a reviewer objected to a query), `/flow-feat-design` (the access paths of a design), `/flow-feat-build` and `/flow-feat-validate`. Invoke it directly whenever the doubt arrives outside any of them — a question in a chat, a comment on an MR/PR already open, a suspicion about a query that has been there for a year.
+
+**Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`). The duel itself, how many challengers run and whether to measure are **flow mechanics** — never a question, in any mode: decide, record, continue. **Hard gates — ALWAYS stop and ask, in every mode:** (1) **creating, seeding or dropping any database, schema or table**, including a throwaway one (§4) — show the exact commands and the target, and never point them at a database the project uses; (2) **any DDL** on a real database (a new index, a column change, a collation change) — that is a schema change, the flow's standing gate; (3) editing code (this command's own output is a verdict, not a patch — the calling phase implements it, or you ask); (4) posting anything to an MR/PR or ticket.
+
+## 1. Resolve the subject
+
+- **No argument** → every query **added or modified** by the current work: `git diff <git.default_base>...HEAD` plus the working tree. This is what the review phases invoke.
+- **A path** (`src/Foo/BarRepository.php`, optionally `:line`) → the queries in it, whether or not they are part of a diff.
+- **A pasted query** (SQL, DQL/HQL/JPQL, a query-builder chain, an ORM call) → that one, plus its call sites if they can be located.
+- **An MR/PR thread or a quoted objection** → the query under discussion **and** any variant the objector proposes. Their variant is a candidate like yours (§3, dogma rule).
+
+**What counts as a query**, stack-agnostic: raw SQL, the ORM's own query language, a query-builder chain, a repository finder, a lazy relation traversed in a loop, an aggregate/count, a bulk write, a migration or index change, and any search-engine or key-value read that behaves the same way. If the diff only renames or reformats one, say so and stop — there is nothing to try.
+
+## 2. The fact sheet (before anyone argues)
+
+One per query, and it is **facts, not opinions**. Every unknown is written down as unknown; a fact you assumed is the thing that later makes the whole duel worthless.
+
+| Field | What goes in it |
+|---|---|
+| **Call site & frequency** | Where it runs, and **how many times per request/job** (once, once per row of a batch of N, inside a loop over an unbounded list) |
+| **Target** | Entity/table(s), and which of them grow forever |
+| **Filter** | Columns compared, and how (equality, range, prefix, function applied to the column, `IN` of how many values) |
+| **Order** | Columns **and their direction** — this pair, not just the column names |
+| **Bound** | Limit/offset, and whether the bound is **global or per key**; if the code cuts the result after the fact, say so — that bounds the payload, not the rows read |
+| **Joins** | For each join, **both** sides: type, length, charset/collation, nullability — read from the real schema, not from the mapping |
+| **Columns read** | And which are heavy (large text/blob/JSON/vector) |
+| **Expected cardinality** | Rows per key, batch size, worst realistic key — with **where the number comes from** (`data.volumes`, a `COUNT`, a measurement). "Few rows" is not a number |
+| **Indexes today** | The indexes that actually exist on those columns and their column order/direction, read with `data.schema_cmd` or from the schema definition — **never assumed from the mapping** |
+
+If `data.schema_cmd` is empty and no schema definition can be read, the index and collation rows are **unknown**, and the duel says so instead of guessing. Two of the checklist items below cannot be judged without them.
+
+## 3. The duel
+
+Three roles. **The judge is always the main agent** — the one holding the work's context and writing the artifact; it is never delegated.
+
+**Challenger** — one subagent — `@name` where `name` comes from `agents.performance` in `FLOW.md` (or `agents.persistence`), declared in `agents/<name>.md` with `mode: subagent`; if the field is empty or that agent does not exist, run the challenger role in the same context, keeping the blinding by only giving it the fact sheet, the schema and the code. It gets the fact sheet, the schema and the code of the query, and **not** the design's rationale, the ticket's prose, or your reasons: exactly as `/flow-feat-review §5.5` blinds its idiom audit, because a plausible written justification is what makes a reviewer stop looking. On **L** work, or on a query on a hot path, run a **second** challenger with the checklist split between them (respect `agents.fanout_max`; empty → 4). Brief:
+
+> You are attacking one data-access query. You receive its fact sheet, the real schema of the tables it touches, and the code — and deliberately **not** why it was written this way. Your job is to show how it degrades, not to approve it. Walk the checklist below and, **for every attack you make, name the concrete data scenario that triggers it** (which volume, which distribution, which key) and what the engine would then do. An attack without a scenario is noise; say "does not apply here" and move on. Do not propose a rewrite yet — first establish what breaks. Under 400 words.
+
+**Checklist — the classic failures, in the order they bite.** The challenger must walk all of it; the judge must see a line per item, including the ones that do not apply.
+
+1. **Is there an index that supports this access, as written?** The filter's columns must match a usable prefix, and the `ORDER BY` must be satisfiable by the same index — **including direction**. A mixed-direction order (`a ASC, b DESC`) over a single-direction index is not a partial win: it sorts the **whole** result set. And an order that reads harmless can be free or fatal depending only on whether both columns run the same way as the index.
+2. **Can the join keys use an index at all?** Different types, different lengths, different charset/collation, a nullable column against a non-nullable one, or a function/cast applied to the indexed side — any of these makes the engine convert one side and **drop the index**, and it typically does it on the big table. This failure is **invisible to tests**: same rows, same order, same assertions — only the plan changes. It is read from the schema of **both** columns, never from the mapping, and it is worth checking even when the change did not introduce it (see item 10).
+3. **A per-key bound is not a global limit.** If the requirement is "the latest k per key", a global `LIMIT n·k` serves the first keys and returns nothing for the rest — a silent partial answer, worse than no bound. Put **every** candidate on the table: one query per key with its own order and limit; a union of per-key subqueries; a window function; and cutting in the process. Measure them (§4); do not rank them from theory.
+4. **Work the engine could do, done in the process** — filtering, ordering, grouping, deduplicating, counting or joining in application code over rows the engine could have excluded. And its mirror image: reading a whole set to keep a handful of rows.
+5. **Heavy columns in a pass that only decides.** Large text/blob/JSON/vector columns read for rows that are about to be discarded. The fix is usually two passes: a light one that decides which keys survive, a keyed one that fetches the weight — and then the light pass must still be bounded (items 1 and 3).
+6. **N+1, and its twin.** A query per row of a result is the famous one; the batch that grew past its usable size is the one that gets missed — an `IN` of thousands of values, a plan that flips once the list is long, a parameter or packet limit. Both are failures of the same question: how many round trips, carrying how much.
+7. **No bound at all.** No limit on a table that grows forever, a deep offset, an order over an unindexed column, an unbounded `COUNT(*)`, a "temporary" full read that outlives the data set it was written for.
+8. **Queries inside loops, and writes one at a time.** A query, a flush, or a commit per iteration; a transaction held open across remote calls; and what **each failed iteration** sets off downstream — what it publishes, enqueues, disables or logs — which is where N failures multiply into something else.
+9. **A new index is not free.** It costs writes and space, it may be redundant with the prefix of one that already exists, and on a large table creating it is DDL — the flow's schema gate, and a pre-deploy step if `git.predeploy_gate` is true.
+10. **Someone else's plan.** The same defect usually already lives in the neighbouring queries, and a schema-level fix (a collation, a type, a missing index) improves all of them at once. When that is what you find, **say it and open a separate ticket**: it does not get dragged into this diff, and the diff does not get blessed because the problem predates it.
+11. **Nothing pins this plan.** When correctness of *performance* rests on a trick — an explicit cast to align a collation, a hint, one specific column order, a `STRAIGHT_JOIN` — deleting it turns nothing red: the rows are identical, only the plan collapses, and no test with a handful of fixture rows can hold the line. If a trick is the answer, it ships with a comment saying **why it is there and what removes it**, plus the ticket for the root cause. If a trick is *not* worth that, say so — the alternative that needs no trick may be worth its cost.
+12. **The cardinality is assumed, not counted.** Every item above rests on the row counts in the fact sheet. If they came from intuition, that is the first finding, and `data.volumes` or a `COUNT` is the fix.
+
+**Defender** — answer each attack with **evidence, not intent**: the plan, the index actually chosen, the rows read, the measured time. "It is bounded because the batch is small" is not a defence; the number that shows the batch is small is. Invoke `@<agents.persistence>` if it is declared and the query is idiomatic to a stack it knows; otherwise the judge defends inline.
+
+**Judge — the rules that decide the duel:**
+
+- **No number, no win.** An attack with a scenario but no plan/measurement and a defence with a justification but no plan/measurement are the same thing: unresolved → it goes to §4, or it is declared unresolved. Never split the difference in prose.
+- **No dogma, in either direction.** "N small queries is an N+1" and "one batched query always wins" are both dogma. N indexed lookups of k rows read n·k entries and routinely beat one scan of thousands. The simple shape stays a candidate until a number removes it.
+- **The objector's variant is measured next to yours** — even when your theory says it is worse, and especially then. If the theory is right, the number proves it in one line and the thread closes; if it is wrong, you found out before the reviewer had to insist.
+- **Measure before you argue.** When a human raises a performance objection, a reasoned reply that has not looked at a plan is the most expensive possible answer: it sounds authoritative, it costs a round trip to disprove, and it is grounded in the design's own rationale, so it feels verified when nothing was — and *that* is the failure this command exists to prevent. Facts first (§2), plan second (§4), position third.
+- **The verdict may be "the premise was wrong."** The most useful outcome of a duel is often that neither side's fix was the real issue — the objection was about a bound and the cost was a lost index. Lead with that, not with who was right.
+
+## 4. Measure — when the schema alone cannot settle it
+
+Read the `data` section of `FLOW.md`. **Everything here is optional and empty by default**; empty means the duel runs **dry** and its verdict says which points it could not settle, which is a legitimate result and an honest one.
+
+| Key | What it gives you |
+|---|---|
+| `explain_cmd` | Get the execution plan of a query (`{QUERY}` substituted) |
+| `schema_cmd` | Show a table's real definition — types, charset/collation, indexes (`{TABLE}` substituted) |
+| `sandbox_cmd` | Create a **throwaway** database to measure in |
+| `seed_cmd` | Populate it with a representative data set |
+| `volumes` | Free text: the real sizes of the hot tables (rows, growth, worst key) |
+
+**Order of preference**: (a) the plan on a data set with realistic volume — the only evidence that settles item 1 and item 2; (b) the plan on the development database, noting that its row counts may make the optimizer choose differently; (c) the schema alone — enough for collation, types, index definitions and directions, not for a plan; (d) nothing, declared.
+
+**The functional test database proves nothing about a plan.** With a handful of fixture rows the optimizer picks whatever is cheapest at that size, which is usually not what it picks in production. A plan measured there is not evidence — say "not measured" rather than reporting it as if it were.
+
+When you do measure: build the data set to the **shape** that matters, not just the size — the distribution is the point (one key with thousands of rows next to twenty thousand keys with one; the batch size the code really passes; the heavy columns actually populated). Then a table, **three runs per variant**, and the plan next to the time:
+
+| Variant | Plan (access, index, rows read) | Time (3 runs) | Rows returned | Keys served |
+|---|---|---|---|---|
+| as written | … | … | … | … |
+| challenger's proposal | … | … | … | … |
+| reviewer's proposal | … | … | … | … |
+
+`Keys served` is there because that is the column that catches a global limit pretending to be a per-key one: a variant can be the fastest and still answer for 40 of the 50 keys asked, which is not a faster answer but a wrong one.
+
+Creating or seeding a database is a **hard gate** (§0): show the commands and the target name, never point them at a database the project uses, and offer the cleanup command with the result. If it stays up for follow-up questions, say so and say how to drop it.
+
+## 5. The verdict — one recommendation, the number behind it, then the costs
+
+Per query, exactly one of:
+
+- **ok** — the access is supported and bounded; state the index it uses and the rows it reads.
+- **change** — with **one** recommendation, not a menu, and the number that carries it. Alternatives go in a line below, with why they lost.
+- **schema / follow-up** — the fix is not in this diff (a collation, a type, a missing index, a neighbouring query). Propose the separate ticket, and say what the diff does in the meantime.
+- **unresolved** — could not be settled without measuring, and measuring was not available. Name the specific question left open. This is a real verdict; a pretend "ok" is not.
+
+**How the verdict reads matters as much as what it says.** A verdict that opens with caveats, weighs three options evenly and buries the recommendation reads as "I don't know" and makes the reader do the deciding twice. So: **the recommendation first**, in one sentence. Then the number or plan that carries it. Then the costs — and **only** the costs that would change the decision. If a consideration would not change what you just recommended, it belongs in the artifact, not in the verdict. And when the honest answer is "it depends", name the condition it depends on and which way you would go by default.
+
+## 6. Where the output lands
+
+- **Inside a phase** (the calling command has a work folder): the queries table and the verdicts go into that phase's artifact — `06-review.md` for the review duel, `08-feedback.md` for a `respond` round, `05-implementation.md` for a query written during build, `07-validation.md` for a measured criterion. Findings marked **change** enter the calling phase's normal flow: a `change` on a query is a review blocker like any other.
+- **Standalone** (no work folder, or invoked ad hoc): report the verdict in chat, and if the measurement was expensive to produce, write it to `.claude/work/<work>/06-review.md` when a work exists, or offer to keep it as a note where the user wants it. A measurement nobody can find gets paid for twice.
+- **domain-memory.** If `domain_memory.enabled` is `true` and the duel produced a durable, non-obvious fact about this project's data — a collation mismatch between two tables, the real size of a hot table, an index that exists but cannot serve the obvious order, a shape that is measurably faster here — `stage_finding` it for this branch. This is exactly the knowledge that costs a day to rediscover, and it is worth more than the finding that triggered it.
+
+## Notes
+
+- **This command judges, it does not patch.** The verdict goes back to the phase that asked, which implements it with its own gates and its own reviewers. Standalone, it ends at the recommendation; the user decides what to do with it.
+- **It applies past the relational case.** A search-engine query with no filter on the partition field, a key-value read in a loop, a queue consumer fetching one row at a time, a message-broker fan-out that multiplies reads — same three questions: what does it read, how many times, and what bounds it.
+- **No new agent roles.** It reuses `agents.performance`, `agents.persistence` and `agents.fanout_max`. The only new configuration is the optional `data` section, and with it empty the command still runs — it just says what it could not prove.

@@ -118,6 +118,8 @@ If `agents.fanout_tool` is set in `FLOW.md`, run the sweep through that tool ins
 
 3. **Launch `Agent general-purpose`** with the task: "Investigate the root cause of <symptom> knowing that <diagnosis findings>. Focus: why it started failing, what change or condition triggers it, what code assumptions are false. Read `.claude/work/<TICKET>/02-diagnose.md`. Report hypotheses ranked by probability."
 4. **If performance or concurrency**: also launch the `agents.performance` agent from FLOW.md (if empty, `Agent general-purpose` with a performance role); if the bug involves queues or dead messages, also launch the `agents.queues` agent (if empty, `Agent general-purpose` with a messaging role).
+
+   **If the symptom is slowness, a timeout, or a load spike, the root cause is a plan until proven otherwise** — and a plan can change without a single line of code changing: a table crossed a size threshold, a key's distribution skewed, an index was dropped, a collation or column type changed under a join, statistics went stale, the batch size grew. Run **`/flow:work:query`** on the queries on the slow path (its §2 fact sheet and §4 measurement) as one of the hypotheses, with the same for-and-against discipline as the rest. Its checklist doubles as a hypothesis list here. And note which of those causes leave the code untouched: `git blame` cannot find them, so an investigation that only reads commits will converge on the wrong thing with high confidence.
 5. **If security**: launch the `agents.security` agent from FLOW.md to evaluate whether the bug opens an attack surface; if empty, use `Agent general-purpose` with a security role in the prompt.
 
 ## 4. Output

@@ -127,6 +127,8 @@ Load the project skills (see `FLOW.md` section `conventions`).
 
 **Borrowed code carries its reason.** When you lift a structure from another file in the repo — a `catch` block, a guard clause, a mapper, a config stanza, a test setup — you are importing decisions made for *that* file's situation, not for yours. Before keeping it, name under "Decisions made during implementation" where it came from and **what makes it apply here**: the exception it catches is actually thrown on this path, the guard's precondition can actually be false here. If you cannot name that reason, do not copy it — write what this code needs or leave it out. Borrowed-and-plausible is the most expensive kind of line to put in a diff: it reads as deliberate, so a reviewer spends real attention before discovering it was never chosen. Same anti-drift rule as §2.0bis, applied to code instead of contracts.
 
+**A query is written against the schema, not against the mapping.** When you write or change a data-access query, check **before** calling it done: the index that will serve its filter *and* its order **in that direction** exists (read the schema, not the entity mapping); the bound is real, and if the requirement is "the latest k per key" it is not a global limit; both key columns of every join share type, length and charset/collation; no heavy column is read in a pass that only decides which rows survive. Take the shape from the **Access paths** table in `03-design.md`; if what you write does not match a row there, that is a design deviation to log. Where `data.explain_cmd` is set in `FLOW.md`, get the plan now and paste it under "Access paths implemented" in `05-implementation.md`; where it is not, say the plan is unverified. Never invent an index or a schema change to make a query work — that is a schema change, a hard gate, and it goes back through the design.
+
 **If in a multi-MR/PR build**: limit yourself to what the current MR/PR touches per `04-mr-plan.md`. Any code that belongs to a later MR/PR is scope expansion; cut it or isolate it behind a feature flag / temporary dead code per the plan.
 
 Decide execution mode:
@@ -214,6 +216,12 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated while you work (not at
 - Decision: …
   - Why: …
   - Discarded alternative: …
+
+## Access paths implemented
+<one row per query written or changed; omit if none. `Plan` is what `data.explain_cmd` returned, or "unverified" when the repo has no way to get one — never a guess.>
+
+| Query (file:line) | Filter · order (direction) · bound | Index it uses | Plan |
+|---|---|---|---|
 
 ## Deviations from the design
 - Design said X → did Y because Z

@@ -91,7 +91,7 @@ First, load the relevant project conventions (see `FLOW.md` section `conventions
 Launch in **parallel** the subagents appropriate for the feature and project type. Subagents are invoked via `@name` as declared in `agents/` for the project (see `FLOW.md` fields `agents.*`); if the field is empty, use a general-purpose subagent with the role indicated in the prompt:
 
 - **Always**: architecture subagent tasked with proposing: which module it lives in, new or modified entities/value objects, CQRS commands/queries (if applicable), events, repositories.
-- **If it touches DB**: persistence subagent tasked with proposing mappings, required migrations, indexes, and the appropriate entity manager.
+- **If it touches DB**: persistence subagent tasked with proposing mappings, required migrations, indexes, and the appropriate entity manager. **And filling the "Access paths" table** of the output: for every read or write the feature needs, the filter, the order **with its direction**, the bound and whether it is per key or global, the expected rows per key, and **the index that supports it** — checked against the schema that exists today, not assumed. An access path with no index behind it is a decision to take here, in writing, not a discovery to make in review: adding the index to the design is far cheaper than arguing about the query on an open MR/PR.
 - **If it touches API/HTTP**: API subagent tasked with defining the endpoint, DTO, route, security, and response format (planning only, not implementation).
 - **If it touches critical performance or high-traffic paths**: performance subagent to flag N+1, repeated out-of-process calls, or load risks.
 - **If it touches security (authentication, payments, sensitive data)**: security subagent tasked with listing threats and mitigations in the proposed design.
@@ -124,6 +124,15 @@ Consolidate the outputs in `.claude/work/<TICKET>/03-design.md`:
 - New / modified entities: <for each new one, state "no equivalent found" or "deliberate duplicate because...">
 - Migrations:
 - Indexes:
+
+### Access paths
+<one row per read or write the feature needs; "N/A — no data access" if it needs none. Filled from the schema that exists today, marking as `new` any index the design asks for. This table is what the data-access duel in review tries the finished query against.>
+
+| Access | Filter | Order (with direction) | Bound | Rows per key (source) | Index that supports it |
+|---|---|---|---|---|---|
+
+- A bound that is **per key** never comes from a global limit: say which shape will carry it (one query per key, a union of per-key subqueries, a window function) and leave the choice to be measured later, not settled by preference now.
+- For joins, state the type, length and charset/collation of **both** key columns when they are not obviously identical: a mismatch there silently costs the index and is invisible to every test.
 
 ## CQRS / Commands and Queries (if applicable)
 - Commands:

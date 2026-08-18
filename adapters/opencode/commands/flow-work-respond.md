@@ -102,6 +102,7 @@ Classify each thread and, for debate/technical ones, **pull the recorded "why"**
 | **D — design debate** | Disagreement on approach; needs a position | debate → code or hold |
 | **E — out of scope** | Valid but another ticket | defer with justification |
 | **F — obsolete/done** | Already addressed / N/A | reply pointing to where |
+| G data/performance objection | a query is called slow, unbounded or unindexed, or a different query is proposed | **measure first** (§4.G), then reply with the plan |
 
 Present a **triage table**: `thread → location → category → proposed action → one-line rationale`. In `manual` mode let the user re-categorize before proceeding.
 
@@ -112,12 +113,24 @@ Decide the stance **honestly** — neither reflexively agree nor reflexively def
 - **B/C** — confirm the edit for §6; if you actually disagree with a nitpick, draft the push-back with the reason.
 - **D** — draft a position **grounded in the recorded rationale**. Two honest outcomes: (a) **reviewer is right and it changes the design** → if it contradicts `03-design.md`, flag it as a *design invalidation* (update the design artifact before coding in §6; if large, route back through `/flow-feat-build`/`/flow-bug-fix`); (b) **you hold your ground** → draft the argument citing the constraint / YAGNI-fit / domain fact, and invite a counter.
 - **E** — draft the deferral and propose a follow-up ticket (offer to note it; do not create trackers silently).
+- **G (data / performance)** — see §4.G: do not draft a position before you have the facts; this is the one category where a well-reasoned reply written too early is worse than no reply.
+
+### 4.G Performance objections are answered with a plan, never with reasoning
+**A reasoned reply that has not looked at an execution plan is the most expensive answer this command can produce**: it sounds authoritative, so it costs the reviewer a round trip to push back; it is grounded in the design's own rationale, so it feels verified when nothing was; and when the reviewer turns out to be right, the thread has burned two rounds and some trust. So:
+1. Run `/flow-work-query` on the query under discussion **and on the variant the reviewer proposes** — fact sheet, duel, measurement where the schema cannot settle it. Both variants in one table, three runs each, with a `keys served` column: a variant can be the fastest and still answer for 40 of the 50 keys asked, which makes it wrong, not fast.
+2. **Measure their variant even when your theory says it is worse** — especially then. And **no dogma**: "N small queries is an N+1" and "one batched query always wins" are both preferences until measured.
+3. Their objection may be **right about the symptom and wrong about the cause** — the most valuable outcome. Lead the reply with what you measured, not with who was right.
+4. If the real defect **predates this MR/PR**, say so and propose the separate ticket: predating it neither blesses the diff nor widens it.
+5. **A trick that fixes a plan ships with its reason** (a cast to align a collation, a hint, a column order): a comment saying why it is there and what removes it, plus the ticket for the root cause — deleting it turns nothing red, only slow.
+
+**How the reply reads is part of the answer**: one recommendation in the first sentence, then the plan or number that carries it, then only the costs that would change the decision. A reply that agrees and then hedges in three directions reads as "I don't know" and makes the reviewer decide twice; when the answer really is "it depends", name the condition and say which way you would go by default. With no `data.*` configured, say so in the reply and answer with what the schema proves (indexes, directions, collations), declaring the rest unverified.
+
 
 Show the drafts. **Hard gate: nothing posted yet.** Per thread the user can **accept**, **edit**, or **"I'll handle this one myself"** (skip). Record in `08-feedback.md`. This is a conversation: after posting (§7) the reviewer may reply → a later `/flow-work-respond` re-fetches and continues.
 
 ## 5. Build the change plan
 
-Each thread → one bucket: **reply-only** (A/F, D-held, E) → §7; **code-change** (B/C, D-conceded) → checklist tagged by thread; **defer** (E) → follow-up note. If code-change is empty, skip §6. If it adds **new behavior**, write the short **business brief** (what the user can do after / what is NOT included) and confirm before editing — same gate as `/flow-feat-build`. Pure refactors/style need no brief.
+Each thread → one bucket: **reply-only** (A/F, D-held, E, and a **G** whose measurement vindicated the code — never because the argument felt solid) → §7; **code-change** (B/C, D-conceded, and a **G** the measurement decided against) → checklist tagged by thread; **defer** (E) → follow-up note. If code-change is empty, skip §6. If it adds **new behavior**, write the short **business brief** (what the user can do after / what is NOT included) and confirm before editing — same gate as `/flow-feat-build`. Pure refactors/style need no brief.
 
 ## 6. Implement the agreed code changes
 
@@ -128,7 +141,7 @@ Each thread → one bucket: **reply-only** (A/F, D-held, E) → §7; **code-chan
 ### 6.1 Review gate — same ladder as `/flow-feat-review` (do not shortcut it)
 In-review edits are **not** exempt because they are "small": this is where a wrong primitive or an over-engineered mechanism slips in under pressure, and it lands in an MR/PR already under human eyes — a low-quality fix produces the *next* round of comments. So the round's diff passes the **same gate as `/flow-feat-review`**, scaled to the round:
 - **Trivial rounds** (only nitpicks, no new classes/wiring) → one built-in `code-review` pass over the round's diff is enough; skip the rest.
-- **Non-trivial rounds** (beyond nitpicks, or introducing new architectural pieces) → run `/flow-feat-review`'s machinery **scoped to this round's diff**: its **§2.0 depth ladder** (effort by round size + sensitive-surface bump, panel when selected, launched **as defined**), its **§2.2 briefs rule** (the stance agreed in §4 goes to the reviewer as context, never as a scope exclusion in the prompt), its **§4 over-engineering/YAGNI** and **§5.5 idiom/primitive audit (blind to the design's rationale)** — the two that catch this loop's failure mode (extracting a class/mechanism to "answer a comment" that a reviewer then flags as the wrong primitive; §5.5 **always** runs when the round introduces new pieces, regardless of size), its **§5 contract check** (if `05-implementation.md` lists contracts and the round touches shape construction), and its **§7 local gates** (`style_fix`, `static_analysis`, `test_one`). **Lightweight mode** (no `03-design.md`): skip §5, §4 judges YAGNI against the code itself; **§5.5 still runs** (it needs no artifact).
+- **Non-trivial rounds** (beyond nitpicks, or introducing new architectural pieces) → run `/flow-feat-review`'s machinery **scoped to this round's diff**: its **§2.0 depth ladder** (effort by round size + sensitive-surface bump, panel when selected, launched **as defined**), its **§2.2 briefs rule** (the stance agreed in §4 goes to the reviewer as context, never as a scope exclusion in the prompt), its **§4 over-engineering/YAGNI** and **§5.5 idiom/primitive audit (blind to the design's rationale)** — the two that catch this loop's failure mode (extracting a class/mechanism to "answer a comment" that a reviewer then flags as the wrong primitive; §5.5 **always** runs when the round introduces new pieces, regardless of size), its **§5 contract check** (if `05-implementation.md` lists contracts and the round touches shape construction), and its **§7 local gates** Plus its **data-access duel** whenever the round **added or changed a query** — including a one-line change to an order, a bound or a join, and including a change made to satisfy a reviewer's comment: a query rewritten under review pressure lands in an MR/PR already under human eyes, and if its plan is worse than what it replaced, the next round is about a regression you introduced while agreeing. If §4.G already measured it, reuse that table. (`style_fix`, `static_analysis`, `test_one`). **Lightweight mode** (no `03-design.md`): skip §5, §4 judges YAGNI against the code itself; **§5.5 still runs** (it needs no artifact).
 - **Blocker rule**: high-severity blocks the push until addressed. If a fix reopens the debated approach, loop back to §4 to re-agree before editing again. Record tier/effort and findings in `08-feedback.md`.
 
 ### 6.2 Push (hard gate)
@@ -149,4 +162,4 @@ Show what will be pushed and confirm. Anti-deploy lock: HEAD must not be `git.de
 ## Notes
 
 - **Never resolves threads** — same principle as confirming outward-facing actions.
-- **No new FLOW.md keys**: reuses `git.*`, `tracker.*`, `quality.review_skill`, `autonomy.mode`, `domain_memory.*`.
+- **No FLOW.md keys of its own**: reuses `git.*`, `tracker.*`, `quality.review_skill`, `autonomy.mode`, `domain_memory.*`, and the optional `data.*` through the query duel in §4.G. With `data.*` empty it still runs: it answers what the schema proves and declares the rest unverified.

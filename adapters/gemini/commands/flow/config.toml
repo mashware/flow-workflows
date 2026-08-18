@@ -10,7 +10,7 @@ Canonical key list and their meaning: `examples/FLOW.template.md` from the plugi
 ## 1. Load
 
 - Read `FLOW.md` at the repo root. If it does not exist, say so, explain that every command still works by auto-detecting/asking, and suggest `/flow:init` to generate one. Then, so the output is still useful, run §2 treating **every** key as empty (all fallbacks).
-- Parse it by section: `tracker`, `git`, `quality`, `agents`, `conventions`, `notes`, `domain_memory`, `observability`.
+- Parse it by section: `tracker`, `git`, `quality`, `agents`, `data`, `conventions`, `notes`, `domain_memory`, `observability`.
 
 ## 2. Effective config (per section)
 
@@ -31,6 +31,7 @@ Light checks — report problems, never change anything:
 - **Coherence**: `git.worktree` is `ask`/`always` but `git.worktree_path` empty → note the default `.worktrees/{branch}` will be used. `git.host` and `git.cli` disagree → flag. `domain_memory.enabled` is `true` but the MCP is not available this session → note the domain steps will be skipped.
 - **Tracker transitions**: if any of `tracker.start_cmd` / `done_cmd` / `abandon_cmd` is set but `tracker.tool` is `none`/empty → flag (there is no ticket to move). If `start_cmd` references `{ASSIGNEE}` but both `tracker.assignee` and `git.assignee` are empty → note the token won't substitute. If `git.host` is `github`/`gitlab` and `done_cmd` is set → note it is usually redundant with `Closes #N` auto-close (harmless, but the merge already closes the issue). These `*_cmd` run best-effort and never block.
 
+- **Data access**: `data.explain_cmd`/`schema_cmd`/`sandbox_cmd`/`seed_cmd` are commands, not agents — check the binary or `make` target exists, never run them. An empty `data` section is not an error: note that the query duel runs on the schema alone and declares what it cannot prove. Flag an `explain_cmd`/`schema_cmd` with no `{QUERY}`/`{TABLE}` token (nothing would substitute), and flag **loudly** any of them pointing at what looks like production — these run against a development or throwaway database. If the section is empty while the repo clearly has a database, say what filling `volumes` alone would buy: a reviewer arguing about real row counts instead of invented ones.
 ## 4. Close
 
 - Print a one-line summary: `N keys set, M using fallbacks, K warnings`.

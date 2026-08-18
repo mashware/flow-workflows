@@ -112,7 +112,7 @@ Do not bless a choice merely because the design rationalized it in prose. **A pl
 
 Only what the §2 skill does **not** already cover. If the feature touches specific areas, additionally launch **in parallel**:
 
-- DB / heavy queries, or **any repeated call that leaves the process** (external API, HTTP, cache, filesystem) → use the `agents.performance` agent from `FLOW.md` on the changed files; if empty, skip this reinforcement. Have it cover what **each failed iteration** sets off downstream — what it publishes, enqueues, disables or logs — not just the cost of the happy path.
+- **Any repeated call that leaves the process** (external API, HTTP, cache, filesystem) → use the `agents.performance` agent from `FLOW.md` on the changed files; if empty, skip this reinforcement. Have it cover what **each failed iteration** sets off downstream — what it publishes, enqueues, disables or logs — not just the cost of the happy path. **Queries are not covered here** — they get their own pass in §3.6, because a general performance reviewer reads the query and its justification and almost never reads its plan.
 - Workers / message queues → use the `agents.queues` agent from `FLOW.md` to verify there is no `flush()` in a loop and that workers are registered with the project convention (see `FLOW.md` section `conventions`); if empty, skip this reinforcement.
 - Frontend → if there are changes in interface code, use the `agents.frontend` agent from `FLOW.md`; if there are also affected frontend tests, use `agents.frontend_test` as well; if either is empty, skip that reinforcement.
 
@@ -133,6 +133,18 @@ Loop, maximum **2 rounds**:
 6. **No silent truncation**: if after 2 rounds the critic still flags uncovered areas, **record them literally** in the output under "Areas not covered after 2 rounds" with their reason. Better to declare the limit than to feign complete coverage.
 
 Fresh findings from this sweep enter the normal flow: they go through §4 (over-engineering), §5 (contracts), and §6 (adversarial verification) like any other.
+
+## 3.6 Data-access duel (queries are tried on their plan, not their prose)
+
+**The one review category that a reading reviewer structurally cannot cover.** A query's correctness is visible in the code; its cost is visible only in the **execution plan**, and the plan depends on things that are nowhere in the diff — the index that exists, its column order and direction, the type and collation of both sides of a join, how many rows a key really has. So a panel of readers approves a query that reads a hundred thousand rows to return fifteen, and does it faster when the design wrote down a plausible reason. This pass exists because that is not a hypothetical failure: it is the one that reaches production and comes back as a reviewer's objection or a slow-query alert.
+
+**When it runs.** Whenever the diff **adds or modifies** a query — raw SQL, the ORM's query language, a query-builder chain, a repository finder, a relation traversed in a loop, an aggregate/count, a bulk write, a migration or index change, or the equivalent read against a search engine or key-value store. **Any size, XS included**: this is not a depth tier, it is a category with no other owner, and a one-line change to an `ORDER BY` is exactly the kind of one-line change that costs a full sort of the result set. It does **not** run for renames, reformats, or a query moved without changing its filter, order, bound, joins or columns — say that in one line and skip.
+
+**How it runs.** Follow the mechanics of **`/flow:work:query`** (the standalone command that owns this logic) over the queries in the diff: its **§2 fact sheet** — call site and frequency, filter, order **with direction**, bound and whether it is global or per key, both sides of every join with their real types and collations, heavy columns, expected cardinality with its source, and the indexes that actually exist read from the schema and not the mapping; its **§3 duel** — a challenger blinded to the design's rationale walking the twelve-item checklist, a defence that answers with plans and numbers rather than intent, and the main agent judging; its **§4 measurement** when the schema alone cannot settle it, gated as that command gates it; and its **§5 verdict** shape, one recommendation with the number behind it.
+
+Three of its judging rules matter most here, because they are what a review round gets wrong: **no number, no win** (an unresolved point is recorded unresolved, never split in prose); **no dogma in either direction** (neither "N small queries is an N+1" nor "one batched query always wins" survives without a measurement); and **a defect that predates the diff is declared and ticketed separately**, never used to bless the diff nor dragged into it.
+
+Verdicts map onto this phase as findings: **change** is a blocker like any other and goes through §6 verification; **schema / follow-up** goes to the output as a proposed ticket; **unresolved** is recorded literally with the question left open — the same anti-silence rule as §3.5's uncovered areas. Do not send `change` verdicts to a skeptic in §6 when they rest on a measured plan: a measured finding is already confirmed.
 
 ## 4. Over-engineering audit (fit + YAGNI)
 
@@ -240,6 +252,18 @@ Write `.claude/work/<TICKET>/06-review.md`:
 
 ## Areas not covered after 2 rounds
 <only if §3.5 still had gaps after exhausting the cap; literal list with reason, or "none">
+
+## Data-access duel
+<one row per query added or modified by the diff, per §3.6; "no queries touched" if none, or "renames only" when the change did not alter filter/order/bound/joins/columns>
+
+| Query (file:line) | Bound | Index used / plan | Rows read → returned | Verdict | Evidence |
+|---|---|---|---|---|---|
+| `FooRepository::findBar()` | per key, 15 | `barIdx` (a,b) backward scan | 750 → 162 | ✅ ok | plan, measured 3 runs |
+| `BazRepository::latest()` | none | full scan, order not indexed | 63k → 15 | ❌ change | plan |
+
+- Measured: <how — realistic data set / dev database / schema only / not measured, and why>
+- Unresolved: <the specific question left open, or "none">
+- Schema / follow-up: <predating defects and schema-level fixes, with the proposed ticket, or "none">
 
 ## Double-blind contract verification
 - Contracts compared: N

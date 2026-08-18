@@ -36,6 +36,7 @@ Run and deduce; show what was found so the user can confirm or correct:
   - `composer.json` → scripts; presence of phpunit/phpstan/php-cs-fixer.
   - `pyproject.toml`/`tox.ini` → pytest/ruff/mypy; `Cargo.toml` → `cargo test/clippy`; `go.mod` → `go test ./...`.
   - If schema migrations exist (Doctrine, Alembic, Rails, Prisma…), propose `quality.db_diff` and raise `git.predeploy_gate`.
+- **Data access** (`data.*`, all optional) — only if the repo actually talks to a database: look for the client and the local stack (a `docker-compose.yml` service, a `DATABASE_URL`/`DB_*` env var, a `Makefile` target that opens a shell). Propose `data.explain_cmd` and `data.schema_cmd` in the engine's own dialect against the **development** database (e.g. for MySQL over Docker Compose: `docker compose exec -T <db-service> mysql <db> -e "EXPLAIN {QUERY}"` and `… -e "SHOW CREATE TABLE {TABLE}"`; PostgreSQL: `psql -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"` / `\d+ {TABLE}`). Leave `sandbox_cmd`/`seed_cmd`/`volumes` empty unless the user has something ready. If nothing is detected, leave the whole section out — the query duel degrades to schema-only and says so.
 - **domain-memory** — is the `domain-memory` MCP available in this session? If yes, `domain_memory.enabled: true`; if not, leave it empty.
 
 ## 3. Ask only what cannot be inferred
@@ -52,6 +53,7 @@ For each point, use `AskUserQuestion` with options and a recommended value; alwa
 - **Agents by role** (`agents.*` and `quality.review_skill`/`reviewers`): optional. Explain that they can be left empty (`general-purpose` is used) and filled in later. If the user has custom agents, collect the names.
 - **Review depth** (`quality.review_depth`): default `proportional` scales the review panel by work size (XS/small changes get only the built-in `code-review`, keeping trivial changes fast; the specialized panel runs on M/L and on sensitive small changes). Only set `full` if the user wants the whole panel on every change regardless of size. Most repos leave it empty (= proportional).
 - **Autonomy** (`autonomy.mode`): how much the flow advances on its own. Offer `manual` *(Recommended)* — every phase stops at each decision and only recommends the next command (current behavior) — `guided` — auto-resolves low-risk/unambiguous decisions and chains phases, still asking at real decision points — or `auto` — also auto-resolves the rest with recorded defaults. Explain that the hard gates (push/MR-PR, ambiguous-base branch creation, DB/migrations, high-severity review findings, and the business brief before any code) always stop and ask regardless of the mode, and that `guided`/`auto` conversely **never** ask about the flow's own mechanics (panels, how many reviewers), WIP commits, continuing a train, size confirmation, or anything already decided — so `auto` really is unattended between the brief and `ship`. It can be changed at any time by editing `FLOW.md`. Empty = `manual`.
+- **Data access** (`data.*`): ask only if §2 found a database. Show the `explain_cmd`/`schema_cmd` you detected for confirmation, and explain what each unlocks: with them, the query duel in `/flow:work:query` and `/flow:feat:review §3.6` settles an index or a collation question with a real plan instead of an argument; without them it still runs, on the schema alone, and declares what it could not prove. Then ask for **`data.volumes`** — the real sizes of the hot tables (rows, growth, worst key) — because that one line is what stops a reviewer agent from inventing the scenario it argues about; free text, and worth filling even when the commands are empty. `sandbox_cmd`/`seed_cmd` (a throwaway database to measure in) are for repos that already have a way to do it; leave them empty otherwise, and note that creating or seeding a database is a hard gate in every mode.
 - **Observability** (`observability`): default is **empty = auto-discover** in `/flow:work:watch`. Only collect a profile if the user provides one ready to go.
 
 What was auto-detected in §2 is shown as the default value; the user only corrects what does not fit.
@@ -59,7 +61,7 @@ What was auto-detected in §2 is shown as the default value; the user only corre
 ## 4. Write `FLOW.md`
 
 Generate the file at the repo root with the **same section structure** as
-`examples/FLOW.template.md` (tracker, git, autonomy, quality, agents, review, conventions,
+`examples/FLOW.template.md` (tracker, git, autonomy, quality, agents, data, review, conventions,
 domain_memory, observability), filling in what was detected/answered and **leaving empty** the keys
 the user does not want to fix (each command already degrades gracefully on an empty key).
 

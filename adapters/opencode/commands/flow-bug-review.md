@@ -91,8 +91,14 @@ A minimal fix rarely adds new classes — but when it does (a new service, handl
 
 Only what the skill in §2 does not already cover. Launch additionally in parallel if applicable:
 
-- DB / queries, or a repeated call that leaves the process (external API, HTTP, cache, filesystem) → sub-agent from `agents.performance` in FLOW.md; if empty, use a general-purpose sub-agent with a performance role in the prompt. Ask what **each failed iteration** sets off downstream, not just what the happy path costs.
+- A repeated call that leaves the process (external API, HTTP, cache, filesystem) — **queries have their own pass in §3.5** → sub-agent from `agents.performance` in FLOW.md; if empty, use a general-purpose sub-agent with a performance role in the prompt. Ask what **each failed iteration** sets off downstream, not just what the happy path costs.
 - Workers / failure queue → sub-agent from `agents.queues` in FLOW.md to confirm the fix prevents recurrence; if empty, use a general-purpose sub-agent with a messaging role in the prompt.
+
+## 3.5 Data-access duel (any size, whenever the fix touches a query)
+
+If the fix **adds or modifies** a query — raw SQL, the ORM's query language, a query-builder chain, a repository finder, a relation traversed in a loop, an aggregate/count, a bulk write, a migration or index change, or the equivalent against a search engine or key-value store — run the mechanics of `/flow-work-query` over it: its **§2 fact sheet** (filter, order **with direction**, bound and whether it is per key or global, both sides of each join with real types and collations, heavy columns, cardinality with its source, the indexes that actually exist), its **§3 blinded challenger** over the twelve-item checklist with the main agent judging, its **§4 measurement** when the schema cannot settle it, and its **§5 verdict** shape. **Any size, XS included** — a one-line change to an `ORDER BY` or a `LIMIT` is precisely the change whose cost is invisible in the diff.
+
+Two things are specific to a fix. **If the bug is itself about slowness or timeouts, the duel is the fix's proof**: the verdict shows the plan before and after, or the fix is unproven whatever the tests say. And a fix is where a **trick** gets added under pressure (a cast to align a collation, a hint, a hand-written column order) — checklist item 11 applies in full: it ships with a comment saying why it is there and what removes it, plus the ticket for the root cause, or it does not ship. Verdicts map as findings: **change** blocks, **schema / follow-up** becomes a proposed ticket, **unresolved** is recorded literally.
 
 ## 4. Over-engineering audit (fit + YAGNI)
 
@@ -140,6 +146,16 @@ Use the commands from `quality` in FLOW.md; if empty, auto-discover:
 ## Over-engineering (fit + YAGNI)
 - New defensive mechanisms in the fix: <list, or "none">
 - No real scenario justifying them: <list, or "none">
+
+## Data-access duel
+<per §3.5; "no queries touched" if none>
+
+| Query (file:line) | Bound | Index used / plan | Rows read → returned | Verdict | Evidence |
+|---|---|---|---|---|---|
+
+- Measured: <realistic data set / dev database / schema only / not measured, and why>
+- Before vs after: <mandatory when the bug was about slowness — the plan on both sides>
+- Unresolved: <the open question, or "none"> · Schema / follow-up: <predating defects + proposed ticket, or "none">
 
 ## Is the regression test adequate?
 - Yes / No (what is missing)

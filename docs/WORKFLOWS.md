@@ -1,13 +1,14 @@
 # The cross-cutting workflows
 
-The `feat` and `bug` flows take a ticket to an open MR/PR. These five workflows cover what
-happens **around** that line: getting the MR/PR merged, watching the deploy, remembering where
-you were, and tasks that don't fit in one repo. All of them work for both `feat` and `bug` work,
+The `feat` and `bug` flows take a ticket to an open MR/PR. These six workflows cover what
+happens **around** that line: getting the MR/PR merged, settling an argument about a query,
+watching the deploy, remembering where you were, and tasks that don't fit in one repo. All of them work for both `feat` and `bug` work,
 and none of them advance `meta.json.phase` — they are loops you run as many times as the round
 requires.
 
 - [Mergeable loop — `/flow:work:green`](#mergeable-loop--flowworkgreen)
 - [Review loop — `/flow:work:respond`](#review-loop--flowworkrespond)
+- [Query duel — `/flow:work:query`](#query-duel--flowworkquery)
 - [Post-deploy watcher — `/flow:work:watch`](#post-deploy-watcher--flowworkwatch)
 - [Work assistant — `/flow:work:daily`](#work-assistant--flowworkdaily)
 - [Cross-repo tasks](#cross-repo-tasks)
@@ -80,7 +81,9 @@ to change something, defer it, or hold your ground. That phase is what `respond`
 3. **Drafts a response per thread.** For design debates it argues from **the rationale the flow
    already recorded** — the ADR-light in `03-design.md`, the recorded challenges, `domain-memory`
    — instead of re-deriving it. That recorded "why" is exactly the ammunition a good review reply
-   needs, and it is the reason the earlier phases bother to write it down.
+   needs, and it is the reason the earlier phases bother to write it down. With one exception, and
+   it is deliberate: a **performance objection about a query** is not answered from the record at
+   all. It goes to `/flow:work:query` and comes back with a plan (see below).
 4. **Implements the agreed changes** reusing the `build`/`fix` mechanics, with the same review
    gate for non-trivial diffs.
 
@@ -90,6 +93,72 @@ It **never resolves a thread**. It tells you which ones are ready and leaves tha
 Replies and pushes are **hard gates** you confirm.
 
 Repeatable — one run per review round, logged to `08-feedback.md`.
+
+---
+
+## Query duel — `/flow:work:query`
+
+```
+/flow:work:query                       # every query the current work added or changed
+/flow:work:query src/Foo/BarRepo.php   # or a file, a pasted query, a reviewer's objection
+```
+
+**A query is not approved by prose, it is approved by its plan.** Correctness is visible in the
+code; cost is not. Cost lives in the execution plan, and the plan depends on facts that are nowhere
+in the diff — which index exists, in what column order and **direction**, the type and collation of
+both sides of a join, how many rows a key really has. So a panel of reading reviewers approves a
+query that reads a hundred thousand rows to return fifteen, and approves it faster when the design
+wrote down a plausible reason for it.
+
+### What it does
+
+1. **States the facts before anyone argues** — call site and how often it runs, filter, order *with
+   its direction*, the bound and whether it is per key or global, both sides of every join with
+   their real types and collations, heavy columns, expected rows per key **and where that number
+   came from**, and the indexes that actually exist, read from the schema rather than the ORM
+   mapping.
+2. **Sends in a challenger, blinded to the design's rationale** — the same blinding as the idiom
+   audit in `review`, for the same reason: a plausible written justification is what makes a
+   reviewer stop looking. It walks a twelve-item checklist of the classic failures (an order the
+   index cannot serve, join keys that silently lose their index, a per-key bound faked with a global
+   limit, heavy columns read in a pass that only decides, N+1 and the batch that grew too big, work
+   the engine could have done, a trick no test can pin) and must name the **data scenario** that
+   triggers each attack.
+3. **Judges with numbers.** The main agent decides — never a subagent. No number, no win: an attack
+   with no plan and a defence with no plan are the same thing, and it goes to measurement or is
+   recorded unresolved. No dogma either way: "N small queries is an N+1" and "one batched query
+   always wins" are both preferences until measured. And **the objector's variant gets measured next
+   to yours**, especially when your theory says it will lose.
+4. **Measures when the schema cannot settle it** — a data set shaped like production (`data.volumes`),
+   three runs per variant, plan next to time, plus a `keys served` column, because a variant can be
+   the fastest and still answer for 40 of the 50 keys asked, which makes it wrong rather than fast.
+5. **Returns one recommendation**, the number behind it, then only the costs that would change the
+   decision. A verdict that hedges in three directions reads as "I don't know" and makes you decide
+   twice.
+
+### Where it runs by itself
+
+- `/flow:feat:review` §3.6 and `/flow:bug:review` §3.5 — **any size, XS included**, whenever the diff
+  adds or changes a query. It is not a depth tier: it is a category no other reviewer owns, and a
+  one-line change to an `ORDER BY` is exactly the change whose cost is invisible.
+- `/flow:work:respond` §4.G — a reviewer objects to a query. The reply is a plan, not an argument.
+- `/flow:feat:design` — the **Access paths** table: filter, order, bound and supporting index decided
+  before the query is written, when adding an index is still cheap.
+- `/flow:feat:build` and `/flow:feat:validate` — the plan recorded as the query is written, and
+  measured against real volumes before shipping, because a green suite proves rows and never plans.
+- `/flow:bug:investigate` — when the symptom is slowness, the root cause is a plan until proven
+  otherwise, and several of its causes leave the code untouched, where `git blame` cannot find them.
+
+### What it never does
+
+It **judges, it does not patch**: the verdict goes back to the phase that asked, which implements it
+with its own gates. Creating, seeding or dropping a database is a **hard gate in every autonomy
+mode**, and it never points at production. And it **never reports an unmeasured plan as measured**:
+"schema only" and "not measured, here is the question left open" are legitimate verdicts — the
+functional test database, with its handful of fixture rows, proves nothing about a plan at all.
+
+Configured by the optional [`data`](CONFIGURATION.md#data) section. With it empty the duel still
+runs, on the schema alone, and says so.
 
 ---
 
