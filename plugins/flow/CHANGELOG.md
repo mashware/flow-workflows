@@ -5,6 +5,18 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.33.0 — Ten lines about a class nobody had opened  ·  2026-08-18
+
+v0.26.0 gave every stop a header: ticket, size, phase, `MR #n of N`, the plan state, one line of what just finished, one line of what is needed from you. That fixed the **order** of a report — you no longer had to read to the end to find out where you were. It did not fix the other two things that make a stop unreadable to the person it is written for.
+
+**The ten-line limit turned out to be a ceiling, not a shape.** "At most ~10 lines of body" is satisfied perfectly by ten lines of paragraph, and ten lines of paragraph are still a wall of text — subordinate clauses, a "for context" opening, a recap of what the previous stop already said. Nothing in the contract asked for short lines, so nothing produced them. The body is now a headline of one or two lines and then two to five bullets, one idea each, and the limit is stated as a ceiling rather than a target.
+
+**And nothing in it asked for the right altitude.** The only rule about wording was `Zero-context`, which says that when a class or method appears it carries four to six words of what it is. That rule assumes the identifier belongs there. Usually it does not. When the agent is the one writing the code, the human on the other side of the stop is doing product — deciding what the software should do, for whom, and what it must not break — not archaeology on a diff they have not read. Ten lines about `AttachmentUploader` are a report about the agent's afternoon; *"attachments over 25 MB no longer break the send — they upload separately and the mail carries a link"* is a report about their software. So the body now speaks in the language of what changed for whoever uses this thing, and a class, file or error code earns a line only when the user has to **decide** about it, asked something technical, or named it first. The mechanics are not lost — they go where they were always more useful, the phase artifact.
+
+**What this is not.** It is not a licence to answer shallowly. The two rules govern the report the flow writes *unprompted*, at a stop; a technical question still gets a technical answer, at whatever length the subject needs.
+
+Both rules sit in the shared **Reporting** preamble, so all 18 phase commands inherit them, and mirrored in the opencode, Gemini CLI and Codex adapters.
+
 ## v0.32.0 — The query passed every gate; nobody read its plan  ·  2026-08-18
 
 A query shipped through `design`, `build` and a full `review` panel, and not one of those gates ever looked at an execution plan. A human reviewer did, in a comment: *"why is the limit in the code and not in the query?"*. The flow answered from theory — the bound is per key, a global `LIMIT` cannot express that, the ORM's query language has no window function — which was all true and all beside the point. When someone finally built a data set and ran `EXPLAIN`, the cost was somewhere else entirely: two tables joined on columns with **different character sets**, so the join could not use an index and the engine scanned 63,000 rows to return fifteen. 449 ms. The same defect was already sitting in a neighbouring query that had been in production for a year, and the shape that finally won was the one the flow had dismissed as obviously worse — one small indexed query per key.
