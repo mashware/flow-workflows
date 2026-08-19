@@ -27,7 +27,7 @@ Run and deduce; show findings to confirm/correct:
 - Observability: default **empty = auto-discover** in `work-watch`.
 
 ## 4. Write `FLOW.md`
-Generate the file at the root with all contract sections (tracker, git, quality, agents, models, review, conventions, domain_memory, observability), filling in what was detected/answered and **leaving empty** what the user didn't set.
+Generate the file at the root with all contract sections — tracker, git, autonomy, quality, agents, models, data, conventions, notes, domain_memory, observability, in that order — filling in what was detected/answered and **leaving empty** what the user didn't set (every command degrades gracefully on an empty key). There is no `review` section: the review panel is configured by `quality.review_depth`, `quality.review_skill` and `quality.reviewers`. When in doubt about a key or its default, `../../plugins/flow/examples/FLOW.template.md` is the canonical list — read it rather than reproducing it from here.
 
 ## 5. Close
 Summarize what was configured and what was left empty (= auto-discover). `FLOW.md` is **personal config, not team config** — it mixes repo facts with your own flow preferences (autonomy, the tools/agents you have installed, review depth, assignee) and holds no secrets, but it should not be committed. If it is not already git-ignored, **offer to add `FLOW.md` to `.gitignore`** (this edits a tracked file — confirm first). Suggest `/flow-feat-start` or `/flow-work-status`.

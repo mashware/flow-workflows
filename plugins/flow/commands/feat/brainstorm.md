@@ -126,7 +126,7 @@ Each advisor gets this brief, with the lens substituted:
 
 **Round 3 — you synthesize.** Rank the approaches best to worst *for this case* (project fit + simplicity, not generic), weighing the fatal flaws the critique surfaced. State explicitly where the advisors **agreed** and where they **disagreed** — the disagreement is the useful part, and it is what a single line of thought never produces.
 
-If `agents.fanout_tool` is set in `FLOW.md`, run these rounds through that tool instead of plain parallel subagents; the rounds, the briefs and the `fanout_max` ceiling do not change. See `docs/CONFIGURATION.md` §`agents`.
+If `agents.fanout_tool` is set in `FLOW.md`, run these rounds through that tool instead of plain parallel subagents; the rounds, the briefs and the `fanout_max` ceiling do not change. See the `agents` section of `FLOW.md` (and `examples/FLOW.template.md`, which documents both keys inline).
 
 With the result, fill §4: each approach → one "Option"; your consensus/disagreement reading + recommendation → "Initial recommendation". Fold each approach's biggest surfaced flaw into its "Why it could be a bad idea" line. **A subagent that comes back empty is dropped, not retried** — synthesize from the ones that answered, and note in `02-brainstorm.md` how many of the launched advisors reported (`N/M`). If the critique round comes back empty, rank from the approaches alone.
 

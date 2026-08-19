@@ -220,7 +220,7 @@ git status --porcelain            # clean working tree?
   - **Stacked on `<current-branch>`** (train mode) — only if this task depends on another not yet merged. Record it in `meta.json` as `stacked_on` and note that the MR/PR will point to that branch, not the main base.
 
 ### 5.2 Create with explicit base and WITHOUT inheriting its upstream
-Name: per `git.branch_pattern` from `FLOW.md` (replace `{PREFIX}` and `{TICKET}`; `{slug}` = the slug defined in §1, English kebab-case). **In ticket-less local-only mode there is no `{TICKET}`**: name the branch `<prefix><slug>` (prefix from `tracker.prefix` if set), i.e. apply the pattern with the §2.5 slug in the `{slug}` position and drop the `{TICKET}` segment (collapse any doubled separator). Create only if the user confirms:
+Name: per `git.branch_pattern` from `FLOW.md` (replace `{PREFIX}` and `{TICKET}`; `{slug}` = the slug defined in §1, English kebab-case). **Empty `branch_pattern` → `{PREFIX}{TICKET}-{slug}`.** **In ticket-less local-only mode there is no `{TICKET}`**: name the branch `<prefix><slug>` (prefix from `tracker.prefix` if set), i.e. apply the pattern with the §2.5 slug in the `{slug}` position and drop the `{TICKET}` segment (collapse any doubled separator). Create only if the user confirms:
 ```bash
 git fetch origin
 git switch --create <branch-name> --no-track <git.default_base>      # independent task
@@ -275,7 +275,7 @@ Create the work directory following the §1 naming: `.claude/work/<TICKET>-<slug
 
 In ticket-less mode (§2.5) set `draft_from_conversation: true` and `tracker_issue` to the created issue id/url (or `null` if local-only). In ticket mode leave both at their defaults above.
 
-Write `<work-dir>/panel.json` now, next to `meta.json`, in the shape given by the Reporting preamble. This is the work's first appearance in the user's live panel, and it is born without a train (the MR/PR plan has not run) — so it is short: the title, `Right now:` what is starting, `Next:` the phase this size routes to, and any sibling repo from the cross-repo step as a `warn` line. Every later phase overwrites it whole.
+Write `<work-dir>/panel.json` now, next to `meta.json`, in the shape given by the Reporting preamble. This is the work's first appearance in the user's live panel, and it is born without a train (the MR/PR plan has not run) — so it is short: the title (`style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, and any sibling repo from the cross-repo step as a `block` line. Every later phase overwrites it whole.
 
 Populate `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the task touches; leave `[]` for a single-repo task.
 

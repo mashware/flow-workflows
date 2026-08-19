@@ -241,7 +241,7 @@ If `domain_memory.enabled` is `false` or empty, skip without notifying.
 ### 6.1 Update `meta.json` per scenario
 
 **A) The MR/PR was created (and merged, if the flow reached that)** (normal case):
-- If there are **no** `mrs` or there was only 1: once merged, `phase = "done"`, add `ship` to `phases_done`, update `updated_at`.
+- If there are **no** `mrs` or there was only 1: add `ship` to `phases_done` and update `updated_at`. `phase = "done"` **only if the user confirms it was actually merged** — the same question as the multi-delivery case below, asked once with `AskUserQuestion`, because right after §3 the MR/PR is open and the normal answer is no. Not merged → leave `phase = "ship"`: `/flow:work:green` and `/flow:work:respond` operate on the open MR/PR and `/flow:work:clean` only sweeps what merged, so a work parked at `done` with its MR/PR open sends all three at the wrong target.
 - If it is a multi-delivery build: record the current MR/PR's `url` in its `meta.json.mrs` entry. Set its `status` to `merged` **only if the user confirms it was actually merged**; otherwise keep it `in_progress` — **the train does not require the current MR/PR to be merged to proceed**. If there are still `pending` entries, leave `phase = "build"` and go to §6.2 (train continuation). If all entries are `merged`/`closed`/`superseded`, `phase = "done"`.
 
 **B) The MR/PR was closed without merge** (rejected, discarded by reviewers):
@@ -251,7 +251,7 @@ If `domain_memory.enabled` is `false` or empty, skip without notifying.
 **C) The plan changed and this MR/PR is no longer needed**:
 - If coming here because the plan was rethought: mark the entry as `superseded` with `note` pointing to the new MR/PR.
 
-In every scenario, refresh `panel.json` from the updated `meta.json`. When this ship sets `phase = "done"`, say so in the panel in plain words (`ok`: nothing left here) and drop the `Waiting on you:` line — a finished work whose panel still reads "building" is the one misreading that costs the user a whole morning of looking in the wrong place.
+In every scenario, refresh `panel.json` from the updated `meta.json`. A shipped-but-open MR/PR is a `wait` line carrying its `link`; it becomes `done` only when it is confirmed merged. When this ship sets `phase = "done"`, say so in the panel in plain words (`mark: "info"` with `style: "ok"`: nothing left here) and drop the `Decision` line — a finished work whose panel still reads "building" is the one misreading that costs the user a whole morning of looking in the wrong place.
 
 ### 6.1.1 Tracker: move to done
 
@@ -263,11 +263,14 @@ Run `tracker.done_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contra
 
 The whole point of a train is to build the next MR/PR **without waiting for the current one to merge**. So do not stop here to wait for the merge — resolve `git.train_chain` from FLOW.md (`ask` | `always` | `wait`; **empty → derive from `autonomy.mode`**: `manual` → `ask`, `guided`/`auto` → `always`) and act:
 
-- **`wait`**: do not continue now. Leave `phase = "build"` and tell the user to run `/flow:feat:build` once the current MR/PR is merged. This legacy "wait for merge" behavior happens **only** when explicitly configured.
 First identify the **next startable MR/PR**: the `pending` one with the lowest `n` whose `depends_on` are all `merged` (same rule as `/flow:feat:build §1`). Then decide its **base branch** by whether it depends on the just-shipped MR/PR:
+
 - **Depends on the current MR/PR** (`depends_on` includes the current `n`) → real train: base = the current branch (stacked).
 - **Parallel sibling** (does not depend on the current MR/PR — e.g. same wave, or a different independent chain) → it is **not** part of this train: base = `git.default_base`, `stacked_on` = null. Do not stack an independent MR/PR on an unrelated branch just because it is built next.
 
+With that MR/PR and its base resolved, act on `git.train_chain`:
+
+- **`wait`**: do not continue now. Leave `phase = "build"` and tell the user to run `/flow:feat:build` once the current MR/PR is merged. This legacy "wait for merge" behavior happens **only** when explicitly configured.
 - **`ask`**: ask with `AskUserQuestion` — "Continue now with the next MR/PR (#\<n\> «\<title\>»), based on \<its base branch per the rule above\>?". If **no** → stop and recommend `/flow:feat:build`. If **yes** → continue as in `always`.
 - **`always`**: continue automatically; record the decision in the artifact, **do not prompt** — not as "shall I start #\<n\>?", and above all not as "shall I wait for #\<n-1\> to merge?". Offering the wait is offering an option the configuration already ruled out: `wait` is the only value that holds the train, and it is not the one in play. This is listed in the never-ask block of the preamble for a reason — it is the stop that most often turns a configured train back into a manual one.
 

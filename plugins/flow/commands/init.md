@@ -62,9 +62,12 @@ What was auto-detected in §2 is shown as the default value; the user only corre
 ## 4. Write `FLOW.md`
 
 Generate the file at the repo root with the **same section structure** as
-`examples/FLOW.template.md` (tracker, git, autonomy, quality, agents, models, data, review, conventions,
-domain_memory, observability), filling in what was detected/answered and **leaving empty** the keys
-the user does not want to fix (each command already degrades gracefully on an empty key).
+`examples/FLOW.template.md` — tracker, git, autonomy, quality, agents, models, data, conventions,
+notes, domain_memory, observability, in that order — filling in what was detected/answered and
+**leaving empty** the keys the user does not want to fix (each command already degrades gracefully
+on an empty key). There is no `review` section: the review panel is configured by
+`quality.review_depth`, `quality.review_skill` and `quality.reviewers`. When in doubt about a key or
+its default, the template is the canonical list — read it rather than reproducing it from here.
 
 ## 5. Close
 

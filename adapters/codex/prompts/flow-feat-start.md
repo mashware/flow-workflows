@@ -1,6 +1,6 @@
 # `/flow-feat-start $ARGUMENTS`
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 **Models — which one runs this step.** Read `models` from `FLOW.md`. **This command's key is `study`**; empty (or no `models` section) = run with the model this session was launched with, and say nothing about it. When it is set, it applies to the subagents **this command decides to launch**: in this harness a subagent's model is declared in its own definition, so satisfy the key by launching a subagent declared with that model (see the adapter's `PRIMITIVES.md`), and an agent named in `agents.<role>` keeps whatever its own definition already sets. Parallel fan-out rounds take `models.workers` when set, otherwise this command's key. For the parts you perform **yourself** you cannot switch your own model: when the configured value differs from the model you are running, state it in one line at the handoff — naming this harness's own way to switch it (its model command, or the `--model` flag at launch) — record it in the phase artifact, and **continue**. That is flow mechanics: never a question in `guided`/`auto`, never a hard gate. If this harness cannot set a model per subagent at all, note it once and carry on with the inherited one.
 
@@ -216,7 +216,7 @@ git status --porcelain            # clean tree?
   - **Stacked on `<current-branch>`** (train mode) — only if this task depends on another not yet merged. Record it in `meta.json` as `stacked_on` and remember the MR/PR will target that branch, not the main base.
 
 ### 5.2 Create with an explicit base and WITHOUT inheriting its upstream
-Name: per `git.branch_pattern` from `FLOW.md` (substitute `{PREFIX}` and `{TICKET}`; `{slug}` = the slug defined in §1, English kebab-case). **In ticket-less local-only mode there's no `{TICKET}`**: name the branch `<prefix><slug>` (prefix from `tracker.prefix` if set), i.e. apply the pattern with the §2.5 slug in the `{slug}` position and drop the `{TICKET}` segment (collapse any doubled separator). Create only if the user confirms:
+Name: per `git.branch_pattern` from `FLOW.md` (substitute `{PREFIX}` and `{TICKET}`; `{slug}` = the slug defined in §1, English kebab-case). **Empty `branch_pattern` → `{PREFIX}{TICKET}-{slug}`.** **In ticket-less local-only mode there's no `{TICKET}`**: name the branch `<prefix><slug>` (prefix from `tracker.prefix` if set), i.e. apply the pattern with the §2.5 slug in the `{slug}` position and drop the `{TICKET}` segment (collapse any doubled separator). Create only if the user confirms:
 ```bash
 git fetch origin
 git switch --create <branch-name> --no-track <git.default_base>      # independent task
@@ -271,7 +271,7 @@ Create the work directory following the §1 naming: `.claude/work/<TICKET>-<slug
 
 In ticket-less mode (§2.5) set `draft_from_conversation: true` and `tracker_issue` to the created issue id/url (or `null` if local-only). In ticket mode leave both at their defaults above.
 
-Write `<work-dir>/panel.json` now, next to `meta.json`, in the shape given by the Reporting preamble. This is the work's first appearance in the user's live panel, and it is born without a train (the MR/PR plan has not run) — so it is short: the title, `Right now:` what is starting, `Next:` the phase this size routes to, and any sibling repo from the cross-repo step as a `warn` line. Every later phase overwrites it whole.
+Write `<work-dir>/panel.json` now, next to `meta.json`, in the shape given by the Reporting preamble. This is the work's first appearance in the user's live panel, and it is born without a train (the MR/PR plan has not run) — so it is short: the title (`style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, and any sibling repo from the cross-repo step as a `block` line. Every later phase overwrites it whole.
 
 Populate `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the task touches; leave `[]` for a single-repo task.
 

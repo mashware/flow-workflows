@@ -16,7 +16,7 @@ This is **cross-cutting** (works the same for a `feat` or a `bug` MR/PR) and **r
 
 ## 0. Step 0 — read FLOW.md
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, agents, domain). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, agents, domain). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 Extract from `git`: `host` (`gitlab`|`github`), `cli` (`glab`|`gh`; empty → inferred from `host`), `request_term` (`MR`|`PR`), `default_base`. From `tracker`: `tool` and `prefix`. From `quality`: `test`, `test_one`, `static_analysis`, `style_fix`, `frontend_test` (the local commands used in §5 to reproduce and verify a fix; empty → auto-discover the repo's equivalents from the Makefile / npm / composer scripts) and `review_skill` (used in §5 if the fix is non-trivial). From `agents`: the expert sub-agents to delegate fixes to. If `domain_memory.enabled` is `true`, you will `search_knowledge` in §3.
 
@@ -124,7 +124,7 @@ Decide the exit on the **combination** of both halves, never on the pipeline alo
 
 - **Pipeline green *and* the merge verdict is mergeable** → report it (naming both facts) and stop.
 - **Pipeline green but blockers remain** → do **not** report "green, you're good". Report the pipeline as green, list the blockers, and continue to §3 with them — this is the case this command exists to stop letting through.
-- **Pipeline still running / pending** → tell the user and offer to **wait** (poll with `Monitor`, or autopilot a re-check with `ScheduleWakeup` every ~2–3 min) or to stop and re-run this command later. If there are already **non-pipeline** blockers, work on those meanwhile instead of idling.
+- **Pipeline still running / pending** → tell the user and offer to **wait** (poll with `Monitor`, or autopilot a re-check with `ScheduleWakeup` every ~2–3 min; with neither tool in this harness, say so and let them re-run the command when CI finishes) or to stop and re-run this command later. If there are already **non-pipeline** blockers, work on those meanwhile instead of idling.
 - **Pipeline never ran** (no CI configured, or it did not trigger) → say so; if the merge verdict is clean too, stop — there is nothing for this command to do.
 
 ## 3. Triage every blocker
@@ -186,7 +186,7 @@ Run this **before** the other buckets when it is present, and only after the har
 
 - **Push (hard gate).** Before pushing, show what will be pushed (files, commit message) and confirm with `AskUserQuestion`. Never push to the base branch: HEAD must not be `git.default_base` and its upstream must point to the branch itself (the same anti-deploy lock as `/flow:feat:ship §4.0` and `/flow:work:respond §6.2`). Push with `git push` to the existing branch — the MR/PR already exists; this just adds the fix commits, and the push itself re-triggers the pipeline. **Force-push only after a rebase the user explicitly chose** (§5.C.2), and then only `git push --force-with-lease` — never a bare `--force`, and never as a way out of a rejected push (a rejected push means the remote branch moved: fetch and understand it first).
 - **Rerun without a push** (rerun-only bucket, K). Only after the user confirms (hard gate): `glab ci retry` / `gh run rerun <run-id> --failed`. Attach the recorded flake evidence. If it fails again the same way, it was **not** flaky — reclassify to T/Y and fix it; do not rerun a second time hoping.
-- **Watch it back to green.** After the push/rerun the pipeline re-runs. Offer to monitor it (poll with `Monitor`, or `ScheduleWakeup` every ~2–3 min) and report when it goes green — or let a later `/flow:work:green` re-check. Do not claim the pipeline is fixed until it actually reports green: report what you pushed and that CI is re-running.
+- **Watch it back to green.** After the push/rerun the pipeline re-runs. Offer to monitor it (poll with `Monitor`, or `ScheduleWakeup` every ~2–3 min; with neither available, say so instead of implying it is being watched) and report when it goes green — or let a later `/flow:work:green` re-check. Do not claim the pipeline is fixed until it actually reports green: report what you pushed and that CI is re-running.
 - **Re-read the merge verdict too.** A push resolves conflicts on the remote asynchronously; once the pipeline settles, re-run §2.1 and report the *merge* verdict, not only the pipeline. That is the only evidence that the MR/PR is actually mergeable now.
 
 ## 7. Log, loop, and domain knowledge

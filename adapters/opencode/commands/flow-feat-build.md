@@ -4,7 +4,7 @@ description: Implement the feature following the approved design and keep a runn
 
 # `/flow-feat-build`
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — don't block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it's active but the MCP fails or takes longer than 2 s, continue without that context — don't block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 **Models — which one runs this step.** Read `models` from `FLOW.md`. **This command's key is `code`**; empty (or no `models` section) = run with the model this session was launched with, and say nothing about it. When it is set, it applies to the subagents **this command decides to launch**: in this harness a subagent's model is declared in its own definition, so satisfy the key by launching a subagent declared with that model (see the adapter's `PRIMITIVES.md`), and an agent named in `agents.<role>` keeps whatever its own definition already sets. Parallel fan-out rounds take `models.workers` when set, otherwise this command's key. For the parts you perform **yourself** you cannot switch your own model: when the configured value differs from the model you are running, state it in one line at the handoff — naming this harness's own way to switch it (its model command, or the `--model` flag at launch) — record it in the phase artifact, and **continue**. That is flow mechanics: never a question in `guided`/`auto`, never a hard gate. If this harness cannot set a model per subagent at all, note it once and carry on with the inherited one.
 
@@ -134,7 +134,7 @@ Without this copy, don't proceed to §2.1.
 
 ## 2.1 Work
 
-Load the project conventions (see `FLOW.md` section `conventions`).
+Apply the repo's `conventions` from `FLOW.md` — free text (layers, patterns, prohibitions), so read it and follow it as written. If opencode also exposes project conventions as files or agents encoding them, load those too; with none, the `conventions` text is the whole instruction, not a pointer to something else.
 
 **Comment discipline**: comment only a non-obvious *why* (a constraint, the reason for a workaround, a subtle invariant), never narrate what the code already says or restate the design, and match the file's comment density. **Never put the ticket ID, task/step number, or "for MR #N" in a code comment** — that lives in the commit/branch/MR-PR, not the source, where it just rots.
 

@@ -8,7 +8,7 @@ Apply the fix. **Minimum viable**: do not take the opportunity to refactor adjac
 
 ## 1. Pre-flight
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 **Models — which one runs this step.** Read `models` from `FLOW.md`. **This command's key is `code`**; empty (or no `models` section) = run with the model you were launched with, and say nothing about it. When it is set: pass it to every subagent **this command decides to launch**, except one named in `agents.<role>` — that agent keeps the model its own definition sets, because you configured it there. Parallel fan-out rounds take `models.workers` when set, otherwise this command's key. For the parts you perform **yourself** you cannot switch your own model: when the configured value differs from the model you are running, state it in one line at the handoff (`this step is configured for <value>, you are on <current>` → `/model <value>`), record it in the phase artifact, and **continue**. That is flow mechanics — never a question in `guided`/`auto`, never a hard gate. If the harness cannot set a model per subagent, note it once and carry on with the inherited one.
 
@@ -107,7 +107,7 @@ Save the brief at the top of `04-fix.md`. If during implementation the temptatio
 
 - Apply the minimal fix targeting the finding from `03-investigation.md` (or the diagnosis if you skipped investigate).
 - If it touches a sensitive area (authentication, payments, sensitive data), consult the `agents.architecture` agent from FLOW.md to confirm the correct layer; if that is empty, check directly against `conventions` from FLOW.md.
-- Use `TaskCreate` for fix steps if there are more than 2.
+- If there are more than 2 fix steps, track them as a task list (`TaskCreate` where the harness offers one; otherwise keep the numbered list in `04-fix.md` and tick it off there — the list is the point, the tool is not).
 - **Comment discipline**: add a comment only to explain a *why* the code cannot (a non-obvious constraint, the reason for the workaround, a subtle invariant); do not narrate what the code already says, and match the surrounding file's comment density. **Never write the ticket ID or "fix for #N" into a code comment** — that lives in the commit/branch/MR-PR, not the source (a bug fix especially tempts a "// fixes X" breadcrumb that just rots).
 - Keep the log updated while editing.
 

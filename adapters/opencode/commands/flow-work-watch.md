@@ -17,7 +17,7 @@ State between cycles lives in `.claude/work/<TICKET>/monitor.md` — each cycle 
 
 ## 0. Step 0 — read FLOW.md
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 If `observability` in FLOW.md **is populated**, extract from it:
 - `platform` / `site`: observability platform and address (org/site).
@@ -155,7 +155,7 @@ Write the summary to the same `<work-dir>/monitor.md` (resolved in §1) and deli
 
 If `domain_memory.enabled` is `true`, run `stage_finding` with the relevant findings (measured baselines, low-traffic signals, error patterns) for the staging of this branch.
 
-Write the final verdict to `panel.json` too, and say the window is closed (`Right now: nothing — the watch window is over`) so the panel does not read as still monitoring. On 🔴, leave the `accent` line pointing at the bug flow.
+Write the final verdict to `panel.json` too — this is the line whose colour *is* the information, so it takes `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and say the window is closed (a `Now` line reading `nothing — the watch window is over`) so the panel does not read as still monitoring. On 🔴, leave a `Decision` line marked `wait` pointing at the bug flow.
 
 ## Appendix: `observability` profile format in FLOW.md
 
