@@ -1,6 +1,6 @@
 # The cross-cutting workflows
 
-The `feat` and `bug` flows take a ticket to an open MR/PR. These six workflows cover what
+The `feat` and `bug` flows take a ticket to an open MR/PR. These seven workflows cover what
 happens **around** that line: getting the MR/PR merged, settling an argument about a query,
 watching the deploy, remembering where you were, and tasks that don't fit in one repo. All of them work for both `feat` and `bug` work,
 and none of them advance `meta.json.phase` — they are loops you run as many times as the round
@@ -11,6 +11,7 @@ requires.
 - [Query duel — `/flow:work:query`](#query-duel--flowworkquery)
 - [Post-deploy watcher — `/flow:work:watch`](#post-deploy-watcher--flowworkwatch)
 - [Work assistant — `/flow:work:daily`](#work-assistant--flowworkdaily)
+- [Housekeeping — `/flow:work:clean`](#housekeeping--flowworkclean)
 - [Cross-repo tasks](#cross-repo-tasks)
 
 ## After `ship`, before `merge`
