@@ -181,7 +181,7 @@ If when splitting you find that there is really just 1 small MR/PR (≤ 50 lines
 ## 6. Close
 
 - Update `meta.json`: `phase = "plan"`, add `plan` to `phases_done`.
-- Refresh `panel.json`. This is the phase that gives the panel its train: from here on it carries one line per `mrs[]` entry, and "how many are left" stops being something the user has to ask for. Nothing is merged or open yet, so every entry reads as pending under `Left`.
+- Refresh `panel.json`. This is the phase that gives the panel its train: from here on it carries one line per `mrs[]` entry, and "how many are left" stops being something the user has to ask for. Nothing is merged or open yet, so every entry carries `mark: "pending"` — with the not-yet-started ones collapsed into a single `#a–#z` line, and **no heading over the train**: `mark` states each entry's real state, which is why grouping them under `Done`/`Now`/`Left` is wrong here (see the `panel.json` schema in `/flow:work:README`).
 - **Show the plan the way it will be executed**, not just as a list. The user has to be able to see, without decoding two columns, what runs at the same time and what waits for what. So print the wave line first, then the table:
 
   ```

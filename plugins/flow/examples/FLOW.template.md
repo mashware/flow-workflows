@@ -48,7 +48,7 @@ Branch and Pull/Merge Request conventions.
 - `cli:`              # `glab` | `gh`. Empty = inferred from `host`.
 - `request_term:`     # `MR` | `PR`. How to name the request in text. Empty = inferred from `host`.
 - `default_base:`     # base for new branches, e.g. `origin/master` or `origin/main`.
-- `branch_pattern:`   # e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case.
+- `branch_pattern:`   # e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case. Empty = `{PREFIX}{TICKET}-{slug}`.
 - `assignee:`         # user to assign the MR/PR to. Empty = do not assign.
 - `squash:`           # `true` | `false` (squash-before-merge).
 - `request_sections:` # MR/PR description sections, one per line with `- `. Empty = free-form.
@@ -78,8 +78,9 @@ How much the flow advances on its own vs. stopping to ask you.
                       #   auto   — as guided, plus auto-resolves the remaining decision points with sensible
                       #            (recorded) defaults, chaining phases without pausing.
                       # HARD GATES stop and ask in EVERY mode, no exceptions: any push or MR/PR (ship),
-                      # branch creation with an ambiguous base, DB schema changes/migrations, and a review
-                      # with high-severity findings.
+                      # branch creation with an ambiguous base, DB schema changes/migrations, a review
+                      # with high-severity findings, and the business brief confirmed just before the
+                      # first edit in `build`/`fix`.
                       # NEVER ASKED in guided/auto (decided, recorded, left behind): flow mechanics
                       # (panels, challengers, how many reviewers), WIP commits, continuing a train when
                       # train_chain resolves to `always`, size confirmation, and anything already decided

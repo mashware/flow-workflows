@@ -8,7 +8,7 @@ Mandatory code review of the fix.
 
 ## 1. Pre-flight
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 **Models — which one runs this step.** Read `models` from `FLOW.md`. **This command's key is `review`**; empty (or no `models` section) = run with the model you were launched with, and say nothing about it. When it is set: pass it to every subagent **this command decides to launch**, except one named in `agents.<role>` — that agent keeps the model its own definition sets, because you configured it there. Parallel fan-out rounds take `models.workers` when set, otherwise this command's key. For the parts you perform **yourself** you cannot switch your own model: when the configured value differs from the model you are running, state it in one line at the handoff (`this step is configured for <value>, you are on <current>` → `/model <value>`), record it in the phase artifact, and **continue**. That is flow mechanics — never a question in `guided`/`auto`, never a hard gate. If the harness cannot set a model per subagent, note it once and carry on with the inherited one.
 
@@ -184,6 +184,12 @@ Use the `quality` commands from FLOW.md; if empty, auto-discover:
 ## Is the regression test adequate?
 - Yes / No (what is missing)
 
+## Quality gates
+<per §6 — the commands actually run, each with its result>
+- style_fix: ✅ / ❌
+- static_analysis: ✅ / ❌
+- regression test (`test_one`): ✅ / ❌
+
 ## Discarded by adversarial verification
 <only if §5 was run; refuted findings with their reason, or "not applicable">
 
@@ -196,6 +202,6 @@ Use the `quality` commands from FLOW.md; if empty, auto-discover:
 
 ## 8. Close
 
-- With blockers: `phase` stays at `validate`. Iterate.
+- With blockers: `phase` stays where it was (`validate` for size ≥ S, `fix` on XS, where validate never ran). Iterate.
 - Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/flow:bug:postmortem` (M/L) or `/flow:bug:ship` (XS/S).
 - **Autonomy handoff.** Only without blockers — with blockers, stop in every mode. For **M/L**: in `manual`, propose `/flow:bug:postmortem` with a single `AskUserQuestion`; in `guided`/`auto`, **chain into it automatically** in this same turn. For **XS/S**, the next step is `ship`, which pushes and opens the MR/PR — a hard gate in **every** mode: stop here and propose `/flow:bug:ship` with a single `AskUserQuestion`, never chaining into it on its own.

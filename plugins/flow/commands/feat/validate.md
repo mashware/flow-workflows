@@ -115,7 +115,7 @@ For criteria that no automated test can prove now, verify them **together with t
 ## 5. Manual edge cases
 
 If the feature has UI or critical flows:
-- If it touches payments: test with the test cards or credentials appropriate for the provider (see `Skill stripe:test-cards` if using Stripe).
+- If it touches payments: test with the test cards or credentials the provider publishes for its sandbox (and with the harness skill for that provider, if one is installed).
 - If it touches workers/queues: make sure no jobs are stuck in dead-letter. If there are and they are not yours, do not touch them here.
 - If it touches migrations: run `quality.db_update` from `FLOW.md` (if defined). Verify there is no unexpected schema difference with the comparison command the project uses.
 

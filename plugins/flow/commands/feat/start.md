@@ -220,7 +220,7 @@ git status --porcelain            # clean tree?
   - **Stack on `<current-branch>`** (train mode) — only if this task depends on another not yet merged. Record it in `meta.json` as `stacked_on` and remember that the MR/PR will point to that branch, not to the main base.
 
 ### 5.2 Create in place, with explicit base and WITHOUT inheriting its upstream
-Name: per `git.branch_pattern` in `FLOW.md` (substitute `{PREFIX}` and `{TICKET}`; `{slug}` = the slug defined in §1, English kebab-case). **In ticket-less local-only mode there is no `{TICKET}`**: name the branch `<prefix><slug>` (prefix from `tracker.prefix` if set), i.e. apply the pattern with the §2.5 slug in the `{slug}` position and drop the `{TICKET}` segment (collapse any doubled separator). Create only if the user confirms:
+Name: per `git.branch_pattern` in `FLOW.md` (substitute `{PREFIX}` and `{TICKET}`; `{slug}` = the slug defined in §1, English kebab-case). **Empty `branch_pattern` → `{PREFIX}{TICKET}-{slug}`.** **In ticket-less local-only mode there is no `{TICKET}`**: name the branch `<prefix><slug>` (prefix from `tracker.prefix` if set), i.e. apply the pattern with the §2.5 slug in the `{slug}` position and drop the `{TICKET}` segment (collapse any doubled separator). Create only if the user confirms:
 ```bash
 git fetch origin
 git switch --create <branch-name> --no-track <git.default_base>      # independent task
@@ -288,7 +288,7 @@ Populate `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one 
 
 ### `panel.json`
 
-Write it now, next to `meta.json`, in the shape given by the Reporting preamble. This is the work's first appearance in the user's live panel, and it is born without a train (`plan` has not run) — so it is short: the title, `Right now:` what is starting, `Next:` the phase this size routes to, and any sibling repo from §3.5 as a `warn` line. Every later phase overwrites it whole.
+Write it now, next to `meta.json`, in the shape given by the Reporting preamble. This is the work's first appearance in the user's live panel, and it is born without a train (`plan` has not run) — so it is short: the title (`style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, and any sibling repo from §3.5 as a `block` line. Every later phase overwrites it whole.
 
 ### `01-context.md`
 Structure:

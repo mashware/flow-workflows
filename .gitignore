@@ -6,3 +6,6 @@
 
 # domain-memory MCP local index
 .domain-memory/
+
+# per-machine Claude Code settings
+.claude/settings.local.json

@@ -1,6 +1,6 @@
 # `/flow-work-status`
 
-**Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+**Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 Shows an overview of work in progress and detects divergences between artifacts and actual git state.
 
@@ -49,14 +49,14 @@ Compare with `mrs[in_progress].lines_est` and `files_est` and show:
 
 Rules:
 - If lines ≤ `lines_est * 1.5` **and** files ≤ `files_est + 2`: show without warning.
-- If **either** threshold is exceeded: add `⚠ exceeds estimate` and suggest that `/flow-feat-build` apply §2.2 (cut / continue / reopen).
+- If **either** threshold is exceeded: add `⚠ exceeds estimate` and suggest that `/flow-feat-build` apply §2.3 (the size gauge: cut / continue / reopen).
 
 ## 3. Divergences with git
 
 If the branch in meta.json **is the current one**:
 
 - `git diff --name-only <base>...HEAD | wc -l` → files changed on the branch.
-- Read `04-implementation.md` or `04-fix.md` and extract the files listed.
+- Read `05-implementation.md` (features) or `04-fix.md` (bugs) and extract the files listed.
 - If there are files changed in git that don't appear in the log:
   ```
   ⚠ Divergence: <N> files changed but not recorded in the log.

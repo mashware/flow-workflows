@@ -227,7 +227,7 @@ When all three hold: in **`manual`**, offer it with `AskUserQuestion` ("Verify t
 
 Refuted findings come off the blockers/suggestions list and go into the output under "Discarded by verification" with the reason, so there is a trace of what was filtered and why. **One skeptic, not three** — the earlier three-voter majority multiplied cost by finding for a filter whose failure mode is cheap: a wrongly-discarded finding is recorded in the artifact and stays visible to you.
 
-If `agents.fanout_tool` is set in `FLOW.md`, run the verification through that tool instead of plain parallel subagents; the gate, the ceiling and the one-skeptic rule do not change. See `docs/CONFIGURATION.md` §`agents`.
+If `agents.fanout_tool` is set in `FLOW.md`, run the verification through that tool instead of plain parallel subagents; the gate, the ceiling and the one-skeptic rule do not change. See the `agents` section of `FLOW.md` (and `examples/FLOW.template.md`, which documents both keys inline).
 
 Not run for XS/S, for small diffs, or with fewer than 4 ambiguous findings: the cost does not justify it. When you skip it, say so in one line of `06-review.md` — skipped and clean are not the same result.
 

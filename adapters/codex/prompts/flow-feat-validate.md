@@ -1,6 +1,6 @@
 # `/flow-feat-validate`
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it doesn't exist or a key is empty, use the default value or auto-discover as each step specifies. Regarding `domain_memory`: if it's active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 **Models — which one runs this step.** Read `models` from `FLOW.md`. **This command's key is `test`**; empty (or no `models` section) = run with the model this session was launched with, and say nothing about it. When it is set, it applies to the subagents **this command decides to launch**: in this harness a subagent's model is declared in its own definition, so satisfy the key by launching a subagent declared with that model (see the adapter's `PRIMITIVES.md`), and an agent named in `agents.<role>` keeps whatever its own definition already sets. Parallel fan-out rounds take `models.workers` when set, otherwise this command's key. For the parts you perform **yourself** you cannot switch your own model: when the configured value differs from the model you are running, state it in one line at the handoff — naming this harness's own way to switch it (its model command, or the `--model` flag at launch) — record it in the phase artifact, and **continue**. That is flow mechanics: never a question in `guided`/`auto`, never a hard gate. If this harness cannot set a model per subagent at all, note it once and carry on with the inherited one.
 
@@ -88,7 +88,7 @@ Launch in **parallel**:
 If `meta.json.worktree` is not null (the work was developed in a worktree and the runnable env lives in the main checkout), offer once before verifying: "to test this branch against the main environment, run `/flow-work-try <meta.branch>` (it switches the main checkout and re-syncs per `git.worktree_resync`), and `/flow-work-try --back` to return afterwards." Suggest it, don't run it yourself, and don't force it.
 
 If the feature has a user interface or critical flows:
-- If it touches payments: test with the appropriate test cards or credentials for the provider (see the `stripe:test-cards` skill if using Stripe).
+- If it touches payments: test with the test cards or credentials the provider publishes for its sandbox.
 - If it touches workers/queues: make sure no jobs are stuck in the failure queue. If there are and they're not yours, don't touch them here.
 - If it touches migrations: run `quality.db_update` from `FLOW.md` (if defined). Verify there's no unexpected schema difference.
 

@@ -2,7 +2,7 @@
 
 Guided development workflows for terminal coding agents. Instead of one big "do this task" prompt,
 work moves through explicit, reviewable phases — `feat` (idea → design → build → review → ship)
-and `bug` (diagnose → root cause → fix → validate → ship → postmortem) — plus post-deploy
+and `bug` (diagnose → root cause → fix → validate → review → postmortem → ship) — plus post-deploy
 monitoring and multi-agent code review. Every phase leaves an artifact on disk, so the work is
 resumable, auditable, and hand-editable.
 
@@ -15,8 +15,9 @@ asks at the real ones.
 
 What makes that safe is that the autonomy dial never moves the **hard gates**. In *every* mode,
 including `auto`, flow stops and asks before: any push or MR/PR, creating a branch on an ambiguous
-base, a DB schema change or migration, and shipping a review that came back with high-severity
-findings. In `manual`, commits during `build` are yours to authorize too — it leaves the work in your
+base, a DB schema change or migration, shipping a review that came back with high-severity
+findings, and the business brief it writes just before touching code — 3-5 bullets of what you will
+be able to do afterwards and what is *not* included, confirmed by you. In `manual`, commits during `build` are yours to authorize too — it leaves the work in your
 tree so you can read the diff first. It goes alone; it doesn't go behind your back.
 
 The dial cuts both ways, and that half matters just as much: `guided`/`auto` **never** ask about the
@@ -76,8 +77,8 @@ A bug:
 /flow:bug:fix                  # minimal fix
 /flow:bug:validate             # regression test that fails before, passes after
 /flow:bug:review
-/flow:bug:ship
-/flow:bug:postmortem           # lessons + areas to watch (larger incidents)
+/flow:bug:postmortem           # lessons + areas to watch (M/L incidents)
+/flow:bug:ship                 # commit, push, MR/PR (carries the postmortem summary)
 ```
 
 **No ticket?** Run `/flow:feat:start` with no arguments and it drafts the work from the
@@ -202,7 +203,7 @@ The file is a list of lines, and each one says **what it is** rather than how to
 the reader aligns into a column, and `link` is a field — never a URL pasted into the text — that the
 reader shortens, makes clickable and pins to the right. Blank lines separate alignment blocks, so
 the MR/PR train and the labels below it don't drag each other wide. Styles stay semantic
-(`title` `dim` `ok` `warn` `error`), never colours — the reader owns the palette. Two properties make it trustworthy: it is overwritten
+(`normal` `dim` `title` `accent` `ok` `warn` `error`), never colours — the reader owns the palette. Two properties make it trustworthy: it is overwritten
 **whole**, so it is never half of an old state and half of a new one; and it is written **before** a
 long stretch rather than after it, with an honest `updated_at` — a file written only on success
 keeps showing as finished a step that in fact died halfway, whereas a stale timestamp is something
@@ -257,10 +258,11 @@ flow-workflows/
 ├── .claude-plugin/marketplace.json     # catalog (Claude Code)
 ├── plugins/flow/                       # Claude Code plugin
 │   ├── commands/  (feat/ bug/ work/ + init + config + news + save-knowledge)
-│   ├── hooks/     (guard against pushing to the main branch)
+│   ├── hooks/     (guard against pushing to the main branch + update notice on session start)
 │   └── examples/FLOW.template.md
 ├── docs/                               # configuration and workflow reference
 ├── script/check.py                     # release preflight (see below)
+├── RELEASING.md                        # release procedure + what the preflight enforces
 └── adapters/
     ├── install.sh
     ├── opencode/  ·  gemini/  ·  codex/
@@ -277,11 +279,17 @@ ln -s ../../script/check.py .git/hooks/pre-commit   # optional
 ```
 
 It refuses a tree with an empty tracked file (a zero-byte `plugin.json` shipped in two releases and
-kept the plugin from loading at all), a manifest that does not parse, a manifest version that
-disagrees with the newest `CHANGELOG.md` heading, a command without frontmatter, a `.toml` that does
-not parse, an embedded `json` example that does not parse, a `panel.json` example using a `mark`,
-`style` or inline URL the reader would not understand, and a plugin command missing from any of the
-three adapters. Every one of those is something that has actually shipped or nearly shipped.
+kept the plugin from loading at all), any `.json` that does not parse (`hooks.json` included, which
+nothing but the loader reads), a manifest version that disagrees with the newest `CHANGELOG.md`
+heading, a hook that lost its executable bit, a command without frontmatter, a `.toml` that does not
+parse, an embedded `json` example that does not parse, a `panel.json` example using a `mark`, `style`
+or inline URL the reader would not understand, retired panel vocabulary anywhere in the tree, a
+divergent copy of the shared phase preamble, and an adapter mirror that is **missing, orphaned or out
+of date** — the last one read from git, since the mirrors are condensed by hand and a diff cannot
+judge them. Every one of those is something that has actually shipped or nearly shipped.
+
+The full release procedure, and the conventions those checks encode, are in
+[`RELEASING.md`](RELEASING.md).
 
 ## What it does not ship (on purpose)
 

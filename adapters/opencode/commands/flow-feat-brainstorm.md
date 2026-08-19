@@ -96,7 +96,7 @@ Run 2-3 queries in parallel. Maximum wait time 2 s; if it fails, continue withou
 
 ### 3.A Perspectives panel (parallel subagents)
 
-**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round. The panel is **proportional** — for **M**, advisors then you synthesize; for **L**, advisors, then the cross-critique round, then you synthesize. Take the first three lenses for M; add `operations` for L or when the feature touches a sensitive surface (authentication/authorization, payments, personal data, public contract, migration). Leave `agents.fanout_tool` empty: it names a harness-specific orchestrator this tool does not have.
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round. The panel is **proportional** — for **M**, advisors then you synthesize; for **L**, advisors, then the cross-critique round, then you synthesize. Take the first three lenses for M; add `operations` for L or when the feature touches a sensitive surface (authentication/authorization, payments, personal data, public contract, migration). Leave `agents.fanout_tool` empty: it names a harness-specific orchestrator this tool does not have. Both keys live in the `agents` section of `FLOW.md`, documented inline in the repo's `examples/FLOW.template.md`.
 
 Launch several subagents via `@name` (per `agents.architecture` and equivalents in `FLOW.md`, or general-purpose subagents if those fields are empty) in `mode:subagent`, **in parallel without seeing each other** — real diversity. Each subagent generates **one** approach from a distinct lens:
 

@@ -137,7 +137,7 @@ Without this copy, do not proceed to §2.1.
 
 ## 2.1 Work
 
-Load the project skills (see `FLOW.md` section `conventions`).
+Apply the repo's `conventions` from `FLOW.md` — free text (layers, patterns, prohibitions), so read it and follow it as written. If the harness also exposes project skills that encode those conventions, load them; if there are none, the `conventions` text is the whole instruction, not a pointer to something else.
 
 **Comment discipline.** Add a comment only when it earns its place: to explain a *why* the code cannot (a non-obvious constraint, a workaround and its reason, a subtle invariant). Do not narrate *what* the code already states, do not restate the design, and match the surrounding file's comment density — an over-commented change reads as noise and rots as the code moves on. **Never write the ticket ID, task/step number, or "for MR #N" into a code comment**: that traceability belongs in the commit, branch and MR/PR, not in the source. A comment that only makes sense to someone reading this MR/PR today does not belong in the code.
 

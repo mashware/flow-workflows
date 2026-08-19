@@ -12,7 +12,7 @@ This is **external state polling** work (the observability platform changes over
 
 ## 0. Step 0 — read FLOW.md
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes more than 2s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 If `observability` in FLOW.md **is filled in**, extract from it:
 - `platform` / `site`: observability platform and address (org/site).
@@ -159,7 +159,7 @@ Write the summary to the same `<work-dir>/monitor.md` (resolved in §1) and pres
 - **Evidence strength**: if the surface had low traffic (§4), the 🟢 is worth little — say so explicitly ("green, but the flow barely executed during the window: weak evidence"). Do not sell a zero-traffic green as a guarantee.
 - **Honest limits**: does not cover slow leaks (which take longer than the window) or regressions that require specific input not exercised during those minutes. This is a first-hour safety net, not a guarantee.
 
-Write the final verdict to `panel.json` too, and say the window is closed (`Right now: nothing — the watch window is over`) so the panel does not read as still monitoring. On 🔴, leave the `accent` line pointing at `/flow:bug:start`.
+Write the final verdict to `panel.json` too — this is the line whose colour *is* the information, so it takes `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and say the window is closed (a `Now` line reading `nothing — the watch window is over`) so the panel does not read as still monitoring. On 🔴, leave a `Decision` line marked `wait` pointing at `/flow:bug:start`.
 
 If `domain_memory.enabled` is `true`, run `stage_finding` with relevant findings (measured baselines, low-traffic signals, error patterns) for the staging of this branch.
 

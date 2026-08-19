@@ -10,7 +10,7 @@ Usage: `/flow-work-respond [mr-iid-or-url]` — the argument is optional; by def
 
 ## 0. Step 0 — read FLOW.md
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain). If it does not exist or a key is empty, use the default or auto-discover as each step indicates. Regarding `domain_memory`: if active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain). If it does not exist or a key is empty, use the default or auto-discover as each step indicates. Regarding `domain_memory`: if active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance.
 
 Extract from `git`: `host` (`gitlab`|`github`), `cli` (`glab`|`gh`; empty → inferred from `host`), `request_term` (`MR`|`PR`), `assignee`. From `tracker`: `tool`/`prefix`. From `quality`: `review_skill` (§6). If `domain_memory.enabled` is `true`, `search_knowledge` in §3.
 

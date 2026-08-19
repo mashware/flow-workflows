@@ -14,7 +14,7 @@ Usage: `/flow-work-green [mr-iid-or-url]` — the argument is optional; by defau
 
 ## 0. Step 0 — read FLOW.md
 
-Read `FLOW.md` for conventions. If it does not exist or a key is empty, use the default or auto-discover as each step indicates. Regarding `domain_memory`: if active but the MCP fails or takes more than 2 s, continue without it. Follow any `notes` entry for this command (or `all`).
+Read `FLOW.md` for conventions. If it does not exist or a key is empty, use the default or auto-discover as each step indicates. Regarding `domain_memory`: if active but the MCP fails or takes longer than 2 s, continue without it. Follow any `notes` entry for this command (or `all`).
 
 Extract from `git`: `host`, `cli` (`glab`|`gh`; empty → from `host`), `request_term`, `default_base`. From `tracker`: `tool`/`prefix`. From `quality`: `test`, `test_one`, `static_analysis`, `style_fix`, `frontend_test` (local commands to reproduce/verify a fix in §5; empty → auto-discover) and `review_skill` (§5). From `agents`: the sub-agents to delegate fixes to. If `domain_memory.enabled`, `search_knowledge` in §3.
 
@@ -110,7 +110,7 @@ Per failing job: name, kind (lint/test/type-check/build/security/coverage…), t
 
 ### 2.3 When there is nothing to do
 
-Decide on the **combination**, never the pipeline alone: pipeline green **and** verdict mergeable → report both facts and stop. Pipeline green **but blockers remain** → never "green, you're good": report the green, list the blockers, continue to §3 (this is the case the command exists for). Pipeline **still running** → offer to wait (`Monitor`, or `ScheduleWakeup` every ~2–3 min); if non-pipeline blockers already exist, work on those meanwhile. Pipeline **never ran** (no CI) → say so; if the verdict is clean too, stop.
+Decide on the **combination**, never the pipeline alone: pipeline green **and** verdict mergeable → report both facts and stop. Pipeline green **but blockers remain** → never "green, you're good": report the green, list the blockers, continue to §3 (this is the case the command exists for). Pipeline **still running** → offer to wait by re-querying the pipeline every ~2–3 min within this run; opencode has no in-session rescheduling (see `PRIMITIVES.md`), so say so and let the user re-run the command when CI finishes rather than implying an autopilot. If non-pipeline blockers already exist, work on those meanwhile. Pipeline **never ran** (no CI) → say so; if the verdict is clean too, stop.
 
 ## 3. Triage every blocker
 
@@ -158,7 +158,7 @@ Run **before** the other buckets, and only after the hard gate:
 
 - **Push (hard gate)**: show what will be pushed, confirm. Anti-deploy lock: HEAD ≠ `git.default_base`, upstream points to the branch itself. `git push` to the existing branch (this re-triggers the pipeline). **Force-push only after a rebase the user explicitly chose** (§5.C.2), and then only `--force-with-lease` — never bare `--force`, and never as a way out of a rejected push (fetch and understand why the remote moved).
 - **Rerun without a push** (K): only after confirmation — `glab ci retry` / `gh run rerun <run-id> --failed`, with the flake evidence. Same failure again → it was **not** flaky; reclassify to T/Y and fix.
-- **Watch it back to green**: after push/rerun, offer to monitor (`Monitor`/`ScheduleWakeup`) and report when green — or a later run re-checks. Do not claim it is fixed until CI reports green. Then **re-read the merge verdict** (§2.1) too: only that shows the MR/PR is actually mergeable now.
+- **Watch it back to green**: after push/rerun, offer to re-query the pipeline within this run and report when green; with no in-session rescheduling in opencode, say so instead of implying it is being watched — or a later run re-checks. Do not claim it is fixed until CI reports green. Then **re-read the merge verdict** (§2.1) too: only that shows the MR/PR is actually mergeable now.
 
 ## 7. Log, loop, and domain knowledge
 

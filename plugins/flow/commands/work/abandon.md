@@ -4,7 +4,7 @@ description: Close a work without shipping (discarded feature, non-issue, etc.)
 
 # `/flow:work:abandon`
 
-**Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes more than 2s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+**Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding `domain_memory`: if active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 Clean closure for works that will not reach the base branch. Typical cases:
 
@@ -83,7 +83,7 @@ Do not decide alone — ask.
   - `notes` += abandonment reason.
   - `updated_at` updated.
 - **Tracker: move to won't-do** (never "done" — this work did not ship). Only if `tracker.tool` is not `none`/empty, `tracker.abandon_cmd` is set, and `meta.json.ticket` is a **real tracker id** (skip for local-only slugs). Run `tracker.abandon_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contract as `/flow:feat:start §6.5`: **best-effort, idempotent, gated** (ask once in `autonomy.mode: manual`; automatic in `guided`/`auto`); failure or already-in-state ticket → warn and continue, never block. If `tracker.abandon_cmd` is empty, do nothing (the ticket stays as-is; the user closes it by hand if they want).
-- If the folder has a `panel.json` (the live panel described in `/flow:work:README`), overwrite it with a terminal state before archiving — the title, one `warn` line saying the work was abandoned and why, and no `Waiting on you:`. The file travels with the folder into `_archive/`, so the user's panel stops finding the work at its old path either way; this is so the archived copy does not read as a work still in flight.
+- If the folder has a `panel.json` (the live panel described in `/flow:work:README`), overwrite it with a terminal state before archiving — the title, one `block` line saying the work was abandoned and why, and no `Decision` line. The file travels with the folder into `_archive/`, so the user's panel stops finding the work at its old path either way; this is so the archived copy does not read as a work still in flight.
 - Move the folder to `.claude/work/_archive/` **keeping its directory name** (`_archive/<work-dir>/`, where `<work-dir>` is the folder located in §1 — e.g. `<TICKET>-<slug>`) so it does not appear in `/flow:work:status` as pending.
 - Report to the user: ticket abandoned, reason, what was done with the branch.
 

@@ -11,7 +11,7 @@ Start a bug. `$ARGUMENTS` is **optional**:
 
 ## 0. Pre-flight
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes more than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
 
 **Models — which one runs this step.** Read `models` from `FLOW.md`. **This command's key is `study`**; empty (or no `models` section) = run with the model you were launched with, and say nothing about it. When it is set: pass it to every subagent **this command decides to launch**, except one named in `agents.<role>` — that agent keeps the model its own definition sets, because you configured it there. Parallel fan-out rounds take `models.workers` when set, otherwise this command's key. For the parts you perform **yourself** you cannot switch your own model: when the configured value differs from the model you are running, state it in one line at the handoff (`this step is configured for <value>, you are on <current>` → `/model <value>`), record it in the phase artifact, and **continue**. That is flow mechanics — never a question in `guided`/`auto`, never a hard gate. If the harness cannot set a model per subagent, note it once and carry on with the inherited one.
 
@@ -154,9 +154,11 @@ If there are signals of multi-repo scope (the ticket mentions another project, t
 | Size | Criteria                                                       | Suggested phases                              |
 |------|----------------------------------------------------------------|-----------------------------------------------|
 | XS   | Obvious fix (typo, inverted condition, null check)             | start → fix → review → ship                   |
-| S    | Clear symptom, reasonably bounded cause                        | start → diagnose → fix → review → validate → ship |
-| M    | Clear symptom but non-obvious cause, possible regression       | start → diagnose → investigate → fix → validate → review → postmortem |
+| S    | Clear symptom, reasonably bounded cause                        | start → diagnose → fix → validate → review → ship |
+| M    | Clear symptom but non-obvious cause, possible regression       | start → diagnose → investigate → fix → validate → review → postmortem → ship |
 | L    | Critical incident, multi-component, production affected        | full flow + mandatory postmortem              |
+
+**`validate` comes before `review` on every size that has both.** The regression test is what proves the fix fixes the bug, and a review that has not seen it green is reviewing a claim. `/flow:bug:review` enforces this — it refuses to run without `validate` in `phases_done` for size ≥ S — so the order above is the gate, not a preference.
 
 ## 3. Branch
 
@@ -165,15 +167,23 @@ Same two non-negotiable rules as in `/flow:feat:start` §5 (breaking them alread
 1. **Explicit base**, never implicit from wherever you are. If you are on another task's branch, you would inherit its commits.
 2. **No inherited upstream**: with `branch.autoSetupMerge=true` (team configuration), creating from `git.default_base` from FLOW.md without `--no-track` leaves the upstream pointing to that base and a push can end up there.
 
+**Name**: per `git.branch_pattern` in `FLOW.md` — substitute `{PREFIX}`, `{TICKET}` and `{slug}` (the §0 slug, English kebab-case) — exactly as `/flow:feat:start §5.2` does. A fix branch follows the repo's convention like any other work; a hardcoded shape here is a branch that does not match what the team greps for, and on trackers that link by branch name (Jira, Linear) it is a fix whose ticket never notices it. **Empty `branch_pattern` → `{PREFIX}{TICKET}-{slug}`.**
+
 ```bash
 git rev-parse --abbrev-ref HEAD && git status --porcelain   # where am I / clean tree
 git fetch origin
-git switch --create $ARGUMENTS-fix-slug --no-track <git.default_base>   # independent base; --no-track required
+git switch --create <branch-name> --no-track <git.default_base>   # independent base; --no-track required
 ```
 
-In ticket-less local-only mode there is no `$ARGUMENTS`: name the branch `<slug>-fix` from the §1.5 slug (prefix from `tracker.prefix` if set). If an issue was created in §1.5.4, use the real id as usual.
+In ticket-less local-only mode there is no `{TICKET}`: apply the pattern with the §1.5.2 slug in the `{slug}` position and drop the `{TICKET}` segment, collapsing any doubled separator (prefix from `tracker.prefix` if set). If an issue was created in §1.5.4 the run is in ticket mode and the real id is used as usual.
 
 If the current branch is not the main base, ask for the base with `AskUserQuestion` (`git.default_base` recommended, or stacked on the current one in train mode → note it as `stacked_on`). Create only if the user confirms. First push is always `git push -u origin HEAD` (in `ship`), never to the main base.
+
+**Link the branch to the tracker issue** (GitHub only, best-effort) — same step and same reason as `/flow:feat:start §5.5`. **Only if `tracker.tool` is `gh` and the ticket is a numeric GitHub issue**:
+```bash
+gh issue develop <N> --base <resolved-base> --name <branch-name>   # <N> = numeric issue, <resolved-base> = git.default_base or, in train mode, the parent branch
+```
+GitHub does not populate the issue's "Development" panel from a `#N` in the MR/PR title, and the `Closes #N` in the body (`/flow:bug:ship §1`) is **ignored when the MR/PR targets a non-default branch** — which is exactly the train case this section allows just above. A linked branch registered now is the link that survives either way. Best-effort: if the command fails (branch already on the remote, permissions, older `gh`), warn in one line and continue — never block branch creation. For `glab`/`acli`/`linear`, skip: they link by cross-reference or by the branch name itself.
 
 **Worktree mode** (same as `/flow:feat:start` §5.0/§5.4): read `git.worktree` from FLOW.md. If `always` (or `ask` and the user chooses it), create the branch as a worktree instead of switching in place — `git worktree add --no-track -b <branch> <worktree-path> <git.default_base>`, path from `git.worktree_path` (empty → `.worktrees/<branch>`, git-ignore it). Do not `git switch`; the fix runs from the worktree (`cd <worktree-path>`). Record the resolved path in `meta.json.worktree`. If `off`/empty, in-place as above and `worktree` is `null`.
 
@@ -203,7 +213,7 @@ Create the work directory following the §0 naming: `.claude/work/<TICKET>-<slug
 }
 ```
 
-`<work-dir>/panel.json`: write it now, next to `meta.json`, in the shape given by the Reporting preamble. This is the bug's first appearance in the user's live panel, and a bug has no MR/PR train — so it is short: the title (the symptom), `Right now:` what is starting, `Next:` the phase this size routes to, and any sibling repo from §1.6 as a `warn` line. Every later phase overwrites it whole.
+`<work-dir>/panel.json`: write it now, next to `meta.json`, in the shape given by the Reporting preamble. This is the bug's first appearance in the user's live panel, and a bug has no MR/PR train — so it is short: the title (the symptom, `style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, and any sibling repo from §1.6 as a `block` line. Every later phase overwrites it whole.
 
 Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the fix touches; leave `[]` for a single-repo fix. Use `pending` only when the fix **changes a surface that sibling consumes** (a payload key, an error code, a route, an event shape); a fix that leaves the contract untouched is `none`.
 
