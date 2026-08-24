@@ -44,25 +44,60 @@ cmd=$(printf '%s' "$cmd" | awk '
 # 'rtk proxy git push', and any wrapper that ends up invoking one.
 echo "$cmd" | grep -qE 'git[[:space:]]+push' || exit 0
 
-branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+# The branch that decides is the one in the directory the push RUNS in, not the one in the
+# session's directory. With worktrees — the layout this plugin prescribes — the main checkout
+# sits on the main branch while the branch being pushed is checked out somewhere else, so
+# reading HEAD here blocked every legitimate push from a worktree. Start from the session's
+# directory and let 'cd <path>' and 'git -C <path>' move it, the way the shell would.
+base_dir=$(printf '%s' "$event" | jq -r '.cwd // empty' 2>/dev/null || true)
+[ -n "$base_dir" ] && [ -d "$base_dir" ] || base_dir=$PWD
 
-# 1) You are standing on master/main — nothing you push from here is what you meant.
-if [ "$branch" = "master" ] || [ "$branch" = "main" ]; then
-  echo "BLOCKED: push from '$branch'. Do not push from the main branch. Switch to a work branch (git switch -c PROJ-XXXXX-slug --no-track origin/master)." >&2
-  exit 2
-fi
+# A path only a shell could resolve (a variable, a glob, '-', '~') leaves the directory where
+# it was. That is the conservative answer: the session's checkout is the one that tends to be
+# sitting on the main branch, so an unresolvable path errs towards blocking, never towards
+# waving a push through.
+resolve_dir() {
+  local from=$1 path=$2
+  path=${path%\"}; path=${path#\"}
+  path=${path%\'}; path=${path#\'}
+  case $path in
+    ''|-|~*|*'$'*|*'*'*|*'`'*) printf '%s' "$from" ;;
+    /*) if [ -d "$path" ]; then printf '%s' "$path"; else printf '%s' "$from"; fi ;;
+    *)  if [ -d "$from/$path" ]; then printf '%s' "$from/$path"; else printf '%s' "$from"; fi ;;
+  esac
+}
 
 # Judge each push on its own. A command chains several things — only the segments that
 # actually run a push are evidence, so 'git commit -m "sync master fixes" && git push -u
 # origin HEAD' is a safe push next to an unrelated mention of the main branch, and every
-# push in a chain gets checked rather than just the last one.
-segments=$(printf '%s' "$cmd" | tr '\n' ';' | sed -E 's/(\&\&|\|\||\||;)/\n/g')
+# push in a chain gets checked rather than just the last one. The separator is kept at the
+# head of the segment it introduces, so a 'cd' that may never run can be told apart.
+segments=$(printf '%s' "$cmd" | tr '\n' ';' | sed -E 's/(\&\&|\|\||\||;)/\n\1 /g')
 
 judge() {
-  local seg=$1
+  local seg=$1 dir=$2
+
+  # 'git -C <path>' aims this one push at another checkout whatever the directory is.
+  if [[ $seg =~ git[[:space:]]+-C[[:space:]]+([^[:space:]]+) ]]; then
+    dir=$(resolve_dir "$dir" "${BASH_REMATCH[1]}")
+  fi
+
+  # 1) The push runs on master/main — nothing it sends is what you meant.
+  local branch
+  branch=$(git -C "$dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+  if [ "$branch" = "master" ] || [ "$branch" = "main" ]; then
+    echo "BLOCKED: push from '$branch' (in $dir). Do not push from the main branch. Switch to a work branch (git switch -c PROJ-XXXXX-slug --no-track origin/master), or run the push where that branch is checked out ('git -C <worktree> push -u origin HEAD')." >&2
+    return 2
+  fi
+
+  # A directory can be named after the main branch ('.worktrees/main', a clone in ~/src/master).
+  # Those words name a path, not a ref, so the path arguments leave before the branch is looked
+  # for as a token — otherwise pushing from such a worktree is refused for its spelling.
+  local refs
+  refs=$(printf '%s' "$seg" | sed -E 's/(^|[[:space:]])(-C|cd)[[:space:]]+[^[:space:]]+//g')
 
   # 2) master/main as a loose token (HEAD:master, origin master, refs/heads/master…).
-  if echo "$seg" | grep -qE '(^|[[:space:]]|:|/)(master|main)([[:space:]]|:|$)'; then
+  if echo "$refs" | grep -qE '(^|[[:space:]]|:|/)(master|main)([[:space:]]|:|$)'; then
     echo "BLOCKED: the push references master/main. Push to your branch: 'git push -u origin HEAD'." >&2
     return 2
   fi
@@ -70,8 +105,8 @@ judge() {
   # 3) --all/--mirror push every branch, carrying the main branch along whatever the
   #    upstream says.
   if echo "$seg" | grep -qE '[[:space:]](--all|--mirror)([[:space:]]|$)' \
-     && { git show-ref --verify --quiet refs/heads/master 2>/dev/null \
-          || git show-ref --verify --quiet refs/heads/main 2>/dev/null; }; then
+     && { git -C "$dir" show-ref --verify --quiet refs/heads/master 2>/dev/null \
+          || git -C "$dir" show-ref --verify --quiet refs/heads/main 2>/dev/null; }; then
     echo "BLOCKED: '--all'/'--mirror' pushes every branch, the main branch included. Push only your branch: 'git push -u origin HEAD'." >&2
     return 2
   fi
@@ -106,7 +141,7 @@ judge() {
   remaining=$(printf '%s\n' $stripped | grep -c .)
 
   if [ "$remaining" -le "$threshold" ]; then
-    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
+    upstream=$(git -C "$dir" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
     if [ "$upstream" = "origin/master" ] || [ "$upstream" = "origin/main" ]; then
       echo "BLOCKED: upstream='$upstream'; this push names no refspec, so it would resolve to $upstream. Fix it with 'git branch --unset-upstream' and use 'git push -u origin HEAD'." >&2
       return 2
@@ -115,9 +150,22 @@ judge() {
   return 0
 }
 
+cur_dir=$base_dir
 while IFS= read -r segment; do
+  # A 'cd' moves every command after it, so the tracked directory moves with it — except
+  # behind '||', where the shell runs it only if the previous command failed. Trusting that
+  # one could hand a push the directory it never reached; ignoring it keeps the checkout we
+  # know about, which is the strict side.
+  if [ "${segment#||}" = "$segment" ]; then
+    trimmed=$(printf '%s' "$segment" | sed -E 's/^[[:space:]]*(\&\&|;|\|)?[[:space:]]*\(*[[:space:]]*//')
+    case $trimmed in
+      cd[[:space:]]*)
+        cur_dir=$(resolve_dir "$cur_dir" "$(printf '%s' "$trimmed" | awk '{print $2}')")
+        ;;
+    esac
+  fi
   echo "$segment" | grep -qE 'git[[:space:]]+push' || continue
-  judge "$segment" || exit 2
+  judge "$segment" "$cur_dir" || exit 2
 done <<SEGMENTS
 $segments
 SEGMENTS

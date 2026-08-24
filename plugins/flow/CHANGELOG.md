@@ -5,6 +5,14 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.35.1 — The guard read the branch from the wrong directory  ·  2026-08-24
+
+**Pushing from a worktree was blocked, and worktrees are what this plugin tells you to use.** The push guard's first check read `HEAD` wherever the hook happened to run — the session's directory — and refused the push if that said `master`/`main`. Under `worktree: always` the main checkout stays on the main branch by design while the work branch lives in `.worktrees/<branch>`, so every legitimate `git push -u origin HEAD` from a worktree was refused, and the reason it gave named a branch nobody was pushing. The only ways out were moving the session into the worktree or having you run the push by hand — an agent stopping to ask for a push is the failure this hook was supposed to prevent, not cause.
+
+The check now resolves the directory the push actually runs in: `git -C <path>` aims one push, `cd <path>` moves everything chained after it, and both compose the way the shell composes them. Checks 3 and 4 read that directory too, so `--all` sees the right refs and a blind push is judged against the *worktree's* upstream instead of the main checkout's. A path only a shell could resolve (a variable, a glob, `~`, `-`) leaves the directory where it was, and a `cd` behind `||` — which may never run — is not trusted: both land on the session's checkout, the one most likely to be sitting on the main branch, so an unreadable command errs towards refusing.
+
+What still blocks is unchanged, and the guard did not get looser: a bare `git push -u origin HEAD` from a checkout that really is on the main branch is refused exactly as before, and so is `cd <worktree> && git push origin HEAD:master`. New in the strict direction: a worktree whose *path* is named after the main branch (`.worktrees/main`, a clone in `~/src/master`) no longer trips the loose-token check on its spelling — a directory name is not a refspec. Fourteen new cases in `script/tests/push-guard.sh`, including the session directory arriving in the hook event rather than being inferred.
+
 ## v0.35.0 — A fix was Done before anyone had merged it  ·  2026-08-19
 
 Three audits over the tree — commands, tooling, docs — found the same shape of defect in three places: a rule stated in one file and contradicted in another, where nothing checked which one was true.
