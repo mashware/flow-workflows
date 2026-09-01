@@ -74,6 +74,7 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 - Current branch → work folder `.claude/work/<TICKET>/` (via `meta.json`). No folder → **lightweight mode**: skip artifact reads, warn once, continue.
 - Resolve MR/PR: (1) `$ARGUMENTS`; (2) `meta.json.mrs[]` matching the branch → `url`; (3) query `git.cli` for the branch's open MR/PR (`gh pr view --json ...`/`gh pr list --head`, or `glab mr list --source-branch`); (4) several/none → ask, list candidates.
 - Merged/closed → warn, ask continue or stop.
+- **Round budget — checked before the round starts.** Rounds spent by this MR/PR: `meta.json.mrs[].respond_rounds` (work-level with no `mrs`), or count the round entries in `08-feedback.md` when absent. Ceiling: `quality.respond_max_rounds` (empty = `3`, `0` = none). Would exceed it → **do not start the round**: stop in **every** mode and hand it back — which threads are open and about what, what each spent round tried (from `08-feedback.md`, not memory), and **where the disagreement sits**. A fourth round repeating the third is the loop failing where nobody is watching; raising the ceiling is the user's call.
 
 ## 2. Fetch the open threads
 Pull every unresolved thread with its full chain:
@@ -147,6 +148,8 @@ Show what will be pushed, confirm. Anti-deploy lock: HEAD ≠ `git.default_base`
 
 ## 8. Log, loop, domain knowledge
 - **Artifact**: append the round to `.claude/work/<TICKET>/08-feedback.md`: date, per thread — location, category, decision, reply, commit/edit.
+- **Count the round where it survives a restart**: increment `respond_rounds` for this MR/PR in `meta.json` in the same write that appends the round to `08-feedback.md`. The ceiling above is worth exactly as much as this counter; lightweight mode (no work folder) has nothing to write and no ceiling to enforce.
+- **A repeated answer spends the budget and buys nothing**: if a reply says what an earlier round already said — same position, same reasoning, no new evidence — stop **now** rather than at the ceiling and escalate that thread by name: your position, the reviewer's counter, and that neither has moved.
 - **domain-memory**: if enabled and a non-obvious "why" emerged → `stage_finding` (silence by default).
 - **Loop/close**: threads awaiting the reviewer → ball in their court, later run continues. All answered + pushed → summarize (addressed, code changes, **ready to resolve**, follow-ups). Once merged, normal `/flow-feat-ship`/`/flow-bug-ship` close (and `/flow-work-watch` post-deploy).
 

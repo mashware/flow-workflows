@@ -32,11 +32,17 @@ python3 script/check.py                # must be green before the version bump m
 ## Keeping the adapters in step
 
 `plugins/flow/` is the source of truth. `adapters/opencode/`, `adapters/codex/` and
-`adapters/gemini/` mirror all 31 commands — about 14k lines against the plugin's 5.7k — and there
-is **no generator**: they are condensed by hand, roughly 15% shorter, with subsections merged, and
-each in its own harness's invocation syntax (`/flow-feat-ship` for opencode and Codex,
-`/flow:feat:ship` for Gemini CLI). That condensation is deliberate, which is why a mechanical diff
-cannot verify them.
+`adapters/gemini/` mirror all 32 commands — about 14k lines against the plugin's 5.7k. The
+**condensation is by hand**: roughly 15% shorter, subsections merged, each in its own harness's
+invocation syntax (`/flow-feat-ship` for opencode and Codex, `/flow:feat:ship` for Gemini CLI).
+That is deliberate, and it is why a mechanical diff cannot verify them.
+
+What *is* mechanical is now generated. For a **new** command, `script/adapter-new.py <command>`
+writes all three mirrors in the right place with the right wrapper and the prefix rewritten, and
+marks the body for you to condense; `--from <file>` wraps a body you condensed once for all three.
+And `script/adapter-smoke.py` checks the result is usable — the wrapper its harness reads, that
+harness's prefix throughout, every command and path cited real, and `install.sh` landing the files
+where the harness looks. Neither replaces the condensation; both remove the ways it went wrong.
 
 So the rule is a discipline, and the preflight holds you to it: **edit a plugin command and its
 three mirrors in the same commit.** `check_adapter_freshness` reads git — a plugin command whose
@@ -69,3 +75,23 @@ Each of these exists because it shipped broken once:
 - **No retired `panel.json` vocabulary** (`Right now:`, `Waiting on you:`, grouping the train
   `under Left`) anywhere in the plugin or the adapters. The panel's reader knows `mark` and `ref`;
   those labels render as prose and quietly lose the column — this is where the spec drifted once.
+- **The mirrors are usable, not just present.** `script/adapter-smoke.py --static-only` runs inside
+  the preflight: each mirror parses in its harness's wrapper (opencode frontmatter · Codex none ·
+  Gemini TOML), every `/flow…` invocation uses that harness's prefix, and every command and path it
+  cites exists. Parity and freshness could only say a mirror *existed* and was *current*; a fresh
+  mirror teaching `/flow:feat:build` to opencode passed both.
+
+## Before the tag, run the smoke test whole
+
+```bash
+python3 script/adapter-smoke.py
+```
+
+The half the preflight skips is the slow one: it executes `adapters/install.sh` for each harness
+against a throwaway `HOME` and checks the files land where that harness reads them, in the expected
+number, with the changelog `/flow-news` needs. It needs none of the three harnesses installed, and it
+is the only thing that would notice `install.sh` copying into a path that no longer exists.
+
+For a **new** command, generate its mirrors instead of writing them: `script/adapter-new.py <command>`
+places all three with the right wrapper and prefix and marks the body for condensing; `--from <file>`
+wraps a body you condensed once for all three at a time.

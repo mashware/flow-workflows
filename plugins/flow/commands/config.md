@@ -59,33 +59,28 @@ keys apply where flow improvises the agent and to fan-out workers), and commands
 
 ## 3. Validate (flag, do not fix)
 
-Light checks — report problems, never change anything:
+Light checks — report problems, never change anything. **Scope: this file.** Whether the world it
+describes exists — CLIs installed *and authenticated*, agents discoverable, hooks executable, the
+MCP reachable, the base branch resolvable — belongs to `/flow:doctor`, which checks it properly
+instead of twice and half. Point the user there in one line whenever a key below names a tool, an
+agent or a command; do not duplicate those checks here.
 
-- **CLIs**: for the tools referenced (`tracker.tool`, `git.cli`), check they are installed
-  (`command -v gh glab acli tea az …`). Missing → warn that the corresponding step degrades
-  (e.g. tracker read → manual paste; MR/PR creation → manual).
-- **Agents**: for each non-empty `agents.*` **role** and `quality.reviewers` / `quality.review_skill`,
-  check it is discoverable (`~/.claude/agents`, repo `.agents/agents`, or a plugin). Not found →
-  warn it will fall back to `general-purpose` (or be skipped). `agents.fanout_max` and
-  `agents.fanout_tool` are **not** roles — do not look for an agent by those names.
 - **Fan-out**: `agents.fanout_max` must be a positive integer; anything else → flag and note the
   default `4` applies. `agents.fanout_tool` names a harness tool, not an agent: if it is set and
   this harness does not expose it, note the fan-out falls back to plain parallel subagents (not an
   error — that is the portable path).
 - **Models**: `models.*` values are **free text for the harness** — never flag a model name as invalid, never suggest a "better" one, and never invent a default. Only report: a key that is not one of `study` / `code` / `test` / `review` / `workers` (flag it — it is a typo and will be ignored), and whether this harness can set a model per subagent at all (if it cannot, note that every value degrades to inheritance). If `models.code` is set, note in one line that `build`/`fix` are single-thread on XS/S/M, so there the value is reported at the handoff rather than applied.
-- **Commands**: for `quality.*` and `git.worktree_resync` entries that look like `make <target>`,
-  optionally check the target exists in the `Makefile`; for npm/composer scripts, check they exist.
-  Do not run them — only check presence. Unresolvable → flag as "declared but not found".
 - **Coherence**: `git.worktree` is `ask`/`always` but `git.worktree_path` empty → note the default
-  `.worktrees/{branch}` will be used. `git.host` and `git.cli` disagree → flag. `domain_memory.enabled`
-  is `true` but the MCP is not available this session → note the domain steps will be skipped.
+  `.worktrees/{branch}` will be used. `git.host` and `git.cli` disagree → flag. These are about the
+  file contradicting itself; whether the declared commands, agents and MCP actually exist here is
+  `/flow:doctor`.
 - **Tracker transitions**: if any of `tracker.start_cmd` / `done_cmd` / `abandon_cmd` is set but `tracker.tool`
   is `none`/empty → flag (there is no ticket to move). If `start_cmd` references `{ASSIGNEE}` but both
   `tracker.assignee` and `git.assignee` are empty → note the token won't substitute. If `git.host` is
   `github`/`gitlab` and `done_cmd` is set → note it is usually redundant with `Closes #N` auto-close (harmless,
   but the merge already closes the issue). These `*_cmd` run best-effort and never block.
 - **Data access**: `data.explain_cmd` / `schema_cmd` / `sandbox_cmd` / `seed_cmd` are commands, not
-  agents — check the referenced binary or `make` target exists, never run them. If the whole `data`
+  agents — never run them, and leave "does the binary exist" to `/flow:doctor`. If the whole `data`
   section is empty, do not flag it as an error: note that the query duel in `/flow:work:query` and
   `/flow:feat:review §3.6` runs on the schema alone and declares what it cannot prove. If
   `explain_cmd` or `schema_cmd` is set but has no `{QUERY}` / `{TABLE}` token → flag (nothing would
@@ -104,6 +99,8 @@ Light checks — report problems, never change anything:
 ## 4. Close
 
 - Print a one-line summary: `N keys set, M using fallbacks, K warnings`.
+- If anything you flagged depends on the environment rather than the file, close with one line:
+  `/flow:doctor` checks the tools, agents, hooks and repo state this config assumes.
 - If there are warnings, suggest the concrete fix (install a CLI, create/rename an agent, correct a
   key) and, when the fix is a config change, point at `/flow:init` or the specific `FLOW.md` key.
 - Do not proceed to any other command on your own.

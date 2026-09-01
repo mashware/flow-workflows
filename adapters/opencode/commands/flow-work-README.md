@@ -20,6 +20,7 @@ If the file does not exist or a key is empty, each command auto-discovers the va
 - **Numbered artifacts**: each phase writes a `NN-phase.md` that the next step reads.
 - **`meta.json` is the source of truth** for state (current phase, size, branch). Without it, commands refuse to proceed.
 - **Size drives the flow**: in `/flow-feat-start` and `/flow-bug-start` the work is classified XS/S/M/L and skipping phases is suggested for small changes.
+- **Entering the flow is a choice, and sometimes the wrong one.** Size prunes phases; it never asks whether this should be a work at all, and XS is still four commands, a branch and a folder. A change describable in one sentence, in one file, needing no review, whose whole test story is that the suite passes or does not — **say so and offer the two-line alternative** instead of opening a work. It goes back to being a work the moment it needs a ticket, someone else has to understand why later, or it touches a schema, a contract, or anything with a rollback story. Ceremony that has not earned itself is what makes a process get abandoned.
 - **Branch with explicit base and no upstream pointing to the base**: creating a branch once caused an accidental deployment, so `/flow-feat-start` §5 and `/flow-bug-start` §4 enforce two rules. (1) **Explicit base**: never `git checkout -b` from "wherever I am" — the base is `git.default_base` from FLOW.md (normal case) or a confirmed parent branch (train mode, noted in `meta.json.stacked_on`). If the current branch is not the base, confirm the base before creating. (2) **`--no-track` required**: with `branch.autoSetupMerge=true`, creating from the base without `--no-track` leaves the upstream on the remote base; a push that resolves the upstream ends up on the base and can trigger a deployment. The first push is always `git push -u origin HEAD` (own branch), and `/flow-feat-ship` §4.0 / `/flow-bug-ship` §3.0 block if HEAD is the base branch or the upstream points to it.
 - **Small, focused, loosely coupled MR/PRs**: the default goal is to close the feature in the smallest possible MR/PRs, each with a clear purpose, independently mergeable when possible. Coupling between MR/PRs only when unavoidable; when it is, justify it in `04-mr-plan.md` and record the merge order. A huge MR/PR "because it can't be split" signals that `/flow-feat-plan` was not thought through — go back to that phase before continuing.
 - **Understand before starting**: if after reading the ticket, `domain-memory`, and the code there are still open questions that affect the design (which cases it covers, what happens with certain roles/plans, what it does if user X, which metric/event counts as "success"), **ask the user** before closing `/flow-feat-start` or `/flow-feat-brainstorm`. Making up answers that the user will have to correct later is worse than asking upfront. Ask all at once, not one by one.
@@ -60,6 +61,9 @@ If the file does not exist or a key is empty, each command auto-discovers the va
   "size": "XS" | "S" | "M" | "L",
   "phase": "context" | "brainstorm" | "design" | "plan" | "build" | "review" | "validate" | "ship" | "diagnose" | "investigate" | "fix" | "postmortem" | "done" | "abandoned",
   "phases_done": ["context", ...],
+  "reviewed_sha": "sha the last passing review read, or ''",
+  "validated_sha": "sha the suite last went green on, or ''",
+  "respond_rounds": 0,
   "mrs": [
     {
       "n": 1,
@@ -67,6 +71,9 @@ If the file does not exist or a key is empty, each command auto-discovers the va
       "size": "S",
       "status": "pending" | "in_progress" | "merged" | "closed" | "superseded",
       "phases_done": ["build", "review", "validate"],
+      "reviewed_sha": "",
+      "validated_sha": "",
+      "respond_rounds": 0,
       "wave": 1,
       "depends_on": [],
       "lines_est": 120,
@@ -127,7 +134,7 @@ Sits next to `meta.json` in each work folder. `meta.json` is the *state machine*
 
 **No headings over the train.** Grouping the entries under `Done` / `Now` / `Left` is the obvious layout and it is wrong here: in a train an MR/PR that has shipped is *open, waiting to merge*, so `Done  #1 …  MR open` contradicts itself in the one place the user is trusting at a glance. `mark` says it per entry — `wait` for shipped and waiting, `current` for the one being worked, `done` only for merged.
 
-**Who writes it.** The 18 phase commands, from the shared Reporting preamble — in pre-flight, before every stop, before any long unattended stretch, and at their close. Plus the two `ship` commands the instant an MR/PR URL exists, `plan` when the train is first populated, `resume` (which rebuilds it after a break — the moment it is most likely to be stale), `watch` on every monitoring cycle, and `abandon` with a terminal state before archiving. The read-only commands — `status`, `daily`, `config`, `news` — never write it. `clean` archives the folder with the panel inside it.
+**Who writes it.** The 18 phase commands, from the shared Reporting preamble — in pre-flight, before every stop, before any long unattended stretch, and at their close. Plus the two `ship` commands the instant an MR/PR URL exists, `plan` when the train is first populated, `resume` (which rebuilds it after a break — the moment it is most likely to be stale), `watch` on every monitoring cycle, and `abandon` with a terminal state before archiving. The read-only commands — `status`, `daily`, `config`, `doctor`, `news` — never write it. `clean` archives the folder with the panel inside it.
 
 ## Shortcuts by size
 

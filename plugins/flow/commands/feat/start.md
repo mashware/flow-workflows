@@ -194,6 +194,8 @@ Based on the ticket and context, propose a size. In **`manual`**, ask the user t
 
 Recommend the size you estimate with a "(Recommended)".
 
+**Below XS there is no work.** Before recording the size, ask yourself whether this belongs in the flow at all: a change describable in one sentence, in one file, needing nobody's review, whose whole test story is that the existing suite passes or does not — a typo, a version bump, a log level, a comment. Then **say so and offer the alternative**: name the edit and the commit message, and let the user take it by hand. Do it in one `AskUserQuestion` (do it by hand · open the work anyway) in every mode, `auto` included — this is the one place where entering the flow is itself the decision, and it is the user's. Keep the work when any of these holds: it needs the ticket moved, someone else has to understand later why it was done, or it touches a schema, a contract, or anything with a rollback story. A work folder opened for a typo is not rigour; it is what teaches the user to stop reaching for these commands.
+
 ## 5. Create the branch
 
 **Two non-negotiable rules**, because breaking them has already caused an accidental deployment:

@@ -71,6 +71,7 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 
 - Load `meta.json`. Require `review` in `phases_done` (and `validate` if `size` ≥ S, and `postmortem` if `size` is M or L — the same sizes `/flow-bug-review` routes to postmortem, so what it suggests and what this requires are one rule).
 - If not met, refuse and send to the missing step.
+- **The review has to be about the tree you are about to push.** Compare `meta.json.reviewed_sha` and `validated_sha` with `git rev-parse HEAD`. **Equal** → continue. **Absent** → one line, continue. **Different** → read the delta (`git log --oneline <sha>..HEAD`) and judge it by **what it touches**: only test files or this work's folder under `.claude/work/` → note both shas in `06-review.md` and continue; **anything else** → stop and ask in **every** mode: *re-review the delta* (`/flow-bug-review` over `<sha>..HEAD`) · *ship as it stands*, recording that the user accepted them unreviewed. A fix whose last commits nobody read is the shape of the second incident.
 
 ## 1. Draft title and description (without sending anything yet)
 

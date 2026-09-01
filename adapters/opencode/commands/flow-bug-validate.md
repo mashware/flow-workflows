@@ -117,4 +117,5 @@ Then:
 
 - If test is red or regressions found: `phase` stays at `fix`. The user iterates.
 - If green: `phase = "validate"`, add to `phases_done`. Suggest `/flow-bug-review`.
+- Record `validated_sha` = `git rev-parse HEAD` in the same write: the regression test passed on *that* tree, and the `/flow-bug-ship` pre-flight reads it to tell that from "it passed on something else".
 - **Autonomy handoff** (only when green — a red gate stops in every mode). In `manual`, propose `/flow-bug-review` as a question; in `guided`/`auto`, **chain into it automatically** in this same turn.

@@ -49,8 +49,12 @@ Try without installing: `claude --plugin-dir <path>/flow-workflows/plugins/flow`
 **Other harnesses.** Run `adapters/install.sh <tool>` for opencode / Gemini CLI / Codex CLI — see
 [`adapters/README.md`](adapters/README.md). Same commands and logic; only the invocation syntax
 differs (`/flow:feat:start` in Claude Code and Gemini, `/flow-feat-start` in opencode/Codex).
-⚠️ The adapters are generated faithfully to each tool's documented format **but not yet tested
-inside the tool** — a solid first cut; validate as you use them and adjust paths if your harness
+The mirrors are **checked mechanically** on every preflight: each one parses in its harness's format,
+uses that harness's invocation prefix, cites only commands and paths that exist, and `install.sh` is
+run against a throwaway `HOME` to confirm the files land where that harness looks for them
+([`script/adapter-smoke.py`](script/adapter-smoke.py)). ⚠️ What that cannot tell you is whether a
+harness *executes* a workflow the way Claude Code does — **no harness has run them end to end**. Treat
+them as a solid, verified-on-paper first cut: validate as you use them, and adjust paths if your
 version differs (especially Codex, where the prompts location moves between versions).
 
 ## The two flows
@@ -90,6 +94,20 @@ next step, `/flow:work:resume` picks up the work tied to your current branch, an
 `/flow:work:daily` gives you a standup across everything. The size classified at `start` (XS/S/M/L)
 also prunes phases: an XS change goes `start → build → review → ship`. Type `/flow` (or `/`) for
 autocomplete.
+
+### When not to use it
+
+The size dial prunes *phases*; it never says "this is not a work at all", so it is worth saying here.
+**Do it by hand** when the change is one you can describe in a single sentence, touches one file,
+needs nobody's review, and whose entire test story is that the existing suite either passes or it
+does not: a typo in a string, a version bump, a log level, a comment. Edit, commit, done — a work
+folder, a branch, an artifact trail and a review panel cost more than that change is worth, and the
+fastest way to abandon a process is to feel it taxing you on a two-line fix.
+
+It goes back to being a work as soon as **any** of these is true: it needs a ticket, or someone other
+than you has to understand later why it was done, or it touches a schema, a contract, or anything
+with a rollback story. Those are exactly what the artifacts and the gates buy you. Neither buys
+anything on a typo.
 
 **How much of it you drive** is one line in `FLOW.md` — `autonomy.mode`, changeable at any time:
 
@@ -135,6 +153,7 @@ The hard gates listed above hold in all three. → [Autonomy reference](docs/CON
 |---|---|
 | `/flow:init` | Wizard that generates this repo's `FLOW.md` (auto-detects, asks the minimum) |
 | `/flow:config` | Show the effective `FLOW.md` config: what is set, what is empty (and its fallback), plus validation |
+| `/flow:doctor` | **Environment check** — the CLIs installed *and authenticated*, the agents your config names, the hooks executable, the MCP reachable, the base branch resolvable. Read-only, quiet on success |
 | `/flow:work:green` | **Mergeable loop** — the open MR/PR cannot merge (red pipeline, conflicts, behind base): triage, fix at the root, push. Never green-washes → [docs](docs/WORKFLOWS.md#mergeable-loop--flowworkgreen) |
 | `/flow:work:respond` | **Review loop** — triage the MR/PR threads, debate, implement what you agreed, reply. Never resolves threads → [docs](docs/WORKFLOWS.md#review-loop--flowworkrespond) |
 | `/flow:work:query` | **Query duel** — puts a data-access query on trial: fact sheet, blinded challenger, and a verdict settled by its execution plan, never by prose → [docs](docs/WORKFLOWS.md#query-duel--flowworkquery) |
@@ -262,6 +281,8 @@ flow-workflows/
 │   └── examples/FLOW.template.md
 ├── docs/                               # configuration and workflow reference
 ├── script/check.py                     # release preflight (see below)
+├── script/adapter-smoke.py             # are the mirrors usable? (format · prefixes · install)
+├── script/adapter-new.py               # generate a new command's three mirrors
 ├── RELEASING.md                        # release procedure + what the preflight enforces
 └── adapters/
     ├── install.sh
@@ -274,7 +295,8 @@ There is no CI here — a release is a tag on whatever is in the tree — so `sc
 stands between a broken tree and a permanent tag. Run it, or wire it in once:
 
 ```bash
-python3 script/check.py
+python3 script/check.py            # includes the static half of the adapter smoke test
+python3 script/adapter-smoke.py     # both halves: also runs install.sh against a throwaway HOME
 ln -s ../../script/check.py .git/hooks/pre-commit   # optional
 ```
 
@@ -287,6 +309,18 @@ or inline URL the reader would not understand, retired panel vocabulary anywhere
 divergent copy of the shared phase preamble, and an adapter mirror that is **missing, orphaned or out
 of date** — the last one read from git, since the mirrors are condensed by hand and a diff cannot
 judge them. Every one of those is something that has actually shipped or nearly shipped.
+
+What none of those could catch is a mirror that exists, is current, and is still unusable — wrapped in
+a format its harness does not read, teaching the *other* harness's invocation prefix, or citing a
+command or path that is not there. [`script/adapter-smoke.py`](script/adapter-smoke.py) checks that,
+and its static half runs inside `check.py`. Run it whole before a release: the second half executes
+`adapters/install.sh` for each harness against a throwaway `HOME` and verifies the files land where
+that harness looks for them, which needs none of the three harnesses installed.
+
+When you add a command, [`script/adapter-new.py`](script/adapter-new.py) writes its three mirrors for
+you — the mechanical part (wrapper per harness, invocation prefix rewritten in either direction, file
+in the right place) with the body marked for you to condense. `--from <file>` wraps a body you already
+condensed once, for all three.
 
 The full release procedure, and the conventions those checks encode, are in
 [`RELEASING.md`](RELEASING.md).

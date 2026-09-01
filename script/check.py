@@ -424,6 +424,30 @@ def check_panel_vocabulary_prose(files):
                         f"(the reader knows `mark`/`ref`: Now · Next · Decision)")
 
 
+SMOKE = "script/adapter-smoke.py"
+
+
+def check_adapter_smoke():
+    """Delegate the "is this mirror actually usable" half to adapter-smoke.py.
+
+    Parity and freshness answer whether a mirror exists and whether it is current.
+    Neither can catch one that is fresh and wrong — the wrong wrapper for its harness,
+    the other harness's invocation prefix, a path that is not there. That check lives in
+    its own script because it also has an install half (running install.sh against a
+    throwaway HOME) too slow for a pre-commit hook; only the static half runs here.
+    """
+    script = os.path.join(ROOT, SMOKE)
+    if not os.path.exists(script):
+        fail(SMOKE, "missing — the adapter smoke test is part of the preflight")
+        return
+    run = subprocess.run([sys.executable, script, "--static-only", "--quiet"],
+                         cwd=ROOT, capture_output=True, text=True)
+    if run.returncode == 0:
+        return
+    for line in (run.stdout or run.stderr).strip().splitlines():
+        problems.append(line.strip())
+
+
 def main():
     files = tracked_files()
     if not files:
@@ -440,6 +464,7 @@ def main():
     check_embedded_json(files)
     check_adapter_parity(files)
     check_adapter_freshness(files)
+    check_adapter_smoke()
     check_shared_preamble(files)
     check_panel_vocabulary_prose(files)
 

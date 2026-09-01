@@ -40,12 +40,25 @@ observability, and the subagent map for YOUR project.
     headless execution**. The command runs ONE cycle and exits; state lives in `monitor.md`,
     which each cycle re-reads. It works, but the trigger is external, not the session itself.
 
-## Warning
+## What is checked, and what is still on you
 
-These adapters were generated **faithfully following each tool's documented format, but without
-being run inside it** (they can't be executed from here). They are a solid first version;
-validate them when you use them and adjust paths if your harness version differs — especially
-in Codex, where the prompts location changes between versions (see `codex/README.md`).
+Every preflight runs [`../script/adapter-smoke.py`](../script/adapter-smoke.py) over these files:
 
-> Single source of truth for the logic: `../plugins/flow/commands/`. If you change a workflow
-> there, regenerate the affected adapter to keep them in sync.
+- each mirror **parses in the shape its harness reads** — opencode a `description:` frontmatter,
+  Codex no frontmatter at all, Gemini a TOML `description` + `prompt`
+- every `/flow…` invocation in the body uses **this harness's prefix** (`/flow-feat-build` for
+  opencode and Codex, `/flow:feat:build` for Gemini) — the mistake hand-condensing produces most, and
+  the one that hands you a command your harness does not have
+- every command and repo path it cites **exists**
+- `install.sh` is executed against a **throwaway `HOME`** and the files are checked to land where that
+  harness looks for them, in the expected number, changelog included
+
+⚠️ **What none of that proves**: that the harness *runs* a workflow the way Claude Code does. These
+have never been executed inside opencode, Gemini CLI or Codex end to end. Validate as you use them,
+and adjust paths if your version differs — especially Codex, where the prompts location changes
+between versions (see `codex/README.md`).
+
+> Single source of truth for the logic: `../plugins/flow/commands/`. If you change a workflow there,
+> update the affected mirrors — the preflight reads git and fails on a mirror older than its command.
+> For a **new** command, `../script/adapter-new.py <command>` writes all three wrappers with the body
+> marked for you to condense (`--from <file>` wraps a body you already condensed once).

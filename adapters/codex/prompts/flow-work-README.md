@@ -22,6 +22,7 @@ If the file doesn't exist or a key is empty, each command auto-discovers the val
 - **Numbered artifacts**: each phase writes a `NN-phase.md` that the next step reads.
 - **`meta.json` is the source of truth** for state (current phase, size, branch). Without it, commands refuse to continue.
 - **Size drives the flow**: in `/flow-feat-start` and `/flow-bug-start` the work is classified XS/S/M/L and phases are suggested to skip for small changes.
+- **Entering the flow is a choice, and sometimes the wrong one.** Size prunes phases; it never asks whether this should be a work at all, and XS is still four commands, a branch and a folder. A change describable in one sentence, in one file, needing no review, whose whole test story is that the suite passes or does not — **say so and offer the two-line alternative** instead of opening a work. It goes back to being a work the moment it needs a ticket, someone else has to understand why later, or it touches a schema, a contract, or anything with a rollback story. Ceremony that has not earned itself is what makes a process get abandoned.
 - **Branch with explicit base and no upstream to the base**: creating a branch already caused an accidental deployment, so `/flow-feat-start` §5 and `/flow-bug-start` §3 enforce two rules.
 - **MR/PR communicates functionality, not implementation**: the title and description come from the **Brief** of the corresponding artifact, not from the technical design.
 - **Mandatory MR/PR preview before creating**: in `/flow-feat-ship` and `/flow-bug-ship`, before invoking creation, the full block is printed to the user and confirmation is requested.
@@ -41,6 +42,9 @@ If the file doesn't exist or a key is empty, each command auto-discovers the val
   "size": "XS" | "S" | "M" | "L",
   "phase": "context" | "brainstorm" | "design" | "plan" | "build" | "review" | "validate" | "ship" | "diagnose" | "investigate" | "fix" | "postmortem" | "done" | "abandoned",
   "phases_done": ["context", ...],
+  "reviewed_sha": "sha the last passing review read, or ''",
+  "validated_sha": "sha the suite last went green on, or ''",
+  "respond_rounds": 0,
   "mrs": [...],
   "related_repos": [
     { "repo": "sibling-project", "scope": "what's needed there", "status": "pending" | "in_progress" | "done", "contract_handoff": "none" | "pending" | "published → <location>" }
@@ -96,7 +100,7 @@ Sits next to `meta.json` in each work folder. `meta.json` is the *state machine*
 
 **No headings over the train.** Grouping the entries under `Done` / `Now` / `Left` is the obvious layout and it is wrong here: in a train an MR/PR that has shipped is *open, waiting to merge*, so `Done  #1 …  MR open` contradicts itself in the one place the user is trusting at a glance. `mark` says it per entry — `wait` for shipped and waiting, `current` for the one being worked, `done` only for merged.
 
-**Who writes it.** The 18 phase commands, from the shared Reporting preamble — in pre-flight, before every stop, before any long unattended stretch, and at their close. Plus the two `ship` commands the instant an MR/PR URL exists, `plan` when the train is first populated, `resume` (which rebuilds it after a break — the moment it is most likely to be stale), `watch` on every monitoring cycle, and `abandon` with a terminal state before archiving. The read-only commands — `status`, `daily`, `config`, `news` — never write it. `clean` archives the folder with the panel inside it.
+**Who writes it.** The 18 phase commands, from the shared Reporting preamble — in pre-flight, before every stop, before any long unattended stretch, and at their close. Plus the two `ship` commands the instant an MR/PR URL exists, `plan` when the train is first populated, `resume` (which rebuilds it after a break — the moment it is most likely to be stale), `watch` on every monitoring cycle, and `abandon` with a terminal state before archiving. The read-only commands — `status`, `daily`, `config`, `doctor`, `news` — never write it. `clean` archives the folder with the panel inside it.
 
 ## Shortcuts by size
 
