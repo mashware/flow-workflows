@@ -9,3 +9,7 @@
 
 # per-machine Claude Code settings
 .claude/settings.local.json
+
+# Python bytecode from the script/ helpers (importable modules leave it behind)
+__pycache__/
+*.pyc

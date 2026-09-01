@@ -69,3 +69,23 @@ Each of these exists because it shipped broken once:
 - **No retired `panel.json` vocabulary** (`Right now:`, `Waiting on you:`, grouping the train
   `under Left`) anywhere in the plugin or the adapters. The panel's reader knows `mark` and `ref`;
   those labels render as prose and quietly lose the column — this is where the spec drifted once.
+- **The mirrors are usable, not just present.** `script/adapter-smoke.py --static-only` runs inside
+  the preflight: each mirror parses in its harness's wrapper (opencode frontmatter · Codex none ·
+  Gemini TOML), every `/flow…` invocation uses that harness's prefix, and every command and path it
+  cites exists. Parity and freshness could only say a mirror *existed* and was *current*; a fresh
+  mirror teaching `/flow:feat:build` to opencode passed both.
+
+## Before the tag, run the smoke test whole
+
+```bash
+python3 script/adapter-smoke.py
+```
+
+The half the preflight skips is the slow one: it executes `adapters/install.sh` for each harness
+against a throwaway `HOME` and checks the files land where that harness reads them, in the expected
+number, with the changelog `/flow-news` needs. It needs none of the three harnesses installed, and it
+is the only thing that would notice `install.sh` copying into a path that no longer exists.
+
+For a **new** command, generate its mirrors instead of writing them: `script/adapter-new.py <command>`
+places all three with the right wrapper and prefix and marks the body for condensing; `--from <file>`
+wraps a body you condensed once for all three at a time.

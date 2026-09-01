@@ -204,4 +204,5 @@ Use the `quality` commands from FLOW.md; if empty, auto-discover:
 
 - With blockers: `phase` stays where it was (`validate` for size ≥ S, `fix` on XS, where validate never ran). Iterate.
 - Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/flow:bug:postmortem` (M/L) or `/flow:bug:ship` (XS/S).
+- **Record *what* you reviewed**, in the same write: `reviewed_sha` = `git rev-parse HEAD`. `phases_done` only says a review happened; the sha says which tree it was about, and `/flow:bug:ship §0` compares it against what is being pushed. Only when the phase advances — a review that ended in blockers reviewed nothing that stands.
 - **Autonomy handoff.** Only without blockers — with blockers, stop in every mode. For **M/L**: in `manual`, propose `/flow:bug:postmortem` with a single `AskUserQuestion`; in `guided`/`auto`, **chain into it automatically** in this same turn. For **XS/S**, the next step is `ship`, which pushes and opens the MR/PR — a hard gate in **every** mode: stop here and propose `/flow:bug:ship` with a single `AskUserQuestion`, never chaining into it on its own.

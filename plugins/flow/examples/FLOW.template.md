@@ -106,6 +106,9 @@ npm/composer scripts, etc.) and reports what it uses.
                       #   full         → always run the built-in `code-review` (xhigh) + the full panel regardless of size (pre-0.7 behavior).
                       # Empty = `proportional`. Effort ladder low<medium<high<xhigh<max applies where the tool exposes it (Claude Code); adapters
                       # for other tools read "higher effort" as maximum thoroughness for L-sized or sensitive-surface work.
+- `respond_max_rounds:` # how many rounds of `/flow:work:respond` one MR/PR gets before the command stops and hands the
+                      #   negotiation back to you instead of going round again. Empty = `3`. `0` = no ceiling (not
+                      #   recommended: what the ceiling prevents is a loop re-arguing a settled thread while nobody reads).
 - `review_skill:`     # orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below.
 - `reviewers:`        # if `review_skill` is empty: list of agents that run in parallel as a review panel (one per line with `- `). Empty with no skill = only the built-in `code-review`.
 

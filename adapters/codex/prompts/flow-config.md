@@ -54,6 +54,7 @@ Light checks — report problems, never change anything:
 - **Commands**: for `quality.*` and `git.worktree_resync` entries that look like `make <target>`, optionally
   check the target exists in the `Makefile`; for npm/composer scripts, check they exist. Don't run them —
   only check presence. Unresolvable → flag as "declared but not found".
+- **Environment is `/flow-doctor`'s job, not this command's**: whether the declared CLIs are *authenticated*, the named agents exist here, the hooks are executable, the MCP answers and the base branch resolves. Flag a key that contradicts another key; point at `/flow-doctor` for a key that describes a machine.
 - **Coherence**: `git.worktree` is `ask`/`always` but `git.worktree_path` empty → note the default
   `.worktrees/{branch}` will be used. `git.host` and `git.cli` disagree → flag. `domain_memory.enabled` is
   `true` but the MCP isn't available this session → note the domain steps will be skipped.

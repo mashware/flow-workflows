@@ -81,6 +81,7 @@ Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never fro
 - Identify the current branch and its work folder `.claude/work/<TICKET>/` (via `meta.json`, matching `branch`). If there is **no** work folder (MR opened outside the flow), run in **lightweight mode**: skip artifact reads, warn once that there is no recorded rationale to draw on, and keep going.
 - Resolve the target MR/PR: (1) `$ARGUMENTS` if given (IID/URL); (2) `meta.json.mrs[]` entry matching the current branch → its `url`; (3) query `git.cli` for the open MR/PR of the current branch — `gh pr view --json number,url,state,title,headRefName` / `gh pr list --head <branch>`, or `glab mr list --source-branch <branch>`; (4) if several or none, **ask** (list candidates). Do not guess.
 - If the MR/PR is **merged/closed**, warn and ask whether to continue or stop.
+- **Round budget — checked before the round starts.** Read how many rounds this MR/PR has spent: `meta.json.mrs[].respond_rounds` (work-level `respond_rounds` with no `mrs`), or count the round entries in `08-feedback.md` when the field is absent. Ceiling: `quality.respond_max_rounds` (empty = `3`, `0` = none). If this round would exceed it, **do not start it** — stop in **every** mode and hand the negotiation back: which threads are open and about what, what each spent round already tried (from `08-feedback.md`, not from memory), and **where the disagreement sits**. A fourth round repeating the third is the loop failing where nobody is watching. Raising the ceiling or taking the thread over is the user's call.
 
 ## 2. Fetch the open threads
 
@@ -162,6 +163,8 @@ Show what will be pushed and confirm. Anti-deploy lock: HEAD must not be `git.de
 ## 8. Log, loop, and domain knowledge
 
 - **Artifact**: append this round to `.claude/work/<TICKET>/08-feedback.md` (create it the first round): date, and per thread — location, category, decision, reply posted, commit/edit. A later round reads it to avoid re-litigating settled threads.
+- **Count the round where it survives a restart**: increment `respond_rounds` for this MR/PR in `meta.json` in the same write that appends the round to `08-feedback.md`. The ceiling above is worth exactly as much as this counter; lightweight mode (no work folder) has nothing to write and no ceiling to enforce.
+- **A repeated answer spends the budget and buys nothing**: if a reply says what an earlier round already said — same position, same reasoning, no new evidence — stop **now** rather than at the ceiling and escalate that thread by name: your position, the reviewer's counter, and that neither has moved.
 - **domain-memory**: if enabled and the debate produced a non-obvious "why" (a constraint a reviewer surfaced, an integration gotcha, a reversed decision) → `stage_finding` (silence by default).
 - **Loop/close**: if threads await the reviewer, say the ball is in their court; a later `/flow-work-respond` picks up the next round. When all are answered and code pushed, summarize: threads addressed, code changes, threads **ready to resolve**, follow-up tickets. Once merged, the normal `/flow-feat-ship` / `/flow-bug-ship` close applies (and `/flow-work-watch` post-deploy).
 

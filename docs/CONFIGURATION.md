@@ -16,6 +16,7 @@ disagree, the template wins:
 | [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examples/FLOW.template.md) | The **skeleton to copy**, and the canonical list of keys |
 | This document | What each key **means**, its default, and when it's worth setting |
 | `/flow:config` | Your **effective** config: what is set, what is empty (and its fallback), plus validation |
+| `/flow:doctor` | Whether the environment that config assumes exists here: CLIs and their auth, agents, hooks, MCP, base branch |
 | `/flow:init` | **Generates** the file for you, auto-detecting what it can |
 
 ## Getting a `FLOW.md`
@@ -245,13 +246,26 @@ npm/composer scripts…) and reports what it used.
 | `db_diff` | `make database-compare` — shows pending schema SQL |
 | `frontend_test` | `make test-frontend` |
 
-Three more keys configure review rather than commands:
+Four more keys configure review rather than commands:
 
 | Key | What it does | Empty |
 |---|---|---|
 | `review_depth` | `proportional` · `full` — how much of the panel runs, and at what effort | `proportional` |
 | `review_skill` | Orchestrating skill for the review panel | No skill; see `reviewers` |
 | `reviewers` | Agents that run in parallel as a panel, one per line | Only the built-in `code-review` |
+| `respond_max_rounds` | Rounds `/flow:work:respond` gets on one MR/PR before it stops and hands the negotiation back | `3` (`0` = no ceiling) |
+
+### The round budget (`respond_max_rounds`)
+
+`/flow:work:respond` is a loop: reviewers comment, the flow answers, sometimes it changes code, the
+reviewer comes back. Without a ceiling that loop can spend round after round restating a position
+nobody has moved on — and because each round is only appended to `08-feedback.md`, you find out by
+reading the artifact, which is too late. At the ceiling the command **stops before starting the next
+round**, in every autonomy mode, and reports the open threads, what each spent round tried, and the
+one sentence the reviewer and the flow do not agree on. Raising it, taking the thread over, or
+granting one more round is your call. A round that only rephrases an earlier answer escalates
+immediately rather than waiting for the ceiling. The counter lives in `meta.json`
+(`respond_rounds`, per MR/PR) so a session resumed days later does not lose count.
 
 ### How much review runs (`review_depth`)
 

@@ -265,6 +265,7 @@ Write `.claude/work/<TICKET>/06-review.md`:
 
 - If there are blockers: **do not advance `phase`**. Leave `phase = "build"` and the user resolves them.
 - If no blockers: `phase = "review"`, add to `phases_done`. **In a multi-MR/PR work**, also add `review` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — this is exactly what `/flow:feat:ship §1` gates on per MR/PR, so without it the ship gate would pass on a stale sibling's review.
+- **Record *what* you reviewed**, in the same write: `reviewed_sha` = `git rev-parse HEAD`, work-level and — in a multi-MR/PR work — in this MR/PR's `mrs[]` entry. `phases_done` only says a review *happened*; the sha says which tree it was about, and the `/flow:feat:ship` pre-flight compares it against what is being pushed. Only when the phase advances — a review that ended in blockers reviewed nothing that stands.
 - Summary to the user: findings and next step.
 - **Autonomy handoff** — only with no blockers and no unresolved high-severity findings; either one stops the flow in every mode. In `manual`, propose `/flow:feat:validate` as a question; in `guided`/`auto`, **chain into `/flow:feat:validate` automatically** in this same turn. Never chain into `/flow:feat:ship` from here, in any mode.
 """

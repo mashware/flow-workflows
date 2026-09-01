@@ -1,0 +1,85 @@
+description = "Check that the environment the flow assumes actually exists here — CLIs, auth, agents, hooks, MCP, repo state"
+
+prompt = """
+# `/flow:doctor`
+
+Read-only. Answers one question: **will the flow actually work in this repo, right now?** Writes
+nothing, runs nothing with side effects, fixes nothing — it reports, with the fix next to each finding.
+
+`/flow:config` reads the *configuration*: which `FLOW.md` keys are set and what the empty ones fall
+back to. This checks the *world that configuration assumes*. A `FLOW.md` can be perfectly valid and
+still describe a machine you are not on: an agent you renamed, a git CLI whose token expired, a hook
+that lost its executable bit. Each finding below is one that otherwise surfaces mid-phase — the git
+host CLI discovered at `ship`, **after** the work is done; a missing reviewer discovered never,
+because review just runs with fewer of them and still reports a clean pass.
+
+Run it in an unfamiliar repo, after changing machines, after `/flow:init`, or when a command failed
+in a way that smelled like the environment rather than the code.
+
+## 1. Load
+
+- Read `FLOW.md` at the repo root. Absent is **not** an error: every command still works by
+  auto-detecting and asking. Say so in one line, check what does not depend on it (git, hooks, base
+  branch), and note that `/flow:init` would let this check the rest.
+- Do not re-print the effective config — that is `/flow:config`. Name a key only when it is broken.
+
+## 2. Checks
+
+Each reports **ok** (silent) · **missing** (the flow will degrade or refuse) · **degraded** (it runs,
+quietly worse than the config promises), plus the fix.
+
+- **Tools.** The git host CLI (`git.cli`, or derived from `git.host`) is installed **and
+  authenticated** — `gh auth status`, `glab auth status`. Installed-but-unauthenticated is the case
+  that matters and the one nothing else checks: it passes every presence test and then fails at
+  `ship`, with the work finished. Same for `tracker.tool`. For `quality.*` and
+  `git.worktree_resync` entries: a `make` target exists in the `Makefile`, an npm/composer script
+  exists, otherwise the binary is on `PATH` — **never run them**. Declared-but-absent is worth
+  flagging loudly: `validate` gates on a command that cannot run. `data.*` are commands too; check
+  presence, never touch a database.
+- **Agents.** Every role set in `agents.*` (not `fanout_max` / `fanout_tool` — those are not agents),
+  plus `quality.reviewers` and `quality.review_skill`, is discoverable where this harness keeps them.
+  This is the check whose absence costs most and shows least: a panel missing two of its five agents
+  does not fail, it reviews less and reports a clean pass. Report each missing name and its fallback.
+  Note it when this harness cannot set a model per subagent — then every `models.*` value degrades to
+  inheritance whatever the file says.
+- **MCP.** `domain_memory.enabled: true` → the MCP is reachable **this session**. Unreachable means
+  `/flow:save-knowledge` and the domain steps of `start` / `design` / `postmortem` are skipped
+  quietly, which is how a repo ends up with months of decisions recorded nowhere. Declared off while
+  it *is* available → say so once; nothing is broken, the memory is just unused.
+- **Hooks.** Whatever push guard this harness installs is present, **executable**, and the version
+  expected; its config file parses. A hook that lost its `+x` bit fails open and silently — the only
+  symptom is a push to `main` that nobody stopped. Check the bit, not just the path.
+- **Repo state.** The base branch (`git.default_base`, empty → detected) exists and is reachable
+  (`git rev-parse --verify`, `git ls-remote --exit-code`): a base that does not resolve makes `start`
+  branch off the wrong thing and `ship` diff against nothing. `git.worktree` is `ask`/`always` →
+  `git.worktree_path` resolves, its parent is writable, and no worktree in `git worktree list` is
+  stale — flag, never prune (that is `/flow:work:clean`). The repo has a remote, the current branch's
+  upstream is its own, `.claude/work/` exists or can be created, and every `meta.json` in it parses.
+- **Harness.** `agents.fanout_tool`, if set, is exposed here — absent means the fan-out falls back to
+  plain parallel subagents, which is the portable path, not an error. `agents.fanout_max` is a
+  positive integer (else the default `4` applies).
+
+## 3. Output
+
+**Quiet on success.** A wall of green ticks is noise that trains you to stop reading it: print one
+line per finding, grouped by area, plus a summary line.
+
+```
+flow doctor — 3 findings
+
+  Tools     ✗ glab installed but not authenticated          → glab auth login
+  Agents    ✗ quality.reviewers: security-auditor not found → review runs with 4 of 5, silently
+  Hooks     · push guard is not executable                  → chmod +x (fails open: pushes to main are NOT blocked)
+
+  ok: tracker CLI · quality commands · domain-memory MCP · base branch · worktrees · harness
+```
+
+- All ok → one line, naming what was checked, so the reader knows the silence was earned.
+- Order findings by **what they cost**, not by area: something that fails open and silently (a dead
+  hook, a missing reviewer) outranks something that will fail loudly the moment you hit it, because
+  the loud one cannot ship a mistake.
+- Every finding carries its fix on the same line — a config fix points at the `FLOW.md` key or
+  `/flow:init`; a machine fix gives the command to run.
+- Never fix, install, or write anything, and do not chain into another command. This one exists to be
+  trusted as read-only.
+"""
