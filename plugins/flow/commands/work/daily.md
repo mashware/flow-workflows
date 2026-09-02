@@ -1,29 +1,32 @@
 ---
 description: Your work assistant — a Scrum-style daily standup across all your work (local + forge + tracker)
+argument-hint: "[question]"
 ---
 
 # `/flow:work:daily $ARGUMENTS`
 
-**Step 0**: read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as indicated by each step. Regarding external sources (tracker, forge, `domain_memory`): every one is **best-effort** — if a CLI is missing/unauthenticated, an MCP fails, or a call takes more than ~3s, continue without that source and note it in a single line; **never block**. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
 
-Your **work assistant**: the Scrum-style daily standup. Answers *"what was I working on?"*, *"what's left?"*, *"what should I pick up today?"* by combining three sources — your **local** work state, the **forge** (open MRs/PRs, reviews, CI), and the **tracker** (assigned/re-prioritized tickets). Unlike `/flow:work:status` (a technical control table) and `/flow:work:resume` (one branch), this is a cross-cutting, narrative briefing.
+External sources (tracker, forge, `domain_memory`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
 
-**Read-only.** It never touches `meta.json`, git, the forge, or the tracker. Its only write is the "last seen" marker in §6, exactly like `/flow:news`.
+Your **work assistant**: a Scrum-style daily standup — *"what was I working on?"*, *"what's left?"*, *"what should I pick up today?"* — from three sources: **local** work state, the **forge** (open MRs/PRs, reviews, CI), the **tracker** (assigned/re-prioritized tickets). Unlike `/flow:work:status` (technical table) and `/flow:work:resume` (one branch), a cross-cutting narrative briefing.
+
+**Read-only.** Never touches `meta.json`, git, the forge, or the tracker; its only write is the "last seen" marker (§6), like `/flow:news`.
 
 ## Modes
 
 - **No `$ARGUMENTS`** → full daily briefing (§5 three-block format).
-- **`$ARGUMENTS` is a question** (e.g. `/flow:work:daily what's left on the payment work?`) → answer *that* using the same sources, without printing the full briefing. Do not move the marker in this mode (it is an ad-hoc lookup, like `/flow:news vX.Y.Z`).
+- **`$ARGUMENTS` is a question** (e.g. `/flow:work:daily what's left on the payment work?`) → answer *that* from the same sources, without the full briefing. Do not move the marker (ad-hoc lookup, like `/flow:news vX.Y.Z`).
 
 ## 1. Local layer (always — the base of the briefing)
 
 - `git branch --show-current` → the **active** work.
 - `ls -1 .claude/work/` (ignore `_archive`); read each `meta.json`.
-- Determine the **"last session" boundary**: the marker from §6 if present; otherwise derive it from the most recent commit date and the newest `updated_at` across works.
-- Order works by `updated_at` (most recent first). The most recently touched is the *"what were we on?"* answer.
+- **"Last session" boundary**: the marker from §6 if present; otherwise the most recent commit date and the newest `updated_at` across works.
+- Order works by `updated_at` (most recent first); the first is the *"what were we on?"* answer.
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.
-- Per work, gather: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending** — synthesized from the most recent artifact(s) (`NN-*.md`) and `meta.notes`, not re-derived from code.
-- **Cross-repo parts**: read `meta.json.related_repos`; any entry not `done` means a *sibling repo* still needs work. Surface only what's recorded — flow never scans or opens the other repo.
+- Per work: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending** — synthesized from the most recent artifact(s) (`NN-*.md`) and `meta.notes`, not re-derived from code.
+- **Cross-repo parts**: `meta.json.related_repos` entries not `done` → a *sibling repo* still needs work. Surface only what is recorded — never scan or open the other repo.
 
 ## 2. Forge layer (best-effort, via `git.cli`)
 
@@ -31,33 +34,33 @@ What the team is asking of you **right now**. Resolve the CLI from `git.cli` (or
 
 - **Your open MRs/PRs**: `glab mr list --author=@me` / `gh pr list --author @me`.
 - **Awaiting your review**: `glab mr list --reviewer=@me` / `gh pr list --search "review-requested:@me"`.
-- **CI red** on your MRs/PRs → flag it (links to `/flow:work:green`).
-- **Cannot merge** — the forge's own verdict, which is *not* the pipeline: conflicts with the base, branch behind base, still a draft, approvals missing (`detailed_merge_status`/`has_conflicts` on GitLab · `mergeable`/`mergeStateStatus`/`reviewDecision` on GitHub). A green MR/PR can be unmergeable, so flag it separately, naming the reason. Conflicts / behind-base → `/flow:work:green`; draft and approvals are yours or the reviewers' to clear.
-- **Threads that need *your* reply** — those whose **latest comment is not yours** (someone left you something unanswered), fetched per open MR/PR (`glab api .../merge_requests/:iid/discussions` · `gh api` review threads) and compared against your identity (`git.assignee` / `@me`). This — **not** the raw *unresolved* count — is the signal for `/flow:work:respond`: because `/flow:work:respond` **never resolves** threads, a thread you already answered stays unresolved until the reviewer closes it, so counting *unresolved* would flag your own answered threads forever.
-- **Threads awaiting the reviewer** — unresolved but whose latest comment **is yours** (you replied; the ball is in the reviewer's court): **informational only**, never an action for you.
+- **CI red** on your MRs/PRs → flag it (→ `/flow:work:green`).
+- **Cannot merge** — the forge's verdict, distinct from the pipeline: conflicts, behind base, draft, approvals missing (`detailed_merge_status`/`has_conflicts` on GitLab · `mergeable`/`mergeStateStatus`/`reviewDecision` on GitHub). Flag separately, naming the reason. Conflicts / behind-base → `/flow:work:green`; draft and approvals are yours or the reviewers' to clear.
+- **Threads that need *your* reply** — **latest comment not yours**, fetched per open MR/PR (`glab api .../merge_requests/:iid/discussions` · `gh api` review threads), compared against `git.assignee` / `@me`. This — **not** the raw *unresolved* count — is the signal for `/flow:work:respond` (it **never resolves** threads, so an answered thread stays unresolved until the reviewer closes it).
+- **Threads awaiting the reviewer** — unresolved, latest comment **is yours**: **informational only**, never an action for you.
 
-Degrade: if `git.cli` is empty / not installed / unauthenticated / times out, skip this layer and print one line, e.g. `(forge unavailable: gh not authenticated)`. The term MR/PR follows `git.request_term`.
+Degrade: `git.cli` empty / not installed / unauthenticated / timeout → skip this layer and print one line, e.g. `(forge unavailable: gh not authenticated)`. The term MR/PR follows `git.request_term`.
 
 ## 3. Tracker layer (best-effort, via `tracker.tool`)
 
 What you should **start or re-prioritize**. Resolve from `tracker.tool` (`acli` Jira / `gh` issues / `glab` issues / `linear` / `none`):
 
 - **Assigned to you**: `gh issue list --assignee @me` / `glab issue list --assignee=@me` / the Jira (`acli`) or Linear equivalent (Linear via its MCP if available).
-- Highlight: recently assigned, **priority changes**, and status changes that don't match your local work state.
+- Highlight: recently assigned, **priority changes**, and status changes that do not match your local work state.
 
-Degrade like §2. If `tracker.tool` is `none`/empty, skip with one line (`(no tracker configured)`). Ticket format follows `tracker.prefix`.
+Degrade like §2. `tracker.tool` `none`/empty → skip with one line (`(no tracker configured)`). Ticket format follows `tracker.prefix`.
 
 ## 4. Cross the three layers (the real value)
 
-The briefing's value is in the *joins* — turn them into concrete, **suggested** commands (never act):
+Turn the *joins* into concrete, **suggested** commands (never act):
 
-- Ticket assigned to you with **no local work** → suggest `/flow:feat:start <TICKET>` or `/flow:bug:start <TICKET>`.
-- Local work `done`/`ship` but its ticket is still open in the tracker → divergence to close out.
+- Ticket assigned to you with **no local work** → `/flow:feat:start <TICKET>` or `/flow:bug:start <TICKET>`.
+- Local work `done`/`ship` but its ticket still open in the tracker → divergence to close out.
 - Local work whose branch has an open MR/PR with **CI red or an unmergeable state** (conflicts, behind base) → `/flow:work:green`; with **threads awaiting your reply** (latest comment not yours) → `/flow:work:respond`.
 - A ticket's **priority was raised** while you were on something else → call out the possible refocus.
-- A work with `related_repos` entries not `done` → the **other repo's part is still open**: surface it (`<repo>: <scope>`) and suggest starting the work there (`/flow:feat:start <TICKET>` in that repo). If the entry's `contract_handoff` is `pending`, add that the contract was never handed over — the sibling would start by guessing shapes this repo already decided, so the fix is `/flow:feat:ship` §6.3 on this side first. flow only reminds; it never scans the sibling.
+- `related_repos` entries not `done` → the **other repo's part is still open**: surface it (`<repo>: <scope>`) and suggest `/flow:feat:start <TICKET>` in that repo. `contract_handoff` `pending` → add that the contract was never handed over; the fix is `/flow:feat:ship` §6.3 on this side first. flow only reminds; it never scans the sibling.
 - Uncommitted local changes not reflected in any log/artifact → nudge toward the relevant phase.
-- **Residue piling up** → `/flow:work:clean`. Cheap local check, no extra forge calls: `git worktree list` (minus the main checkout) against the works you already read. A worktree whose work is `done`, or that no work folder claims at all, is a finished branch still taking up a full checkout — nobody removed it, because `ship` only offers to when it sets `phase: done` and a train's intermediate MR/PR never does. Mention it as one line with the count, at the end of the briefing, and only when there is more than a handful; it is housekeeping, never the headline.
+- **Residue piling up** → `/flow:work:clean`. Cheap local check, no extra forge calls: `git worktree list` (minus the main checkout) against the works already read; a worktree whose work is `done`, or that no work folder claims, is a finished branch still holding a checkout. One line with the count, at the end, only above a handful — housekeeping, never the headline.
 
 Suggest only. The user decides.
 
@@ -83,14 +86,14 @@ Awaiting others (optional)
 Next: <2-4 concrete flow commands>
 ```
 
-- Keep it scannable prose, not a raw dump. Mark degraded sources inline so the user knows what was **not** checked (e.g. a trailing `(tracker unavailable)` line).
-- **Blockers is only what *you* must act on.** Threads you already answered (waiting on the reviewer) go in *Awaiting others*, never in Blockers — omit that block when empty.
-- If there are no local works and no external items, say so plainly and suggest `/flow:feat:start` or `/flow:bug:start`.
+- Scannable prose, not a raw dump. Mark degraded sources inline so the user knows what was **not** checked (e.g. a trailing `(tracker unavailable)` line).
+- **Blockers is only what *you* must act on.** Threads you already answered go in *Awaiting others*, never in Blockers — omit that block when empty.
+- No local works and no external items → say so plainly and suggest `/flow:feat:start` or `/flow:bug:start`.
 
 ## 6. "Last seen" marker (the only write)
 
-Like `/flow:news`: persist a timestamp to `~/.claude/flow/daily-last-seen` (outside the repo) so *"since last session"* is precise across sessions.
+Like `/flow:news`: a timestamp in `~/.claude/flow/daily-last-seen` (outside the repo) makes *"since last session"* precise.
 
-- On first run (no marker), derive the boundary from commits/`updated_at` (§1) and create the marker at the end.
-- Update the marker **only** in the no-`$ARGUMENTS` briefing mode; leave it untouched when answering an ad-hoc question.
-- This single write is the documented exception to the read-only rule; everything else observes.
+- First run (no marker): derive the boundary from commits/`updated_at` (§1) and create the marker at the end.
+- Update the marker **only** in the no-`$ARGUMENTS` briefing mode; untouched when answering an ad-hoc question.
+- The documented exception to the read-only rule; everything else observes.

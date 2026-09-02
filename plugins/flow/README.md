@@ -15,7 +15,7 @@ writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
 - **tracker**: ticket prefix, how to read a ticket (description **and** comment thread), and the optional start/done/abandon transitions.
 - **git**: host and CLI (`github` or `gitlab`), term (MR/PR), default base, branch pattern, assignee, squash, description sections, pre-deploy gate, train chaining (multi-PR stacked branches), worktrees.
 - **autonomy**: `manual` | `guided` | `auto` — how much the flow advances on its own. The hard gates (push/MR-PR, ambiguous branch base, DB schema changes, high-severity review findings, the business brief before code) stop in **every** mode.
-- **quality**: test/analysis/style/DB commands for the repo (empty = auto-discover), plus `review_depth`, `review_skill` and `reviewers` — how much of the review panel runs and who is on it.
+- **quality**: test/analysis/style/DB commands for the repo (empty = auto-discover), plus `review_depth` (`proportional` · `full` · `light`), `review_skill` and `reviewers` — how much of the review panel runs and who is on it.
 - **agents**: role→agent map for the steps that delegate to a specialist, plus the parallel fan-out ceiling (`fanout_max`) and its optional orchestrator (`fanout_tool`).
 - **models**: which model each kind of step runs with (`study`, `code`, `test`, `review`, `workers`). Free text, passed straight to your harness; empty = the step runs with the model you launched the command with.
 - **data**: how to get a query's execution plan and a table's real schema, plus the volumes of the hot tables — what the query duel needs to judge a query on its plan instead of on an argument. Empty = the duel runs on the schema alone and says what it could not prove.
@@ -32,6 +32,13 @@ every key is also documented inline in `examples/FLOW.template.md`, which ships 
 **Empty or absent keys degrade gracefully**: each command states what it does when a value is
 missing (auto-discover, use default, or ask you). A repo without `FLOW.md` still works, just
 with more questions and auto-discovery.
+
+## What ships
+
+- `commands/` — one file per `/flow:*` command, each reduced to its contract. Start with `/flow:next`.
+- `skills/flow-core/SKILL.md` — the rules every command shares (step 0 `FLOW.md`, models, autonomy and hard gates, how a stop reads, `panel.json`, `00-summary.md`), loaded once per session.
+- `hooks/` — the push guard and the update notice.
+- `examples/FLOW.template.md` — every key with its default; `/flow:init` writes only the keys you set.
 
 ## Install
 

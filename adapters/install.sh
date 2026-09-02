@@ -56,13 +56,17 @@ case "$TOOL" in
     ;;
 esac
 
-# /flow:news reads the bundled changelog from a stable, harness-agnostic path.
-# (The Claude Code plugin reads it from ${CLAUDE_PLUGIN_ROOT}; the adapters lack
-#  that, so they read ~/.claude/flow/CHANGELOG.md instead.)
+# The adapters have no ${CLAUDE_PLUGIN_ROOT}, so what the plugin reads from there lands
+# in ~/.claude/flow instead: the shared rules every command points at (CORE.<tool>.md,
+# generated per harness by script/adapter-build.py), the changelog /flow:news reads, and
+# the manifest it takes the installed version from.
 mkdir -p "$HOME/.claude/flow"
+cp "$HERE/$TOOL/CORE.md" "$HOME/.claude/flow/CORE.$TOOL.md"
+note "core: shared rules copied to ~/.claude/flow/CORE.$TOOL.md (every command reads it once per session)"
 if cp "$HERE/../plugins/flow/CHANGELOG.md" "$HOME/.claude/flow/CHANGELOG.md" 2>/dev/null; then
   note "news: changelog copied to ~/.claude/flow/CHANGELOG.md (feeds /flow-news · /flow:news)"
 fi
+cp "$HERE/../plugins/flow/.claude-plugin/plugin.json" "$HOME/.claude/flow/plugin.json" 2>/dev/null || true
 
 echo
 echo "→ One key step remaining: place a FLOW.md at the root of your repo."

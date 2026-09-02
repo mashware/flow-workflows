@@ -1,6 +1,10 @@
 # PRIMITIVES.md — Primitive translation map
 
-This document explains how each Claude Code-specific primitive was translated to the opencode adapter, and which capabilities have no direct equivalent.
+How each Claude Code-specific primitive maps to opencode, and which capabilities have no direct equivalent.
+
+> The generated commands carry a short **legend** right after their title; it comes from the `LEGEND`
+> dict in `script/adapter-build.py`. This document is the long form of that legend. The command prose
+> itself is the plugin's, untouched — the legend defines the terms, the body keeps using them.
 
 ## Translation table
 
@@ -8,10 +12,12 @@ This document explains how each Claude Code-specific primitive was translated to
 |---|---|---|---|
 | `Agent <role>` / subagent | Delegates isolated work to a subagent with its own tools | `@name` (invoke a subagent declared in `agents/<name>.md` with `mode: subagent`) | See "How to declare subagents" below |
 | `AskUserQuestion` | Structured menu with clickable options | **Plain-text question to the user, wait for reply** | No structured UI exists in opencode — the agent writes the question with numbered options and the user replies in text |
-| `ScheduleWakeup` | Re-wake the session in N minutes (watch autopilot) | **OS cron + `opencode run -p "<prompt>"`** | No in-session rescheduling exists; `work-watch` runs one cycle and exits; state between cycles is saved in `monitor.md`; the user configures the cron |
+| `ScheduleWakeup` | Re-wake the session in N minutes (watch autopilot) | **OS cron + `opencode run -p "<prompt>"`** | No in-session rescheduling exists; one invocation is one cycle, state between cycles is saved in `monitor.md`; the user configures the cron |
 | Parallel fan-out | N subagents in one round, each blind to the others; the main agent synthesizes | **Multiple `@name` subagents launched in the same prompt** (opencode may run them in parallel if the tool supports it); otherwise sequential with manual consolidation | **Ports directly** — the plugin describes fan-out as parallel subagents, not as a Claude Code tool. Cap the round at `agents.fanout_max` from `FLOW.md` (empty → 4); leave `agents.fanout_tool` empty, it names a harness-specific orchestrator opencode does not have. The synthesis always stays with the main agent |
-| `Skill commit-commands:commit-push-pr` | Create commit + push + MR/PR using the tool's built-in skill | **Manual git + `git.cli` CLI from `FLOW.md`** (e.g. `glab mr create` or `gh pr create`) | If an equivalent skill/command exists in opencode, use it; otherwise the steps are explicit in `/flow-feat-ship` and `/flow-bug-ship` |
-| `Skill <name>` (other skills) | Invoke a reusable flow from the tool | **Inline**: the skill content is incorporated into the prompt of the command that used to invoke it | Project convention skills are loaded by reading the files referenced in `FLOW.md` under `conventions` |
+| `Skill commit-commands:commit-push-pr` | Create commit + push + MR/PR using the tool's built-in skill | **Manual git + `git.cli` CLI from `FLOW.md`** (e.g. `glab mr create` or `gh pr create`) | If an equivalent skill/command exists in opencode, use it; otherwise `git add` · `git commit` · `git push -u origin HEAD` · the CLI |
+| `Skill save-knowledge` | Consolidate domain-memory findings | `/flow-save-knowledge` from this adapter | |
+| `Skill flow:flow-core` | Load the shared rules once per session | **Read `~/.claude/flow/CORE.opencode.md`** — `install.sh` puts it there from `CORE.md` | Project convention skills are loaded by reading the files referenced in `FLOW.md` under `conventions` |
+| `/model <value>` | Switch the session's model | opencode's model picker (`/models`) | Reported at the handoff, not enforced — see `models` below |
 | `mcp__domain-memory__search_knowledge` | Query the domain-memory MCP | **Same tool name**: `mcp__domain-memory__search_knowledge` | The MCP server is configured in `opencode.json` under `mcp.domain-memory` |
 | `mcp__domain-memory__stage_finding` | Stage a domain finding | **Same name**: `mcp__domain-memory__stage_finding` | Idem |
 | `mcp__domain-memory__read_staging` | Read the current branch's staging area | **Same name**: `mcp__domain-memory__read_staging` | Idem |
@@ -28,18 +34,18 @@ In Claude Code, `AskUserQuestion` shows a structured menu with buttons/options t
 ### Watch autopilot (ScheduleWakeup)
 In Claude Code, `work:watch` uses `ScheduleWakeup` to reschedule itself automatically within the same session: the agent sleeps N minutes and wakes up on its own, without user intervention.
 
-In opencode **this mechanism does not exist in-session**. The equivalent is:
+In opencode **this mechanism does not exist in-session**. The legend tells the agent to run one cycle, persist state in `monitor.md`, and leave the scheduling to the user:
 
-1. **One cycle per run**: `work-watch` executes **one monitoring cycle** (queries signals, reports, updates `monitor.md`) and exits.
-2. **Persisted state**: everything needed for the next cycle (plan, baseline, T0, T_fin, signals, accumulated state) is saved in `.claude/work/<TICKET>/monitor.md`.
-3. **Continuous cycles via cron**: the user sets up an OS cron job or scheduled task that runs `opencode run -p "/flow-work-watch {TICKET}"` every ~5 minutes. Example:
+1. **One cycle per run**: an invocation of `/flow-work-watch` executes one monitoring cycle (queries signals, reports, updates `monitor.md`) and exits.
+2. **Persisted state**: everything needed for the next cycle (plan, baseline, T0, T_fin, signals, accumulated state) lives in `.claude/work/<TICKET>/monitor.md`.
+3. **Continuous cycles via cron**: the user sets up an OS cron job that runs `opencode run -p "/flow-work-watch {TICKET}"` every ~5 minutes:
    ```bash
    # Example crontab: monitor PROJ-15421 every 5 minutes
    */5 * * * * cd /path/to/repo && opencode run -p "/flow-work-watch PROJ-15421"
    ```
-4. **Clean re-entry**: at the start of each cycle, `work-watch` detects whether `monitor.md` already has an approved plan and jumps directly to §5 (cycle) without repeating discovery.
+4. **Clean re-entry**: the plugin prose already detects an approved plan in `monitor.md` and jumps to the cycle section without repeating discovery.
 
-**Practical effect**: continuous monitoring requires explicit cron configuration by the user; in Claude Code it was automatic. The manual alternative (`/loop 5m /flow-work-watch {TICKET}` from Claude Code) does not exist in opencode either — the closest option is the cron.
+**Practical effect**: continuous monitoring requires explicit cron configuration by the user; in Claude Code it was automatic. `/loop 5m …` does not exist in opencode either — the closest option is the cron.
 
 ## How to declare subagents in opencode
 

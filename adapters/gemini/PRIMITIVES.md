@@ -1,25 +1,30 @@
 # Primitive map: flow plugin → Gemini CLI
 
+> The generated commands carry a short **legend** right after their title; it comes from the `LEGEND`
+> dict in `script/adapter-build.py`. This document is the long form of that legend. The command prose
+> itself is the plugin's, untouched — the legend defines the terms, the body keeps using them.
+
 ## Translation table
 
 | Original primitive (Claude Code) | Meaning | Translation in this adapter |
 |---|---|---|
-| `AskUserQuestion` | Structured options menu waiting for the user's choice | Plain text question. Gemini CLI has no structured menu; the agent asks and waits for the user's free-text reply. |
-| `ScheduleWakeup(N min)` | Auto-wake in N minutes within the session | **Does not exist in session.** The `/flow:work:watch` command runs one cycle and exits. To repeat it: OS cron + `gemini -p "/flow:work:watch TICKET"`. State between cycles lives in `monitor.md` (surface, baseline, approved plan). |
+| `AskUserQuestion` | Structured options menu waiting for the user's choice | Plain text question with numbered options. Gemini CLI has no structured menu; the agent asks and waits for the user's free-text reply. |
+| `ScheduleWakeup(N min)` | Auto-wake in N minutes within the session | **Does not exist in session.** One invocation of `/flow:work:watch` is one cycle. To repeat it: OS cron + `gemini -p "/flow:work:watch TICKET"`. State between cycles lives in `monitor.md` (surface, baseline, approved plan). |
 | Parallel fan-out | N subagents in one round, main agent synthesizes | **Ports directly** — the plugin describes the fan-out as parallel subagents, not as a Claude Code tool. Invoke them with `@name` from `.gemini/agents/`; with no sub-agents configured, run the round sequentially in the same context (same rounds, same briefs, more wall-clock). Respect `agents.fanout_max` from FLOW.md (empty → 4) and leave `agents.fanout_tool` empty: it names a harness-specific orchestrator that Gemini CLI does not have. The fan-out points are `/flow:feat:brainstorm` §3.A, `/flow:bug:investigate` §3.A and `/flow:feat:review`/`/flow:bug:review`. |
 | `Agent <role>` / `Agent general-purpose` | Delegate isolated work to a sub-agent of a specific type | `@name` where `name` comes from the `agents.<role>` map in FLOW.md. If the field is empty or the agent does not exist in `.gemini/agents/`, the conductor performs the task in the same context. |
 | `Skill commit-commands:commit-push-pr` | Create commit + push + open MR/PR | Run directly: `git add`, `git commit`, `git push -u origin HEAD`, and the `git.cli` CLI from FLOW.md (e.g. `glab mr create` or `gh pr create`). |
 | `Skill save-knowledge` | Consolidate domain-memory findings | Run the `/flow:save-knowledge` command from this adapter. |
-| `Skill <others>` | Invoke a reusable project flow | Include the logic inline in the prompt or invoke the corresponding sub-agent with `@name`. |
+| `Skill flow:flow-core` | Load the shared rules once per session | Read `~/.claude/flow/CORE.gemini.md` — `install.sh` puts it there from `CORE.md`. |
+| `/model <value>` | Switch the session's model | The `--model` flag at launch. Reported, not enforced — see `models` below. |
 | `TaskCreate` / `TaskUpdate` | Step tracking with status (in_progress, completed) | Maintain a manual markdown checklist in `05-implementation.md` or `04-fix.md`. Update it as work progresses. |
 | `mcp__domain-memory__<tool>` | Call to a domain-memory MCP tool | The tool name is identical. Only the server configuration mechanism changes (see `settings.snippet.json`). |
-| `$ARGUMENTS` | Arguments passed to the command | `{{args}}` in Gemini CLI TOML. |
+| `$ARGUMENTS` | Arguments passed to the command | `{{args}}` in Gemini CLI TOML — the generator rewrites it. |
 
 ---
 
 ## What is ported unchanged
 
-The following rules are kept identical to the original plugin version:
+Everything the plugin prose says — the generator does not rewrite a sentence of it. In particular:
 
 - Phase gates for each command (`phases_done`, `meta.json` as source of truth).
 - Untrusted input quarantine (logs, traces, user payloads treated as inert data).
@@ -33,7 +38,7 @@ The following rules are kept identical to the original plugin version:
 
 ---
 
-## What was trimmed or degrades
+## What degrades
 
 ### `AskUserQuestion` — no structured menu
 
@@ -41,15 +46,14 @@ In Claude Code, `AskUserQuestion` presents numbered options and the user picks o
 
 ### `/flow:work:watch` autopilot — no `ScheduleWakeup` in session
 
-In Claude Code, `/flow:work:watch` reschedules itself automatically within the session using `ScheduleWakeup`. Gemini CLI has no session-level equivalent. Solution:
+In Claude Code, `/flow:work:watch` reschedules itself automatically within the session using `ScheduleWakeup`. Gemini CLI has no session-level equivalent. What the legend asks instead:
 
-1. The command runs **one monitoring cycle** and exits.
+1. One invocation is **one monitoring cycle**.
 2. To repeat every 5 minutes, configure a cron job:
    ```
    */5 * * * * gemini -p "/flow:work:watch TICKET" >> ~/.gemini/watch-TICKET.log 2>&1
    ```
-3. State between cycles (monitored surface, baseline, approved plan, accumulated verdicts) is persisted in `.claude/work/TICKET/monitor.md`. The command reads it at the start of each cycle to avoid repeating the discovery step.
-4. The manual alternative is `/loop 5m /flow:work:watch TICKET` if the user's harness has that command available.
+3. State between cycles (monitored surface, baseline, approved plan, accumulated verdicts) is persisted in `.claude/work/TICKET/monitor.md`. The plugin prose already reads it at the start of each cycle to avoid repeating the discovery step.
 
 ### Parallel fan-out — conditional on configured sub-agents
 

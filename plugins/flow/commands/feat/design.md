@@ -4,110 +4,46 @@ description: Design the technical solution (architecture, DB, APIs, risks) befor
 
 # `/flow:feat:design`
 
-Read `FLOW.md` at the repo root for this repo's conventions (tracker, git, quality, domain, observability). If it does not exist or a key is empty, use the default value or auto-discover as each step indicates. Regarding `domain_memory`: if it is active but the MCP fails or takes longer than 2 s, continue without that context — do not block or notify the user. Also, if `FLOW.md` has a `notes` entry for this command (or an `all` entry), follow it as mandatory additional guidance for this step.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `study`.**
 
-**Models — which one runs this step.** Read `models` from `FLOW.md`. **This command's key is `study`**; empty (or no `models` section) = run with the model you were launched with, and say nothing about it. When it is set: pass it to every subagent **this command decides to launch**, except one named in `agents.<role>` — that agent keeps the model its own definition sets, because you configured it there. Parallel fan-out rounds take `models.workers` when set, otherwise this command's key. For the parts you perform **yourself** you cannot switch your own model: when the configured value differs from the model you are running, state it in one line at the handoff (`this step is configured for <value>, you are on <current>` → `/model <value>`), record it in the phase artifact, and **continue**. That is flow mechanics — never a question in `guided`/`auto`, never a hard gate. If the harness cannot set a model per subagent, note it once and carry on with the inherited one.
-
-**Autonomy.** Read `autonomy.mode` from `FLOW.md` (`manual` | `guided` | `auto`; empty = `manual`) and apply it throughout this command. `manual` — stop at every decision point; at the end, propose the next command with a single `AskUserQuestion` (the recommended next step as the default option) and invoke it only when the user confirms — never advance without that confirmation, never make the user type it. `guided` — resolve low-risk, unambiguous decisions yourself using the recommended default and record the choice in the phase artifact instead of asking; still ask at genuine decision points; at the end, chain into the recommended next command automatically. `auto` — as `guided`, and also auto-resolve the remaining decision points with sensible (recorded) defaults, chaining phases without pausing. **Hard gates — ALWAYS stop and ask the user, in every mode, no exceptions:** (1) any push or MR/PR creation (all of `ship`); (2) creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch); (3) DB schema changes or migrations; (4) a `review` that surfaced high-severity findings — never chain into `ship` on those. Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo, (b) ambiguous and not resolved by the ticket + domain-memory, or (c) a hard gate; otherwise take the sensible default and record it in the artifact.
-
-**Never a question in `guided`/`auto` — decide, record, continue.** The hard gates above stop in *every* mode; these stop in *none* of `guided`/`auto`, and asking them anyway is the single most common way an unattended run ends up feeling manual. (a) **Flow mechanics** — whether to launch a panel, challengers, a skeptic filter or a parallel fan-out, how wide it goes, how many reviewers, inline vs subagent: that is your judgement on cost and latency, not the user's decision, and each step's recommended default *is* the answer. (b) **WIP commits** on the work branch. (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`. (d) **Size confirmation** — take the proposed size, record it, move on. (e) **Anything already decided and recorded** in this work's artifacts or `meta.json.notes`: reopening a settled decision is not prudence, it makes the user decide twice and costs them their trust that a decision *stays* decided. Reopen only when new evidence contradicts the premise it rested on — and then lead with the evidence, not with the question.
-
-**Reporting — how every stop reads.** When this command stops — a question, a hard gate, or the end of the turn — the user is coming back to a screen they walked away from, often with other works running in other panes. They have **not** read your tool calls, your subagents' reports, or the artifacts you wrote. So every stop **opens with this header**, before any prose:
-
-```
-<TICKET> · <size> · phase <phase> · MR #<n> of <N>
-Plan: <k> of <N> shipped — #1 <url/id> <state> · #2 <state> · #3–#N pending
-Now: <one line — what just finished>
-I need: <one line — the decision or action you need from them, or "nothing, continuing with X">
-```
-
-Take every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never from memory. Drop the `MR #<n> of <N>` and `Plan:` lines when the work has no `mrs`. After the header, **at most ~10 lines of body**, and only what could change a decision the user might take. Everything else goes to the phase artifact, which is where it stays useful.
-
-**Product altitude — the effect, not the implementation.** The body is written in the language of what changed for whoever uses this software: what the product does now that it did not, what was breaking and for whom, what is still not covered. Not what you built. Code identifiers — classes, files, methods, error codes — earn a line only when the user has to *decide* about one, when they asked something technical, or when they named it first; the mechanics belong to the phase artifact, which is where they stay useful. Ten lines about `AttachmentUploader` say nothing to someone who has not read the diff; "attachments over 25 MB no longer break the send — they upload separately and the mail carries a link" says all of it. When an identifier is genuinely unavoidable, the Zero-context rule below applies to it.
-
-**Short lines, not prose.** One or two lines of headline, then two to five bullets, one idea each. No chained subordinate clauses, no "for context", no restating what an earlier stop already said. The ~10-line limit above is a ceiling, not a target: ten lines of prose obey it and are still a wall of text. This governs the report you write unprompted — when the user asks a technical question, answer it in full.
-
-**Out of the chat, into the artifact**: narrating your own process or your own mistakes, correcting your subagents' reports, bookkeeping (directory names, how you located `meta.json`), and anything a previous stop already said. **Subagent completion or idle notifications never earn a turn of their own** — absorb them into the next real stop.
-
-**Zero-context rule.** Write for someone who just sat down. The first mention of a code identifier (class, method, constant, error code) carries 4–6 words of what it is — not `fromStored()` but "`fromStored()`, the method that rehydrates a stored token". Never cite a section number (`§4.2`) without naming what it is. No jargon the user has not used first.
-
-**If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose: in `manual` it hides among the text, and in `guided`/`auto` it is a stop the mode never authorized. If it does not deserve the menu, it is not a question — it is a decision you take and record.
-
-**Live panel — the same stop, written to disk.** The user typically has several works in flight at once and a panel open per work, so "where is this one at?" is a question they should never have to type at you. Whenever the state such a panel would show changes, overwrite `.claude/work/<work>/panel.json` **whole** (never patch it) with a snapshot built from `meta.json` plus what you know right now:
-
-```json
-{
-  "updated_at": "2026-08-06T16:45:00+02:00",
-  "phase": "validate",
-  "header": true,
-  "lines": [
-    {"text": "Expose a thread's tracking state and events", "style": "title"},
-    "",
-    {"ref": "#1", "text": "batch read sources", "mark": "wait", "link": "https://gitlab.com/…/merge_requests/9977"},
-    {"ref": "#2", "text": "per-event and per-recipient counters", "mark": "current"},
-    {"ref": "#3–#6", "text": "channel map · use case · document detail · route", "mark": "pending"},
-    "",
-    {"ref": "Now", "text": "unit suite and the test agent over #2", "mark": "info"},
-    {"ref": "Next", "text": "ship #2", "mark": "info"},
-    {"ref": "Decision", "text": "confirm the MR/PR body before I create it", "mark": "wait"},
-    "",
-    {"text": "sibling-repo still needs the endpoint contract", "mark": "block"}
-  ]
-}
-```
-
-**`mark` says what a line *is*; the panel decides how to draw it.** `done` (merged, finished) · `current` (what is running right now — at most one) · `pending` (not started) · `wait` (shipped or asked, now waiting on someone else — an open MR/PR, a decision of the user's) · `block` (something is stopping this) · `info` (plain statement of fact). Lines carrying a `mark` form an aligned column: symbol, then `ref`, then the text, with the link pinned right. **Do not also set `style` on a marked line** — `style` overrides the mark's colour, and the colour is how the mark reads. The one exception is a line whose colour *is* the information (a monitoring cycle's verdict): there, `mark: "info"` plus `style: ok|warn|error` is the point.
-
-**`ref` need not be a number.** `#1`, `#3–#6`, but equally `Now`, `Next`, `Decision`. Column width is computed **per block**, and blocks are separated by blank lines — so the MR/PR train aligns with the train and the labels below align with each other, without dragging one another wide. Use blank lines deliberately: they are what keeps two groups from distorting each other.
-
-**`link` is a field, never text inside `text`.** The panel shortens it to its MR/PR number and pins it to the right of the line, or hangs it underneath when it does not fit. Pasting a raw URL into `text` gets you a 60-character line that wraps.
-
-**What goes in, in this order.** (1) The work title (`style: title`, no mark). (2) The MR/PR train — one entry per `meta.json.mrs[]`, `ref` `#n`, a short title, the `mark` for its real state, and `link` for the ones that have a URL; entries not started yet collapse into a single `#a–#z` `pending` line; omit the block when the work has no `mrs`. (3) `Now` — what is actually running, the one fact `meta.json` cannot hold. (4) `Next`. (5) `Decision`, marked `wait`, **only** when the flow is parked on the user, naming the decision. (6) Blockers marked `block`: a sibling repo whose `contract_handoff` is `pending`, a red pipeline, a dependency that has not merged.
-
-**When to write it.** (a) In pre-flight, as soon as `meta.json` is loaded. (b) Immediately **before** every stop header above. (c) **Before** any stretch that will run long without stopping — a subagent fan-out, a full test suite, a CI poll — never after: a panel written only when a step succeeds keeps showing as finished a step that in fact died halfway, and a truthful `updated_at` is what lets the panel flag that instead. When that stretch is expected to outlast the panel's staleness warning (~30 min), set **`stale_after_minutes`** to what it will really take, so a long CI poll is not reported as a dead agent. (d) Wherever `## Close` updates `meta.json`.
-
-**Rules.** `phase` is **the phase you are running right now**, which is not `meta.json.phase` until you close: that field only advances at the end, so a header drawn from it shows the previous phase for as long as this one lasts. Write it on every panel. `header: true` means ticket, type, phase and age are drawn by the panel — never repeat them in `lines`. Keep it under ~14 lines; the panel wraps a long line and aligns the continuation under its text, so length is a matter of saying less, not of measuring columns. Every fact comes from `meta.json` and the artifacts, never from memory — an invented MR/PR state, read at a glance and trusted, is worse than a blank panel. Set `updated_at` from the real clock (`date -Iseconds`), local offset included; never carry over the previous value. Write in the language the work's artifacts are written in — the panel is read by the same person who reads them. No work folder (the lightweight mode of `respond`/`green`) → nothing to write, and that is fine.
-
-Technical design phase. **Still no production code is written.** The output is a plan that the next step executes.
+Technical design phase. **Still no production code is written.** Output: a plan the next step executes.
 
 ## 1. Pre-flight
 
-- Load `meta.json` by current branch. If it does not exist, ask the user to start with `/flow:feat:start`.
-- Read `01-context.md` and (if it exists) `02-brainstorm.md`.
-- If `size` is `XS`, suggest jumping to `/flow:feat:build` and stop unless the user insists.
+- Load `meta.json` by current branch. Missing → ask the user to start with `/flow:feat:start`.
+- Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received) and `02-brainstorm.md` if it exists. (flow-core §5)
+- `size` is `XS` → suggest jumping to `/flow:feat:build` and stop unless the user insists.
 
 ## 2. Focused domain-memory query
 
-If `domain_memory.enabled` is `true` in `FLOW.md`: before inventorying the code, call `mcp__domain-memory__search_knowledge` with queries oriented at the **affected module** and **integrations** the design will touch. This often uncovers domain decisions invisible from the code (legal constraints, integration assumptions, reasons for a historical coupling).
-
-Launch 2-4 queries in parallel. Timeout 2 s; if it fails, continue. Relevant hits go at the top of the design under "Additional domain context" (§4 template). If `domain_memory.enabled` is `false` or empty, skip without notifying.
+- `domain_memory.enabled` is `true` in `FLOW.md` → before the inventory, call `mcp__domain-memory__search_knowledge` with 2-4 parallel queries on the **affected module** and the **integrations** the design touches (uncovers legal constraints, integration assumptions, historical couplings).
+- Timeout 2 s; on failure continue. Relevant hits go under "Additional domain context" (§5 template).
+- `false` or empty → skip without notifying.
 
 ## 3. Prior inventory (reuse before creating)
 
-**Before** launching the design subagents, identify what the feature needs that **already exists** in the code or database. This prevents architects from proposing duplicate pieces. Launch an `Agent` with `subagent_type: Explore` with a brief like:
+**Before** launching the design subagents, list what the feature needs that **already exists** in code or DB. Launch an `Agent` with `subagent_type: Explore`:
 
 > For feature `<title>` (see `.claude/work/<TICKET>/01-context.md`), search the repo for related pieces that already exist and could be reused: domain entities, value objects, repositories, services, events, columns or tables, CQRS commands/queries, and similar endpoints. Do not propose design — only list what is found with one line each and its location. If the feature mentions concepts like `<concept1>`, `<concept2>`, search for those specifically.
 
-Save the result at the top of `03-design.md` under "## What already exists" (see §3). Design subagents read that section and only propose new things when nothing equivalent is found; if they knowingly propose a duplicate, they justify it.
+Save the result at the top of `03-design.md` under "## What already exists". Design subagents read it and propose new pieces only when nothing equivalent exists; a knowing duplicate must be justified.
 
 ## 4. Work
 
-Load the relevant skills for the project first (see `FLOW.md` section `conventions`).
+1. Load the project's skills (`FLOW.md` section `conventions`).
+2. Launch **in parallel** by feature/project type. Agent = `agents.<role>` from `FLOW.md`; empty → `Agent general-purpose` with the role in the prompt.
 
-Launch the appropriate subagents **in parallel** based on the feature and project type:
+| When | Agent | Task |
+|---|---|---|
+| **Always** | `agents.architecture` | Module where it lives; new/modified entities and value objects; CQRS commands/queries (if applicable); events; repositories. |
+| Touches DB | `agents.persistence` | Mappings, migrations, indexes, entity manager. **Fills the "Access paths" table** (§5): for every read/write — filter, order **with direction**, bound (per key or global), expected rows per key, and **the index that supports it**, checked against today's schema, not assumed. An access path with no index is a decision taken here in writing, not a review discovery. |
+| Touches API/HTTP | `agents.api` | Endpoint, DTO, route, security, response format (planning only). |
+| Critical performance / hot paths | `agents.performance` | Anticipate N+1, repeated out-of-process calls, load risks. |
+| Security (auth, payments, sensitive data) | `agents.security` | Threats and mitigations for the proposed design. |
 
-- **Always**: `agents.architecture` agent (or `Agent general-purpose` if empty) tasked with proposing: module where it lives, new or modified entities/value objects, CQRS commands/queries (if applicable), events, repositories.
-- **If it touches DB**: `agents.persistence` agent (or `Agent general-purpose` if empty) tasked with proposing mappings, required migrations, indexes, and appropriate entity manager. **And with filling the "Access paths" table** (see §5): for every read or write the feature needs, the filter, the order **with its direction**, the bound and whether it is per key or global, the expected rows per key, and **the index that supports it** — checked against the schema that exists today, not assumed. An access path with no index behind it is a decision to take here, in writing, not a discovery to make in review: it is far cheaper to add the index to the design than to argue about the query on an open MR/PR.
-- **If it touches API/HTTP**: `agents.api` agent (or `Agent general-purpose` if empty) tasked with defining endpoint, DTO, route, security, and response format (planning only, no implementation).
-- **If it touches critical performance or hot paths**: `agents.performance` agent (or `Agent general-purpose` if empty) to anticipate N+1, repeated out-of-process calls, or load risks.
-- **If it touches security (authentication, payments, sensitive data)**: `agents.security` agent (or `Agent general-purpose` if empty) tasked with listing threats and mitigations for the proposed design.
-
-For each area, use the agent defined in `agents.<role>` in `FLOW.md`; if that field is empty, use `Agent general-purpose` with the role in the prompt.
-
-Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists) and the "What already exists" section in its prompt. Explicit instructions in the brief:
-
-- **Before proposing a new entity/column/repository/service, check whether something from the inventory works.** If duplicating knowingly, justify in the decision table.
-- **Do not add defensive mechanisms "just in case".** Every proposed validation, guard, retry, lock, fallback, or cache must be accompanied by the **real and present** scenario that requires it (with evidence: a `domain-memory` finding, a file, a known traffic pattern). If the scenario is hypothetical or the current system already prevents it, **do not propose it**. Solve what the ticket asks for today, not future problems (YAGNI).
+3. Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists) and "What already exists". Explicit brief instructions:
+   - **Before proposing a new entity/column/repository/service, check whether something from the inventory works.** Knowing duplicate → justify in the decision table.
+   - **Do not add defensive mechanisms "just in case".** Every validation, guard, retry, lock, fallback or cache carries the **real and present** scenario that requires it, with evidence (a `domain-memory` finding, a file, a known traffic pattern). Hypothetical, or already prevented by the system → **do not propose it**. Solve today's ticket (YAGNI).
 
 ## 5. Output
 
@@ -227,11 +163,11 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 <filled in by §6 with the challenger table>
 ```
 
-When filling **"Acceptance criteria"**: start from the provisional list in `01-context.md` (pinned from the ticket in `/flow:feat:start`), fold in the clarifications and the internal/external contracts decided here, and promote it to the canonical, enumerated list. This is the list `/flow:feat:validate` gates against — keep it observable, verifiable, and proportional to size.
+**"Acceptance criteria"**: start from the provisional list in `01-context.md` (pinned from the ticket in `/flow:feat:start`), fold in the clarifications and the internal/external contracts decided here, and promote it to the canonical enumerated list `/flow:feat:validate` gates against — observable, verifiable, proportional to size.
 
 ## 6. Design challenge (challenger)
 
-Before closing, **challenge the design** by launching an `Agent general-purpose` with this brief (self-contained):
+Before closing, **challenge the design** with an `Agent general-purpose` and this self-contained brief:
 
 > You are the critical reviewer of the design in `.claude/work/<TICKET>/03-design.md`. **Do not propose implementation.** Challenge the plan from 4 angles. The **first is the most important** and looks for the opposite of the others — it looks for what is UNNECESSARY.
 >
@@ -243,13 +179,13 @@ Before closing, **challenge the design** by launching an `Agent general-purpose`
 > 3. **Simplification**: is there a simpler way to achieve the same? Is any piece redundant with "What already exists"?
 > 4. **Production operation**: rollback, observability, online migrations, cross-effects with workers/caches/queues. Only what truly applies to this change.
 > 5. **Decision idiom (audit the "Decisions (ADR-light)" table)**: for each row `Decision | Discarded alternative | Why`:
->    - **False dichotomy**: the row frames the choice as exactly two options (A vs B). Is there an **option C** that was not considered? Name it. The classic trap: *"use the bus vs couple to the concrete class directly"* silently ignores *"expose a service behind an interface"* — which respects the boundary just as well without the downside. If the decision is binary, suspect a missing third path.
->    - **Rationale smell**: is the "Why" a *verifiable reason* or a *manual-sounding phrase* (*"respects bounded contexts"*, *"for consistency"*, *"follows the pattern"*)? If it cannot be checked against a concrete constraint in this project, flag it — it must be made concrete, or marked as a claim to re-verify against the code in review. A justification that sounds like a textbook is how the wrong choice survives.
->    - **Primitive fit**: does each chosen primitive match its job by name and role (a Query that only reads, a Command that mutates state or emits events)? A primitive doing the opposite of its name is a design smell before it is a code smell.
+>    - **False dichotomy**: the row frames the choice as exactly two options (A vs B). Is there an **option C** that was not considered? Name it (e.g. *"use the bus vs couple to the concrete class"* ignores *"expose a service behind an interface"*). If the decision is binary, suspect a missing third path.
+>    - **Rationale smell**: is the "Why" a *verifiable reason* or a *manual-sounding phrase* (*"respects bounded contexts"*, *"for consistency"*, *"follows the pattern"*)? If it cannot be checked against a concrete constraint in this project, flag it — it must be made concrete, or marked as a claim to re-verify against the code in review.
+>    - **Primitive fit**: does each chosen primitive match its job by name and role (a Query that only reads, a Command that mutates state or emits events)? A primitive doing the opposite of its name is a design smell.
 >
 > Read `01-context.md` for the business goal. Output: markdown table `| Angle | Finding | Type (unnecessary/missing/idiom) | Severity |` with severities `high`/`medium`/`low`. Under 550 words. Do not invent problems to fill space — if an angle has no findings, say "no findings". It is perfectly valid (and desirable) for the result to say "the design is tight, nothing unnecessary or missing".
 
-If the feature touches a **sensitive domain** (payments, authentication, personal data, usage/tracking counters), launch **in parallel** a second `Agent general-purpose` focused on that domain:
+**Sensitive domain** (payments, authentication, personal data, usage/tracking counters) → launch **in parallel** a second `Agent general-purpose`:
 
 > Challenge the design from the <domain> angle: what abuse cases are possible? What consistency guarantees are needed that the current design does not provide? What decisions may have regulatory or support consequences? Same table format.
 
@@ -266,56 +202,59 @@ Consolidate findings at the end of `03-design.md` under:
 | Operation | … | missing | low | … |
 ```
 
-**If there is a `high` severity without a response**: show the findings to the user and ask with `AskUserQuestion`. Options depend on the type:
+**`high` severity without a response** → show the findings and ask with `AskUserQuestion`. Options by type:
 
-- If the finding is **"unnecessary"** (fit/YAGNI): **Cut it** (remove the piece from the design — default option), or **Keep and justify** (fill in "Response" with the real scenario that requires it — if you cannot name one, it is unnecessary).
-- If the finding is **"missing"** (assumption/operation): **Reopen brainstorm/design** to incorporate it, or **Assume and document** (fill in "Response" with the conscious assumption — `"We assume X because Y"`).
-- If the finding is **"idiom"** (false dichotomy / rationale smell / primitive mismatch): **Adopt the third option or correct the primitive** (update the ADR row and the affected plan — default when option C is clearly better), or **Keep and make the "Why" concrete** (replace the manual-sounding phrase with a checkable reason; if you cannot, the decision is not justified). Do not leave the rationale as a textbook phrase.
+| Type | Options |
+|---|---|
+| **unnecessary** (fit/YAGNI) | **Cut it** (remove the piece — default) · **Keep and justify** (fill "Response" with the real scenario; if none can be named, it is unnecessary). |
+| **missing** (assumption/operation) | **Reopen brainstorm/design** to incorporate it · **Assume and document** (fill "Response" with the conscious assumption — `"We assume X because Y"`). |
+| **idiom** (false dichotomy / rationale smell / primitive mismatch) | **Adopt the third option or correct the primitive** (update the ADR row and the affected plan — default when option C is clearly better) · **Keep and make the "Why" concrete** (replace the manual-sounding phrase with a checkable reason; if you cannot, the decision is not justified). Never leave a textbook phrase as rationale. |
 
-Do not advance to close with unresolved high severities. Medium and low ones are informational — they stay on record so code review has them in view. **A challenger that returns "nothing unnecessary or missing, the design is tight" is a good result, not a failure** — do not force findings.
+- Do not advance to close with unresolved high severities. Medium and low stay on record for code review.
+- **A challenger that returns "nothing unnecessary or missing, the design is tight" is a good result, not a failure** — do not force findings.
 
 ## 7. Is the size still correct?
 
-Design is when the real complexity of the work becomes visible (migrations, cross-module, integrations). If what comes out in `03-design.md` does not fit `meta.json.size`:
+If what `03-design.md` reveals (migrations, cross-module, integrations) does not fit `meta.json.size`:
 
-- Propose reclassifying to the user (`AskUserQuestion`).
-- If confirmed, update `meta.json.size` and note in `meta.json.notes`.
-- **Consequences**: moving from M to L activates the full flow. Moving from M to S removes `/flow:feat:plan` from the path. Explicitly inform the user of the flow change.
+- Propose reclassifying (`AskUserQuestion`).
+- Confirmed → update `meta.json.size`, note in `meta.json.notes`.
+- **Consequences**: M → L activates the full flow; M → S removes `/flow:feat:plan` from the path. Explicitly inform the user of the flow change.
 
 ## 7.5 Cross-repo scope (refine)
 
-Design is where a repo the conversation missed often surfaces (this change needs a consumer, a client, or a shared contract updated elsewhere). If `## Modules/layers affected` points at another repo, **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending", "contract_handoff" }`); if a repo listed at `start` turns out not to be needed, drop it. flow only records it — the reminder fires at `/flow:feat:ship`.
-
-This is also where `contract_handoff` gets its real value, because the contracts now exist: for each entry, set it to `pending` if any contract in §"External contracts" names that repo as its consumer, or `none` if the sibling's work touches nothing declared here (a UI-only change, an independent migration). A `pending` here is what makes `/flow:feat:ship` §6.3 offer the handoff; leaving it `none` on a repo that does consume a contract is exactly the silence this is meant to break.
+- If `## Modules/layers affected` points at another repo (consumer, client, shared contract), **add or update `meta.json.related_repos`** (`{ "repo", "scope", "status": "pending", "contract_handoff" }`); drop a repo listed at `start` that turns out not to be needed. flow only records it — the reminder fires at `/flow:feat:ship`.
+- Set `contract_handoff` per entry now that contracts exist: `pending` if any contract in §"External contracts" names that repo as consumer; `none` if the sibling's work touches nothing declared here (UI-only change, independent migration). `pending` is what makes `/flow:feat:ship` §6.3 offer the handoff — never leave `none` on a repo that consumes a contract.
 
 ## 8. Domain findings staging
 
-If `domain_memory.enabled` is `true` in `FLOW.md`: review the decision table (ADR-light) and the challenges to detect **non-obvious domain decisions** — things a future reader of the repo could not deduce just by reading the code. Typical examples:
+`domain_memory.enabled` is `true` in `FLOW.md` → review the ADR-light table and the challenges for **non-obvious domain decisions** a future reader could not deduce from the code, e.g.:
 
 - "We decided not to use X because the external integration only guarantees Y under Z."
 - "We coupled A with B because legal/fiscal requirements demand that..."
 - "The handler is intentionally non-idempotent because the domain allows it and simplifies the flow."
 
-**Evidence before staging.** Every finding carries one line of **evidence** — what you checked and against what — recorded with it in the call. A finding is a claim about how *this project* behaves, and it will be read months from now as settled fact by someone who will not re-derive it; an unverified finding is worse than no finding, because it is believed. Two rules on what counts:
+**Evidence before staging.** Every finding carries one line of **evidence** (what you checked, against what), recorded with it in the call. An unverified finding is worse than none — it will be believed.
 
-- **Claims about what the code does** are verified against `git.default_base` from `FLOW.md` — not against your working branch, and **never against a train/integration branch**. On a stacked branch, diffing against the parent shows your siblings' changes as though they were the baseline, so "the code already handles X" can be true where you are standing and false on the default base, which is the only place the claim will matter.
-- **Claims about generated output** — a query the ORM builds, a serialized payload, a rendered template, a resolved config — are verified against the output **actually produced**: dump it, log it, execute it. Reading the builder and predicting what it emits is precisely how a confident, wrong finding gets written down.
+- **Claims about what the code does** → verify against `git.default_base` from `FLOW.md` — not your working branch, **never a train/integration branch** (siblings' changes would look like the baseline).
+- **Claims about generated output** (ORM query, serialized payload, rendered template, resolved config) → verify against the output **actually produced**: dump it, log it, execute it. Never predict from the builder.
 
-If you cannot produce that line for a finding, **do not stage it**: tell the user it did not survive verification and move on. A finding withdrawn here costs nothing; one that lands in the store wrong gets trusted.
+No evidence line → **do not stage it**: tell the user it did not survive verification and move on.
 
-**Silence by default**: if there is nothing non-obvious, do not ask. If there are 1+ findings with a clear signal:
+**Silence by default**: nothing non-obvious → do not ask. 1+ findings with a clear signal →
 
 - Call `mcp__domain-memory__stage_finding` with the finding, its evidence line, and the context. One call per finding.
-- Briefly inform the user: "Staged X domain finding(s) to consolidate in `/flow:feat:ship`".
+- Inform briefly: "Staged X domain finding(s) to consolidate in `/flow:feat:ship`".
 
-Do not invoke `save_knowledge` here — the final save is in `/flow:feat:ship` with a prior `read_staging`. If `domain_memory.enabled` is `false` or empty, skip without notifying.
+Never invoke `save_knowledge` here — the final save is in `/flow:feat:ship` after `read_staging`. `false` or empty → skip without notifying.
 
 ## 9. Close
 
 - Update `meta.json`: `phase = "design"`, add to `phases_done`.
-- **Confirm the acceptance criteria** as part of the design review: present the enumerated list to the user. If every criterion is unambiguous and verifiable, the design review covers them — no separate prompt. Escalate to `AskUserQuestion` **only** when a criterion is ambiguous, not verifiable, or you suspect one is missing for what the ticket asks today (same restraint as the challenger — do not invent criteria). The user can edit/add/remove; apply their edits to `03-design.md` before advancing.
-- **In `manual`/`guided`**, ask the user to review the design; if they request changes, edit the artifact before advancing. **In `auto`, do not ask** — record it as accepted per the handoff below. Do not read this bullet as an unconditional stop: that is the contradiction that turns an unattended run into a manual one.
+- Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
+- **Confirm the acceptance criteria** within the design review: present the enumerated list. If every criterion is unambiguous and verifiable, the review covers them — no separate prompt. `AskUserQuestion` **only** when a criterion is ambiguous, not verifiable, or one is likely missing for today's ticket (same restraint as the challenger). Apply the user's edits to `03-design.md` before advancing.
+- **In `manual`/`guided`**, ask the user to review the design; edit the artifact on requested changes before advancing. **In `auto`, do not ask** — record it as accepted per the handoff below. Not an unconditional stop.
 - Next step by size:
-  - **XS / S**: suggest `/flow:feat:build` (1 single MR/PR, no need to plan splitting).
-  - **M / L**: suggest `/flow:feat:plan` to decide how to split the work into independently mergeable MRs/PRs before implementing.
-- **Autonomy handoff.** Reviewing the design is a genuine decision point, so in `manual` and `guided` ask for the review before advancing. In `auto`, record the design as accepted in the artifact and **chain into the command for the size automatically** in this same turn. In `manual`, propose that command with a single `AskUserQuestion` (recommended option by default) rather than leaving it as a written suggestion. Unresolved `high`-severity findings from the design challenge (§6) stop the flow in **every** mode — do not chain over them.
+  - **XS / S**: suggest `/flow:feat:build` (1 single MR/PR, no planned split).
+  - **M / L**: suggest `/flow:feat:plan` to split the work into independently mergeable MRs/PRs before implementing.
+- **Autonomy handoff.** Design review is a genuine decision point: `manual` and `guided` ask for it before advancing. `auto` records the design as accepted in the artifact and **chains into the command for the size** in this same turn. `manual` proposes that command with a single `AskUserQuestion` (recommended option by default), never a written suggestion. Unresolved `high`-severity findings (§6) stop the flow in **every** mode — do not chain over them.

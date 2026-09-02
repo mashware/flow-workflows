@@ -4,22 +4,19 @@ description: Assistant that generates the FLOW.md for this repo (auto-detects wh
 
 # `/flow:init`
 
-Creates (or updates) `FLOW.md` at the repo root. This is the configuration read by all other
-`/flow:*` commands. The goal: the user answers the **minimum** — everything that can be inferred
-from the repo is auto-detected and only confirmed.
+Creates or updates `FLOW.md` at the repo root — the configuration every other `/flow:*` command
+reads. The user answers the **minimum**: what the repo can tell is auto-detected and only confirmed.
 
-Contract reference and key names: `examples/FLOW.template.md` from the plugin. Do not
-invent keys that are not there.
+Key names and contract: `examples/FLOW.template.md` from the plugin. Do not invent keys that are not there.
 
 ## 1. If `FLOW.md` already exists
 
-If there is a `FLOW.md` at the root, show it and ask: **update** (re-detect and re-ask,
-preserving what the user does not want to change), or **cancel**. Do not overwrite without
-confirmation.
+Show it and ask: **update** (re-detect and re-ask, preserving what the user keeps) or **cancel**.
+Never overwrite without confirmation.
 
 ## 2. Auto-detection (do NOT ask about what you can infer)
 
-Run and deduce; show what was found so the user can confirm or correct:
+Run, deduce, show what was found for confirmation or correction:
 
 - **Git host and CLI** — from `git remote -v`:
   - `github.com` → host `github`, cli `gh`, request_term `PR`.
@@ -27,59 +24,58 @@ Run and deduce; show what was found so the user can confirm or correct:
   - `bitbucket.org` → `bitbucket`, request_term `PR`.
   - `dev.azure.com`/`visualstudio.com` → `azure`, cli `az`, `PR`.
   - Known Gitea/Forgejo domain → `gitea`, cli `tea`.
-  - Unknown domain (self-hosted) → ask which one (GitLab/Gitea/other) and which CLI it uses.
-  - Check which CLI is actually installed: `command -v gh glab tea az`.
+  - Unknown domain (self-hosted) → ask which host (GitLab/Gitea/other) and which CLI.
+  - Installed CLIs: `command -v gh glab tea az`.
 - **Base branch** — `git symbolic-ref refs/remotes/origin/HEAD` (or `git remote show origin`): `origin/main` or `origin/master` → `git.default_base`.
-- **Quality commands** — inspect the repo and propose what you find (leave empty if nothing found):
-  - `Makefile` → grep targets `test`, `lint`, `phpstan`/`stan`, `cs-fixer`/`fmt`, `database`/`migrate`.
+- **Quality commands** — propose what the repo has (empty if nothing found):
+  - `Makefile` → targets `test`, `lint`, `phpstan`/`stan`, `cs-fixer`/`fmt`, `database`/`migrate`.
   - `package.json` → `scripts` (test, lint, build, typecheck).
-  - `composer.json` → scripts; presence of phpunit/phpstan/php-cs-fixer.
+  - `composer.json` → scripts; phpunit/phpstan/php-cs-fixer present.
   - `pyproject.toml`/`tox.ini` → pytest/ruff/mypy; `Cargo.toml` → `cargo test/clippy`; `go.mod` → `go test ./...`.
-  - If schema migrations exist (Doctrine, Alembic, Rails, Prisma…), propose `quality.db_diff` and raise `git.predeploy_gate`.
-- **Data access** (`data.*`, all optional) — only if the repo actually talks to a database: look for the client and the local stack (a `docker-compose.yml` service, a `DATABASE_URL`/`DB_*` env var, a `Makefile` target that opens a shell). Propose `data.explain_cmd` and `data.schema_cmd` in the engine's own dialect against the **development** database (e.g. for MySQL over Docker Compose: `docker compose exec -T <db-service> mysql <db> -e "EXPLAIN {QUERY}"` and `… -e "SHOW CREATE TABLE {TABLE}"`; PostgreSQL: `psql -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"` / `\d+ {TABLE}`). Leave `sandbox_cmd`/`seed_cmd`/`volumes` empty unless the user has something ready. If nothing is detected, leave the whole section out — the query duel degrades to schema-only and says so.
-- **domain-memory** — is the `domain-memory` MCP available in this session? If yes, `domain_memory.enabled: true`; if not, leave it empty.
+  - Schema migrations (Doctrine, Alembic, Rails, Prisma…) → propose `quality.db_diff` and raise `git.predeploy_gate`.
+- **Data access** (`data.*`, all optional) — only if the repo talks to a database. Find the client and the local stack (a `docker-compose.yml` service, a `DATABASE_URL`/`DB_*` env var, a `Makefile` target that opens a shell). Propose `data.explain_cmd` and `data.schema_cmd` in the engine's dialect against the **development** database — MySQL over Docker Compose: `docker compose exec -T <db-service> mysql <db> -e "EXPLAIN {QUERY}"` and `… -e "SHOW CREATE TABLE {TABLE}"`; PostgreSQL: `psql -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"` / `\d+ {TABLE}`. Leave `sandbox_cmd`/`seed_cmd`/`volumes` empty unless the user has something ready. Nothing detected → leave the section out (the query duel degrades to schema-only and says so).
+- **domain-memory** — the `domain-memory` MCP is available in this session → `domain_memory.enabled: true`; else empty.
 
 ## 3. Ask only what cannot be inferred
 
-For each point, use `AskUserQuestion` with options and a recommended value; always leave the path
-"leave empty → auto-discover / skip this". Ask about:
+One `AskUserQuestion` per point, options plus a recommended value, always with the path "leave
+empty → auto-discover / skip this". §2's detections are the defaults; the user corrects only what does not fit.
 
-- **Ticket prefix** (`tracker.prefix`, e.g., `PROJ-`, or none) and **how to read a ticket** (`tracker.tool`). Offer the options **without preselecting one** (the git host does not determine the tracker — a GitLab repo may track in Jira): `acli` (Jira), `gh` (GitHub issues), `glab` (GitLab issues), `linear`, or `none` (manual). From the chosen `tool`, set a default `tracker.view_cmd` the user can override: `acli` → `acli jira workitem view {TICKET}`; `gh` → `gh issue view {TICKET}`; `glab` → `glab issue view {TICKET}`; `linear`/`none` → leave empty. Set `tracker.comments_cmd` alongside it from the same choice — the `view_cmd`s print only the description, and the comment thread is where scope decisions and a sibling repo's published contracts live: `gh` → `gh issue view {TICKET} --comments`; `glab` → `glab issue view {TICKET} --comments`; `acli`/`linear`/`none` → leave empty (the commands try the tool's native way and warn if there is none). When proposing `gh`/`glab`, check the CLI is installed (`command -v gh glab`); if missing, keep the choice but warn the step will degrade to a manual paste until it is.
-- **Ticket state transitions** (`tracker.start_cmd` / `done_cmd` / `abandon_cmd` / `assignee`): optional, so tickets don't sit stale in the backlog — flow can move them to *in progress* on start, *done* on ship, *won't-do* on abandon. **Ask only if `tracker.tool` is `acli` (Jira) or `linear`**; for `gh`/`glab` skip and leave them empty (merge already auto-closes the issue via `Closes #N`), for `none` skip entirely. When asked, offer sensible defaults the user confirms/edits and explain each may be left empty: Jira → `start_cmd: acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}`, `done_cmd: acli jira workitem transition {TICKET} "Done"`, `abandon_cmd: acli jira workitem transition {TICKET} "Won't Do"` (state names vary per board — tell the user to match theirs). Collect `tracker.assignee` (the tracker account for `{ASSIGNEE}`; empty = fall back to `git.assignee`). Note they run best-effort and gated, and never block.
+- **Ticket prefix** (`tracker.prefix`, e.g. `PROJ-`, or none) and **ticket reader** (`tracker.tool`), options **without preselecting one** (the git host does not determine the tracker): `acli` (Jira), `gh` (GitHub issues), `glab` (GitLab issues), `linear`, `none` (manual).
+  - Default `tracker.view_cmd` (overridable): `acli` → `acli jira workitem view {TICKET}`; `gh` → `gh issue view {TICKET}`; `glab` → `glab issue view {TICKET}`; `linear`/`none` → empty.
+  - `tracker.comments_cmd` from the same choice (`view_cmd`s print only the description; scope decisions and sibling-repo contracts live in the thread): `gh` → `gh issue view {TICKET} --comments`; `glab` → `glab issue view {TICKET} --comments`; `acli`/`linear`/`none` → empty (the commands try the native way and warn if there is none).
+  - Proposing `gh`/`glab` → check `command -v gh glab`; missing → keep the choice, warn the step degrades to manual paste until installed.
+- **Ticket state transitions** (`tracker.start_cmd` / `done_cmd` / `abandon_cmd` / `assignee`): optional — *in progress* on start, *done* on ship, *won't-do* on abandon. **Ask only if `tracker.tool` is `acli` or `linear`**; `gh`/`glab` → skip, leave empty (merge auto-closes via `Closes #N`); `none` → skip.
+  - Offer defaults to confirm/edit, each may stay empty. Jira: `start_cmd: acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}`, `done_cmd: acli jira workitem transition {TICKET} "Done"`, `abandon_cmd: acli jira workitem transition {TICKET} "Won't Do"` (state names vary per board — match theirs).
+  - Collect `tracker.assignee` (account for `{ASSIGNEE}`; empty = `git.assignee`). Note they run best-effort, gated, never blocking.
 - **MR/PR assignee** (`git.assignee`, or none) and **squash** (`git.squash`).
 - **MR/PR sections** (`git.request_sections`, or free-form).
-- **Pre-deploy gate** (`git.predeploy_gate`): do you run schema SQL manually on the server before deploying? If yes and you detected a schema diff command, propose `quality.db_diff`.
-- **Train chaining** (`git.train_chain`): optional, only relevant for multi-PR features on stacked branches. Explain the default (empty = derived from `autonomy.mode`: `manual` asks "continue with the next MR/PR?", `guided`/`auto` chain automatically — the train never waits for the previous MR/PR to merge). Only set `ask`/`always`/`wait` if the user wants to override that. Most repos leave it empty.
-- **Agents by role** (`agents.*` and `quality.review_skill`/`reviewers`): optional. Explain that they can be left empty (`general-purpose` is used) and filled in later. If the user has custom agents, collect the names.
-- **Review depth** (`quality.review_depth`): default `proportional` scales the review panel by work size (XS/small changes get only the built-in `code-review`, keeping trivial changes fast; the specialized panel runs on M/L and on sensitive small changes). Only set `full` if the user wants the whole panel on every change regardless of size. Most repos leave it empty (= proportional).
-- **Autonomy** (`autonomy.mode`): how much the flow advances on its own. Offer `manual` *(Recommended)* — every phase stops at each decision and only recommends the next command (current behavior) — `guided` — auto-resolves low-risk/unambiguous decisions and chains phases, still asking at real decision points — or `auto` — also auto-resolves the rest with recorded defaults. Explain that the hard gates (push/MR-PR, ambiguous-base branch creation, DB/migrations, high-severity review findings, and the business brief before any code) always stop and ask regardless of the mode, and that `guided`/`auto` conversely **never** ask about the flow's own mechanics (panels, how many reviewers), WIP commits, continuing a train, size confirmation, or anything already decided — so `auto` really is unattended between the brief and `ship`. It can be changed at any time by editing `FLOW.md`. Empty = `manual`.
-- **Data access** (`data.*`): ask only if §2 found a database. Show the `explain_cmd`/`schema_cmd` you detected for confirmation, and explain what each unlocks: with them, the query duel in `/flow:work:query` and `/flow:feat:review §3.6` settles an index or a collation question with a real plan instead of an argument; without them it still runs, on the schema alone, and declares what it could not prove. Then ask for **`data.volumes`** — the real sizes of the hot tables (rows, growth, worst key) — because that one line is what stops a reviewer agent from inventing the scenario it argues about; free text, and worth filling even when the commands are empty. `sandbox_cmd`/`seed_cmd` (a throwaway database to measure in) are for repos that already have a way to do it; leave them empty otherwise, and note that creating or seeding a database is a hard gate in every mode.
-- **Model per kind of step** (`models.*`): **do not ask about this** unless the user brings up models themselves. Write the section with all keys empty — empty means every step runs with the model the command was launched with, which is the behavior everyone expects by default — and mention in the close that it exists and where it is documented. It is an advanced, harness-specific key (values are free text passed straight to the harness), and a question about it during setup buys a decision the user has no basis to make yet.
-- **Observability** (`observability`): default is **empty = auto-discover** in `/flow:work:watch`. Only collect a profile if the user provides one ready to go.
-
-What was auto-detected in §2 is shown as the default value; the user only corrects what does not fit.
+- **Pre-deploy gate** (`git.predeploy_gate`): schema SQL run manually on the server before deploying? Yes + a schema diff command detected → propose `quality.db_diff`.
+- **Train chaining** (`git.train_chain`): optional, multi-PR features on stacked branches only. Empty (default) = derived from `autonomy.mode`: `manual` asks "continue with the next MR/PR?", `guided`/`auto` chain automatically — the train never waits for the previous MR/PR to merge. Set `ask`/`always`/`wait` only to override; most repos leave it empty.
+- **Agents by role** (`agents.*`, `quality.review_skill`/`reviewers`): optional; empty = `general-purpose`, fill in later. Collect names of custom agents if any.
+- **Review depth** (`quality.review_depth`), most repos leave it empty (= proportional):
+  - `proportional` (default) — panel scaled by work size: XS/small changes get only the built-in `code-review`; the specialized panel runs on M/L and on sensitive small changes.
+  - `light` — only the built-in `code-review` on every size, no panel, no skeptics; sensitive surfaces still get the proportional panel.
+  - `full` — the whole panel on every change regardless of size.
+- **Autonomy** (`autonomy.mode`): `manual` *(Recommended)* — stops at each decision, only recommends the next command; `guided` — resolves low-risk/unambiguous decisions and chains phases, asks at real decision points; `auto` — also resolves the rest with recorded defaults. Explain the hard gates that stop in every mode and what `guided`/`auto` never ask (both lists: `flow:flow-core` skill §2), so `auto` is unattended between the brief and `ship`. Editable any time in `FLOW.md`. Empty = `manual`.
+- **Data access** (`data.*`): only if §2 found a database. Show the detected `explain_cmd`/`schema_cmd` for confirmation; they let the query duel in `/flow:work:query` and `/flow:feat:review §3.6` settle an index or collation question with a real plan — without them it runs on the schema alone and declares what it could not prove. Then ask for **`data.volumes`** — real sizes of the hot tables (rows, growth, worst key), free text, worth filling even with the commands empty. `sandbox_cmd`/`seed_cmd` (a throwaway database to measure in) only for repos that already have one; note that creating or seeding a database is a hard gate in every mode.
+- **Model per kind of step** (`models.*`): **do not ask** unless the user brings up models. Leave every key empty (omitted in §4 = each step runs with the model the command was launched with); mention in the close that the section exists and where it is documented. Values are free text passed straight to the harness.
+- **Observability** (`observability`): **empty = auto-discover** in `/flow:work:watch`. Collect a profile only if the user has one ready.
 
 ## 4. Write `FLOW.md`
 
-Generate the file at the repo root with the **same section structure** as
-`examples/FLOW.template.md` — tracker, git, autonomy, quality, agents, models, data, conventions,
-notes, domain_memory, observability, in that order — filling in what was detected/answered and
-**leaving empty** the keys the user does not want to fix (each command already degrades gracefully
-on an empty key). There is no `review` section: the review panel is configured by
-`quality.review_depth`, `quality.review_skill` and `quality.reviewers`. When in doubt about a key or
-its default, the template is the canonical list — read it rather than reproducing it from here.
+Write a **compact** file at the repo root — every command reads it in every phase, so its size is paid on every step:
+
+- Two-line header: what the file is, and that the plugin's `examples/FLOW.template.md` documents every key and default.
+- Sections in the template's order — tracker, git, autonomy, quality, agents, models, data, conventions, notes, domain_memory, observability — but **only the sections and keys that have a value**. One line per key: `- key: value`. No template comments.
+- Empty keys are omitted entirely (absent = default, same as empty; each command degrades gracefully). A section with no set key is omitted too.
+- No `review` section: the panel is configured by `quality.review_depth`, `quality.review_skill` and `quality.reviewers`.
+- In doubt about a key or its default → read the template, never reproduce it from here.
 
 ## 5. Close
 
-Summarize on screen: what was configured and what was left **empty (= auto-discover)**.
-
-`FLOW.md` is **personal config, not team config**: it mixes repo facts (tracker, quality commands,
-conventions) with your own flow preferences (autonomy mode, the tools/agents you have installed,
-review depth, assignee) — what one developer wants differs from the next, and the same file on
-another machine may reference agents or an MCP that isn't there. It holds **no secrets** (those
-stay in your credential store), but it should not be committed. So: if `FLOW.md` is not already
-git-ignored, **offer to add it to `.gitignore`** (append a `FLOW.md` line) — this edits a tracked
-file, so confirm before writing. A team that wants to share the repo-fact subset can still commit
-it deliberately.
-
-Then suggest the next step: `/flow:feat:start` or `/flow:work:status`.
+- Summarize on screen: what was configured, what was left **empty (= auto-discover)**; mention `models.*` exists and where it is documented (§3).
+- `FLOW.md` is **personal config, not team config** (repo facts mixed with one developer's flow preferences, tools and agents; **no secrets**) — it should not be committed. One `AskUserQuestion`, both parts in the same question:
+  - `FLOW.md` not already git-ignored → **offer to add it to `.gitignore`** (append a `FLOW.md` line). This edits a tracked file — confirm before writing. A team wanting the repo-fact subset can still commit it deliberately.
+  - Git-ignore `.claude/work/` too — recommended default: ignore it (artifacts are personal working state; teams that want to share them commit deliberately). `git.worktree` not `off` → offer `.worktrees/` in the same gesture.
+- Suggest `/flow:next` as the next step (it routes to `/flow:feat:start`, `/flow:work:resume` or `/flow:work:status`).

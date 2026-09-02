@@ -52,6 +52,81 @@ repo-fact subset can commit it deliberately.
 
 ---
 
+## Every key at a glance
+
+The authoritative list is the template that ships with the plugin; this table is generated from it.
+
+<!-- config-keys:begin -->
+_Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examples/FLOW.template.md) by `script/config-keys.py` — edit the template, not this table._
+
+| Section | Key | What it does (first line of the template comment) |
+|---|---|---|
+| `tracker` | `prefix` | e.g. `PROJ-`. Empty = no prefix / free-form ticket |
+| `tracker` | `tool` | `acli` (Jira) \| `gh` (GitHub issues) \| `glab` (GitLab issues) \| `linear` \| `none` (manual). Empty = none |
+| `tracker` | `view_cmd` | optional, command to view a ticket. `{TICKET}` is substituted. e.g.: |
+| `tracker` | `comments_cmd` | optional, command to read the ticket's COMMENT THREAD. `{TICKET}` substituted. The `view_cmd`s above |
+| `tracker` | `assignee` | tracker username/account for the `{ASSIGNEE}` token in the commands below. Empty = fall back to `git.assignee` |
+| `tracker` | `start_cmd` | optional, run when a work STARTS (`/flow:feat:start`, `/flow:bug:start`) to move the ticket to "in progress" and/or assign it. `{TICKET}` and `{ASSIGNEE}` substituted; chain two calls with `&&`. Empty = do not transition on start. e.g.: |
+| `tracker` | `done_cmd` | optional, run when a work SHIPS and is merged (`phase` reaches `done`) to move the ticket to "done". `{TICKET}` substituted. Empty = do not transition. **Leave empty on GitHub/GitLab** — the `Closes #N` in the MR/PR body already auto-closes the issue on merge. e.g.: |
+| `tracker` | `abandon_cmd` | optional, run when a work is ABANDONED (`/flow:work:abandon`) to move the ticket to a cancelled / won't-do state. `{TICKET}` substituted. Empty = do not transition. e.g.: |
+| `git` | `host` | `gitlab` \| `github`. Determines the terminology and default CLI |
+| `git` | `cli` | `glab` \| `gh`. Empty = inferred from `host` |
+| `git` | `request_term` | `MR` \| `PR`. How to name the request in text. Empty = inferred from `host` |
+| `git` | `default_base` | base for new branches, e.g. `origin/master` or `origin/main` |
+| `git` | `branch_pattern` | e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case. Empty = `{PREFIX}{TICKET}-{slug}` |
+| `git` | `assignee` | user to assign the MR/PR to. Empty = do not assign |
+| `git` | `squash` | `true` \| `false` (squash-before-merge) |
+| `git` | `request_sections` | MR/PR description sections, one per line with `- `. Empty = free-form |
+| `git` | `predeploy_gate` | `true` if this repo runs schema SQL manually on the server BEFORE deploying and wants to block the MR/PR until done. Empty/false = no Pre-deploy section or blocking thread |
+| `git` | `train_chain` | multi-PR train (stacked branches) behavior at the end of `/flow:feat:ship` when there are still pending MR/PRs. `ask` \| `always` \| `wait`. The train NEVER waits for the previous MR/PR to merge except in `wait` |
+| `git` | `worktree` | `off` (default) \| `ask` \| `always`. Whether `/flow:feat:start` & `/flow:bug:start` create the new branch as a git worktree instead of switching in place. `ask` = prompt each time; `always` = always; `off`/empty = never (in-place, current behavior) |
+| `git` | `worktree_path` | path template for the worktree dir. `{branch}` and `{repo}` are substituted. Empty with `worktree`≠`off` = `.worktrees/{branch}` at the repo root (git-ignore it). e.g. `.worktrees/{branch}` or `../{repo}.worktrees/{branch}` |
+| `git` | `worktree_resync` | commands `/flow:work:try` runs after switching the main checkout to a branch (and again on `--back`), to re-sync the environment (e.g. DB schema, assets). One command per line with `- `, run in order. Empty = `/flow:work:try` only does the git switch, no env re-sync. e.g.: |
+| `autonomy` | `mode` | `manual` (default) \| `guided` \| `auto`. Empty = `manual` |
+| `quality` | `test` | e.g. `make test` |
+| `quality` | `test_one` | e.g. `make test-filter filter={FILTER}` (`{FILTER}` is substituted) |
+| `quality` | `static_analysis` | e.g. `make phpstan-ci` |
+| `quality` | `style_fix` | e.g. `make cs-fixer-changed` |
+| `quality` | `db_update` | e.g. `make database-update` (empty if not applicable) |
+| `quality` | `db_diff` | command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL) |
+| `quality` | `frontend_test` | e.g. `make test-frontend` (empty if no frontend) |
+| `quality` | `review_depth` | how much of the review panel runs AND at what effort, scaled by work size + risk, in `/flow:*:review`. `proportional` (default) \| `full` \| `light` |
+| `quality` | `respond_max_rounds` | how many rounds of `/flow:work:respond` one MR/PR gets before the command stops and hands the |
+| `quality` | `review_skill` | orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below |
+| `quality` | `reviewers` | if `review_skill` is empty: list of agents that run in parallel as a review panel (one per line with `- `). Empty with no skill = only the built-in `code-review` |
+| `agents` | `architecture` | design/layers/architecture |
+| `agents` | `persistence` | DB/ORM/mappings/migrations/queries |
+| `agents` | `api` | endpoints/DTOs/routes/HTTP contracts |
+| `agents` | `performance` | N+1, indexes, hot paths, out-of-process calls, load |
+| `agents` | `queues` | queues, dead-letter, workers |
+| `agents` | `security` | threats, authentication, sensitive data |
+| `agents` | `frontend` | components/UI |
+| `agents` | `frontend_test` | frontend tests |
+| `agents` | `testing` | backend tests / coverage |
+| `agents` | `fanout_max` | max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported |
+| `agents` | `fanout_tool` | orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable |
+| `models` | `study` | feat:start, feat:brainstorm, feat:design, feat:plan · bug:start, bug:diagnose, |
+| `models` | `code` | feat:build · bug:fix · work:green (and the changes /flow:work:respond implements) |
+| `models` | `test` | feat:validate · bug:validate |
+| `models` | `review` | feat:review · bug:review · work:query · work:respond (thread triage) |
+| `models` | `workers` | the parallel fan-out rounds ONLY: approach panel (brainstorm §3.A), hypothesis sweep |
+| `data` | `explain_cmd` | get a query's execution plan. `{QUERY}` is substituted. e.g.: |
+| `data` | `schema_cmd` | show a table's REAL definition — column types, lengths, charset/collation, indexes and their |
+| `data` | `sandbox_cmd` | create a THROWAWAY database to measure in, isolated from anything the project uses. Empty = no |
+| `data` | `seed_cmd` | populate the sandbox with a data set shaped like production — the DISTRIBUTION is the point, not the |
+| `data` | `volumes` | free text: the real sizes of the hot tables — rows, growth, worst key. The cheapest key in this |
+| `notes` | `all` | applies to every command |
+| `domain_memory` | `enabled` | `true` if the MCP is installed and running. Empty/false = commands |
+| `observability` | `platform` | `datadog` \| other. Empty = auto-discover |
+| `observability` | `site` | e.g. `app.datadoghq.com` (org/site) |
+| `observability` | `deploy_detect` | how to identify YOUR deploy. Free text. e.g.: "merge→parent pipeline (glab by SHA)→bridge→child pipeline→go-live jobs" |
+| `observability` | `services` | one per line: `name \| role(web\|workers\|...) \| apm:<query> \| logs:<filter> \| sql:<service> \| deploy_job:<job>` |
+| `observability` | `queues` | e.g. `rabbitmq, *_dlx by delta` |
+| `observability` | `notes` | measured baselines/thresholds, low-traffic flags, etc |
+<!-- config-keys:end -->
+
+---
+
 ## `tracker`
 
 How tickets are identified and read.
@@ -250,7 +325,7 @@ Four more keys configure review rather than commands:
 
 | Key | What it does | Empty |
 |---|---|---|
-| `review_depth` | `proportional` · `full` — how much of the panel runs, and at what effort | `proportional` |
+| `review_depth` | `proportional` · `full` · `light` — how much of the panel runs, and at what effort | `proportional` |
 | `review_skill` | Orchestrating skill for the review panel | No skill; see `reviewers` |
 | `reviewers` | Agents that run in parallel as a panel, one per line | Only the built-in `code-review` |
 | `respond_max_rounds` | Rounds `/flow:work:respond` gets on one MR/PR before it stops and hands the negotiation back | `3` (`0` = no ceiling) |
@@ -285,6 +360,15 @@ the built-in reviewer one effort tier (medium → high → xhigh → max) *and* 
 Risk buys depth, not just size.
 
 `full` always runs the built-in reviewer at xhigh plus the whole panel, whatever the size.
+
+`light` runs **only** the built-in reviewer (or `review_skill`) at medium effort on every size: no
+panel, no reinforcements, no skeptic fan-out. A sensitive surface still upgrades the work to the
+`proportional` tier. It is the cheapest honest review, for repos where token cost matters more
+than coverage — and the review artifact says so.
+
+Whatever the tier, `06-review.md` and the stop header carry one **cost line**: how many subagents
+ran (reviewers · reinforcements · skeptics), at which tier and effort. What a review costs is
+something you read, not something you discover on the bill.
 
 When the panel runs, it runs **whole**: its members own categories the rest of the flow does not
 revisit, so a skipped one leaves that category with no owner. The review artifact records **ran vs

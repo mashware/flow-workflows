@@ -4,26 +4,22 @@ description: Consolidate the current branch's staged findings into the domain-me
 
 You are in the `/flow:save-knowledge` flow.
 
-**Step 0**: read `FLOW.md` at the repo root. If `domain_memory.enabled` is not `true`, respond to the user *"domain-memory is not enabled in this repo's FLOW.md."* and stop without doing anything else.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
 
-The user wants to consolidate into the store the knowledge learned in this session (or in previous sessions on the same branch).
+**Step 0**: read `FLOW.md` at the repo root. `domain_memory.enabled` is not `true` → reply *"domain-memory is not enabled in this repo's FLOW.md."* and stop.
 
-Run this sequence:
+Consolidate into the store the knowledge learned in this session (or in previous sessions on the same branch):
 
-1. **Read the staging** for the current branch with `read_staging`. If it is empty and you also have no new findings in the current session context, tell the user *"Nothing to consolidate on this branch."* and stop.
-
-2. **Combine** the staged findings with any relevant findings that appeared in the current session and are not yet in staging. Apply the "why vs what" rule: discard anything that is not domain knowledge.
-
+1. **Read the staging** for the current branch with `read_staging`. Empty, and no new findings in the current session context → *"Nothing to consolidate on this branch."* and stop.
+2. **Combine** the staged findings with relevant session findings not yet in staging. Apply the "why vs what" rule: discard anything that is not domain knowledge.
 3. **For each consolidated finding**:
-   - Call `search_knowledge` with the topic and the `file_paths` of the finding.
+   - Call `search_knowledge` with the topic and the finding's `file_paths`.
    - Decide: create a new entry, update an existing one, enrich with a new angle, or flag a conflict.
-   - If there is a conflict, ask the user immediately. Do not save until resolved.
-   - If there is no conflict, call `save_knowledge` with the decision.
-
-4. **Report to the user** what was done in brief format: *"Created: N. Updated: M. Archived: K. Conflicts resolved: J."*
-
+   - Conflict → ask the user immediately; do not save until resolved.
+   - No conflict → call `save_knowledge` with the decision.
+4. **Report** in brief: *"Created: N. Updated: M. Archived: K. Conflicts resolved: J."*
 5. **Clear the staging** for the branch after successful consolidation.
 
-If any MCP call fails, report the specific failure to the user (this flow is explicit — failures are visible).
+Any MCP call fails → report the specific failure (this flow is explicit — failures are visible, never skipped silently).
 
-The domain-memory MCP is a generic project (https://github.com/mashware/domain-memory). Consult `.domain-memory/instructions.md` in the repo for the full behavior details if it exists.
+The domain-memory MCP is a generic project (https://github.com/mashware/domain-memory). Consult `.domain-memory/instructions.md` in the repo for the full behaviour if it exists.
