@@ -5,6 +5,15 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.39.0 — `init` only knew the stacks its author had used  ·  2026-09-02
+
+**In short**
+- `/flow:init` now detects Gradle/Maven (Android, Kotlin, Java), .NET (`*.sln`, `*.csproj`, EF Core migrations), Xcode/SwiftPM and Flutter, and proposes their test, lint, style and build commands.
+- Multi-stack repos (a backend plus a mobile client) get one chained command per key, and `init` says so.
+- The template's `quality` examples and the auto-discovery notes in `build`, `fix`, `review`, `config` and `doctor` name those stacks too.
+
+**The flow was stack-agnostic; its wizard was not.** Nothing in the commands depends on a language — every quality gate is a command read from `FLOW.md` — but `/flow:init` only looked for a Makefile, npm, composer, pyproject, Cargo and go.mod, so an Android or C# repo got an empty `quality` section and a question, and lost the "auto-detects, you confirm" experience the wizard promises. It now recognises Gradle and Maven, .NET solutions and projects (with EF Core migrations raising the pre-deploy gate like Doctrine does), Xcode projects and Swift packages (asking for the scheme and destination when there are several), and Flutter. `/flow:doctor` checks those wrappers and binaries the same way it checks `make` targets.
+
 ## v0.38.0 — The flow asked for one product where it needed a role  ·  2026-09-02
 
 **In short**

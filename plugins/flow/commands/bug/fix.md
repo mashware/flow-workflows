@@ -96,7 +96,7 @@ Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this ren
 
 ## 4. Immediate quality
 
-`quality` commands from FLOW.md; empty → auto-discover (Makefile, npm/composer scripts) and report what you use:
+`quality` commands from FLOW.md; empty → auto-discover (Makefile, npm/composer scripts, Gradle, dotnet, Xcode, Flutter…) and report what you use:
 
 - `quality.style_fix`
 - `quality.static_analysis`

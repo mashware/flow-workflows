@@ -34,7 +34,7 @@ For **every** documented key in `examples/FLOW.template.md`, one row:
 
 - **set** → the value (list keys like `git.worktree_resync` or `quality.reviewers`: the items).
 - **empty / absent** → `(empty → <what happens>)`, taken from the key's comment in the template
-  (e.g. `quality.test` → "auto-discover from Makefile/npm/composer"; `tracker.tool` → "manual paste";
+  (e.g. `quality.test` → "auto-discover from Makefile/npm/composer/Gradle/dotnet/Xcode/Flutter"; `tracker.tool` → "manual paste";
   `agents.security` → "general-purpose with the role"; `git.worktree` → "off / in-place";
   `git.worktree_resync` → "`/flow:work:try` only switches, no re-sync"; `quality.review_depth` →
   "proportional" — the other depths are `light` and `full`). Never leave a reader guessing what an empty key does.

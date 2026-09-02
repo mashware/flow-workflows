@@ -84,9 +84,9 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `git` | `worktree_resync` | commands `/flow:work:try` runs after switching the main checkout to a branch (and again on `--back`), to re-sync the environment (e.g. DB schema, assets). One command per line with `- `, run in order. Empty = `/flow:work:try` only does the git switch, no env re-sync. e.g.: |
 | `autonomy` | `mode` | `manual` (default) \| `guided` \| `auto`. Empty = `manual` |
 | `quality` | `test` | e.g. `make test` |
-| `quality` | `test_one` | e.g. `make test-filter filter={FILTER}` (`{FILTER}` is substituted) |
-| `quality` | `static_analysis` | e.g. `make phpstan-ci` |
-| `quality` | `style_fix` | e.g. `make cs-fixer-changed` |
+| `quality` | `test_one` | e.g. `make test-filter filter={FILTER}` · `./gradlew test --tests {FILTER}` · `dotnet test --filter {FILTER}` (`{FILTER}` is substituted) |
+| `quality` | `static_analysis` | e.g. `make phpstan-ci` · `./gradlew lint` · `dotnet build -warnaserror` · `flutter analyze` |
+| `quality` | `style_fix` | e.g. `make cs-fixer-changed` · `./gradlew ktlintFormat` · `dotnet format` · `swift-format -i -r Sources` |
 | `quality` | `db_update` | e.g. `make database-update` (empty if not applicable) |
 | `quality` | `db_diff` | command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL) |
 | `quality` | `frontend_test` | e.g. `make test-frontend` (empty if no frontend) |

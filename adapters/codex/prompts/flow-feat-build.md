@@ -231,7 +231,7 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at th
 
 As larger pieces are completed:
 
-- Run `quality.style_fix` from `FLOW.md` to fix style; if empty, auto-discover (e.g. from Makefile or npm scripts).
+- Run `quality.style_fix` from `FLOW.md` to fix style; if empty, auto-discover (Makefile, npm scripts, Gradle, dotnet, Xcode, Flutter…).
 - Run `quality.static_analysis` from `FLOW.md` when a piece is stable; if empty, auto-discover.
 - If tests were added, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover. **A filtered run is judged by how many tests it executed, never by its exit code** — most runners exit `0` when the filter matches nothing (`OK, 0 tests`, `No tests ran`, `no tests to run`, `0 passed`). Read the executed count **and** test names: count `0`, or your new tests missing from the names → **the run did not happen**; treat as failure, fix the filter, run again. No count reported → drop the filter and run the whole test file. In "Relevant commands executed", record the count you saw, not just the command — "green" without a number is not evidence.
 

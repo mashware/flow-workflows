@@ -87,13 +87,14 @@ How much the flow advances on its own vs. stopping to ask you.
                       # and recorded — only new contradicting evidence reopens a settled decision.
 
 ## quality
-Repo commands for quality gates. **Empty = the command auto-discovers** (Makefile,
-npm/composer scripts, etc.) and reports what it uses.
+Repo commands for quality gates, whatever the stack — `make test`, `./gradlew test`, `dotnet test`,
+`xcodebuild test`, `flutter test`, `cargo test`… **Empty = the command auto-discovers** (Makefile, npm/composer
+scripts, Gradle, dotnet, Xcode, Flutter, pyproject, Cargo, go.mod) and reports what it uses.
 
 - `test:`             # e.g. `make test`
-- `test_one:`         # e.g. `make test-filter filter={FILTER}` (`{FILTER}` is substituted)
-- `static_analysis:`  # e.g. `make phpstan-ci`
-- `style_fix:`        # e.g. `make cs-fixer-changed`
+- `test_one:`         # e.g. `make test-filter filter={FILTER}` · `./gradlew test --tests {FILTER}` · `dotnet test --filter {FILTER}` (`{FILTER}` is substituted)
+- `static_analysis:`  # e.g. `make phpstan-ci` · `./gradlew lint` · `dotnet build -warnaserror` · `flutter analyze`
+- `style_fix:`        # e.g. `make cs-fixer-changed` · `./gradlew ktlintFormat` · `dotnet format` · `swift-format -i -r Sources`
 - `db_update:`        # e.g. `make database-update` (empty if not applicable)
 - `db_diff:`          # command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL)
 - `frontend_test:`    # e.g. `make test-frontend` (empty if no frontend)

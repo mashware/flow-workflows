@@ -187,7 +187,7 @@ Not run for XS/S, small diffs, or fewer than 4 ambiguous findings. When skipped,
 
 ## 7. Local quality gates
 
-Read `quality.*` from `FLOW.md`. Empty → auto-discover equivalent commands (Makefile, npm/composer scripts) and note what you use.
+Read `quality.*` from `FLOW.md`. Empty → auto-discover equivalent commands (Makefile, npm/composer scripts, Gradle, dotnet, Xcode, Flutter…) and note what you use.
 
 Launch in parallel (background if slow):
 - `quality.style_fix`
