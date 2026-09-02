@@ -17,7 +17,7 @@ contract — do not invent keys, and do report keys documented there but absent 
 - Read `FLOW.md` at the repo root. Missing → say so, note that every command still works by
   auto-detecting/asking, suggest `/flow:init`, then run §2 treating **every** key as empty (all fallbacks).
 - Parse by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`, `conventions`,
-  `notes`, `domain_memory`, `observability`.
+  `notes`, `knowledge`, `observability`.
 
 ## 2. Effective config (per section)
 
@@ -29,6 +29,8 @@ For **every** documented key in `examples/FLOW.template.md`, one row:
   `agents.security` → "general-purpose with the role"; `git.worktree` → "off / in-place";
   `git.worktree_resync` → "`/flow:work:try` only switches, no re-sync"; `quality.review_depth` →
   "proportional" — the other depths are `light` and `full`). Never leave a reader guessing what an empty key does.
+
+For `knowledge`, print the four roles resolved with who decided each: the `knowledge` key, the legacy `domain_memory.enabled` alias, or empty with its fallback (`search` → no lookups; `stage` → artifact only; `read_staging` → artifacts; `save` → `KNOWLEDGE.md`).
 
 Group by section with a short header each, so it scans as a table; keep set-vs-empty visually
 distinct (e.g. `✓` vs `·`).

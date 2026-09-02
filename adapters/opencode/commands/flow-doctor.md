@@ -14,7 +14,7 @@ description: Check that the environment the flow assumes actually exists here �
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → opencode's model picker (`/models`).
-> - `mcp__domain-memory__*` → same tool names; server declared in `opencode.json` (see `opencode.json` in this adapter).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
 Read-only. Answers one question: **will the flow actually work in this repo, right now?**
 **Writes nothing, runs nothing with side effects, never fixes anything** — it reports, with the
@@ -60,11 +60,11 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
   (a skill: skipped) — a panel missing agents reviews less and still reports a clean pass.
 - Harness cannot set a model per subagent → note that every `models.*` value degrades to inheritance.
 
-### 2.3 MCP
+### 2.3 Knowledge sources
 
-- `domain_memory.enabled` is `true` → the MCP is reachable **this session**. Unreachable →
-  `/flow-save-knowledge` and the domain steps of `start`/`design`/`postmortem` are skipped quietly — say so.
-- Declared `false`/empty while the MCP *is* available → say so once. Nothing is broken; the memory is unused.
+- For each `knowledge.*` role that is set (`search` may list several): an `mcp__*` tool → it is exposed **this session**; a shell command → its binary is on `PATH`. Unreachable → the steps using that role degrade quietly (no lookup, findings stay in artifacts, `KNOWLEDGE.md`) — say so, with the role.
+- `domain_memory.enabled: true` and no `knowledge` section → legacy alias; check the four `mcp__domain-memory__*` tools and suggest writing the `knowledge` section.
+- No role set while a knowledge MCP *is* available (`mcp__domain-memory__*`, `mcp__codegraph__*`, or any tool whose name says search/knowledge/memory) → say so once. Nothing is broken; the source is unused.
 
 ### 2.4 Hooks
 
@@ -106,7 +106,7 @@ flow doctor — 3 findings
   Agents    ✗ quality.reviewers: security-auditor not found  → review runs with 4 of 5, silently
   Hooks     · block-push-to-master.sh is not executable  → chmod +x (fails open: pushes to main are NOT blocked)
 
-  ok: tracker CLI · quality commands · domain-memory MCP · base branch · worktrees · harness
+  ok: tracker CLI · quality commands · knowledge sources · base branch · worktrees · harness
 ```
 
 - Everything ok → one line naming what was checked.

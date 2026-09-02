@@ -14,7 +14,7 @@ description: Monitor the observability platform after a deploy and alert on erro
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → opencode's model picker (`/models`).
-> - `mcp__domain-memory__*` → same tool names; server declared in `opencode.json` (see `opencode.json` in this adapter).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
 Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
@@ -37,7 +37,7 @@ If `observability` **is filled in**, extract:
 
 If `observability` **is empty or absent** → auto-discover everything in §3.
 
-If `domain_memory.enabled` is `true`, call `search_knowledge` with the ticket name before continuing.
+If `knowledge.search` is set, call `knowledge.search` with the ticket name before continuing.
 
 ## 1. Pre-flight and T0
 
@@ -170,7 +170,7 @@ Write the summary to `<work-dir>/monitor.md` (§1) and present it:
 
 Final verdict to `panel.json` too — `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and a `Now` line reading `nothing — the watch window is over`. On 🔴, a `Decision` line marked `wait` pointing at `/flow-bug-start`.
 
-`domain_memory.enabled` is `true` → `stage_finding` relevant findings (measured baselines, low-traffic signals, error patterns) for this branch's staging.
+`knowledge.stage` is set → `knowledge.stage` relevant findings (measured baselines, low-traffic signals, error patterns) for this branch's staging.
 
 ## Appendix: `observability` profile format in FLOW.md
 

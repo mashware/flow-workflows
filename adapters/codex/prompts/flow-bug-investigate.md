@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Investigation phase: **why it happened**, not just what is failing.
 
@@ -21,9 +21,9 @@ Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already rea
 - Read `meta.json` and `00-summary.md`; open in full only `02-diagnose.md` (and `01-context.md` when the summary leaves the symptom unclear). (flow-core §5)
 - Require `diagnose` in `phases_done`; if missing, redirect to `/flow-bug-diagnose`.
 
-## 2. Focused domain-memory query
+## 2. Focused knowledge query
 
-If `domain_memory.enabled`: 2-3 `mcp__domain-memory__search_knowledge` queries in parallel about **the hypothetical cause** (the symptom was already queried in diagnose). Maximum wait 2 s; continue on failure. Record findings in `03-investigation.md`.
+`knowledge.search` set → 2-3 `knowledge.search` queries in parallel about **the hypothetical cause** (the symptom was already queried in diagnose). Maximum wait 2 s; continue on failure. Record findings in `03-investigation.md`.
 
 - Race condition → `"lock <resource>"`, `"idempotency <handler>"`.
 - Broken external integration → `"<API> retry"`, `"webhook signature"`.
@@ -136,11 +136,11 @@ If the bug turned out simpler or wider than `meta.json.size` says (multi-compone
 
 ## 7. Domain finding staging
 
-If `domain_memory.enabled` and the root cause reveals a **non-obvious "why"** about the domain (a false model assumption, a historical decision that no longer applies, an undocumented external-integration behaviour), stage it. Silence by default — only on a clear signal.
+If `knowledge.stage` is set and the root cause reveals a **non-obvious "why"** about the domain (a false model assumption, a historical decision that no longer applies, an undocumented external-integration behaviour), stage it. Silence by default — only on a clear signal.
 
-- `mcp__domain-memory__stage_finding` with the finding and context, one call per finding.
+- `knowledge.stage` with the finding and context, one call per finding.
 - Notify the user: "Staged X domain finding(s) to consolidate in `/flow-bug-postmortem`".
-- Never `save_knowledge` here — that belongs to the postmortem.
+- Never `knowledge.save` here — that belongs to the postmortem.
 
 ## 8. Close
 

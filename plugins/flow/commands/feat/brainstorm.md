@@ -15,9 +15,9 @@ Exploration phase. **No code is written.** Opens the option space so design does
 - `meta.json.phase` not `context` → warn and ask whether to continue anyway.
 - `size` `XS` or `S` → suggest `/flow:feat:design` or `/flow:feat:build` directly and stop (unless the user insists).
 
-## 2. Focused domain-memory query
+## 2. Focused knowledge query
 
-`domain_memory.enabled` is `true` in `FLOW.md` → before generating options, call `mcp__domain-memory__search_knowledge` with 2-3 parallel queries on the **concept/pattern** the feature covers, not the generic title (already queried in `/flow:feat:start`). Examples:
+`knowledge.search` is set → before generating options, call `knowledge.search` with 2-3 parallel queries on the **concept/pattern** the feature covers, not the generic title (already queried in `/flow:feat:start`). Examples:
 
 - tracking → `"tracking deduplication"`, `"hash collision"`.
 - payments → `"trial expiration"`, `"plan downgrade flow"`.

@@ -74,7 +74,7 @@ Fix-specific:
 
 Review the diff for new defensive mechanisms smuggled in "just in case" (validation, guard, retry, lock, fallback, cache, idempotency, circuit breaker):
 
-- Per mechanism: *"What real, present scenario in this project justifies it?"* Verify against the code — can the flow reach that state, or does something already prevent it? If `domain_memory.enabled`, query `mcp__domain-memory__search_knowledge` when it depends on domain rules.
+- Per mechanism: *"What real, present scenario in this project justifies it?"* Verify against the code — can the flow reach that state, or does something already prevent it? If `knowledge.search` is set, query it when it depends on domain rules.
 - A fix is **minimal**: anything not directly attacking the root cause of `03-investigation.md` and not answering a present scenario → Blockers, with a trim proposal.
 
 ## 4.5. Completeness check (M/L, no loop)

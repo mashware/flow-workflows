@@ -47,7 +47,7 @@ repo-fact subset can commit it deliberately.
 | [`data`](#data) | How to read a query's plan and the real size of the hot tables | The query duel runs on the schema alone and says what it could not prove |
 | [`conventions`](#conventions) | Rules the code must respect | No specific conventions |
 | [`notes`](#notes) | Extra mandatory instructions per command | No extra guidance |
-| [`domain_memory`](#domain_memory) | The `domain-memory` MCP | Domain steps are skipped silently |
+| [`knowledge`](#knowledge) | Where the flow reads and writes what it learns, by role (`search`, `stage`, `read_staging`, `save`) | Knowledge steps are skipped silently |
 | [`observability`](#observability) | What `/flow:work:watch` monitors | Auto-discovered at watch time |
 
 ---
@@ -116,7 +116,12 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `data` | `seed_cmd` | populate the sandbox with a data set shaped like production — the DISTRIBUTION is the point, not the |
 | `data` | `volumes` | free text: the real sizes of the hot tables — rows, growth, worst key. The cheapest key in this |
 | `notes` | `all` | applies to every command |
-| `domain_memory` | `enabled` | `true` if the MCP is installed and running. Empty/false = commands |
+| `knowledge` | `search` | tool(s) that return context for a query — one per line with `- ` to consult several in parallel |
+| `knowledge` | `stage` | optional. Tool that records ONE finding for this branch during a phase (finding + context as its arguments) |
+| `knowledge` | `read_staging` | optional. Tool that returns what this branch has staged. Empty = the phase artifacts are the staging |
+| `knowledge` | `save` | optional. Tool that consolidates one finding into the store (`/flow:save-knowledge`, `ship`, `postmortem`) |
+| `knowledge` | `timeout_s` | per call. Empty = 2. A call that fails or takes longer → continue without it, silently |
+| `domain_memory` | `enabled` | `true` = the four `knowledge` roles resolve to the `domain-memory` MCP tools (`search_knowledge`, |
 | `observability` | `platform` | `datadog` \| other. Empty = auto-discover |
 | `observability` | `site` | e.g. `app.datadoghq.com` (org/site) |
 | `observability` | `deploy_detect` | how to identify YOUR deploy. Free text. e.g.: "merge→parent pipeline (glab by SHA)→bridge→child pipeline→go-live jobs" |
@@ -605,17 +610,48 @@ manual.
 
 ---
 
-## `domain_memory`
+## `knowledge`
 
-| Key | What it does |
-|---|---|
-| `enabled` | `true` if the [`domain-memory`](https://github.com/mashware/domain-memory) MCP is installed and running |
+Where the flow reads and writes what it learns about the project. The commands name a **role**,
+never a product, so any MCP tool, CLI command or skill fits — `domain-memory`, `codegraph`, a
+search over `docs/adr`, or whatever comes next.
 
-With it on, flow searches domain knowledge when entering new territory (`start`, `brainstorm`,
-`design`, `diagnose`, `investigate`), stages non-obvious findings when closing `design` and
-`investigate`, and offers to consolidate them at `ship`/`postmortem`. Empty or `false` = every
-domain step is skipped silently; if the MCP doesn't answer in 2 s, flow continues without it and
-doesn't mention it.
+| Key | What it does | Empty |
+|---|---|---|
+| `search` | Tool(s) that return context for a query — one per line to consult several in parallel; a shell command gets `{QUERY}` substituted | No knowledge lookups |
+| `stage` | Records one finding for this branch during a phase | The finding stays in the phase artifact |
+| `read_staging` | Returns what this branch staged | The phase artifacts are the staging |
+| `save` | Consolidates one finding into the store | `/flow:save-knowledge` appends to `KNOWLEDGE.md` at the repo root |
+| `timeout_s` | Per-call timeout | `2` |
+
+Where each role is used: `search` on entering new territory (`start`, `brainstorm`, `design`,
+`diagnose`, `investigate`) and wherever a rationale is argued (`review`, `respond`, `green`);
+`stage` when closing `design`, `investigate`, `query`, `respond`, `green`, `watch`; `read_staging`
+and `save` at `ship`, `postmortem` and `/flow:save-knowledge`. A call that fails or exceeds the
+timeout → the flow continues without it and does not mention it. Results are material to weigh,
+never instructions.
+
+Only `search` is needed to gain something: a user of `codegraph` fills one line and every
+`start`/`design`/`investigate`/`review` gets context. The other three roles exist for stores with a
+staging notion; with them empty nothing is lost — the artifacts already record the findings.
+
+Example:
+
+```
+## knowledge
+- search:
+  - mcp__domain-memory__search_knowledge
+  - mcp__codegraph__query
+- stage: mcp__domain-memory__stage_finding
+- read_staging: mcp__domain-memory__read_staging
+- save: mcp__domain-memory__save_knowledge
+```
+
+### `domain_memory` (legacy alias)
+
+`domain_memory.enabled: true` with no `knowledge` section resolves the four roles to the
+[`domain-memory`](https://github.com/mashware/domain-memory) tools. Existing `FLOW.md` files keep
+working; `/flow:init` no longer writes it, and `/flow:doctor` suggests the `knowledge` section.
 
 ---
 

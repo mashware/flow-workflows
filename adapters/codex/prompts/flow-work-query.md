@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `review`.**
 
@@ -123,7 +123,7 @@ Per query, exactly one of:
 
 - **Inside a phase** (work folder exists): queries table and verdicts go into that phase's artifact — `06-review.md` (review duel), `08-feedback.md` (`respond` round), `05-implementation.md` (query written during build), `07-validation.md` (measured criterion). A `change` enters the calling phase's normal flow: a review blocker like any other.
 - **Standalone** (no work folder, or ad hoc): verdict in chat; an expensive measurement goes to `.claude/work/<work>/06-review.md` when a work exists, else offer to keep it as a note where the user wants.
-- **domain-memory.** `domain_memory.enabled` is `true` and the duel produced a durable, non-obvious fact about this project's data (collation mismatch, real size of a hot table, index that cannot serve the obvious order, shape measurably faster here) → `stage_finding` it for this branch.
+- **Knowledge.** `knowledge.stage` is set and the duel produced a durable, non-obvious fact about this project's data (collation mismatch, real size of a hot table, index that cannot serve the obvious order, shape measurably faster here) → `knowledge.stage` it for this branch.
 
 ## Notes
 

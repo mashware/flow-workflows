@@ -15,7 +15,7 @@ How each Claude Code-specific primitive maps to the Codex CLI adapter, and what 
 | `ScheduleWakeup` (watch autopilot) | Re-wake in N min within the current session | **Does not exist in Codex CLI**. See "What does NOT port 1:1" below. |
 | Parallel fan-out | N subagents in one round + synthesis by the main agent | **Ports directly** — the plugin describes fan-out as parallel subagents, and Codex supports multiple simultaneous subagents in the same response. Cap the round at `agents.fanout_max` from FLOW.md (empty → 4); leave `agents.fanout_tool` empty, it names a harness-specific orchestrator Codex does not have. |
 | `Skill commit-commands:commit-push-pr` | Create commit + push + MR/PR | Manual sequence: `git add`, `git commit`, `git push -u origin HEAD`, and the `git.cli` CLI from FLOW.md (e.g. `glab mr create` or `gh pr create`). |
-| `Skill save-knowledge` | Consolidate domain-memory findings | `/flow-save-knowledge` from this adapter. |
+| `Skill save-knowledge` | Consolidate the branch's knowledge findings | `/flow-save-knowledge` from this adapter. |
 | `Skill flow:flow-core` | Load the shared rules once per session | **Read `~/.claude/flow/CORE.codex.md`** — `install.sh` puts it there from `CORE.md`. |
 | `/model <value>` | Switch the session's model | The `--model` flag at launch (or `/model` if your Codex version has it). Reported, not enforced — see `models` below. |
 | `mcp__domain-memory__<tool>` | Call the domain-memory MCP | The **same MCP server** (same tool name). Only the configuration changes: in Claude Code it's referenced from `.mcp.json`; in Codex it's declared in `~/.codex/config.toml` under `[mcp_servers.domain-memory]`. See `config.snippet.toml`. |

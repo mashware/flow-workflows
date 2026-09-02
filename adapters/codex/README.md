@@ -91,7 +91,7 @@ cp /path/to/adapters/codex/AGENTS.md /root/of/your/repo/AGENTS.md
 ## Dependencies
 
 - **Codex CLI** installed and configured with your OpenAI API key.
-- **domain-memory MCP** installed if you want `domain_memory.enabled: true` in FLOW.md. Project: https://github.com/mashware/domain-memory
+- **domain-memory MCP** installed if you name its tools in the `knowledge` section of FLOW.md. Project: https://github.com/mashware/domain-memory
 - **git CLI** configured (`glab`, `gh`, or other per `git.cli` in FLOW.md) to create MRs/PRs from the terminal.
 
 ## Differences from the original plugin (Claude Code)

@@ -116,7 +116,7 @@ Per query, exactly one of:
 
 - **Inside a phase** (work folder exists): queries table and verdicts go into that phase's artifact — `06-review.md` (review duel), `08-feedback.md` (`respond` round), `05-implementation.md` (query written during build), `07-validation.md` (measured criterion). A `change` enters the calling phase's normal flow: a review blocker like any other.
 - **Standalone** (no work folder, or ad hoc): verdict in chat; an expensive measurement goes to `.claude/work/<work>/06-review.md` when a work exists, else offer to keep it as a note where the user wants.
-- **domain-memory.** `domain_memory.enabled` is `true` and the duel produced a durable, non-obvious fact about this project's data (collation mismatch, real size of a hot table, index that cannot serve the obvious order, shape measurably faster here) → `stage_finding` it for this branch.
+- **Knowledge.** `knowledge.stage` is set and the duel produced a durable, non-obvious fact about this project's data (collation mismatch, real size of a hot table, index that cannot serve the obvious order, shape measurably faster here) → `knowledge.stage` it for this branch.
 
 ## Notes
 

@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session.
 

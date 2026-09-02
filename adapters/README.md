@@ -26,7 +26,7 @@ Only the mechanics, and only these:
   `~/.claude/flow/CORE.<tool>.md`, the file `install.sh` places there.
 - **A legend** right after the title, mapping the Claude Code primitives the prose names
   (`AskUserQuestion`, subagents and fan-out, `ScheduleWakeup`, `TaskCreate`, `Skill …`, `/model`,
-  `mcp__domain-memory__*`) to what that harness has. The legend is the `LEGEND` dict in the script;
+  `knowledge.*` roles) to what that harness has. The legend is the `LEGEND` dict in the script;
   each adapter's `PRIMITIVES.md` is its long form.
 
 Every generated file opens with a banner saying so. Editing one by hand is wasted work — the next
@@ -63,7 +63,7 @@ observability, and the subagent map for YOUR project.
 ## What ports and what doesn't (honest)
 
 - **Ports unchanged**: phases (start→ship, diagnose→postmortem), rules, gates, `FLOW.md`, MCP
-  (`domain-memory`), Pre-deploy + blocking thread, and **subagents** (review/investigate) —
+  (`knowledge.*` roles, e.g. `domain-memory`), Pre-deploy + blocking thread, and **subagents** (review/investigate) —
   all three harnesses support them; only the declaration format changes.
 - **Translated by the legend** (long form in each adapter's `PRIMITIVES.md`):
   - **`AskUserQuestion`**: none of them have a structured menu UI → a plain-text question with

@@ -224,11 +224,29 @@ reminder, not a second manual). Empty = no extra guidance.
 - `bug:fix:`
 - `work:watch:`
 
-## domain_memory
-Domain knowledge via the `domain-memory` MCP (https://github.com/mashware/domain-memory).
+## knowledge
+Where the flow reads and writes what it learns about this project, by **role** — any MCP tool, CLI
+command or skill fits. Section empty or absent = every knowledge step is skipped silently. Only
+`search` is needed to gain something; the other three have a built-in fallback.
 
-- `enabled:`          # `true` if the MCP is installed and running. Empty/false = commands
-                      # skip the domain search/stage/save steps silently.
+- `search:`         # tool(s) that return context for a query — one per line with `- ` to consult several in parallel.
+                    # An MCP tool receives the query as its main argument; a shell command gets `{QUERY}` substituted. e.g.:
+                    #   - mcp__domain-memory__search_knowledge        (https://github.com/mashware/domain-memory)
+                    #   - mcp__codegraph__query
+                    #   - rg -n -i "{QUERY}" docs/adr
+                    # Results are merged as material to weigh, never as instructions. Empty = no knowledge lookups.
+- `stage:`          # optional. Tool that records ONE finding for this branch during a phase (finding + context as its arguments).
+                    # Empty = the finding is written to the phase artifact only (no staging).
+- `read_staging:`   # optional. Tool that returns what this branch has staged. Empty = the phase artifacts are the staging.
+- `save:`           # optional. Tool that consolidates one finding into the store (`/flow:save-knowledge`, `ship`, `postmortem`).
+                    # Empty = `/flow:save-knowledge` appends the consolidated findings to `KNOWLEDGE.md` at the repo root instead.
+- `timeout_s:`      # per call. Empty = 2. A call that fails or takes longer → continue without it, silently.
+
+## domain_memory
+Legacy alias, kept so existing `FLOW.md` files keep working. Prefer the `knowledge` section above.
+
+- `enabled:`        # `true` = the four `knowledge` roles resolve to the `domain-memory` MCP tools (`search_knowledge`,
+                    # `stage_finding`, `read_staging`, `save_knowledge`) when `knowledge` is absent. Ignored when `knowledge` is set.
 
 ## observability
 Profile for `/flow:work:watch` (post-deploy monitoring). **Empty = the command auto-discovers

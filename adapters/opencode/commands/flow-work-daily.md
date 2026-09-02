@@ -14,11 +14,11 @@ description: Your work assistant — a Scrum-style daily standup across all your
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → opencode's model picker (`/models`).
-> - `mcp__domain-memory__*` → same tool names; server declared in `opencode.json` (see `opencode.json` in this adapter).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
 Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session.
 
-External sources (tracker, forge, `domain_memory`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
+External sources (tracker, forge, `knowledge`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
 
 Your **work assistant**: a Scrum-style daily standup — *"what was I working on?"*, *"what's left?"*, *"what should I pick up today?"* — from three sources: **local** work state, the **forge** (open MRs/PRs, reviews, CI), the **tracker** (assigned/re-prioritized tickets). Unlike `/flow-work-status` (technical table) and `/flow-work-resume` (one branch), a cross-cutting narrative briefing.
 

@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Creates or updates `FLOW.md` at the repo root — the configuration every other `/flow-*` command
 reads. The user answers the **minimum**: what the repo can tell is auto-detected and only confirmed.
@@ -42,7 +42,7 @@ Run, deduce, show what was found for confirmation or correction:
   - `pyproject.toml`/`tox.ini` → pytest/ruff/mypy; `Cargo.toml` → `cargo test/clippy`; `go.mod` → `go test ./...`.
   - Schema migrations (Doctrine, Alembic, Rails, Prisma…) → propose `quality.db_diff` and raise `git.predeploy_gate`.
 - **Data access** (`data.*`, all optional) — only if the repo talks to a database. Find the client and the local stack (a `docker-compose.yml` service, a `DATABASE_URL`/`DB_*` env var, a `Makefile` target that opens a shell). Propose `data.explain_cmd` and `data.schema_cmd` in the engine's dialect against the **development** database — MySQL over Docker Compose: `docker compose exec -T <db-service> mysql <db> -e "EXPLAIN {QUERY}"` and `… -e "SHOW CREATE TABLE {TABLE}"`; PostgreSQL: `psql -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"` / `\d+ {TABLE}`. Leave `sandbox_cmd`/`seed_cmd`/`volumes` empty unless the user has something ready. Nothing detected → leave the section out (the query duel degrades to schema-only and says so).
-- **domain-memory** — the `domain-memory` MCP is available in this session → `domain_memory.enabled: true`; else empty.
+- **Knowledge sources** (`knowledge.*`) — look at the MCP tools exposed in this session: `mcp__domain-memory__*` → propose `search: mcp__domain-memory__search_knowledge`, `stage: mcp__domain-memory__stage_finding`, `read_staging: mcp__domain-memory__read_staging`, `save: mcp__domain-memory__save_knowledge`; any other tool whose name says search / query / knowledge / memory / graph (e.g. `mcp__codegraph__*`) → propose it as an additional `search` entry, roles it cannot fill left empty. A `docs/adr` or similar folder with no MCP → propose `search: rg -n -i "{QUERY}" docs/adr`. Nothing found → leave the section out. Never write `domain_memory.enabled` — it is the legacy alias.
 
 ## 3. Ask only what cannot be inferred
 
@@ -75,7 +75,7 @@ empty → auto-discover / skip this". §2's detections are the defaults; the use
 Write a **compact** file at the repo root — every command reads it in every phase, so its size is paid on every step:
 
 - Two-line header: what the file is, and that the plugin's `examples/FLOW.template.md` documents every key and default.
-- Sections in the template's order — tracker, git, autonomy, quality, agents, models, data, conventions, notes, domain_memory, observability — but **only the sections and keys that have a value**. One line per key: `- key: value`. No template comments.
+- Sections in the template's order — tracker, git, autonomy, quality, agents, models, data, conventions, notes, knowledge, observability — but **only the sections and keys that have a value**. One line per key: `- key: value`. No template comments.
 - Empty keys are omitted entirely (absent = default, same as empty; each command degrades gracefully). A section with no set key is omitted too.
 - No `review` section: the panel is configured by `quality.review_depth`, `quality.review_skill` and `quality.reviewers`.
 - In doubt about a key or its default → read the template, never reproduce it from here.

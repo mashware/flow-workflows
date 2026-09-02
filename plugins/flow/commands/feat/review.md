@@ -102,7 +102,7 @@ Verdicts as findings: **change** = blocker, through §6; **schema / follow-up** 
 2. **Find its row** in the "Defensive mechanisms and their justification" table in `03-design.md`.
    - **No row** → blocker (slipped past the design filter). Ask: what real and present scenario in the project justifies it?
    - **Row with a hypothetical scenario** ("just in case", "it could happen that…", "in the future") → blocker of type "unnecessary".
-3. **Verify the scenario against the code, not paper**: can the flow reach that state? Does an upstream already prevent it? A quota/constraint already bound it? Is it redundant with something existing? If `domain_memory.enabled` is `true`, query `mcp__domain-memory__search_knowledge` when the scenario depends on domain rules.
+3. **Verify the scenario against the code, not paper**: can the flow reach that state? Does an upstream already prevent it? A quota/constraint already bound it? Is it redundant with something existing? If `knowledge.search` is set, query it when the scenario depends on domain rules.
 4. **Key question per piece**: *"if I remove this, what breaks in the project — today, not in a hypothetical future?"*. Honest answer "nothing that can really happen" → over-engineering finding.
 
 "Unnecessary" findings go to Blockers with a concrete proposal: "remove X — protects against Y, which cannot happen because Z (evidence)".

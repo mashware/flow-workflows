@@ -14,7 +14,7 @@ description: Start a new feature (read the tracker, classify size, create branch
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → opencode's model picker (`/models`).
-> - `mcp__domain-memory__*` → same tool names; server declared in `opencode.json` (see `opencode.json` in this adapter).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
 Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `study`.**
 
@@ -41,7 +41,7 @@ Derive the slug **once** — after the title is known (§2), or in §2.5.2 — a
 **In parallel**:
 
 1. **Tracker** *(ticket mode only)*: `tracker.tool` not `none` → read the ticket with `tracker.view_cmd` (`{TICKET}` substituted): title, description, acceptance criteria. **Read it whole, comment thread included — §2.1.** `tool` `none`/empty or command fails → ask the user to paste the ticket and continue. Ticket-less → skip; §2.5 supplies title/description/criteria.
-2. **domain-memory**: `domain_memory.enabled` `true` → `domain-memory` MCP `search_knowledge` with the ticket title and keywords. No answer in 2 s or failure → continue without it.
+2. **Knowledge search**: `knowledge.search` set → `knowledge.search` with the ticket title and keywords. No answer in 2 s or failure → continue without it.
 3. **Git**: check you are on a clean branch. Uncommitted changes → warn, do not block.
 
 ### 2.1 The whole ticket means the comment thread too
@@ -98,7 +98,7 @@ Record for `meta.json` (§6): `draft_from_conversation: true`, `tracker_issue` =
 
 ## 3. Clarify ticket gaps
 
-Before classifying size, list open questions affecting the design that neither the ticket (description **and** thread, §2.1) nor `domain-memory` resolves. Typical:
+Before classifying size, list open questions affecting the design that neither the ticket (description **and** thread, §2.1) nor the knowledge search resolves. Typical:
 
 - Different plan or access types.
 - Locales, countries or languages with different rules.
@@ -254,7 +254,7 @@ Structure:
 <from §2.1, ticket mode only. One bullet per comment that changes the work — `<author>, <date>: <what was decided>` — and, when a comment overrides the description, say which part it overrides. `"empty thread"` if there were no comments; the §2.1 one-liner if they could not be read (never leave this blank as if the thread had been read and was empty). Omit the section in ticket-less mode.>
 
 ## Relevant domain knowledge
-<domain-memory hits with one bullet per finding, or "no findings">
+<knowledge search hits with one bullet per finding, or "no findings">
 
 ## Contracts received
 <only if §3.6 applied. Either the contract block copied verbatim from the other side (with its source), or the one-line note that another repo is referenced and no contract was published. Omit the whole section when there is no cross-repo signal.>

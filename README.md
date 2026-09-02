@@ -80,7 +80,7 @@ size prunes:  XS  start → build → review → ship     S  + design (abridged)
 | `/flow:work:try` | Point the main checkout at a branch to test it (then `--back`) |
 | `/flow:work:clean` | Sweep merged worktrees, dead branches, unarchived folders. Never deletes on a guess |
 | `/flow:work:abandon` | Close a work item without shipping |
-| `/flow:save-knowledge` | Consolidate the branch's findings into `domain-memory` |
+| `/flow:save-knowledge` | Consolidate the branch's findings into the knowledge store (`knowledge.save`, or `KNOWLEDGE.md`) |
 | `/flow:news` | What changed in the plugin since the version you last saw |
 
 ## Autonomy
@@ -144,7 +144,7 @@ One file at the repo root describes your conventions. Anything left empty is aut
 | `data` | How to read a query's execution plan and the real size of the hot tables |
 | `conventions` | Rules the code must respect |
 | `notes` | Extra mandatory instructions per command |
-| `domain_memory` | Whether the [`domain-memory`](https://github.com/mashware/domain-memory) MCP is available |
+| `knowledge` | Knowledge sources by role — `search`, `stage`, `read_staging`, `save` — any MCP ([`domain-memory`](https://github.com/mashware/domain-memory), `codegraph`…), CLI or skill |
 | `observability` | The profile `/flow:work:watch` monitors after a deploy |
 
 `/flow:init` writes a compact `FLOW.md` with only the keys you set, and offers to git-ignore `FLOW.md` and `.claude/work/`. It is personal config, not team config ([why](docs/PHILOSOPHY.md#personal-config-not-team-config)). Reference: [CONFIGURATION](docs/CONFIGURATION.md).
@@ -210,7 +210,7 @@ CI runs the same four on every PR. The preflight refuses what has shipped broken
 
 ## What it does not ship (on purpose)
 
-No agents and no review skill — those are stack-specific; you name yours in `FLOW.md`. Two generic hooks ship: a guard against pushing to `master`/`main`, and an update notice at session start. Optional dependencies (`domain-memory`, your git host CLI, a tracker CLI) improve specific steps; without them those steps degrade and the rest works.
+No agents and no review skill — those are stack-specific; you name yours in `FLOW.md`. Two generic hooks ship: a guard against pushing to `master`/`main`, and an update notice at session start. Optional dependencies (a knowledge source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific steps; without them those steps degrade and the rest works.
 
 ## License
 

@@ -14,9 +14,9 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 - If `type` is not `bug`, refuse.
 - If `size` is `XS`, suggest skipping to `/flow:bug:fix` and stop.
 
-## 2. Focused domain-memory query
+## 2. Focused knowledge query
 
-If `domain_memory.enabled`: 2-3 `mcp__domain-memory__search_knowledge` queries in parallel about the **suspected component** (handler, worker, endpoint, module) — the same root cause may have appeared under a different symptom. Maximum wait 2 s; continue on failure.
+`knowledge.search` set → 2-3 `knowledge.search` queries in parallel about the **suspected component** (handler, worker, endpoint, module) — the same root cause may have appeared under a different symptom. Maximum wait 2 s; continue on failure.
 
 - Dead-letter queue → `"DLX <handler-name>"`, `"retry policy worker"`.
 - Endpoint → `"endpoint <path>"`, `"validation <DTO>"`.

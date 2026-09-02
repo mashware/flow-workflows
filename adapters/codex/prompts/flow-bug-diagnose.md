@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Diagnosis phase: isolate **what** is failing before looking for **why**.
 
@@ -22,9 +22,9 @@ Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already rea
 - If `type` is not `bug`, refuse.
 - If `size` is `XS`, suggest skipping to `/flow-bug-fix` and stop.
 
-## 2. Focused domain-memory query
+## 2. Focused knowledge query
 
-If `domain_memory.enabled`: 2-3 `mcp__domain-memory__search_knowledge` queries in parallel about the **suspected component** (handler, worker, endpoint, module) — the same root cause may have appeared under a different symptom. Maximum wait 2 s; continue on failure.
+`knowledge.search` set → 2-3 `knowledge.search` queries in parallel about the **suspected component** (handler, worker, endpoint, module) — the same root cause may have appeared under a different symptom. Maximum wait 2 s; continue on failure.
 
 - Dead-letter queue → `"DLX <handler-name>"`, `"retry policy worker"`.
 - Endpoint → `"endpoint <path>"`, `"validation <DTO>"`.

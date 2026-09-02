@@ -55,7 +55,7 @@ cp settings.snippet.json ~/.gemini/settings.json
 #   }
 ```
 
-If you do not want to use `domain-memory`, you can skip this step. The commands check `domain_memory.enabled` in `FLOW.md` and degrade silently if the MCP is not available.
+If you do not want to use `domain-memory`, you can skip this step. The commands read the `knowledge.*` roles in `FLOW.md` and degrade silently when a tool is not available.
 
 ### 3. Create FLOW.md in the repo
 
@@ -65,7 +65,7 @@ All commands read `FLOW.md` at the repo root in their step 0. Without it, each c
 cp ../../plugins/flow/examples/FLOW.template.md ./FLOW.md
 ```
 
-Key fields to fill in: `tracker`, `git.default_base`, `git.branch_pattern`, `git.request_term`, `git.cli`, `quality.*`, `conventions`, `agents.*`, `domain_memory.enabled`.
+Key fields to fill in: `tracker`, `git.default_base`, `git.branch_pattern`, `git.request_term`, `git.cli`, `quality.*`, `conventions`, `agents.*`, `knowledge.*`.
 
 ---
 

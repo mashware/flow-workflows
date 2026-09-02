@@ -1,5 +1,5 @@
 ---
-description: Start the bug flow (tracker, domain-memory, size, branch, initial artifact)
+description: Start the bug flow (tracker, knowledge, size, branch, initial artifact)
 argument-hint: "[TICKET]  (empty: draft the incident from this conversation)"
 ---
 
@@ -30,7 +30,7 @@ Derive the slug **once** — after the symptom is known (§1), or in §1.5.2 —
 In parallel:
 
 1. **Tracker** *(ticket mode only)*: read it with `tracker.view_cmd` from FLOW.md (`{TICKET}` = `$ARGUMENTS`). **Read it whole, comment thread included — §1.1.** If `tool:none` or the key is missing, ask the user for symptom, severity and environment. **Ticket-less mode: skip — §1.5 is the source of symptom/severity/environment.**
-2. **domain-memory** (if `domain_memory.enabled`): `search_knowledge` with keywords from the symptom — detect previous postmortems in the same area.
+2. **Knowledge search** (if `knowledge.search` is set): `knowledge.search` with keywords from the symptom — detect previous postmortems in the same area.
 3. **Observability**, if the incident is recent and you have clues (service, trace, log): the MCP tools of `observability.platform` from FLOW.md. Do not force it.
 4. **Git**: check clean branch and commit base.
 
@@ -169,7 +169,7 @@ Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one 
 ## Decided in the ticket thread
 <from §1.1, ticket mode only. One bullet per comment that changes the work — `<author>, <date>: <reproduction / cause ruled out / decision>` — plus any contract or change published from a sibling repo, copied verbatim with its source. `"empty thread"` if there were no comments; the §1.1 one-liner if they could not be read. Omit in ticket-less mode.>
 
-## Prior knowledge (domain-memory)
+## Prior knowledge
 <findings or "no findings">
 
 ## Initial clues

@@ -5,6 +5,23 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.38.0 — The flow asked for one product where it needed a role  ·  2026-09-02
+
+**In short**
+- New `knowledge` section in `FLOW.md`: four roles (`search`, `stage`, `read_staging`, `save`) filled by any MCP tool, CLI or skill — domain-memory, codegraph, a search over `docs/adr`, or whatever comes next.
+- Every command names the role, never the product; an empty role degrades (no lookup · finding stays in the artifact · artifacts are the staging · `KNOWLEDGE.md` instead of a store).
+- `search` accepts several providers, consulted in parallel; `knowledge.timeout_s` replaces the fixed 2 s.
+- `domain_memory.enabled: true` keeps working as a legacy alias; `/flow:init` detects knowledge MCPs and proposes the mapping; `/flow:doctor` and `/flow:config` resolve the roles.
+- `/flow:save-knowledge` works without a store: it appends to `KNOWLEDGE.md` at the repo root.
+
+**Twenty-one commands named `mcp__domain-memory__*` by hand.** The flow only ever needed four operations from a knowledge store — look something up, note a finding, read what was noted, consolidate it — and one product's tool names were written into every step that used them, gated by one boolean. A team on `codegraph`, or on a memory server that does not exist yet, had nothing to fill in. The `knowledge` section names a tool per role, the commands say `knowledge.search` where they said the tool, and the resolution rules live once in flow-core §0.
+
+**Only `search` buys anything on its own.** The other three roles exist for stores with a staging notion. With them empty nothing is lost: the finding that would have been staged is already in the phase artifact, `ship` and `postmortem` read the artifacts, and `/flow:save-knowledge` appends to `KNOWLEDGE.md` (asking once before creating the file, in every mode). `search` takes a list, so a repo can consult domain-memory for the business and codegraph for the structure in the same call.
+
+**Nothing existing breaks.** `domain_memory.enabled: true` with no `knowledge` section resolves the four roles to the domain-memory tools, and the template keeps the key under a "legacy alias" heading. `/flow:init` stops writing it: it looks at the MCP tools exposed in the session, proposes the domain-memory mapping when those are there, any other search/knowledge/memory/graph tool as an extra `search` entry, and a `rg` over `docs/adr` when there is a folder and no MCP. `/flow:doctor` checks each configured role is reachable this session and suggests the new section when it finds the alias.
+
+Mirrored across the opencode, Gemini CLI and Codex adapters by the generator; the legend line about the MCP now speaks of `knowledge.*` roles.
+
 ## v0.37.0 — The same rules were copied eighteen times, and the mirrors by hand  ·  2026-09-02
 
 **In short**

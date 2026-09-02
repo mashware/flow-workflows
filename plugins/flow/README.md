@@ -8,7 +8,7 @@ review, quarantine of untrusted input, adversarial verification, human gate befo
 ## Configuration: `FLOW.md`
 
 The easiest path: run **`/flow:init`**, which auto-detects what it can from the repo (git host,
-base branch, test commands, whether migrations exist, whether `domain-memory` is active) and
+base branch, test commands, whether migrations exist, which knowledge MCPs are exposed) and
 writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
 `examples/FLOW.template.md` to the repo root. Commands read it in their step 0. It covers:
 
@@ -21,7 +21,7 @@ writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
 - **data**: how to get a query's execution plan and a table's real schema, plus the volumes of the hot tables — what the query duel needs to judge a query on its plan instead of on an argument. Empty = the duel runs on the schema alone and says what it could not prove.
 - **conventions**: code conventions the commands must respect (free text).
 - **notes**: per-command extra guidance, followed as mandatory additional instructions for that step.
-- **domain_memory**: whether the [`domain-memory`](https://github.com/mashware/domain-memory) MCP is active.
+- **knowledge**: the knowledge sources by role — `search`, `stage`, `read_staging`, `save` — any MCP ([`domain-memory`](https://github.com/mashware/domain-memory), `codegraph`…), CLI or skill; empty roles degrade silently. `domain_memory.enabled` is the legacy alias.
 - **observability**: profile for `work:watch` (services, platform, deploy detection, queues). Empty = auto-discover.
 
 `FLOW.md` is **personal config, not team config** — it mixes repo facts with your own preferences

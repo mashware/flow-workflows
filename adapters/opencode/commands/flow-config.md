@@ -14,7 +14,7 @@ description: Show this repo's effective FLOW.md config — what is set, what is 
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → opencode's model picker (`/models`).
-> - `mcp__domain-memory__*` → same tool names; server declared in `opencode.json` (see `opencode.json` in this adapter).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
 Read-only. Shows what the `/flow-*` commands will actually use in this repo. **Writes nothing** —
 to change the config use `/flow-init` or edit `FLOW.md`.
@@ -28,7 +28,7 @@ contract — do not invent keys, and do report keys documented there but absent 
 - Read `FLOW.md` at the repo root. Missing → say so, note that every command still works by
   auto-detecting/asking, suggest `/flow-init`, then run §2 treating **every** key as empty (all fallbacks).
 - Parse by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`, `conventions`,
-  `notes`, `domain_memory`, `observability`.
+  `notes`, `knowledge`, `observability`.
 
 ## 2. Effective config (per section)
 
@@ -40,6 +40,8 @@ For **every** documented key in `examples/FLOW.template.md`, one row:
   `agents.security` → "general-purpose with the role"; `git.worktree` → "off / in-place";
   `git.worktree_resync` → "`/flow-work-try` only switches, no re-sync"; `quality.review_depth` →
   "proportional" — the other depths are `light` and `full`). Never leave a reader guessing what an empty key does.
+
+For `knowledge`, print the four roles resolved with who decided each: the `knowledge` key, the legacy `domain_memory.enabled` alias, or empty with its fallback (`search` → no lookups; `stage` → artifact only; `read_staging` → artifacts; `save` → `KNOWLEDGE.md`).
 
 Group by section with a short header each, so it scans as a table; keep set-vs-empty visually
 distinct (e.g. `✓` vs `·`).

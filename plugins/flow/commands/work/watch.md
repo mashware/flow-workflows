@@ -26,7 +26,7 @@ If `observability` **is filled in**, extract:
 
 If `observability` **is empty or absent** → auto-discover everything in §3.
 
-If `domain_memory.enabled` is `true`, call `search_knowledge` with the ticket name before continuing.
+If `knowledge.search` is set, call `knowledge.search` with the ticket name before continuing.
 
 ## 1. Pre-flight and T0
 
@@ -159,7 +159,7 @@ Write the summary to `<work-dir>/monitor.md` (§1) and present it:
 
 Final verdict to `panel.json` too — `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and a `Now` line reading `nothing — the watch window is over`. On 🔴, a `Decision` line marked `wait` pointing at `/flow:bug:start`.
 
-`domain_memory.enabled` is `true` → `stage_finding` relevant findings (measured baselines, low-traffic signals, error patterns) for this branch's staging.
+`knowledge.stage` is set → `knowledge.stage` relevant findings (measured baselines, low-traffic signals, error patterns) for this branch's staging.
 
 ## Appendix: `observability` profile format in FLOW.md
 

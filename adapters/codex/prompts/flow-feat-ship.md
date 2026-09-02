@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
@@ -178,12 +178,12 @@ With the repo policy "all threads resolved before merge", the MR/PR cannot merge
 
 ## 5. Domain knowledge (offer)
 
-Only if `domain_memory.enabled` is `true` in `FLOW.md`; `false`/empty → skip without notifying. **Only if there is something non-obvious worth saving** (silence-by-default):
+Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip without notifying (the artifacts already hold the findings). **Only if there is something non-obvious worth saving** (silence-by-default):
 
-1. **Read the staging accumulated during the branch**: `mcp__domain-memory__read_staging` — what `/flow-feat-design` (and other phases) already staged. Main material.
+1. **Read the staging accumulated during the branch**: `knowledge.read_staging` (empty → what the artifacts recorded) — what `/flow-feat-design` (and other phases) already staged. Main material.
 2. **Review** `03-design.md`, `05-implementation.md`, `06-review.md` for "why" findings (domain decisions, legal constraints, integrations, business motivations) **not staged at the time**. The "what" (code, paths) is NOT saved.
 3. **Combine staging + new findings** into a short list. Empty or only code-derivable → do not insist.
-4. 1+ relevant findings → ask the user whether to consolidate. Yes → `Skill save-knowledge` (it does `read_staging` internally and orchestrates the save; you provide the context of what to consolidate). No → do not insist.
+4. 1+ relevant findings → ask the user whether to consolidate. Yes → `Skill save-knowledge` (it does `knowledge.read_staging` internally and orchestrates the save; you provide the context of what to consolidate). No → do not insist.
 
 ## 6. Close
 

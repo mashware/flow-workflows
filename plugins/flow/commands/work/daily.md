@@ -7,7 +7,7 @@ argument-hint: "[question]"
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
 
-External sources (tracker, forge, `domain_memory`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
+External sources (tracker, forge, `knowledge`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
 
 Your **work assistant**: a Scrum-style daily standup — *"what was I working on?"*, *"what's left?"*, *"what should I pick up today?"* — from three sources: **local** work state, the **forge** (open MRs/PRs, reviews, CI), the **tracker** (assigned/re-prioritized tickets). Unlike `/flow:work:status` (technical table) and `/flow:work:resume` (one branch), a cross-cutting narrative briefing.
 

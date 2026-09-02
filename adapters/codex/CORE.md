@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Every `/flow-*` command assumes these rules. They are stated once, here, so a command file only
 carries what is specific to its phase. Read this once per session; a command that says "load
@@ -19,10 +19,18 @@ carries what is specific to its phase. Read this once per session; a command tha
 ## 0. `FLOW.md` — the repo's configuration
 
 - Read `FLOW.md` at the repo root (tracker, git, autonomy, quality, agents, models, data,
-  conventions, notes, domain_memory, observability). Missing file or empty key → the default or
+  conventions, notes, knowledge, observability). Missing file or empty key → the default or
   the auto-discovery each step names. Never stop because a key is empty.
-- `domain_memory.enabled: true` → use the `domain-memory` MCP where a step says so. If it fails or
-  takes longer than 2 s, continue without it, silently.
+- **Knowledge sources, by role** (`knowledge` section): `search` (one or more tools or commands
+  that return context for a query — all consulted in parallel, results merged as material to weigh),
+  `stage` (record one finding for this branch), `read_staging` (what this branch staged), `save`
+  (consolidate into the store). A step names the role, never a product. Missing role → that step
+  degrades: no `search` → skip the lookup silently; no `stage` → the finding goes to the phase
+  artifact only; no `read_staging` → the artifacts are the staging; no `save` →
+  `/flow-save-knowledge` appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
+  `knowledge.timeout_s` (empty = 2 s); a failure or timeout → continue without it, silently.
+  Legacy: `domain_memory.enabled: true` with no `knowledge` section resolves the four roles to the
+  `domain-memory` MCP tools.
 - `notes.<command>` (or `notes.all`) → mandatory extra instructions for that command.
 - Key names and defaults: the template shipped with the plugin (`examples/FLOW.template.md`).
 
@@ -61,7 +69,7 @@ When set:
 base) — see the command.
 
 Rule of thumb for everything else: ask only when a decision is (a) irreversible or costly to undo,
-(b) ambiguous and not resolved by ticket + domain-memory, or (c) a hard gate. Otherwise take the
+(b) ambiguous and not resolved by ticket + knowledge search, or (c) a hard gate. Otherwise take the
 sensible default and record it.
 
 **Never a question in `guided`/`auto` — decide, record, continue:**

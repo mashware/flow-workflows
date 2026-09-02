@@ -13,7 +13,7 @@ Cross-cutting (`feat` or `bug` MR/PR alike), repeatable (one invocation per revi
 
 ## 0. Step 0 — read FLOW.md
 
-Extract from `git`: `host` (`gitlab`|`github`), `cli` (`glab`|`gh`; empty → inferred from `host`), `request_term` (`MR`|`PR`), `assignee`. From `tracker`: `tool` and `prefix`. From `quality`: `review_skill` (§6, non-trivial rounds). If `domain_memory.enabled` is `true`, `search_knowledge` runs in §3.
+Extract from `git`: `host` (`gitlab`|`github`), `cli` (`glab`|`gh`; empty → inferred from `host`), `request_term` (`MR`|`PR`), `assignee`. From `tracker`: `tool` and `prefix`. From `quality`: `review_skill` (§6, non-trivial rounds). If `knowledge.search` is set, `knowledge.search` runs in §3.
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
 
@@ -23,7 +23,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 3. Creating/switching a branch, or DB schema changes/migrations, when an agreed change requires them.
 4. **Resolving a thread — never do it automatically in any mode.**
 
-Everything else: take the sensible default and record it; ask only when irreversible/costly, ambiguous and not settled by ticket + design + domain-memory, or a hard gate.
+Everything else: take the sensible default and record it; ask only when irreversible/costly, ambiguous and not settled by ticket + design + knowledge search, or a hard gate.
 
 ## 1. Pre-flight — locate the work and the MR/PR
 
@@ -56,7 +56,7 @@ Per thread capture: **id**, **location** (file:line or "general"), **author**, t
 
 ## 3. Triage each thread
 
-Classify every open thread into one category. For debate/technical threads **pull the recorded "why"**: `03-design.md` (ADR-light and "Challenges"), `05-implementation.md`/`04-fix.md` (logged deviations), and, if `domain_memory.enabled`, `search_knowledge` on the affected module/concept. Answer "why did you do X?" from the recorded rationale, not by re-deriving it.
+Classify every open thread into one category. For debate/technical threads **pull the recorded "why"**: `03-design.md` (ADR-light and "Challenges"), `05-implementation.md`/`04-fix.md` (logged deviations), and, if `knowledge.search` is set, `knowledge.search` on the affected module/concept. Answer "why did you do X?" from the recorded rationale, not by re-deriving it.
 
 Categories:
 
@@ -78,7 +78,7 @@ Draft each response and **decide the stance honestly** — neither reflexively a
 
 - **A / F** — draft the answer (cite code/design where useful).
 - **B / C** — confirm the change is right; note the exact edit for §6. If you **disagree** with a nitpick, draft the push-back with the reason (a nitpick is not automatically correct).
-- **D (debate)** — position **grounded in the recorded rationale** (design ADR-light, challenges, domain-memory). Two honest outcomes:
+- **D (debate)** — position **grounded in the recorded rationale** (design ADR-light, challenges, knowledge search). Two honest outcomes:
   - **Reviewer is right and it changes the design** → say so. If the agreed change contradicts `03-design.md`, flag a *design invalidation*: update the design artifact **before** coding (§6); if large, recommend routing it back through `/flow:feat:build` (or `/flow:bug:fix`) rather than an in-review patch.
   - **You hold your ground** → argue from the why (constraint, YAGNI/fit reasoning, domain fact); state the reason and invite a counter — never just assert.
 - **E** — draft the deferral: why out of this MR/PR's scope; propose a follow-up ticket (offer to note it; do not create trackers silently).
@@ -150,7 +150,7 @@ After the push (or immediately, for reply-only threads), post the agreed respons
 ## 8. Log, loop, and domain knowledge
 
 - **Artifact.** Append this round to `.claude/work/<TICKET>/08-feedback.md` (create it the first round). Per round: the date, and per thread — location, category, decision (reply-only / code-change / defer / held / handled-by-user), the reply posted, and the commit/edit if any. **For a `G` thread, the measurement table goes in whole** — variants, plans, timings, keys served, how the data set was built — plus what stayed unresolved. A later round reads it to avoid re-litigating settled threads.
-- **domain-memory.** `domain_memory.enabled` is `true` and the debate produced a non-obvious "why" worth keeping (a reviewer-surfaced constraint, an integration gotcha, a decision that reversed the design) → `stage_finding` for this branch (silence by default; only on a clear signal). Consolidated at `save_knowledge` time.
+- **Knowledge.** `knowledge.stage` is set and the debate produced a non-obvious "why" worth keeping (a reviewer-surfaced constraint, an integration gotcha, a decision that reversed the design) → `knowledge.stage` for this branch (silence by default; only on a clear signal). Consolidated at `knowledge.save` time.
 - **Count the round in the artifact, not in your head.** Increment `respond_rounds` for this MR/PR in `meta.json` (its `mrs[]` entry; work-level when there are no `mrs`) in the same write that appends the round to `08-feedback.md` — the §1 ceiling is worth exactly as much as this counter. Lightweight mode: nothing to write, no ceiling to enforce; say so once and carry on.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5). Not in lightweight mode.
 - **A repeated answer spends the budget and buys nothing.** A reply this round that says what an earlier round said — same position, same reasoning, no new evidence → stop **now**, before the ceiling, and escalate that thread by name: your position, the reviewer's counter, the fact that neither has moved.
@@ -159,4 +159,4 @@ After the push (or immediately, for reply-only threads), post the agreed respons
 ## Notes
 
 - **Scope boundary vs the personal `resolve-mr` skill.** A private, host-specific skill that only *implements* code from review comments is superseded generically: this command adds triage, debate, reply loop and artifact — and, like it, **never resolves threads**. If the user prefers that skill for the code-edit step, §6 can defer to it; the rest is unchanged.
-- **No FLOW.md keys of its own.** Reuses `git.*`, `tracker.*`, `quality.review_skill`, `autonomy.mode`, `domain_memory.*`, and — through `/flow:work:query` in §4.G — the optional `data.*` section. With `data.*` empty it still runs: answers what the schema proves, declares the rest unverified.
+- **No FLOW.md keys of its own.** Reuses `git.*`, `tracker.*`, `quality.review_skill`, `autonomy.mode`, `knowledge.*`, and — through `/flow:work:query` in §4.G — the optional `data.*` section. With `data.*` empty it still runs: answers what the schema proves, declares the rest unverified.

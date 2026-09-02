@@ -13,7 +13,7 @@
 | Parallel fan-out | N subagents in one round, main agent synthesizes | **Ports directly** — the plugin describes the fan-out as parallel subagents, not as a Claude Code tool. Invoke them with `@name` from `.gemini/agents/`; with no sub-agents configured, run the round sequentially in the same context (same rounds, same briefs, more wall-clock). Respect `agents.fanout_max` from FLOW.md (empty → 4) and leave `agents.fanout_tool` empty: it names a harness-specific orchestrator that Gemini CLI does not have. The fan-out points are `/flow:feat:brainstorm` §3.A, `/flow:bug:investigate` §3.A and `/flow:feat:review`/`/flow:bug:review`. |
 | `Agent <role>` / `Agent general-purpose` | Delegate isolated work to a sub-agent of a specific type | `@name` where `name` comes from the `agents.<role>` map in FLOW.md. If the field is empty or the agent does not exist in `.gemini/agents/`, the conductor performs the task in the same context. |
 | `Skill commit-commands:commit-push-pr` | Create commit + push + open MR/PR | Run directly: `git add`, `git commit`, `git push -u origin HEAD`, and the `git.cli` CLI from FLOW.md (e.g. `glab mr create` or `gh pr create`). |
-| `Skill save-knowledge` | Consolidate domain-memory findings | Run the `/flow:save-knowledge` command from this adapter. |
+| `Skill save-knowledge` | Consolidate the branch's knowledge findings | Run the `/flow:save-knowledge` command from this adapter. |
 | `Skill flow:flow-core` | Load the shared rules once per session | Read `~/.claude/flow/CORE.gemini.md` — `install.sh` puts it there from `CORE.md`. |
 | `/model <value>` | Switch the session's model | The `--model` flag at launch. Reported, not enforced — see `models` below. |
 | `TaskCreate` / `TaskUpdate` | Step tracking with status (in_progress, completed) | Maintain a manual markdown checklist in `05-implementation.md` or `04-fix.md`. Update it as work progresses. |
@@ -31,7 +31,7 @@ Everything the plugin prose says — the generator does not rewrite a sentence o
 - Adversarial design verification (challenger in `/flow:feat:design` and `/flow:bug:investigate`).
 - Pre-deploy section + blocking thread in `/flow:feat:ship` and `/flow:bug:ship`.
 - Reading `FLOW.md` in step 0 of every command.
-- `domain_memory` degradation rule: if the MCP does not respond within 2 s or fails, continue without context without notifying the user.
+- `knowledge` degradation rule: `knowledge.*` roles: if a tool does not respond within `knowledge.timeout_s` (2 s) or fails, continue without it, silently.
 - Business brief required before writing code (`/flow:feat:build`, `/flow:bug:fix`).
 - MR/PR preview before creating (`/flow:feat:ship`, `/flow:bug:ship`).
 - Design contract anchoring (verbatim copy + double-blind verification).

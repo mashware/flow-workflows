@@ -57,7 +57,7 @@ Write `.claude/work/<TICKET>/99-abandoned.md`:
 
 ## 4. Domain knowledge (conditional offer)
 
-**Only if `domain_memory.enabled` is `true` and the analysis left non-obvious findings** (why the domain works as it does, legal constraints, surprising integrations): ask whether to invoke `Skill save-knowledge`. Silence by default; `domain_memory.enabled` `false`/absent → skip silently.
+**Only if any `knowledge` role is set and the analysis left non-obvious findings** (why the domain works as it does, legal constraints, surprising integrations): ask whether to invoke `Skill save-knowledge`. Silence by default; the role empty → skip silently.
 
 ## 5. Git state
 

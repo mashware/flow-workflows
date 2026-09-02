@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `study`.**
 
@@ -22,9 +22,9 @@ Technical design phase. **Still no production code is written.** Output: a plan 
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received) and `02-brainstorm.md` if it exists. (flow-core §5)
 - `size` is `XS` → suggest jumping to `/flow-feat-build` and stop unless the user insists.
 
-## 2. Focused domain-memory query
+## 2. Focused knowledge query
 
-- `domain_memory.enabled` is `true` in `FLOW.md` → before the inventory, call `mcp__domain-memory__search_knowledge` with 2-4 parallel queries on the **affected module** and the **integrations** the design touches (uncovers legal constraints, integration assumptions, historical couplings).
+- `knowledge.search` is set → before the inventory, call `knowledge.search` with 2-4 parallel queries on the **affected module** and the **integrations** the design touches (uncovers legal constraints, integration assumptions, historical couplings).
 - Timeout 2 s; on failure continue. Relevant hits go under "Additional domain context" (§5 template).
 - `false` or empty → skip without notifying.
 
@@ -51,7 +51,7 @@ Save the result at the top of `03-design.md` under "## What already exists". Des
 
 3. Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists) and "What already exists". Explicit brief instructions:
    - **Before proposing a new entity/column/repository/service, check whether something from the inventory works.** Knowing duplicate → justify in the decision table.
-   - **Do not add defensive mechanisms "just in case".** Every validation, guard, retry, lock, fallback or cache carries the **real and present** scenario that requires it, with evidence (a `domain-memory` finding, a file, a known traffic pattern). Hypothetical, or already prevented by the system → **do not propose it**. Solve today's ticket (YAGNI).
+   - **Do not add defensive mechanisms "just in case".** Every validation, guard, retry, lock, fallback or cache carries the **real and present** scenario that requires it, with evidence (a knowledge finding, a file, a known traffic pattern). Hypothetical, or already prevented by the system → **do not propose it**. Solve today's ticket (YAGNI).
 
 ## 5. Output
 
@@ -180,9 +180,9 @@ Before closing, **challenge the design** with an `Agent general-purpose` and thi
 > You are the critical reviewer of the design in `.claude/work/<TICKET>/03-design.md`. **Do not propose implementation.** Challenge the plan from 4 angles. The **first is the most important** and looks for the opposite of the others — it looks for what is UNNECESSARY.
 >
 > 1. **Fit and need (dominant angle — look for what is unnecessary)**: review every defensive mechanism in the design (validation, guard, retry, lock, fallback, cache, idempotency, queue, flag). For each one ask:
->    - **Can that scenario actually happen in this project?** Do not assume — verify: query `mcp__domain-memory__search_knowledge` and look at the relevant code. If the system already prevents that scenario (an upstream validates first, a constraint blocks it, the flow does not allow that state, the external integration already guarantees it), the protection is **unnecessary** → finding "this is unnecessary".
+>    - **Can that scenario actually happen in this project?** Do not assume — verify: query `knowledge.search` and look at the relevant code. If the system already prevents that scenario (an upstream validates first, a constraint blocks it, the flow does not allow that state, the external integration already guarantees it), the protection is **unnecessary** → finding "this is unnecessary".
 >    - **Is it needed now, for what the ticket asks (YAGNI)?** If it solves a hypothetical future problem instead of today's → finding "this is unnecessary, it is YAGNI".
->    - Be concrete about the why: "X is unnecessary because in this project Y always happens first, see `<file>`/`<domain-memory finding>`".
+>    - Be concrete about the why: "X is unnecessary because in this project Y always happens first, see `<file>`/`<knowledge finding>`".
 > 2. **Fragile assumptions** (look for what is missing): what beliefs in the design might not hold? What is each one, how could it fail, what would happen? **But before flagging it, confirm the failure is possible in the project** — do not invent theoretical fragilities.
 > 3. **Simplification**: is there a simpler way to achieve the same? Is any piece redundant with "What already exists"?
 > 4. **Production operation**: rollback, observability, online migrations, cross-effects with workers/caches/queues. Only what truly applies to this change.
@@ -236,7 +236,7 @@ If what `03-design.md` reveals (migrations, cross-module, integrations) does not
 
 ## 8. Domain findings staging
 
-`domain_memory.enabled` is `true` in `FLOW.md` → review the ADR-light table and the challenges for **non-obvious domain decisions** a future reader could not deduce from the code, e.g.:
+`knowledge.stage` is set → review the ADR-light table and the challenges for **non-obvious domain decisions** a future reader could not deduce from the code, e.g.:
 
 - "We decided not to use X because the external integration only guarantees Y under Z."
 - "We coupled A with B because legal/fiscal requirements demand that..."
@@ -251,10 +251,10 @@ No evidence line → **do not stage it**: tell the user it did not survive verif
 
 **Silence by default**: nothing non-obvious → do not ask. 1+ findings with a clear signal →
 
-- Call `mcp__domain-memory__stage_finding` with the finding, its evidence line, and the context. One call per finding.
+- Call `knowledge.stage` with the finding, its evidence line, and the context. One call per finding.
 - Inform briefly: "Staged X domain finding(s) to consolidate in `/flow-feat-ship`".
 
-Never invoke `save_knowledge` here — the final save is in `/flow-feat-ship` after `read_staging`. `false` or empty → skip without notifying.
+Never invoke `knowledge.save` here — the final save is in `/flow-feat-ship` after `knowledge.read_staging`. `knowledge.stage` empty → the findings stay in `03-design.md` (ADR-light and challenges), nothing else to do.
 
 ## 9. Close
 

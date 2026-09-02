@@ -1,5 +1,5 @@
 ---
-description: Lessons learned, areas to watch, and offer to save to domain-memory
+description: Lessons learned, areas to watch, and offer to save to the knowledge store
 ---
 
 # `/flow:bug:postmortem`
@@ -63,14 +63,14 @@ Produce an honest analysis:
 
 ## 4. Domain knowledge (offer)
 
-If `domain_memory.enabled`:
+`knowledge.read_staging` or `knowledge.save` set (with neither, the postmortem itself is the record) →
 
-1. Call `mcp__domain-memory__read_staging` — the findings staged in `/flow:bug:investigate` are the primary material.
+1. Call `knowledge.read_staging` (empty → the findings recorded in `03-investigation.md`) — the findings staged in `/flow:bug:investigate` are the primary material.
 2. Review the postmortem for additional "why" items not staged at the time (business decisions, legal constraints, integrations, false model assumptions). The "what" (code, paths) is not saved.
 3. Combine staging + new findings. Empty or only obvious things → do not insist.
 4. 1+ relevant findings → ask the user whether to save them. Yes → `Skill save-knowledge` with the right angle (the lesson, not the code). No → do not insist.
 
-`domain_memory.enabled` false or empty → skip this block silently.
+Neither role set → skip this block silently.
 
 ## 5. Close
 

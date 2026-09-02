@@ -10,7 +10,7 @@
 > - `TaskCreate` → a markdown checklist in the phase artifact.
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
-> - `mcp__domain-memory__*` → same tool names; server declared under `[mcp_servers.domain-memory]` in `config.toml` (see `config.snippet.toml`).
+> - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 **Only for `size` M/L** (optional for S, skip for XS).
 
@@ -71,14 +71,14 @@ Produce an honest analysis:
 
 ## 4. Domain knowledge (offer)
 
-If `domain_memory.enabled`:
+`knowledge.read_staging` or `knowledge.save` set (with neither, the postmortem itself is the record) →
 
-1. Call `mcp__domain-memory__read_staging` — the findings staged in `/flow-bug-investigate` are the primary material.
+1. Call `knowledge.read_staging` (empty → the findings recorded in `03-investigation.md`) — the findings staged in `/flow-bug-investigate` are the primary material.
 2. Review the postmortem for additional "why" items not staged at the time (business decisions, legal constraints, integrations, false model assumptions). The "what" (code, paths) is not saved.
 3. Combine staging + new findings. Empty or only obvious things → do not insist.
 4. 1+ relevant findings → ask the user whether to save them. Yes → `Skill save-knowledge` with the right angle (the lesson, not the code). No → do not insist.
 
-`domain_memory.enabled` false or empty → skip this block silently.
+Neither role set → skip this block silently.
 
 ## 5. Close
 
