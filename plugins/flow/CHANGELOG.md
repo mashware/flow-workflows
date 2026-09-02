@@ -14,6 +14,8 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 
 **The flow was stack-agnostic; its wizard was not.** Nothing in the commands depends on a language — every quality gate is a command read from `FLOW.md` — but `/flow:init` only looked for a Makefile, npm, composer, pyproject, Cargo and go.mod, so an Android or C# repo got an empty `quality` section and a question, and lost the "auto-detects, you confirm" experience the wizard promises. It now recognises Gradle and Maven, .NET solutions and projects (with EF Core migrations raising the pre-deploy gate like Doctrine does), Xcode projects and Swift packages (asking for the scheme and destination when there are several), and Flutter. `/flow:doctor` checks those wrappers and binaries the same way it checks `make` targets.
 
+Also: the push-guard test assumed a git identity, which a CI runner does not have — its throwaway repo could not commit, so every BLOCK case passed for the wrong reason and the first CI run went red. The test now sets its own identity.
+
 ## v0.38.0 — The flow asked for one product where it needed a role  ·  2026-09-02
 
 **In short**

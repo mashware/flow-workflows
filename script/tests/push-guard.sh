@@ -17,6 +17,11 @@ MAIN=$(printf 'm\x61ster')          # avoid the literal token in this file
 
 rm -rf "$BASE/hooktest" && mkdir -p "$BASE/hooktest" && cd "$BASE/hooktest" || exit 1
 git init -q -b "$MAIN" . >/dev/null
+# A CI runner has no git identity, and without one the init commit fails, HEAD never
+# exists, the upstream is never set — and every BLOCK case below passes for the wrong
+# reason (the guard sees a repo with nothing to judge). Give the throwaway repo its own.
+git config user.email flow-test@example.invalid
+git config user.name "flow push-guard test"
 git commit -q --allow-empty -m init
 git switch -q -c feature-branch
 git remote add origin . 2>/dev/null
