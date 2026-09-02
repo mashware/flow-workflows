@@ -1,8 +1,8 @@
 # flow adapter for Gemini CLI
 
-This adapter brings the 25 commands of the `flow` plugin (`/flow:feat:*`, `/flow:bug:*`, `/flow:work:*`, `/flow:*`, `/flow:save-knowledge`) to the **Gemini CLI** format.
+This adapter brings the `flow` plugin's commands (`/flow:feat:*`, `/flow:bug:*`, `/flow:work:*`, `/flow:*`) to the **Gemini CLI** format: **one `.toml` per plugin command, generated** by `script/adapter-build.py` (see [`../README.md`](../README.md)), plus `CORE.md` — the shared flow-core rules every command reads once per session.
 
-The commands are a format adapter, not a reimplementation: the logic and prose are identical to the original plugin. What changes is the target file format and the translation of Claude Code-specific primitives. See `PRIMITIVES.md` for full details.
+The commands are a format adapter, not a reimplementation: the logic and prose are the plugin's, verbatim. What changes is the file format, the invocation prefix, `$ARGUMENTS` → `{{args}}`, and a legend translating the Claude Code-specific primitives. See `PRIMITIVES.md` for the long form. Do not edit the generated files by hand.
 
 ---
 
@@ -17,58 +17,27 @@ The commands are a format adapter, not a reimplementation: the logic and prose a
 
 ## Installation
 
+The shared script does step 1 and the `~/.claude/flow/` copies (`CORE.gemini.md`, the changelog, the manifest) in one go: `../install.sh gemini` (or `../install.sh gemini project`). By hand:
+
 ### 1. Copy the commands
 
 **Global installation** (available in any repo):
 ```bash
 cp -r commands/* ~/.gemini/commands/
+mkdir -p ~/.claude/flow && cp CORE.md ~/.claude/flow/CORE.gemini.md
 ```
 
 **Local installation** (current repo only):
 ```bash
 mkdir -p .gemini/commands
 cp -r commands/* .gemini/commands/
+mkdir -p ~/.claude/flow && cp CORE.md ~/.claude/flow/CORE.gemini.md
 ```
 
 Gemini CLI loads commands from both locations. Local commands take precedence over global ones.
 
-After copying, the structure looks like this:
-```
-~/.gemini/commands/              (or .gemini/commands/ in the repo)
-└── flow/
-    ├── feat/
-    │   ├── start.toml          → /flow:feat:start
-    │   ├── brainstorm.toml     → /flow:feat:brainstorm
-    │   ├── design.toml         → /flow:feat:design
-    │   ├── plan.toml           → /flow:feat:plan
-    │   ├── build.toml          → /flow:feat:build
-    │   ├── review.toml         → /flow:feat:review
-    │   ├── validate.toml       → /flow:feat:validate
-    │   └── ship.toml           → /flow:feat:ship
-    ├── bug/
-    │   ├── start.toml          → /flow:bug:start
-    │   ├── diagnose.toml       → /flow:bug:diagnose
-    │   ├── investigate.toml    → /flow:bug:investigate
-    │   ├── fix.toml            → /flow:bug:fix
-    │   ├── review.toml         → /flow:bug:review
-    │   ├── validate.toml       → /flow:bug:validate
-    │   ├── ship.toml           → /flow:bug:ship
-    │   └── postmortem.toml     → /flow:bug:postmortem
-    ├── work/
-    │   ├── README.toml         → /flow:work:README
-    │   ├── daily.toml          → /flow:work:daily
-    │   ├── resume.toml         → /flow:work:resume
-    │   ├── status.toml         → /flow:work:status
-    │   ├── abandon.toml        → /flow:work:abandon
-    │   ├── respond.toml        → /flow:work:respond
-    │   ├── green.toml          → /flow:work:green
-    │   ├── watch.toml          → /flow:work:watch
-    │   ├── try.toml            → /flow:work:try
-    │   └── clean.toml          → /flow:work:clean
-    ├── init.toml               → /flow:init
-    ├── config.toml             → /flow:config
-    └── save-knowledge.toml     → /flow:save-knowledge
-```
+The tree mirrors the plugin's: `commands/flow/<group>/<name>.toml` → `/flow:<group>:<name>`
+(`flow/feat/start.toml` → `/flow:feat:start`, `flow/init.toml` → `/flow:init`). `find commands -name '*.toml'` is the current list.
 
 ### 2. Configure the domain-memory MCP server
 
@@ -79,7 +48,6 @@ Merge the block from `settings.snippet.json` into your `~/.gemini/settings.json`
 cp settings.snippet.json ~/.gemini/settings.json
 
 # If it already exists, manually merge the "mcpServers" block:
-# Open ~/.gemini/settings.json and add inside "mcpServers":
 #   "domain-memory": {
 #     "command": "npx",
 #     "args": ["-y", "@mashware/domain-memory@latest"],
@@ -87,18 +55,17 @@ cp settings.snippet.json ~/.gemini/settings.json
 #   }
 ```
 
-If you do not want to use `domain-memory`, you can skip this step. The commands check `domain_memory.enabled` in `FLOW.md` and degrade silently if the MCP is not available.
+If you do not want to use `domain-memory`, you can skip this step. The commands read the `knowledge.*` roles in `FLOW.md` and degrade silently when a tool is not available.
 
 ### 3. Create FLOW.md in the repo
 
 All commands read `FLOW.md` at the repo root in their step 0. Without it, each command uses default behavior or auto-discovers what it can.
 
-Copy and fill in the template:
 ```bash
 cp ../../plugins/flow/examples/FLOW.template.md ./FLOW.md
 ```
 
-Key fields to fill in: `tracker`, `git.default_base`, `git.branch_pattern`, `git.request_term`, `git.cli`, `quality.*`, `conventions`, `agents.*`, `domain_memory.enabled`.
+Key fields to fill in: `tracker`, `git.default_base`, `git.branch_pattern`, `git.request_term`, `git.cli`, `quality.*`, `conventions`, `agents.*`, `knowledge.*`.
 
 ---
 
@@ -125,7 +92,7 @@ Without declared sub-agents, the commands run tasks sequentially in the same con
 
 ## Post-deploy monitoring (`/flow:work:watch`)
 
-`/flow:work:watch` does not self-pilot in Gemini CLI (there is no `ScheduleWakeup` in session). The command runs one monitoring cycle and exits. To repeat it automatically:
+`/flow:work:watch` does not self-pilot in Gemini CLI (there is no `ScheduleWakeup` in session). One invocation is one monitoring cycle. To repeat it automatically:
 
 ```bash
 # Example: watch TICKET every 5 minutes for 30 minutes
@@ -174,6 +141,6 @@ State between cycles (monitored surface, baseline, approved plan) is persisted i
 
 ## More information
 
-- `PRIMITIVES.md` — full translation table and what was trimmed.
+- `PRIMITIVES.md` — full translation table and what degrades.
 - `../../plugins/flow/examples/FLOW.template.md` — FLOW.md template.
-- `../../plugins/flow/commands/work/README.md` — complete guide to the flow system.
+- `../../plugins/flow/commands/work/README.md` — complete guide to the flow system (`/flow:work:README`).

@@ -1,6 +1,9 @@
 # flow → opencode adapter
 
-This directory contains the `flow` plugin adapter for [opencode](https://opencode.ai). The 25 commands of the `feat`/`bug`/`work` flow system have been converted to opencode format (markdown with a `description` frontmatter field).
+The `flow` plugin adapter for [opencode](https://opencode.ai): **one file per plugin command,
+generated** by `script/adapter-build.py` (see [`../README.md`](../README.md)) in opencode's format
+— markdown with a `description` frontmatter field — plus `CORE.md`, the shared flow-core rules every
+command reads once per session. Do not edit these files by hand; edit the plugin and rebuild.
 
 ## Command notation: `:` → `-`
 
@@ -28,12 +31,19 @@ The logic and prose of each command are identical; only the invocation name chan
 
 ## Installation
 
-### Option A: global installation (available in all projects)
+The simple path is the shared script, which also places `CORE.md`, the changelog and the manifest
+under `~/.claude/flow/`:
 
-Copy the commands to the opencode global directory:
+```bash
+../install.sh opencode            # global
+../install.sh opencode project    # current repo only (.opencode/commands)
+```
+
+### By hand — Option A: global installation (available in all projects)
 
 ```bash
 cp commands/*.md ~/.config/opencode/commands/
+mkdir -p ~/.claude/flow && cp CORE.md ~/.claude/flow/CORE.opencode.md
 ```
 
 Copy the MCP configuration to the global directory (or merge it into your existing `opencode.json`):
@@ -43,24 +53,16 @@ Copy the MCP configuration to the global directory (or merge it into your existi
 cp opencode.json ~/.config/opencode/opencode.json
 
 # If you already have one, manually merge the "mcp" section:
-# Add to ~/.config/opencode/opencode.json:
 # "mcp": { "domain-memory": { "command": "npx", "args": ["-y", "domain-memory-mcp"] } }
 ```
 
-### Option B: per-project installation (current repo only)
-
-Copy the commands to the project's opencode directory:
+### By hand — Option B: per-project installation (current repo only)
 
 ```bash
 mkdir -p .opencode/commands
 cp /path/to/adapters/opencode/commands/*.md .opencode/commands/
-```
-
-Copy or merge the `opencode.json` into the project root:
-
-```bash
-cp /path/to/adapters/opencode/opencode.json .opencode/opencode.json
-# or merge the "mcp" section into the existing opencode.json
+mkdir -p ~/.claude/flow && cp /path/to/adapters/opencode/CORE.md ~/.claude/flow/CORE.opencode.md
+cp /path/to/adapters/opencode/opencode.json .opencode/opencode.json   # or merge the "mcp" section
 ```
 
 ## Autonomy
@@ -78,49 +80,9 @@ ambiguous base, DB schema changes/migrations, and a review with high-severity fi
 
 ## Available commands
 
-Once installed, invoke them with `/` in opencode:
-
-### Feature flow
-| Command | Description |
-|---------|-------------|
-| `/flow-feat-start <TICKET>` | Start a new feature |
-| `/flow-feat-brainstorm` | Generate options and risks before designing |
-| `/flow-feat-design` | Design the technical solution |
-| `/flow-feat-plan` | Break the work into independent MRs/PRs |
-| `/flow-feat-build` | Implement following the approved design |
-| `/flow-feat-review` | Mandatory multi-agent code review |
-| `/flow-feat-validate` | Validate tests, edge cases, and integrity |
-| `/flow-feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
-
-### Bug flow
-| Command | Description |
-|---------|-------------|
-| `/flow-bug-start <TICKET>` | Start the bug flow |
-| `/flow-bug-diagnose` | Reproduce the failure and scope what is broken |
-| `/flow-bug-investigate` | Find the root cause of the failure |
-| `/flow-bug-fix` | Implement the minimal fix |
-| `/flow-bug-validate` | Regression test and verification |
-| `/flow-bug-review` | Multi-agent code review of the fix |
-| `/flow-bug-postmortem` | Lessons learned and offer to save knowledge |
-| `/flow-bug-ship` | Commit, push, MR/PR of the fix |
-
-### Cross-cutting commands
-| Command | Description |
-|---------|-------------|
-| `/flow-work-README` | Guide to the flow system |
-| `/flow-work-daily` | Work assistant — Scrum-style daily standup across all your work (local + forge + tracker) |
-| `/flow-work-status` | Overview of all open work items |
-| `/flow-work-resume` | Resume work on the current branch |
-| `/flow-work-abandon` | Close a work item without shipping |
-| `/flow-work-try <branch>` | Point the main checkout at a branch to test it (and back), re-syncing per FLOW.md |
-| `/flow-work-clean [--dry-run]` | Sweep what finished work left behind: merged worktrees, dead branches, unarchived folders |
-| `/flow-work-respond [mr]` | Review loop — triage the MR/PR threads, debate, implement, reply |
-| `/flow-work-query [file\|query]` | Query duel — a data-access query tried on its execution plan, not on prose |
-| `/flow-work-green [mr]` | Mergeable loop — red pipeline, conflicts or behind base: triage, fix at the root, push |
-| `/flow-work-watch <TICKET> [duration]` | Monitor observability after a deployment (one cycle) |
-| `/flow-init` | Generate/update the repo's FLOW.md |
-| `/flow-config` | Show the repo's effective FLOW.md config and validate it |
-| `/flow-save-knowledge` | Consolidate findings into the domain-memory store |
+Every command in `../../plugins/flow/commands/` has its mirror here, named by the `:` → `-` rule
+(`feat/ship.md` → `/flow-feat-ship`). `ls commands/` is the current list; `/flow-work-README` is
+the guide to the whole system, and each file's `description` frontmatter says what it does.
 
 ## Subagent configuration
 
@@ -130,7 +92,7 @@ To get the most out of the system, declare project-specific subagents in `agents
 
 ## Continuous monitoring with work-watch
 
-The `/flow-work-watch` command runs **one cycle** and persists state in `monitor.md`. For continuous monitoring, set up a cron job:
+`/flow-work-watch` runs **one cycle** per invocation and persists state in `monitor.md`. For continuous monitoring, set up a cron job:
 
 ```bash
 # Example: monitor every 5 minutes (adjust the path and ticket)
@@ -141,7 +103,8 @@ See `PRIMITIVES.md` for more details on this difference from the original plugin
 
 ## What does not port 1:1
 
-See `PRIMITIVES.md` for the full breakdown. Summary:
+The legend at the top of every generated command maps the Claude Code primitives to opencode;
+`PRIMITIVES.md` is the full breakdown. Summary:
 
 - `AskUserQuestion` → plain-text question; no structured menu.
 - `watch` autopilot → OS cron + `opencode run -p`; state between cycles lives in `monitor.md`.

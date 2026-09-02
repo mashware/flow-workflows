@@ -6,44 +6,19 @@ Brings the `/flow-feat-*`, `/flow-bug-*`, and `/flow-work-*` workflows from the 
 
 ```
 adapters/codex/
-├── prompts/              — 25 custom prompts (one per workflow command)
-│   ├── flow-feat-start.md
-│   ├── flow-feat-brainstorm.md
-│   ├── flow-feat-design.md
-│   ├── flow-feat-plan.md
-│   ├── flow-feat-build.md
-│   ├── flow-feat-review.md
-│   ├── flow-feat-validate.md
-│   ├── flow-feat-ship.md
-│   ├── flow-bug-start.md
-│   ├── flow-bug-diagnose.md
-│   ├── flow-bug-investigate.md
-│   ├── flow-bug-fix.md
-│   ├── flow-bug-validate.md
-│   ├── flow-bug-review.md
-│   ├── flow-bug-postmortem.md
-│   ├── flow-bug-ship.md
-│   ├── flow-work-README.md
-│   ├── flow-work-daily.md
-│   ├── flow-work-resume.md
-│   ├── flow-work-status.md
-│   ├── flow-work-try.md
-│   ├── flow-work-clean.md
-│   ├── flow-work-abandon.md
-│   ├── flow-work-respond.md
-│   ├── flow-work-query.md
-│   ├── flow-work-green.md
-│   ├── flow-work-watch.md
-│   ├── flow-init.md
-│   ├── flow-config.md
-│   └── flow-save-knowledge.md
+├── prompts/              — one custom prompt per plugin command, generated (see ../README.md)
+├── CORE.md               — the shared flow-core rules every prompt reads once per session (generated)
 ├── config.snippet.toml   — sections to merge into ~/.codex/config.toml
 ├── AGENTS.md             — repo guide that Codex reads as context
-├── PRIMITIVES.md         — primitive translation table + trimmed features
+├── PRIMITIVES.md         — primitive translation table, the long form of each prompt's legend
 └── README.md             — this file
 ```
 
+`prompts/*.md` and `CORE.md` are written by `script/adapter-build.py` from the plugin — do not edit them by hand. Prompt names follow the plugin's paths with `:` flattened to `-` (`feat/start.md` → `/flow-feat-start`); `ls prompts/` is the current list.
+
 ## Installation
+
+The shared script does steps 1 and the `~/.claude/flow/` copies (`CORE.codex.md`, the changelog, the manifest) in one go: `../install.sh codex`. By hand:
 
 ### 1. Custom prompts
 
@@ -51,11 +26,10 @@ adapters/codex/
 >
 > **Skills alternative**: if your version of Codex supports skills in `.agents/skills/` in the repo (format `$name`), copy the files from `prompts/` to `.agents/skills/<name>/SKILL.md` inside the repository. The workflows will work the same way, invoked as `$flow-feat-start`, `$flow-bug-fix`, etc.
 
-Copy the files from `prompts/` to the Codex prompts path:
-
 ```bash
 # Common path (confirm with /help or your version's docs):
 cp prompts/*.md ~/.codex/prompts/
+mkdir -p ~/.claude/flow && cp CORE.md ~/.claude/flow/CORE.codex.md
 
 # If the path is different, replace it:
 cp prompts/*.md /path/indicated-by-your-version/of/codex/prompts/
@@ -68,8 +42,7 @@ Prompts are invoked with `/flow-feat-start {TICKET}`, `/flow-bug-diagnose`, `/fl
 Merge the contents of `config.snippet.toml` into your existing `~/.codex/config.toml`:
 
 ```bash
-# Read config.snippet.toml and copy the sections you need manually into your config.toml
-cat config.snippet.toml
+cat config.snippet.toml   # copy the sections you need into your config.toml
 ```
 
 Adjust the `command` and `args` values in `[mcp_servers.domain-memory]` to match the actual domain-memory installation on your machine.
@@ -79,8 +52,6 @@ For subagents, define the `[agents.<name>]` sections you need in `~/.codex/confi
 ### 3. FLOW.md in the repo
 
 Every repo using these workflows needs a `FLOW.md` at its root. Without it, workflows run with default values (auto-discovery), but having it is recommended for project-specific conventions.
-
-Start from the template:
 
 ```bash
 cp ../../plugins/flow/examples/FLOW.template.md FLOW.md
@@ -120,12 +91,12 @@ cp /path/to/adapters/codex/AGENTS.md /root/of/your/repo/AGENTS.md
 ## Dependencies
 
 - **Codex CLI** installed and configured with your OpenAI API key.
-- **domain-memory MCP** installed if you want `domain_memory.enabled: true` in FLOW.md. Project: https://github.com/mashware/domain-memory
+- **domain-memory MCP** installed if you name its tools in the `knowledge` section of FLOW.md. Project: https://github.com/mashware/domain-memory
 - **git CLI** configured (`glab`, `gh`, or other per `git.cli` in FLOW.md) to create MRs/PRs from the terminal.
 
 ## Differences from the original plugin (Claude Code)
 
-See `PRIMITIVES.md` for the full table. The most important points:
+Each prompt opens with a legend mapping the Claude Code primitives to Codex; `PRIMITIVES.md` has the full table. The most important points:
 
 - **AskUserQuestion**: no structured UI → questions become plain text.
 - **ScheduleWakeup** (watch autopilot): does not exist in Codex → `/flow-work-watch` runs one cycle and exits; use OS cron or Codex app Automations to repeat it.

@@ -1,0 +1,31 @@
+name: preflight
+
+# The same checks a maintainer runs before tagging (see RELEASING.md), on every push and
+# pull request — so a broken tree is caught before it is a permanent tag.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # check.py asks git about the tree
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"    # tomllib is needed to validate the Gemini mirrors
+      - name: jq for the push guard
+        run: sudo apt-get update -q && sudo apt-get install -y -q jq
+      - name: release preflight
+        run: python3 script/check.py
+      - name: adapter smoke test (static + install against a throwaway HOME)
+        run: python3 script/adapter-smoke.py
+      - name: generated files are current
+        run: python3 script/adapter-build.py --check && python3 script/config-keys.py --check
+      - name: push guard hook
+        run: bash script/tests/push-guard.sh
+      - name: update-notice hook
+        run: bash script/tests/notify-update.sh

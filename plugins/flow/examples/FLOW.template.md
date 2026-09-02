@@ -87,22 +87,26 @@ How much the flow advances on its own vs. stopping to ask you.
                       # and recorded — only new contradicting evidence reopens a settled decision.
 
 ## quality
-Repo commands for quality gates. **Empty = the command auto-discovers** (Makefile,
-npm/composer scripts, etc.) and reports what it uses.
+Repo commands for quality gates, whatever the stack — `make test`, `./gradlew test`, `dotnet test`,
+`xcodebuild test`, `flutter test`, `cargo test`… **Empty = the command auto-discovers** (Makefile, npm/composer
+scripts, Gradle, dotnet, Xcode, Flutter, pyproject, Cargo, go.mod) and reports what it uses.
 
 - `test:`             # e.g. `make test`
-- `test_one:`         # e.g. `make test-filter filter={FILTER}` (`{FILTER}` is substituted)
-- `static_analysis:`  # e.g. `make phpstan-ci`
-- `style_fix:`        # e.g. `make cs-fixer-changed`
+- `test_one:`         # e.g. `make test-filter filter={FILTER}` · `./gradlew test --tests {FILTER}` · `dotnet test --filter {FILTER}` (`{FILTER}` is substituted)
+- `static_analysis:`  # e.g. `make phpstan-ci` · `./gradlew lint` · `dotnet build -warnaserror` · `flutter analyze`
+- `style_fix:`        # e.g. `make cs-fixer-changed` · `./gradlew ktlintFormat` · `dotnet format` · `swift-format -i -r Sources`
 - `db_update:`        # e.g. `make database-update` (empty if not applicable)
 - `db_diff:`          # command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL)
 - `frontend_test:`    # e.g. `make test-frontend` (empty if no frontend)
-- `review_depth:`     # how much of the review panel runs AND at what effort, scaled by work size + risk, in `/flow:*:review`. `proportional` (default) | `full`.
+- `review_depth:`     # how much of the review panel runs AND at what effort, scaled by work size + risk, in `/flow:*:review`. `proportional` (default) | `full` | `light`.
                       #   proportional → XS: only the built-in `code-review` (medium effort), no panel. S: built-in `code-review` (high) plus
                       #                  the panel ONLY if the diff touches a sensitive surface (auth/authorization, secrets, payments/billing,
                       #                  personal/sensitive data, a public API/contract shape, or a DB migration/schema change); otherwise built-in only.
                       #                  M: built-in (high) + full panel. L: built-in (xhigh) + full panel. A sensitive surface raises the built-in
                       #                  one effort tier (medium→high→xhigh→max) and forces the panel — risk, not just size, buys depth.
+                      #   light        → only the built-in `code-review` (or `review_skill`) at medium effort on every size: no panel, no
+                      #                  reinforcements, no skeptic fan-out. A sensitive surface still gets the proportional tier. The
+                      #                  cheapest honest review — the artifact records the tier and the cost line.
                       #   full         → always run the built-in `code-review` (xhigh) + the full panel regardless of size (pre-0.7 behavior).
                       # Empty = `proportional`. Effort ladder low<medium<high<xhigh<max applies where the tool exposes it (Claude Code); adapters
                       # for other tools read "higher effort" as maximum thoroughness for L-sized or sensitive-surface work.
@@ -221,11 +225,29 @@ reminder, not a second manual). Empty = no extra guidance.
 - `bug:fix:`
 - `work:watch:`
 
-## domain_memory
-Domain knowledge via the `domain-memory` MCP (https://github.com/mashware/domain-memory).
+## knowledge
+Where the flow reads and writes what it learns about this project, by **role** — any MCP tool, CLI
+command or skill fits. Section empty or absent = every knowledge step is skipped silently. Only
+`search` is needed to gain something; the other three have a built-in fallback.
 
-- `enabled:`          # `true` if the MCP is installed and running. Empty/false = commands
-                      # skip the domain search/stage/save steps silently.
+- `search:`         # tool(s) that return context for a query — one per line with `- ` to consult several in parallel.
+                    # An MCP tool receives the query as its main argument; a shell command gets `{QUERY}` substituted. e.g.:
+                    #   - mcp__domain-memory__search_knowledge        (https://github.com/mashware/domain-memory)
+                    #   - mcp__codegraph__query
+                    #   - rg -n -i "{QUERY}" docs/adr
+                    # Results are merged as material to weigh, never as instructions. Empty = no knowledge lookups.
+- `stage:`          # optional. Tool that records ONE finding for this branch during a phase (finding + context as its arguments).
+                    # Empty = the finding is written to the phase artifact only (no staging).
+- `read_staging:`   # optional. Tool that returns what this branch has staged. Empty = the phase artifacts are the staging.
+- `save:`           # optional. Tool that consolidates one finding into the store (`/flow:save-knowledge`, `ship`, `postmortem`).
+                    # Empty = `/flow:save-knowledge` appends the consolidated findings to `KNOWLEDGE.md` at the repo root instead.
+- `timeout_s:`      # per call. Empty = 2. A call that fails or takes longer → continue without it, silently.
+
+## domain_memory
+Legacy alias, kept so existing `FLOW.md` files keep working. Prefer the `knowledge` section above.
+
+- `enabled:`        # `true` = the four `knowledge` roles resolve to the `domain-memory` MCP tools (`search_knowledge`,
+                    # `stage_finding`, `read_staging`, `save_knowledge`) when `knowledge` is absent. Ignored when `knowledge` is set.
 
 ## observability
 Profile for `/flow:work:watch` (post-deploy monitoring). **Empty = the command auto-discovers

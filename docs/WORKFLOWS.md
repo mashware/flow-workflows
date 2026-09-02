@@ -80,7 +80,7 @@ to change something, defer it, or hold your ground. That phase is what `respond`
 2. **Triages each one**: question · nitpick · change request · design debate · out-of-scope ·
    obsolete.
 3. **Drafts a response per thread.** For design debates it argues from **the rationale the flow
-   already recorded** — the ADR-light in `03-design.md`, the recorded challenges, `domain-memory`
+   already recorded** — the ADR-light in `03-design.md`, the recorded challenges, the knowledge sources
    — instead of re-deriving it. That recorded "why" is exactly the ammunition a good review reply
    needs, and it is the reason the earlier phases bother to write it down. With one exception, and
    it is deliberate: a **performance objection about a query** is not answered from the record at
