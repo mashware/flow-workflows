@@ -245,6 +245,12 @@ git branch -r --contains "origin/<parent branch>" | grep -q "origin/<git.default
 
 - **Parent still open** → say it in one line: the child merges first, or is re-targeted before the parent goes in. Never leave the order to chance when both are mergeable.
 - **Parent no longer an ancestor** (merged, squashed, or its branch deleted) and the child **still open** → **hard gate** (a rebase and a force-push, in every autonomy mode). Re-target and replay: `gh pr edit <n> --base <git.default_base>` (or `glab mr update <iid> --target-branch <git.default_base>`), then `git rebase --onto "origin/<git.default_base>" "<old parent>" "<child branch>"` and force-push per the repo's rules. One MR/PR is kept, review history included.
+
+**Re-target before the parent merges, not after — the window closes.** Merging the parent with `--delete-branch` deletes the child's target branch, and the forge then **auto-closes the child**; a closed PR cannot be re-targeted, so what was a one-command fix becomes a new MR/PR and a lost review thread. And when `gh pr edit --base` fails (`exit 1`, a GraphQL error about Projects classic — it happens on repos with the classic projects field), re-target through the REST API instead, with the MR/PR **open** (on a closed one it answers 422):
+
+```bash
+gh api -X PATCH "repos/<owner>/<repo>/pulls/<n>" -f base=<git.default_base>
+```
 - **Parent no longer an ancestor and the child already merged into it** → the content is lost to the base, not to git. Recover it as a fresh MR/PR against `git.default_base` (`git cherry-pick` the child's commits, or re-apply its tree), mark the old entry `superseded` with a `note` pointing at the new one, and tell the user plainly what was missing from the base and for how long.
 
 ### 6.3 Summary and cleanup
