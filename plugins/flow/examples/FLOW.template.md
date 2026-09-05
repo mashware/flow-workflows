@@ -104,6 +104,12 @@ scripts, Gradle, dotnet, Xcode, Flutter, pyproject, Cargo, go.mod) and reports w
                       #   (a browser automation tool, a simulator, a CLI that drives the app). Empty = the agent uses
                       #   what it can detect; with nothing available every UI/end-to-end criterion stays `needs-manual`
                       #   and you verify it, exactly as before. A criterion is NEVER marked proven on reasoning alone.
+- `bench_cmd:`        # how this repo exercises ONE entry point and reports time and memory, so `/flow:*:validate`
+                      #   can run it on the merge base and on HEAD and compare. `{TARGET}` is substituted with the
+                      #   route, command, job or consumer under test. e.g. `make bench TARGET={TARGET}` ·
+                      #   `hyperfine --runs 3 './app {TARGET}'` · `/usr/bin/time -v ./bin/console {TARGET}`.
+                      #   Empty = no benchmarking; the phase says so once and skips. Never invented: with no command
+                      #   here and none discoverable, a timing claim is not made at all.
 - `evidence:`         # `on` (default) | `off`. Whether `/flow:*:validate` captures evidence (screenshots, response
                       #   bodies, log excerpts) into `.claude/work/<work>/evidence/` and `/flow:*:ship` attaches it to
                       #   the MR/PR description. `off` skips both; the criteria table is unaffected.

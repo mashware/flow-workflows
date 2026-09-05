@@ -76,9 +76,10 @@ Runs when the fix **adds or modifies** a query — raw SQL, the ORM's query lang
 Run the mechanics of **`/flow:work:query`**: its **§2 fact sheet** (filter, order **with direction**, bound and whether per key or global, both sides of each join with real types and collations, heavy columns, cardinality with its source, the indexes that actually exist), its **§3 blinded challenger** over the twelve-item checklist with the main agent judging, its **§4 measurement** when the schema cannot settle it, and its **§5 verdict** shape.
 
 Fix-specific:
-- **Bug about slowness or timeouts → the duel is the fix's proof**: the verdict must show the plan before and after, or the fix is unproven whatever the tests say.
+- **Every modified query carries its base row** — the same query on `git merge-base HEAD <git.default_base>`, measured in the same sandbox with the same seed (`/flow:work:query` §4). This chain already demanded it for slowness bugs; it now applies to any query the fix changes, because a fix that quietly costs 40 ms is a regression whether or not the ticket mentioned speed.
+- **Bug about slowness or timeouts → the duel is the fix's proof**: the base and after rows are the verdict, or the fix is unproven whatever the tests say.
 - A **trick** added under pressure (a cast to align a collation, a hint, a hand-written column order) — checklist item 11 applies in full: it ships with a comment saying why it is there and what removes it, plus the ticket for the root cause, or it does not ship.
-- Verdicts map as findings: **change** blocks, **schema / follow-up** → proposed ticket, **unresolved** recorded literally.
+- Verdicts map as findings: **change** blocks, **regressed** blocks unless `03-investigation.md` justifies the trade, **schema / follow-up** → proposed ticket **and a `followups[]` entry** (flow-core §7), **unresolved** recorded literally.
 
 ## 4. Over-engineering audit (fit + YAGNI)
 
@@ -134,11 +135,11 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 ## Data-access duel
 <per §3.5; "no queries touched" if none>
 
-| Query (file:line) | Bound | Index used / plan | Rows read → returned | Verdict | Evidence |
-|---|---|---|---|---|---|
+| Query (file:line) | New/mod | Bound | Index used / plan | Rows read → returned | vs base | Verdict | Evidence |
+|---|---|---|---|---|---|---|---|
 
 - Measured: <realistic data set / dev database / schema only / not measured, and why>
-- Before vs after: <mandatory when the bug was about slowness — the plan on both sides>
+- Before vs after: <the base row for every modified query; times as `min–max` across 3 runs, and a difference inside the spread reported as "no measurable change", never a percentage>
 - Unresolved: <the question left open, or "none">
 - Schema / follow-up: <predating defects, with the proposed ticket, or "none">
 

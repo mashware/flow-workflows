@@ -74,7 +74,7 @@ size prunes:  XS  start → build → review → ship     S  + design (abridged)
 | `/flow:init` | Wizard that generates this repo's `FLOW.md` |
 | `/flow:config` | Effective `FLOW.md`: set vs empty (and its fallback), plus validation |
 | `/flow:doctor` | Environment check — CLIs installed *and authenticated*, agents, hooks, MCP |
-| `/flow:work:query` | Query duel — fact sheet, blinded challenger, verdict by execution plan |
+| `/flow:work:query` | Query duel — fact sheet, blinded challenger, verdict by execution plan against the base version |
 | `/flow:work:watch` | Post-deploy watcher — monitors observability, flags regressions |
 | `/flow:work:daily` | Standup across local + forge + tracker; ask a question or get the briefing |
 | `/flow:work:try` | Point the main checkout at a branch to test it, and print the manual test plan once it is up (then `--back`) |

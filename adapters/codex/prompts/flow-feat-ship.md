@@ -182,6 +182,37 @@ Thread body: the SQL block under "Pre-deploy: run this SQL on the server BEFORE 
 
 With the repo policy "all threads resolved before merge", the MR/PR cannot merge until the SQL is executed and the thread **resolved**. **One single thread even with multiple statements.** Tell the user it is left open on purpose.
 
+### 4.3 Performance comment (only when there are numbers)
+
+`06-review.md` §"Data-access duel" has rows for modified queries, or `07-validation.md` §3.7 has
+benchmark rows → post them as a **comment** on the MR/PR just created (`gh pr comment` /
+`glab mr note`). Nothing measured → post nothing; an empty performance comment is noise.
+
+A comment, not a description section, because it is **re-posted on every push that changes a
+measured path** (`/flow-work-green`, `/flow-work-respond`), and a description rewritten each round
+loses what the numbers were two rounds ago. The history is the point.
+
+```markdown
+## Performance — base `<sha>` → `<sha>`
+
+| Query | Rows read | Time (min–max, 3 runs) | Verdict |
+|---|---|---|---|
+| `FooRepository::findBar()` | 41k → 750 | 120–131 ms → 8–9 ms | improved |
+
+| Entry point | Time | Peak memory | Verdict |
+|---|---|---|---|
+| `GET /campaigns` | 210–224 ms → 88–95 ms | 42 MB → 30 MB | improved |
+
+Measured on <data set>, <n> runs each. A difference inside the run-to-run spread is reported as
+no measurable change, not a percentage.
+```
+
+- **Verdicts**: `improved` · `no measurable change` · `regressed` · `not measured (<reason>)`.
+- **A `regressed` row is a review blocker** unless `03-design.md` justifies the trade — in which
+  case the justification goes in the comment, in one line, next to the row.
+- Posting to the forge is outward-facing: show the comment and confirm with `AskUserQuestion`
+  **in every `autonomy.mode`**, exactly like the description preview in §3.
+
 ## 5. Domain knowledge (offer)
 
 Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip without notifying (the artifacts already hold the findings). **Only if there is something non-obvious worth saving** (silence-by-default):

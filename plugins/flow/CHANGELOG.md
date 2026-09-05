@@ -5,6 +5,28 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.44.0 — The duel picked the best of three new queries and never asked about the old one  ·  2026-09-05
+
+**In short**
+- A **modified** query is now measured against **its own version on the merge base**, not only against the challenger's and reviewer's proposals.
+- New `quality.bench_cmd` benchmarks a touched route, command, consumer or job on both sides — wall time and peak memory.
+- Times are reported `min–max` across three runs, and **a difference inside that spread is "no measurable change", never a percentage**.
+- The numbers reach the reviewer: a **comment** on the MR/PR, re-posted whenever a later push changes a measured path.
+
+**The measurement table compared the wrong things.** `/flow:work:query` §4 seeds a sandbox, takes the plan, runs three times and reports rows read against rows returned — real evidence, and better than most review processes have. But its rows were *as written*, *challenger's proposal*, *reviewer's proposal*: three candidate implementations of the **new** query. There was no row for the query as it exists on `main`. So the duel answered "which of these three is best" and never "did this diff make things better or worse" — and a variant can win against its siblings while being slower than the code it replaces.
+
+**Nothing outside queries was measured at all.** The performance agent in `review` and `validate` *reads* code: it detects N+1, unbounded queries, flush in a loop, per-iteration calls leaving the process. It runs nothing. No endpoint timing, no memory figure, no before and after for a route or a job. The only real measurement in the plugin was `/flow:work:watch`, and that runs **after deploy**, against production observability, when the code is already merged and live.
+
+**And none of it reached the reviewer.** Every number landed in `06-review.md`, inside `.claude/work/`, which `/flow:init` offers to git-ignore and `ship` archives. The MR/PR carried prose.
+
+**The base row.** For every query the diff *changes*, the duel measures the same query at `git merge-base HEAD <git.default_base>` — same sandbox, same seed, same three runs. A baseline on a different data set is not a baseline, and a base version that cannot be run is recorded as **not measured** with the reason, never estimated from reading the old code. New `regressed` verdict, blocking like `change` unless `03-design.md` justifies the trade. The bug chain demanded this for slowness bugs already; it now applies to any query a fix modifies, because a fix that quietly costs 40 ms is a regression whether or not the ticket mentioned speed.
+
+**`quality.bench_cmd`** is how this repo exercises one entry point and reports time and memory, with `{TARGET}` substituted. Free text passed to the harness, like every other command key — the plugin ships no benchmarking tool and stays stack-agnostic. Empty → the phase says so once and skips, and **no timing claim is made at all**.
+
+**The noise floor is a feature, not a caveat.** Three runs on a developer machine with containers up produce variance that reads happily as a 5% improvement. Publish those and the table is disbelieved within a fortnight — at which point the real regressions stop being read too. So: `min–max`, never a mean; a difference inside the spread is *no measurable change*; and when times overlap, the counts (rows read, queries executed) lead, because those are not noisy.
+
+Mirrored across the opencode, Gemini CLI and Codex adapters by the generator.
+
 ## v0.43.0 — The one thing validate could not prove, it asked you to prove for it  ·  2026-09-05
 
 **In short**

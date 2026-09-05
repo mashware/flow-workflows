@@ -33,6 +33,12 @@ Invoked by `/flow-feat-review` and `/flow-bug-review` (duel over the diff), `/fl
 
 One per query, **facts, not opinions**; every unknown written down as unknown.
 
+**First fact: is this query new, or modified?** A modified query has a version on the merge base
+(`git merge-base HEAD <git.default_base>`), and that version is the only thing that answers the
+question a reviewer actually has — *is this better or worse than what we had?* Record the base sha
+and the query as it reads there. A **new** query has no before; say so and skip the base row
+throughout.
+
 | Field | What goes in it |
 |---|---|
 | **Call site & frequency** | Where it runs, and **how many times per request/job** (once, once per row of a batch of N, inside a loop over an unbounded list) |
@@ -98,13 +104,28 @@ Read `data` from `FLOW.md`. **All optional, empty by default**; empty → the du
 
 When you measure: build the data set to the **shape** that matters, not just the size (one key with thousands of rows next to twenty thousand keys with one; the real batch size; heavy columns populated). Then a table, **three runs per variant**, plan next to time:
 
-| Variant | Plan (access, index, rows read) | Time (3 runs) | Rows returned | Keys served |
+| Variant | Plan (access, index, rows read) | Time (3 runs: min–max) | Rows returned | Keys served |
 |---|---|---|---|---|
+| **base (`<merge-base sha>`)** | … | … | … | … |
 | as written | … | … | … | … |
 | challenger's proposal | … | … | … | … |
 | reviewer's proposal | … | … | … | … |
 
+**The base row is the point of the table for a modified query.** Without it the duel answers "which
+of these three is best" and never "did we improve or regress" — a variant can win against its
+siblings and still be slower than the code on `main`. Measure it the same way as the others: same
+sandbox, same seed, same three runs. A baseline taken on a different data set is not a baseline;
+a base version that cannot be run (its schema is gone, the call site did not exist) is recorded as
+**not measured** with the reason, never estimated from reading the old code.
+
 `Keys served` catches a global limit pretending to be per-key: fastest but answering 40 of 50 keys is wrong, not faster.
+
+**Report the spread, and respect it.** Three runs on a developer machine with containers running
+produce variance that will happily read as a 5% improvement. Give each time as `min–max`, not a
+mean, and **call any difference that falls inside the spread "no measurable change"** — never a
+percentage. A table nobody believes after two weeks is worse than no table, and the fastest way
+there is a confident number the hardware invented. Rows read and rows returned do not have this
+problem: they are counts, and they are the evidence to lead with when the times overlap.
 
 Creating or seeding a database is a **hard gate** (§0): show commands and target name, never a database the project uses, offer the cleanup command with the result. If it stays up for follow-ups, say so and how to drop it.
 
@@ -112,7 +133,11 @@ Creating or seeding a database is a **hard gate** (§0): show commands and targe
 
 Per query, exactly one of:
 
-- **ok** — access supported and bounded; state the index used and rows read.
+- **ok** — access supported and bounded; state the index used and rows read. For a modified query,
+  say how it compares to the base row: *improved*, *no measurable change*, or *regressed*.
+- **regressed** — measurably worse than the base version, and the design does not justify it. A
+  blocker, the same as `change`. Justified in `03-design.md` (a correctness fix that costs time, a
+  deliberate trade) → not a blocker, but it is stated in the verdict and it reaches the MR/PR.
 - **change** — **one** recommendation, not a menu, and the number that carries it. Alternatives in a line below, with why they lost.
 - **schema / follow-up** — fix not in this diff (collation, type, missing index, neighbouring query). Propose the separate ticket; say what the diff does meanwhile.
 - **unresolved** — not settleable without measuring, and measuring unavailable. Name the open question. A real verdict; a pretend "ok" is not.
