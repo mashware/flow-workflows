@@ -105,6 +105,8 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `agents` | `testing` | backend tests / coverage |
 | `agents` | `fanout_max` | max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported |
 | `agents` | `fanout_tool` | orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable |
+| `agents` | `report_max_words` | word cap every brief you write for a subagent carries. Empty = 250. Not a style rule: a report too long for the harness to carry is truncated in transit and reaches you as silence |
+| `agents` | `stall_after_minutes` | a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 |
 | `models` | `study` | feat:start, feat:brainstorm, feat:design, feat:plan · bug:start, bug:diagnose, |
 | `models` | `code` | feat:build · bug:fix · work:green (and the changes /flow:work:respond implements) |
 | `models` | `test` | feat:validate · bug:validate |

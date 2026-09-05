@@ -53,7 +53,7 @@ Save the result at the top of `03-design.md` under "## What already exists". Des
 | Critical performance / hot paths | `agents.performance` | Anticipate N+1, repeated out-of-process calls, load risks. |
 | Security (auth, payments, sensitive data) | `agents.security` | Threats and mitigations for the proposed design. |
 
-3. Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists) and "What already exists". Explicit brief instructions:
+3. Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists) and "What already exists", and every brief ends with the report contract of flow-core §6 (`agents.report_max_words`, empty → 250) — a design proposal long enough for the harness to truncate reaches you as an agent that proposed nothing. Explicit brief instructions:
    - **Before proposing a new entity/column/repository/service, check whether something from the inventory works.** Knowing duplicate → justify in the decision table.
    - **Do not add defensive mechanisms "just in case".** Every validation, guard, retry, lock, fallback or cache carries the **real and present** scenario that requires it, with evidence (a knowledge finding, a file, a known traffic pattern). Hypothetical, or already prevented by the system → **do not propose it**. Solve today's ticket (YAGNI).
 
