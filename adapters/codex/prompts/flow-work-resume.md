@@ -67,6 +67,14 @@ With what is new (there is already work on disk):
 - `git status --short` → pending changes.
 - `git log --oneline -5` → latest commits.
 - Warn if there are uncommitted changes not reflected in the most recent log.
+- **Stacked MR/PR still open** (a `meta.json.mrs[]` entry with a `url` and `stacked_on` not null) → check the parent is still an ancestor of the base branch, because this is the one broken state the forge shows as green:
+
+  ```bash
+  git fetch --prune origin
+  git branch -r --contains "origin/<stacked_on>" | grep "origin/<git.default_base>"
+  ```
+
+  No match → the parent was merged (squashed away, most likely) while you were gone, and that MR/PR now merges into a branch the base no longer descends from: its content would land nowhere. Report it as a blocker in the recap and send the user to `/flow-feat-ship §6.2.1`. Fetch fails (offline) → say the check could not run; never report it as fine.
 
 ## 4. Next step
 

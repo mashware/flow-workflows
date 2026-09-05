@@ -59,7 +59,7 @@ Always read **both halves**, in this order, in the same round: **merge verdict**
 
 **`UNKNOWN`/`checking` is not an answer.** Mergeability is computed asynchronously after a push or a base move. Re-query after a few seconds (up to ~3 attempts); still unknown → say exactly that, never report "no conflicts" from an unknown verdict.
 
-Capture every blocker as a row: **conflicts with base**, **branch behind base / needs rebase**, **draft/WIP**, **approvals missing** (how many, from whom), **unresolved discussions** (how many), **required check missing**, plus any host-specific `blocked_status` reason. These feed §3 alongside the failing jobs.
+Capture every blocker as a row: **conflicts with base**, **branch behind base / needs rebase**, **draft/WIP**, **approvals missing** (how many, from whom), **unresolved discussions** (how many), **required check missing**, plus any host-specific `blocked_status` reason. Add one the forge does not report as a blocker at all: **the target branch is no longer an ancestor of `git.default_base`** — a stacked MR/PR whose parent was merged (squashed, or its branch deleted) merges into a dead branch and its content never reaches the base. Check it whenever the target is not `git.default_base` (`git fetch --prune origin && git branch -r --contains "origin/<target>" | grep "origin/<git.default_base>"`); no match → this is the blocker to fix first, per `/flow:feat:ship §6.2.1`. These feed §3 alongside the failing jobs.
 
 ### 2.2 The pipeline
 
