@@ -159,6 +159,12 @@ Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.sq
 
 With an "all threads resolved before merge" policy, the MR/PR cannot be merged or deployed until the SQL is executed and the thread resolved. **One single thread even if there are multiple statements.** Tell the user it is intentionally left open.
 
+### 3.3 Performance comment
+
+`/flow-feat-ship` §4.3, unchanged: query rows from `06-review.md` and benchmark rows from
+`05-validation.md`, posted as a comment on the MR/PR, confirmed in every mode, nothing posted when
+nothing was measured. A slowness bug is the case where this comment *is* the proof the fix worked.
+
 ## 4. Close
 
 - Update `meta.json`: add `ship` to `phases_done`, update `updated_at`. **`phase` becomes `done` only once the MR/PR is confirmed merged** — creating it is not finishing it. Right after §3.1 it is open, so ask once with `AskUserQuestion` whether it has already been merged: **no** (the normal answer) → leave `phase = "ship"`; **yes** → `phase = "done"`. `/flow-work-green` and `/flow-work-respond` work on the open MR/PR; `/flow-work-clean` only sweeps what merged.

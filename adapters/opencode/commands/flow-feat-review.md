@@ -106,7 +106,9 @@ A query's cost lives in its **execution plan** (existing indexes, column order/d
 
 Judging rules: **no number, no win** (unresolved is recorded unresolved, never split in prose); **no dogma in either direction** ("N small queries is an N+1" and "one batched query always wins" both need a measurement); **a defect that predates the diff is declared and ticketed separately**, never used to bless the diff nor dragged into it.
 
-Verdicts as findings: **change** = blocker, through §6; **schema / follow-up** → proposed ticket in the output; **unresolved** → recorded literally with the open question (as §3.5). A `change` verdict resting on a measured plan is already confirmed — no §6 skeptic.
+**A modified query is judged against its own past, not only against its rivals.** For every query the diff *changes* (as opposed to adds), the duel carries the **base row** — the same query on `git merge-base HEAD <git.default_base>`, measured in the same sandbox with the same seed (`/flow-work-query` §4). Without it the table cannot say whether this diff made things better or worse, which is the one thing a reviewer wants from it.
+
+Verdicts as findings: **change** = blocker, through §6; **regressed** = blocker unless `03-design.md` justifies the trade, in which case it is stated and published; **schema / follow-up** → proposed ticket in the output **and a `followups[]` entry** (flow-core §7); **unresolved** → recorded literally with the open question (as §3.5). A `change` verdict resting on a measured plan is already confirmed — no §6 skeptic.
 
 ## 4. Over-engineering audit (fit + YAGNI)
 
@@ -219,10 +221,11 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 ## Data-access duel
 <one row per query added or modified by the diff, per §3.6; "no queries touched" if none, or "renames only" when the change did not alter filter/order/bound/joins/columns>
 
-| Query (file:line) | Bound | Index used / plan | Rows read → returned | Verdict | Evidence |
-|---|---|---|---|---|---|
-| `FooRepository::findBar()` | per key, 15 | `barIdx` (a,b) backward scan | 750 → 162 | ✅ ok | plan, measured 3 runs |
-| `BazRepository::latest()` | none | full scan, order not indexed | 63k → 15 | ❌ change | plan |
+| Query (file:line) | New/mod | Bound | Index used / plan | Rows read → returned | vs base | Verdict | Evidence |
+|---|---|---|---|---|---|---|---|
+| `FooRepository::findBar()` | modified | per key, 15 | `barIdx` (a,b) backward scan | 750 → 162 | 41k → 750 read, 8–9 ms vs 120–131 ms | ✅ ok, improved | plan, 3 runs |
+| `BazRepository::latest()` | new | none | full scan, order not indexed | 63k → 15 | — (new) | ❌ change | plan |
+| `QuxRepository::search()` | modified | per key, 50 | same index, extra join | 900 → 50 | 11–14 ms vs 10–13 ms | ✅ ok, no measurable change | plan, 3 runs |
 
 - Measured: <how — realistic data set / dev database / schema only / not measured, and why>
 - Unresolved: <the specific question left open, or "none">

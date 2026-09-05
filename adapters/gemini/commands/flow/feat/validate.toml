@@ -92,6 +92,33 @@ alone is still worth attaching.
 
 `/flow:feat:ship` reads this folder to build the MR/PR's Evidence section.
 
+## 3.7 Entry-point benchmark (before vs after)
+
+Read `quality.bench_cmd` from `FLOW.md`. **Empty → say so in one line and skip.** The plugin ships
+no benchmarking tool and invents no timings: with no command here, the phase makes no claim about
+speed or memory at all.
+
+Runs when the diff touches a **route, console command, consumer or job** — an entry point a
+benchmark can address. Not for a change confined to code no entry point reaches differently.
+
+1. **Pick the targets**: the entry points this diff actually changes, at most three. More than
+   three → take the three the ticket is about and say which were skipped.
+2. **Run on the base**: `git merge-base HEAD <git.default_base>`, checked out the way this repo
+   already switches (`/flow:work:try` mechanics, or the existing worktree), then `quality.bench_cmd`
+   with `{TARGET}` substituted, **three runs**.
+3. **Run on `HEAD`**, same target, same input, same three runs, same machine state.
+4. **Report `min–max`, never a mean**, for wall time and peak memory, plus whatever else the command
+   emits.
+
+**A difference inside the spread is "no measurable change".** Not a percentage, not "slightly
+faster". A laptop running containers produces variance that reads as a 5% win, and a table that
+publishes those wins is disbelieved within a fortnight — at which point the real regressions stop
+being read too. When the times overlap, lead with the counts the run produced (queries executed,
+rows read, allocations) — those are not noisy.
+
+Base cannot be run (the entry point did not exist, the schema moved under it) → **not measured**
+with the reason. A benchmark is never estimated from reading the diff.
+
 ## 4. Assisted manual verification (for `needs-manual` criteria)
 
 `meta.json.worktree` not null (the runnable env lives in the main checkout) → offer once before verifying: "to test this branch against the main environment, run `/flow:work:try <meta.branch>` (it switches the main checkout and re-syncs per `git.worktree_resync`), and `/flow:work:try --back` to return afterwards." Suggest it; do not run it yourself and do not force it. **`/flow:work:try` §3.5 prints this same plan once the environment is up and can collect the verdicts there** — say so, so the user is not left to ask for it again on the other side.
@@ -146,6 +173,13 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 
 ## Performance
 - Analysis findings: …
+- Entry-point benchmark (§3.7): <one row per target, or "no bench_cmd" / "no entry point touched">
+
+  | Entry point | Time base → HEAD (min–max, 3 runs) | Peak memory base → HEAD | Verdict |
+  |---|---|---|---|
+  | `GET /campaigns` | 210–224 ms → 88–95 ms | 42–43 MB → 30–31 MB | improved |
+  | `app:sync-contacts` | 1.8–2.4 s → 1.9–2.3 s | 120 MB → 121 MB | no measurable change |
+
 - Queries measured: <per query — plan, index used, rows read, time (3 runs), and on what data set; "schema only" or "not measured" with the reason when there was no way to run it>
 - Verdicts still unresolved from `06-review.md §Data-access duel`: <list, or "none">
 - Open risks: …
