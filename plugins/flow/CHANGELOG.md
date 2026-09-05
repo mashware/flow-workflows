@@ -5,6 +5,24 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.41.0 — The pull request said merged, and the branch it merged into was already gone  ·  2026-09-05
+
+**In short**
+- A stacked MR/PR whose parent is merged first lands its content **nowhere** — the forge says merged, the base branch never receives a line. `ship` now checks for it, at the Close and before the train moves on.
+- The recovery is written down: re-target the child at `git.default_base` and rebase (hard gate), or, when it already merged into the dead branch, recover it as a fresh MR/PR.
+- Confirming a merge now verifies the **tree**, not the badge: `git ls-tree` on the base for a path the MR/PR creates.
+- `/flow:work:resume` and `/flow:work:green` check the same thing — a dead target branch is the one blocker a forge reports as green.
+
+**PR 141 was merged into a branch `main` no longer descended from.** It targeted its parent branch in a train; PR 139 squash-merged that same parent into `main` **34 seconds earlier**, which replaced its commits with one new sha and left the parent branch off the base's history. GitHub marked 141 merged — and it was, into a branch that had stopped mattering. A whole decision-record entry and its guard were simply absent from `main`, and nothing surfaced it until somebody read the tree by hand.
+
+**The train logic covered the wrong direction.** `/flow:feat:ship §6.2` already builds the next MR/PR of a train without waiting for the current one to merge — deliberately, so a train is not held back by review latency. What it never said is what to do when the **parent becomes mergeable before the child**. New §6.2.1: while a stacked MR/PR is open, check that its parent is still an ancestor of `git.default_base`; parent still open → the child merges first or is re-targeted before the parent goes in; parent already merged → re-target at the base and rebase (a force-push, so a hard gate in every autonomy mode); child already merged into the dead branch → recover it as a new MR/PR against the base, mark the old entry `superseded`, and say plainly what was missing and for how long.
+
+**A merged badge is not the tree.** Every confirmed merge in `ship` now asks git whether a path the MR/PR creates actually exists on `git.default_base`, and refuses to record `merged` when it does not. It is one command, and it is the only thing that would have caught this.
+
+**Same check where a stale train is met again.** `/flow:work:resume` runs it in the repo-state block — the parent is most likely to have merged while you were away — and `/flow:work:green` captures it as a blocker row, because a dead target branch is precisely the state the forge does not report: mergeable, green, and worthless.
+
+Mirrored across the opencode, Gemini CLI and Codex adapters by the generator.
+
 ## v0.40.0 — The flow told its agents what to read, never what to send back  ·  2026-09-05
 
 **In short**

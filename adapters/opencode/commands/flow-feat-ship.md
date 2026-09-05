@@ -205,6 +205,14 @@ Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip wi
 - Mark the entry `superseded` with `note` pointing to the new MR/PR.
 
 In every scenario:
+- **A merged badge is not the tree.** Whenever the user confirms a merge, verify the content actually reached the base before recording it — mandatory when the entry has `stacked_on` set, cheap enough to be worth it always:
+
+  ```bash
+  git fetch --prune origin
+  git ls-tree -r origin/<git.default_base> --name-only -- <a path this MR/PR creates>
+  ```
+
+  Nothing back → the content is **not** on the base whatever the forge says (see §6.2.1). Do not mark the entry `merged`: leave it `in_progress` with a `note`, tell the user in one line, and recover it with a fresh MR/PR against `git.default_base` before the train moves on.
 - Refresh `panel.json` from the updated `meta.json`. A shipped-but-open MR/PR is a `wait` line carrying its `link`; it becomes `done` only when confirmed merged. When this ship sets `phase = "done"`, say so in plain words (`mark: "info"` with `style: "ok"`: nothing left here) and drop the `Decision` line.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 
@@ -235,6 +243,21 @@ To continue (both `ask`→yes and `always`):
 3. Chain into `/flow-feat-build`.
 
 This continuation is **not** a hard gate: a stacked branch on an explicit, unambiguous parent is safe, and creating MR/PR #\<n+1\> in its own `/flow-feat-ship` will still stop and ask. Never hold the train back solely to wait for a merge unless `train_chain: wait`.
+
+### 6.2.1 The parent merged first — re-target the child, or it merges nowhere
+
+A stacked MR/PR targets **its parent branch**, not `git.default_base`. When the parent is merged first — and a **squash** merge above all — the child's target stops being an ancestor of the base branch, and merging the child then lands its content **nowhere**: the forge marks it merged and `git.default_base` never receives a line of it. Measured: a child merged 34 seconds after its parent was squash-merged; a whole decision-record entry and its guard were missing from `main`, and nothing surfaced it until somebody read the tree.
+
+**Prevention, whenever this work has a stacked MR/PR open** (a `meta.json.mrs[]` entry with a `url` and `stacked_on` not null) — check at this Close and again at every `/flow-work-resume`:
+
+```bash
+git fetch --prune origin
+git branch -r --contains "origin/<parent branch>" | grep -q "origin/<git.default_base>"   # parent still an ancestor?
+```
+
+- **Parent still open** → say it in one line: the child merges first, or is re-targeted before the parent goes in. Never leave the order to chance when both are mergeable.
+- **Parent no longer an ancestor** (merged, squashed, or its branch deleted) and the child **still open** → **hard gate** (a rebase and a force-push, in every autonomy mode). Re-target and replay: `gh pr edit <n> --base <git.default_base>` (or `glab mr update <iid> --target-branch <git.default_base>`), then `git rebase --onto "origin/<git.default_base>" "<old parent>" "<child branch>"` and force-push per the repo's rules. One MR/PR is kept, review history included.
+- **Parent no longer an ancestor and the child already merged into it** → the content is lost to the base, not to git. Recover it as a fresh MR/PR against `git.default_base` (`git cherry-pick` the child's commits, or re-apply its tree), mark the old entry `superseded` with a `note` pointing at the new one, and tell the user plainly what was missing from the base and for how long.
 
 ### 6.3 Summary and cleanup
 
