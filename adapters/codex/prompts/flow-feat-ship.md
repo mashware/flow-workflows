@@ -82,6 +82,9 @@ Does **not** apply to the issue-link line (`Closes #<N>` / `Part of #<N>`): ther
 <bullets taken from "This MR/PR does NOT include..." in the Brief. Important so the reviewer knows what to leave out of scope.>
 <then, if `meta.json.followups[]` has entries still `proposed` or `accepted`: one line each — what was consciously deferred and why, with the ticket id when one exists. A reviewer cannot weigh the diff against what the author chose not to do unless it is written here. Omit the block entirely when there are none.>
 
+## Evidence
+<only if `.claude/work/<TICKET>/evidence/` has files for the criteria of **this** MR/PR (a train filters to the current `mrs[]` entry, not the whole work) and `quality.evidence` is not `off`. One entry per criterion: the criterion in one line, then its before/after pair, or the single after when there is no before. Non-visual evidence (a response body, a log excerpt) goes in a short fenced block instead of an image. Omit the whole section when there is nothing — never an empty header.>
+
 ## Steps to test it
 <taken from `07-validation.md` (flow reproduction) and `01-context.md` (acceptance criteria). Numbered, actionable: "1. Log in as X, 2. Go to Y, 3. Verify Z".>
 
@@ -110,6 +113,8 @@ SQL to run **manually on the server BEFORE deploying**, all statements in a sing
 ```
 
 Rules:
+- **Evidence is uploaded, never linked by path.** `.claude/work/` is git-ignored in most repos, so a path renders as broken text for everyone but you. Attach the files to the forge so they render inline: `gh` has no image-upload command — use the API-backed route your host supports, or paste into the description preview; `glab` uploads to the project. **Neither available → do not drop the section**: keep it as a table of criterion → evidence file, and say plainly in the stop that the images could not be attached and how to add them by hand.
+- **`git.request_sections` wins.** With custom sections defined, `Evidence` appears only if the user listed it. With the default template, it appears whenever there is evidence and is omitted entirely when there is none.
 - **The technical block goes in a collapsed `<details>`.**
 - **The `## Pre-deploy` section does NOT go in `<details>`**: it is a deployment gate, it must be visible. Only if `git.predeploy_gate` is active and the branch touches the DB; otherwise omit it.
 - **Do not copy bullets from `03-design.md` literally** into the main body — the MR/PR talks about behavior the user notices, not layers.

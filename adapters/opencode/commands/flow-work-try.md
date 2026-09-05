@@ -44,6 +44,32 @@ Uncommitted or staged changes → **stop**: switching would carry them over. Tel
    `git switch -` in §4 returns you to the branch you were on before this.
 3. **Re-sync the environment** with `git.worktree_resync`. These commands can be invasive (schema migrations, container rebuilds): show the exact list and confirm before running (`AskUserQuestion`: Run / Skip). On confirm, run them **in order**, stopping and reporting if one fails. Empty → skip silently.
 4. Report: now on `<branch>` (detached), which re-sync commands ran, and that `/flow-work-try --back` returns to the previous branch.
+5. **Then §3.5** — the environment being ready is exactly when the test plan is useful.
+
+## 3.5 Serve the manual test plan
+
+Find the work behind the branch: a `meta.json` whose `branch`, or one of whose `mrs[].branch`,
+matches. **None → stop here**; this command keeps its old behaviour and invents nothing.
+
+The plan already exists; the user should not have to ask for it. Source it in this order:
+
+1. **`07-validation.md` (or `05-validation.md` for a bug) exists** → the criteria still
+   `needs-manual` or `unproven`, each as numbered steps and the expected observation, in the
+   given/when/then wording `/flow-feat-validate` §4 uses. Criteria already `proven-by-test`,
+   `proven-by-agent` or `proven-manually` get **one line together** saying so — never repeat them.
+2. **No validation artifact yet** → the enumerated acceptance criteria from `03-design.md`, all of
+   them, flagged *not yet classified — `validate` has not run*. For a bug with no validation
+   artifact, the reproduction steps from `02-diagnose.md`.
+3. **Neither** → say so plainly and stop. Do not compose a plan out of the diff.
+
+**Offer to collect the verdicts here.** One `AskUserQuestion`, the same shape as
+`/flow-feat-validate` §4 — **Pass** · **Fail** · **Blocked**, up to four criteria per question —
+written straight into the validation artifact with the date. This is what turns `try` into the
+natural entrance to the assisted loop instead of a detour from it: `validate` sends the user here,
+and until now the plan did not come with them. Declining leaves the plan printed and writes nothing.
+
+Printing the plan is free in every `autonomy.mode`. Collecting verdicts needs the user's answers by
+construction, so `guided`/`auto` change nothing here.
 
 ## 4. Back mode — `/flow-work-try --back`
 
@@ -55,6 +81,9 @@ Uncommitted or staged changes → **stop**: switching would carry them over. Tel
    If it fails (no previous branch recorded), tell the user which branch to switch to manually.
 3. Re-sync again with `git.worktree_resync` (same confirm-then-run as §3.3).
 4. Report the branch you are back on and which re-sync commands ran.
+5. **Close the loop** when §3.5 resolved a work on the way in: what was verified during this try
+   session, what is still `unproven`, and the next step — `/flow-feat-validate` (or
+   `/flow-bug-validate`) to finish the gate. Nothing verified → say that, in one line.
 
 ## Notes
 

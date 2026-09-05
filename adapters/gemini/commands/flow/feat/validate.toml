@@ -43,13 +43,62 @@ The gate of this phase is not "suite green" — it is "every acceptance criterio
 1. Read the enumerated **Acceptance criteria** from `03-design.md`. For each, find the test(s) that would fail if it were violated. A test that merely "touches the area" is not enough — it must assert the criterion's observable result (reuse the literal values from the criterion / contracts).
 2. Classify each criterion:
    - **proven-by-test** — a named test demonstrably asserts it. Record the test path.
-   - **needs-manual** — not provable by an automated test now (UI, end-to-end flow, visual result). Goes to the assisted loop in §4.
+   - **needs-manual** — not provable by an automated test now (UI, end-to-end flow, visual result). Goes **first** to the automated attempt in §3.5, and only what that cannot drive reaches the assisted loop in §4.
    - **unproven** — neither. This is a gap → the testing agent in §2 adds the missing test; until it exists the criterion stays `unproven`.
 3. A criterion is **not** proven just because the suite is green: no test asserts its result → `unproven` until one is added.
 
+## 3.5 Try it yourself first (for `needs-manual` criteria)
+
+Everything else this phase produces is evidence *you* generated — a named test, a green suite, a
+measured plan. `needs-manual` was the one bucket where the evidence was the user's, taken on your
+word about what to look at. Exhaust what you can verify before asking them for anything.
+
+Read `quality.functional_check` from `FLOW.md` (empty → use what is available: a browser automation
+tool, a simulator, a CLI that drives the app, an HTTP call against a local endpoint — the same
+signals `/flow:doctor` reports). **Nothing available → skip this section in one line and go to §4**;
+that is a legitimate outcome, not a failure.
+
+`meta.json.worktree` not null → the runnable environment lives in the main checkout, not here. Do
+not fight it: say so once and go to §4, whose first move is `/flow:work:try` (§4 owns that handover).
+
+For each `needs-manual` criterion, drive its given/when/then against the running app and record one
+of three outcomes:
+
+- **`proven-by-agent`** — you exercised it and observed the expected result. Record **how** (tool,
+  route, command) and the **evidence** (§3.6).
+- **`needs-manual`** — you could not drive it: no tool, credentials you do not hold, a physical
+  device, a third-party sandbox. **Record the reason.** It falls through to §4, so the user is only
+  ever asked about what you genuinely could not do.
+- **Fail** — you drove it and the result is not what the criterion says. `unproven`, and it blocks
+  the gate exactly as a failed manual check does. Do not "fix and re-run" here: report it, the
+  implementation is what changes.
+
+**Never mark a criterion proven on reasoning alone.** Reading the code and concluding it must work
+is `needs-manual`, not `proven-by-agent`. This is the same rule the data-access duel applies to an
+unmeasured plan, and it is the only thing that makes the status worth anything.
+
+## 3.6 Evidence
+
+`quality.evidence` is `off` → skip; the statuses above still apply.
+
+Capture what you observed into `.claude/work/<TICKET>/evidence/`, one file per criterion, named
+after it (`ac2-campaign-filter-after.png`). Visual criterion → a screenshot; non-visual → the
+response body, the log excerpt, the command output, saved as text.
+
+**A criterion that changes something already visible needs a before.** Capture it on the base
+branch, or from the pre-change state, *before* running the flow — a before taken after the change
+does not exist, and inventing one is worse than having none. No before available → say so; the after
+alone is still worth attaching.
+
+`/flow:feat:ship` reads this folder to build the MR/PR's Evidence section.
+
 ## 4. Assisted manual verification (for `needs-manual` criteria)
 
-`meta.json.worktree` not null (the runnable env lives in the main checkout) → offer once before verifying: "to test this branch against the main environment, run `/flow:work:try <meta.branch>` (it switches the main checkout and re-syncs per `git.worktree_resync`), and `/flow:work:try --back` to return afterwards." Suggest it; do not run it yourself and do not force it.
+`meta.json.worktree` not null (the runnable env lives in the main checkout) → offer once before verifying: "to test this branch against the main environment, run `/flow:work:try <meta.branch>` (it switches the main checkout and re-syncs per `git.worktree_resync`), and `/flow:work:try --back` to return afterwards." Suggest it; do not run it yourself and do not force it. **`/flow:work:try` §3.5 prints this same plan once the environment is up and can collect the verdicts there** — say so, so the user is not left to ask for it again on the other side.
+
+Only the criteria §3.5 could not drive reach this loop, each with the recorded reason it could not.
+Say which, and why, before asking anything — a user asked to verify what the agent could have done
+itself learns to skip the question.
 
 Verify `needs-manual` criteria **together with the user**, one or a few at a time — the user runs the flow, you keep the checklist until every criterion is accounted for:
 
@@ -78,11 +127,12 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 ## Criteria coverage
 <one row per acceptance criterion from 03-design.md (S+; "N-A — XS" if the phase was skipped)>
 
-| Criterion | Proof type | Test / confirmation | Status |
-|-----------|-----------|---------------------|--------|
-| AC1: <short> | test | `tests/Foo/BarTest::testX` | ✅ proven-by-test |
-| AC2: <short> | manual | confirmed by user 2026-06-24 | ✅ proven-manually |
-| AC3: <short> | manual | — | ❌ unproven (blocked: staging down) |
+| Criterion | Proof type | Test / confirmation | Evidence | Status |
+|-----------|-----------|---------------------|----------|--------|
+| AC1: <short> | test | `tests/Foo/BarTest::testX` | — | ✅ proven-by-test |
+| AC2: <short> | agent | browser, `/campaigns?range=7d` | `evidence/ac2-*.png` | ✅ proven-by-agent |
+| AC3: <short> | manual | confirmed by user 2026-06-24 | `evidence/ac3-after.png` | ✅ proven-manually |
+| AC4: <short> | manual | — (§3.5: no simulator on this host) | — | ❌ unproven (blocked: staging down) |
 
 ## Test coverage
 - Unit added: N (list)
@@ -112,9 +162,10 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 
 ## 7. Close
 
-- **Do not advance `phase`** if tests are red, regressions are found, or **any acceptance criterion is `unproven`** (no test demonstrably asserts it and it was not manually confirmed). The criterion→test mapping is part of the gate — the same "do not advance on red" rule. The user resolves the gap (add the missing test, fix the implementation, or finish the manual verification) and returns to `/flow:feat:validate`.
-- Suite green **and** every acceptance criterion `proven-by-test` or `proven-manually` → `phase = "validate"`, add to `phases_done`. **Multi-MR/PR work** → also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow:feat:ship §1` gates on. Suggest `/flow:feat:ship`.
+- **Do not advance `phase`** if tests are red, regressions are found, or **any acceptance criterion is `unproven`** (no test demonstrably asserts it, and neither §3.5 nor the user confirmed it). The criterion→test mapping is part of the gate — the same "do not advance on red" rule. The user resolves the gap (add the missing test, fix the implementation, or finish the manual verification) and returns to `/flow:feat:validate`.
+- Suite green **and** every acceptance criterion `proven-by-test`, `proven-by-agent` or `proven-manually` → `phase = "validate"`, add to `phases_done`. **Multi-MR/PR work** → also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow:feat:ship §1` gates on. Suggest `/flow:feat:ship`.
 - **Record *what* you validated**, in the same write and only when the phase advances: `validated_sha` = `git rev-parse HEAD`, work-level and in this MR/PR's `mrs[]` entry. `/flow:feat:ship §1` reads it to tell "the suite passed here" from "the suite passed on something else".
+- **Unchecked edge cases and open risks become `followups[]` entries** (flow-core §7) before advancing — see the output template above.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Autonomy handoff — this one stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR: a hard gate in every mode, so do **not** chain into it. Stop here and propose `/flow:feat:ship` with a single `AskUserQuestion` (recommended option by default), invoking it only when the user confirms. This is the deliberate end of the unattended run.
 

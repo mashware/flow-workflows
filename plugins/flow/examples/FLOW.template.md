@@ -98,6 +98,15 @@ scripts, Gradle, dotnet, Xcode, Flutter, pyproject, Cargo, go.mod) and reports w
 - `db_update:`        # e.g. `make database-update` (empty if not applicable)
 - `db_diff:`          # command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL)
 - `frontend_test:`    # e.g. `make test-frontend` (empty if no frontend)
+- `functional_check:` # how to drive the running app so `/flow:*:validate` can prove an acceptance criterion itself
+                      #   instead of dictating it to you: a base URL, a simulator destination, a login or seed command,
+                      #   whatever this repo needs. Free text, read by the agent alongside what `/flow:doctor` detects
+                      #   (a browser automation tool, a simulator, a CLI that drives the app). Empty = the agent uses
+                      #   what it can detect; with nothing available every UI/end-to-end criterion stays `needs-manual`
+                      #   and you verify it, exactly as before. A criterion is NEVER marked proven on reasoning alone.
+- `evidence:`         # `on` (default) | `off`. Whether `/flow:*:validate` captures evidence (screenshots, response
+                      #   bodies, log excerpts) into `.claude/work/<work>/evidence/` and `/flow:*:ship` attaches it to
+                      #   the MR/PR description. `off` skips both; the criteria table is unaffected.
 - `review_depth:`     # how much of the review panel runs AND at what effort, scaled by work size + risk, in `/flow:*:review`. `proportional` (default) | `full` | `light`.
                       #   proportional → XS: only the built-in `code-review` (medium effort), no panel. S: built-in `code-review` (high) plus
                       #                  the panel ONLY if the diff touches a sensitive surface (auth/authorization, secrets, payments/billing,
