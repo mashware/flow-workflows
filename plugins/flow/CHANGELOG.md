@@ -5,6 +5,26 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.40.0 — The flow told its agents what to read, never what to send back  ·  2026-09-05
+
+**In short**
+- Every brief a command writes itself now ends with a **report contract** — a word cap and a shape — because a report too long for the harness to carry is thrown away in transit and reaches the parent looking exactly like an agent that did nothing.
+- Agents that produce volume (code, tests, a translation) are told **the file is the deliverable**, saved piece by piece, and the file is what gets verified.
+- A fan-out now has a **deadline**: the harness signals an agent that finishes and never one that stops advancing, so every stop of a command checks the round it launched.
+- Two new `agents` keys: `report_max_words` (empty = 250) and `stall_after_minutes` (empty = 25).
+
+**Seventeen subagents, and not one delivered its report on its own.** In a single long session driven end to end with `/flow:feat:*`, four agents answered only when asked directly — fifteen minutes late — two more answered three hours late (with the best findings of the delivery, three real defects), and three produced nothing at all. The delivery itself took 73 minutes; the session spent another three hours waiting for reports that were never coming. Nothing tells a parent that a wait is futile.
+
+**The truncation is invisible from the parent's side.** Claude Code discards a subagent result over ~16 000 characters and hands the parent a placeholder saying so. The agent finished, the report was written, and what arrives is indistinguishable from silence. Six of the seventeen hit exactly this, and every one of them had an uncapped brief. A stronger model makes it worse, not better: it writes more, so it truncates sooner.
+
+**The flow already prevented this everywhere it wrote the prompt itself.** The briefs this plugin spells out — in `review`, `plan`, `design`, `investigate`, `brainstorm`, `query` — carry caps of 150 to 600 words, and not one agent launched from them failed. Every failure came from the places where the flow hands the pen to the calling agent and says nothing about the answer: the reviewer panel in `feat`/`bug` `review`, the delegated pieces in `build`, the testing and performance agents in `validate`, the design subagents in `design`. The rule was already the flow's; it just stopped at that boundary. It now lives once in **flow-core §6** and each of those steps points at it.
+
+**Bulk work belongs on disk, not in a context.** One agent spent an hour on a 700-line chunk without touching a file while three siblings with larger chunks finished in twenty minutes each; when it was stopped, everything it had done was gone, because no brief had said the file was the deliverable. `build` now names the path the agent writes, requires a save after each finished piece, and verifies the artifact rather than believing the report.
+
+**A stall raises no event.** The harness reports completion and never a stop, so a stuck round stays invisible unless somebody looks — which, in an unattended run, nothing prompts the parent to do. `flow-core §6` puts a deadline on every fan-out: record what the round should take, check it at **every** stop of the command, and stop, split and relaunch anything past `agents.stall_after_minutes` with nothing written to its path. An agent that went idle with an empty result is asked for it once before being dropped — in this session that question was worth three defects.
+
+`stall_after_minutes: 25` is a first guess from one session and should be revisited once there are numbers from more. Mirrored across the opencode, Gemini CLI and Codex adapters by the generator.
+
 ## v0.39.0 — `init` only knew the stacks its author had used  ·  2026-09-02
 
 **In short**

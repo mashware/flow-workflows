@@ -140,6 +140,13 @@ fan-out runs as plain parallel subagents — the primitive every harness has.
 - `fanout_max:`     # max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported
 - `fanout_tool:`    # orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable
 
+Two more govern **what a delegated agent owes you back** (flow-core §6). They apply to every brief a
+command composes itself — the panel in `review`, the delegated pieces in `build`, the agents in
+`validate` — not to the prompts this plugin already writes out with their own cap.
+
+- `report_max_words:`      # word cap every brief you write for a subagent carries. Empty = 250. Not a style rule: a report too long for the harness to carry is truncated in transit and reaches you as silence
+- `stall_after_minutes:`   # a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25
+
 ## models
 Which model each kind of step runs with. **Every key is optional and empty by default = the step runs
 with the model you launched the command with** (today's behavior — the flow changes nothing).

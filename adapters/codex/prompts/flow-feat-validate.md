@@ -24,7 +24,7 @@ Verify the feature is complete: test coverage, edge cases, performance, regressi
 
 ## 2. Work
 
-Launch **in parallel**:
+Launch **in parallel** — both briefs end with the report contract of flow-core §6 (`agents.report_max_words`, empty → 250; findings only, one line each), and the testing agent is told the **test files are the deliverable**, saved as each one is finished, not at the end:
 
 1. **Testing agent**: the `agents.testing` agent from `FLOW.md`; if empty, `Agent general-purpose` with this role. Brief: "Review the branch changes and complete the test suite where coverage is missing. Focus: the acceptance criteria in `03-design.md` marked `test` that no current test demonstrably asserts (see the §3 mapping), plus edge cases from `03-design.md`, error paths, input validations, emitted domain events. Do not rewrite tests that already pass. Read `.claude/work/<TICKET>/03-design.md` and `05-implementation.md`. Follow the project's test conventions (see `FLOW.md` section `conventions`)."
 

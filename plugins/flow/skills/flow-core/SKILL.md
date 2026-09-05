@@ -1,6 +1,6 @@
 ---
 name: flow-core
-description: Shared rules every /flow command relies on — reading FLOW.md, model keys, autonomy modes and hard gates, how a stop reads, the live panel.json and the 00-summary.md handoff. Load once per session before running any /flow command.
+description: Shared rules every /flow command relies on — reading FLOW.md, model keys, autonomy modes and hard gates, how a stop reads, the live panel.json and the 00-summary.md handoff, and the report contract every delegated brief carries. Load once per session before running any /flow command.
 ---
 
 # flow-core — the rules shared by every `/flow` command
@@ -144,3 +144,38 @@ single largest token cost of a work, so every work carries a short handoff:
   have is the cue to open the artifact — never a licence to guess.
 - Missing summary (a work started before this rule) → read the artifacts as before, write the
   summary at your Close.
+
+## 6. Delegating — what every brief owes the parent
+
+A brief that says what to look at and nothing about what to send back is how a round of agents goes
+quiet: the work gets done and the parent never sees it. The prompts this plugin writes out in full
+already carry a report contract (`Under 250 words`, *findings only, one line each*). **A brief you
+compose yourself carries the same one:**
+
+> Report in under `agents.report_max_words` words (empty → 250): findings only, one line each as
+> `file:line` + what is wrong + the fix. No method, no preamble, no apology.
+
+The cap is not style. **A long report can be truncated in transit and reach you as nothing at all** —
+Claude Code discards a subagent result over ~16 000 characters and hands the parent a placeholder,
+which from here is indistinguishable from an agent that did no work. An uncapped brief over a large
+diff hits that every time, and a stronger model hits it sooner, because it writes more.
+
+**Bulk output is a file, not a report.** When the agent produces volume — a translation, a generated
+test suite, a migration, a batch of edits — name the **path it writes** and require it to **save
+after each finished piece, not at the end**. Then verify the artifact instead of believing the
+report: half a chunk on disk is recoverable, what lives only in the agent's context is not.
+
+**A brief over a large corpus needs a bounded first step.** *"Review this 8 700-line diff"* has no
+first move, and an agent handed one can sit for hours producing nothing. Split it: by path, by
+numbered question, or by the concrete command that answers each one.
+
+**Fan-out has a deadline, because a stall raises no event.** The harness reports an agent that
+*finishes* and never one that *stops advancing*, so a stuck round is invisible unless you look. On
+launching a round, record the time and what you expect it to take. At **every stop of the command** —
+not only the last — check it: whatever your harness offers for listing running agents, and failing
+that, the named path each one was told to write. An agent past `agents.stall_after_minutes`
+(empty → 25) with nothing written is stopped, its brief split in two, and relaunched. An agent that
+went idle with an empty or truncated result is **asked for it directly** before it is written off.
+
+Dropping a silent agent is always allowed, and always reported (`N/M` reported). Waiting on one with
+no deadline is what costs a session.

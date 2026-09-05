@@ -66,7 +66,7 @@ Each advisor gets this brief, with the lens substituted:
 
 `agents.fanout_tool` set in `FLOW.md` → run the rounds through that tool instead of plain parallel subagents; the rounds, the briefs and the `fanout_max` ceiling do not change (see `agents` in `FLOW.md` and `examples/FLOW.template.md`).
 
-Fill §4: each approach → one "Option"; consensus/disagreement reading + recommendation → "Initial recommendation"; each approach's biggest surfaced flaw → its "Why it could be a bad idea" line. **A subagent that comes back empty is dropped, not retried** — synthesize from those that answered and note in `02-brainstorm.md` how many launched advisors reported (`N/M`). Empty critique round → rank from the approaches alone.
+Fill §4: each approach → one "Option"; consensus/disagreement reading + recommendation → "Initial recommendation"; each approach's biggest surfaced flaw → its "Why it could be a bad idea" line. **A subagent that comes back empty is asked once for its answer and then dropped, never relaunched** (flow-core §6 — an empty result is as often a truncated report as an advisor with nothing to say) — synthesize from those that answered and note in `02-brainstorm.md` how many launched advisors reported (`N/M`). Empty critique round → rank from the approaches alone.
 
 ### 3.B Single agent (default case)
 

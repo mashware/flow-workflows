@@ -55,6 +55,8 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 
    Launch the panel **as defined** — whole roster, no hand-picked subset, no substitutions (each member owns a category nothing else repeats). An agent that genuinely cannot run → record it in §8 `Agents launched` with the reason.
 
+   **Every brief you write here ends with the report contract of flow-core §6** — `agents.report_max_words` (empty → 250), findings only, one line each as `file:line` + what is wrong + the fix. This file's own prompts (§3.5, §4, §5.5) already carry theirs; the panel briefs are yours to write, and an uncapped one is truncated in transit and reaches you looking exactly like a reviewer that found nothing. The built-in `code-review` takes no brief — bound it with the §2.0 effort tier and hold it to the same fan-out deadline (flow-core §6): over a large diff it is the likeliest member of this round to stall before its first sentence.
+
 When both run, deduplicate overlapping correctness/simplification findings (count each once). The `review_skill` specialists (offensive/defensive security, silent failures, architecture) are not repeated in later phases.
 
 ### 2.2 Design truth vs design rationale (do not inherit rationalizations)
@@ -66,7 +68,7 @@ When both run, deduplicate overlapping correctness/simplification findings (coun
 
 ## 3. Targeted reinforcements
 
-Only what §2 does **not** already cover; skipped entirely under `light` (§2.0). If the feature touches these areas, additionally launch **in parallel**:
+Only what §2 does **not** already cover; skipped entirely under `light` (§2.0). Same report contract as §2.1 (flow-core §6) on every brief. If the feature touches these areas, additionally launch **in parallel**:
 
 - **Any repeated call that leaves the process** (external API, HTTP, cache, filesystem) → `agents.performance` from `FLOW.md` on the changed files; empty → skip. Have it cover what **each failed iteration** sets off downstream (publishes, enqueues, disables, logs), not just the happy path's cost. **Queries are not covered here** — §3.6 owns them.
 - Workers / message queues → `agents.queues` from `FLOW.md`: no `flush()` in a loop; workers registered per the project convention (`FLOW.md` section `conventions`); empty → skip.

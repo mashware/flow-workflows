@@ -107,6 +107,12 @@ Execution mode:
 - **Single-thread (XS/S/M)**: implement yourself, step by step; subagents only as point consultants when blocked — `agents.architecture` from `FLOW.md` for layer questions, `agents.persistence` for query/mapping questions (`Agent general-purpose` if either is empty).
 - **Partial delegation (M/L with clear pieces)**: `Agent` for isolated endpoints, plus `agents.testing` from `FLOW.md` in parallel to prepare the test suite (`Agent general-purpose` if empty). Pass the full `03-design.md` in the prompt so agents do not invent things.
 
+  A brief here states the **output** as explicitly as the input (flow-core §6):
+  - **Name the path the agent writes**, and require it to **save after each finished piece, not at the end**. Code, tests and generated content are the deliverable; the report is not. Then **verify the file** instead of believing the report — a piece half-written on disk is recoverable, what only exists in the agent's context is lost the moment it is stopped.
+  - **End the brief with the report contract** — under `agents.report_max_words` (empty → 250): what it wrote, where, what it could not do. A report long enough for the harness to truncate reaches you as silence.
+  - **Give it a bounded first step.** A piece with no natural first move ("do the whole module") produces nothing for hours; split it by file or by numbered step until it has one.
+  - **Check the round at every stop of this command**, not only at the end: an agent past `agents.stall_after_minutes` (empty → 25) with nothing written to its path is stopped, split in two and relaunched.
+
 Use `TaskCreate` to track the steps from the design's implementation plan. Mark each step `in_progress` when starting and `completed` when done — do not batch.
 
 ### 2.2 Checkpoints (local commits, gated by `autonomy.mode`)
