@@ -84,6 +84,7 @@ Does **not** apply to the issue-link line (`Closes #<N>` / `Part of #<N>`): ther
 
 ## What is NOT included
 <bullets taken from "This MR/PR does NOT include..." in the Brief. Important so the reviewer knows what to leave out of scope.>
+<then, if `meta.json.followups[]` has entries still `proposed` or `accepted`: one line each — what was consciously deferred and why, with the ticket id when one exists. A reviewer cannot weigh the diff against what the author chose not to do unless it is written here. Omit the block entirely when there are none.>
 
 ## Steps to test it
 <taken from `07-validation.md` (flow reproduction) and `01-context.md` (acceptance criteria). Numbered, actionable: "1. Log in as X, 2. Go to Y, 3. Verify Z".>
@@ -279,6 +280,39 @@ Report **following the stop header** (flow-core §3): ticket, MR/PR URL, changed
 4. **Record it.** On publish, set that entry's `contract_handoff` to `published → <ticket comment url or file path>`. On skip, leave it `pending` — the reminder fires again next ship, by design. Failure to post → warn in one line, leave `pending`, never block the ship.
 
 Still "notes and reminds": the contract goes to the tracker or to this repo, never into the sibling's working tree. Not a hard gate — a skipped handoff never stops a merged MR/PR from closing out.
+
+### 6.4 Follow-up triage — decide once, now that the work is done
+
+Read `meta.json.followups[]` (flow-core §7). **No entries with `status: "proposed"` → skip this
+section entirely and say nothing.** This is the only place the flow asks about deferred work: the
+phases that parked it asked nothing, deliberately.
+
+1. **Present them together.** One `AskUserQuestion`, batched up to 4 entries, each entry's `title`
+   and `why` as the whole prompt — the user does not reopen `05-implementation.md` to answer.
+   Options per entry: **Do it** · **Not worth it** · **Later**.
+2. **Not worth it** → `status: "declined"`, the reason in `note` if the user gave one. Never asked
+   again, in this work or any later one.
+3. **Later** → stays `proposed`. `/flow-work-status`, `/flow-work-daily` and `/flow-next` surface it
+   until it is decided; nothing else happens now.
+4. **Do it** → `status: "accepted"`, then **create the tracker issue**, exactly as
+   `/flow-feat-start` §2.5.4 creates one from a ticket-less draft — the tool's native command
+   (`gh issue create`, `glab issue create`, `acli`, `linear`), best-effort, id captured into
+   `ticket`. Body: the `title`, the `why`, and a link back to this MR/PR and to `meta.json.ticket`.
+   `tracker.tool` `none`/empty or creation fails → warn in one line, leave `ticket: null` and the
+   entry `accepted`; the record survives either way.
+   **Creating an issue is outward-facing: this asks in every `autonomy.mode`, `auto` included.**
+5. **Offer to start one, once.** Any entry now `accepted` → a single `AskUserQuestion`: start the
+   first one here (`/flow-feat-start <ticket>`, or `/flow-bug-start` when the action is itself a
+   fix)? On yes, the new work records `meta.json.origin` pointing back at this work and this entry,
+   and this entry becomes `in_progress` with `work` naming the new folder. On no, nothing changes.
+   Never chain into a `start` without this confirmation.
+
+**On a re-run that confirms the merge**, repeat this for whatever is still `proposed` — a decision
+deferred with **Later** is meant to come back, and this is when it does.
+
+- **Close the follow-up that started this work.** `meta.json.origin` set and this ship moved `phase` to `done` → open the originating work's `meta.json` (live folder or `_archive/`) and set that `followups[]` entry to `status: "done"`. Best-effort: the originating folder is gone or unreadable → warn in one line and continue, never block. Without this the entry stays `in_progress` forever and `status`/`daily` keep reporting work that is finished.
+
+### 6.5 Archive and cleanup
 
 Only if `phase = "done"`:
 - Ask whether to keep `.claude/work/<TICKET>/` or archive it (move to `.claude/work/_archive/`).

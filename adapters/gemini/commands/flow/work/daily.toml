@@ -36,6 +36,7 @@ Your **work assistant**: a Scrum-style daily standup — *"what was I working on
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.
 - Per work: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending** — synthesized from the most recent artifact(s) (`NN-*.md`) and `meta.notes`, not re-derived from code.
 - **Cross-repo parts**: `meta.json.related_repos` entries not `done` → a *sibling repo* still needs work. Surface only what is recorded — never scan or open the other repo.
+- **Open follow-ups**: `followups[]` entries not `declined`/`done`, from the live works **and** from `_archive/*/meta.json` (flow-core §7). The archive is read for this and nothing else.
 
 ## 2. Forge layer (best-effort, via `git.cli`)
 
@@ -68,6 +69,7 @@ Turn the *joins* into concrete, **suggested** commands (never act):
 - Local work whose branch has an open MR/PR with **CI red or an unmergeable state** (conflicts, behind base) → `/flow:work:green`; with **threads awaiting your reply** (latest comment not yours) → `/flow:work:respond`.
 - A ticket's **priority was raised** while you were on something else → call out the possible refocus.
 - `related_repos` entries not `done` → the **other repo's part is still open**: surface it (`<repo>: <scope>`) and suggest `/flow:feat:start <TICKET>` in that repo. `contract_handoff` `pending` → add that the contract was never handed over; the fix is `/flow:feat:ship` §6.3 on this side first. flow only reminds; it never scans the sibling.
+- **Follow-ups nobody has decided on** → one line at most, not a list: `<N> follow-ups awaiting a decision (oldest: <TICKET> F2 — <title>)`, and separately any `accepted` entry with no `work` started, suggesting `/flow:feat:start <ticket>`. A standup is where deferred work should resurface; it is not where it gets triaged — that is `ship`, once. Say nothing when there are none.
 - Uncommitted local changes not reflected in any log/artifact → nudge toward the relevant phase.
 - **Residue piling up** → `/flow:work:clean`. Cheap local check, no extra forge calls: `git worktree list` (minus the main checkout) against the works already read; a worktree whose work is `done`, or that no work folder claims, is a finished branch still holding a checkout. One line with the count, at the end, only above a handful — housekeeping, never the headline.
 

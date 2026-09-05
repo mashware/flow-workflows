@@ -58,7 +58,7 @@ Save the brief at the top of `04-fix.md`. Any "also fix X while we're at it" dur
 
 Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this rename fits here", "this extra test covers another case"): **pause before touching it** and ask with `AskUserQuestion`:
 - **Yes, add it to the brief** — update the brief in `04-fix.md`, continue.
-- **No, leave it out** — note it under "Areas with similar risk" (a risk from the same pattern) or under "Ideas for separate tickets" in `04-fix.md`.
+- **No, leave it out** — note it under "Areas with similar risk" (a risk from the same pattern) or under "Ideas for separate tickets" in `04-fix.md`, **and append it to `meta.json.followups[]`** as `kind: "audit"` (similar risk) or `kind: "out-of-scope"`, `source: "fix"` (flow-core §7).
 
 ## 3. Log
 
@@ -84,10 +84,10 @@ Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this ren
 - <file> — what changed and why (1 line)
 
 ## Areas with similar risk (noted, NOT touched here)
-- open a separate ticket if warranted
+- `F<n>` — <the pattern to audit; also a `meta.json.followups[]` entry, `kind: "audit"`. `bug:validate` §3 checks these do not already show the same active symptom, and `bug:ship` publishes them in the MR/PR description — the one deferral in this plugin that already made the whole journey.>
 
 ## Ideas for separate tickets
-<things that came up during the fix and were decided NOT to include>
+<things that came up during the fix and were decided NOT to include; each with its `F<n>` and a `meta.json.followups[]` entry (`kind: "out-of-scope"`, `source: "fix"`) — flow-core §7>
 
 ## Relevant commands
 - <commands used to install dependencies, etc.>

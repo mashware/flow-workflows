@@ -188,7 +188,7 @@ If either is exceeded, **pause** and ask the user with `AskUserQuestion` (option
 
 If during the build the temptation arises to add something **not in the §2 brief** ("while I'm here…", "this test would also cover X…", "this rename would improve Y…"), **pause before doing it** and ask the user with `AskUserQuestion`:
 - **Yes, add it to the brief** — update the brief in `05-implementation.md` and continue. (If the addition is large, consider §2.3: it could trigger a MR/PR cut.)
-- **No, leave it out** — note it in the "Ideas for separate tickets" section of `05-implementation.md` and continue with the original brief.
+- **No, leave it out** — note it in the "Ideas for separate tickets" section of `05-implementation.md` **and append it to `meta.json.followups[]`** as `kind: "out-of-scope"`, `source: "build"` (flow-core §7): the section keeps it in context, the record is what survives the archive. Continue with the original brief.
 
 Anything unforeseen **always** goes through the user before entering code.
 
@@ -232,7 +232,7 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at th
 - [ ] …
 
 ## Ideas for separate tickets
-<things that came up during the build and were decided NOT to include; each with one line: "what" + "why it makes sense as its own ticket">
+<things that came up during the build and were decided NOT to include; each with one line: `F<n>` + "what" + "why it makes sense as its own ticket". Each row is also a `meta.json.followups[]` entry (`kind: "out-of-scope"`, `source: "build"`) — flow-core §7. Nothing is asked here; `ship` triages the set once, at the end.>
 ```
 
 ## 4. Quality during implementation

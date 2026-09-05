@@ -5,6 +5,28 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.42.0 — Every phase knew what it was choosing not to do, and told nobody  ·  2026-09-05
+
+**In short**
+- Work a phase deliberately parks — a neighbouring defect, an out-of-scope piece, an unmitigated risk, an unchecked edge case, a postmortem's prevention actions — is now a **record in `meta.json`**, not a line in an artifact that gets archived unread.
+- `ship` triages the whole set **once**, at the end: *do it* · *not worth it* · *later*. Accepted ones get their tracker issue opened and an offer to start.
+- Whatever is still open when the MR/PR is created is **named in its description**, so a reviewer sees what was consciously left out.
+- `status`, `daily` and `next` surface the undecided ones — **including from `_archive/`**.
+
+**"Note it as an idea for a separate ticket" appeared in six places and opened nothing.** `build` §2.4 sent it to a section of `05-implementation.md` nothing ever reads again — `ship` opens only that file's Brief. `design` wrote *Identified risks* that appeared in no other command. `validate` left `[ ]` edge cases and *Open risks* that `ship` never surfaced. `bug:validate` listed *other bugs detected* that `bug:ship` opened the file past. `postmortem` ended by literally saying *propose opening separate tickets (not done in this flow)*. And `plan` said *out of scope — idea for a separate ticket* **in the chat**, writing it nowhere at all: the one deferral that left no trace to find.
+
+All of it inside `.claude/work/`, which `/flow:init` offers to git-ignore, and under `_archive/` the moment the work ships. The decision to not widen the diff was right every time. Everything after it was missing.
+
+**The mechanism already existed, in one place.** `bug:fix`'s *Areas with similar risk* is the only deferral in the plugin that made the whole journey: written at `fix`, checked at `validate` for the same active symptom, published by `bug:ship` in the MR/PR description. That is the model this release generalises — no new idea, just the same one applied to the other six.
+
+**`meta.json.followups[]`** (flow-core §7) carries `id`, `kind` (`prevention` · `audit` · `out-of-scope` · `risk` · `edge-case` · `other-bug`), `title`, `why`, `source`, `status`, and the `ticket`/`work` it turned into. The artifact keeps its human-readable section with the `F<n>` id in front of each row, so prose and record cannot drift.
+
+**Nothing is asked when the note is written.** Mid-build is the worst moment to judge whether a neighbouring defect deserves a ticket, and a question there is exactly the interruption `guided`/`auto` exist to prevent. The triage happens once, at `ship`'s Close, batched up to four per question, with `title` and `why` as the entire prompt. *Later* keeps it open and visible; *not worth it* is recorded and never asked again. **Creating the tracker issue for an accepted one is outward-facing, so it asks in every mode**, `auto` included — the same category as the MR/PR gate.
+
+**A work started from an accepted follow-up records `meta.json.origin`**, carries the recorded *why* into `01-context.md` instead of re-deriving it, and closes that entry when it reaches `done`.
+
+Mirrored across the opencode, Gemini CLI and Codex adapters by the generator.
+
 ## v0.41.0 — The pull request said merged, and the branch it merged into was already gone  ·  2026-09-05
 
 **In short**

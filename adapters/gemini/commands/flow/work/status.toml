@@ -21,6 +21,7 @@ Overview of works in progress; detects divergences between artifacts and actual 
 ## 1. List works
 
 - `ls -1 .claude/work/` (ignore `_archive`).
+- **Then `_archive/*/meta.json` for `followups[]` alone** — entries not `declined`/`done` (§5). Nothing else about an archived work is shown; a finished work is exactly when its deferred items stop being visible, which is the point of reading them here.
 - Read the `meta.json` of **every** folder (named `<TICKET>-<slug>`, `<slug>` for ticket-less/local works, or just `<TICKET>` for older ones). Identify each work by `meta.json.ticket`, not by the folder name.
 - Read `00-summary.md` per work when it exists and use it for the recap (`Next:` line, what is pending) instead of reading every artifact (flow-core §5); missing → fall back to the artifacts.
 
@@ -34,11 +35,13 @@ Overview of works in progress; detects divergences between artifacts and actual 
   Phases done: context, design, build…
   MR/PRs:      2/4 merged · MR/PR #3 in_progress · MR/PR #4 pending
   Cross-repo:  <meta.related_repos entries not "done", as "repo: scope">   (line only if any)
+  Follow-ups:  2 awaiting a decision · 1 accepted, not started            (line only if any)
   Next:        <suggested next command>
 ```
 
 - "MR"/"PR" from `git.request_term` in FLOW.md; empty → "MR/PR".
 - `Cross-repo:` only when `meta.json.related_repos` has entries not `done`: each as `<repo>: <scope>`, appending ` — contract not handed over` when that entry's `contract_handoff` is `pending`. It flags that a **sibling repo still has a pending part**; flow never scans or touches the other repo.
+- `Follow-ups:` only when `meta.json.followups[]` has entries not `declined`/`done` (flow-core §7): count the `proposed` ones as *awaiting a decision* and the `accepted` ones without a `work` as *accepted, not started*, naming the ticket id when there is one. `in_progress` entries are already visible as their own work — do not double-count them.
 - `MR/PRs:` only when `meta.json.mrs` exists with >0 entries:
   - Summary: `<merged>/<total> merged`.
   - `closed` or `superseded` MR/PRs present → add to the count: `2/4 merged · 1 closed · 1 pending`.
@@ -85,7 +88,26 @@ Only if the branch in meta.json **is the current one**:
 - **Residue count** (one line, no per-entry detail): worktrees registered (`git worktree list`, minus the main checkout), work folders with `phase: done` still outside `_archive/`, and prunable registrations (`git worktree prune --dry-run`). Total above a handful → `Residue: <N> worktrees · <N> unarchived done · <N> prunable → /flow:work:clean --dry-run`. This command never deletes anything — `clean` establishes the merged/open verdict and acts.
 - Branch pattern from `git.branch_pattern` in FLOW.md; empty → branches matching `<prefix>XXXXX-*` or orphaned folders in `.claude/work/`.
 
-## 5. Quick actions
+## 5. Open follow-ups (live works and `_archive/`)
+
+One block at the end, only when there is anything to show. Deferred work outlives the work that
+deferred it, and `_archive/` is where it goes to be forgotten:
+
+```
+Follow-ups awaiting a decision
+  PROJ-123 F2  audit the other three callers of the same helper       (archived work)
+  PROJ-140 F1  index on events.created_at — plan says full scan       → PROJ-155
+```
+
+- Source: `followups[]` of every `meta.json`, live folders **and** `_archive/`, entries not
+  `declined`/`done`. Show the originating ticket, the id, the `title`, and the created ticket when
+  `ticket` is set. Mark archived origins so it is clear the work itself is finished.
+- `proposed` entries are listed under *awaiting a decision*; `accepted` ones without a `work` under
+  *accepted, not started*. Suggest `/flow:feat:start <ticket>` for the latter.
+- More than about eight → show the newest five and the total. This command is read-only: it never
+  triages, creates a ticket, or edits `followups[]`. That happens once, at `ship` (flow-core §7).
+
+## 6. Quick actions
 
 If a work's branch matches the current one, suggest:
 - `phase = "done"` → nothing to do; offer to archive.

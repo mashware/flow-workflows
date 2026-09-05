@@ -49,7 +49,7 @@ Then:
 
 ## Adjacent areas
 - Searches done:
-- Other bugs detected: <list to open separate tickets, do NOT fix here>
+- Other bugs detected: <list to open separate tickets, do NOT fix here. Each one carries an `F<n>` and a `meta.json.followups[]` entry (`kind: "other-bug"`, `source: "validate"`, flow-core §7): `bug:ship` triages them once at Close, so a bug found while validating another one stops depending on whoever remembers this file.>
 ```
 
 ## 5. Close

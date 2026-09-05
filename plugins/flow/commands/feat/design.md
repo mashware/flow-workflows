@@ -102,6 +102,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 - Security:
 
 ## Identified risks
+<one line each, `F<n>` in front of any risk this design records but does **not** mitigate — those become `meta.json.followups[]` entries (`kind: "risk"`, `source: "design"`, flow-core §7). A risk the design *does* handle needs no id: say where it is handled. Until now this section was written here and read by nothing.>
 - Performance:
 - Security:
 - Compatibility:

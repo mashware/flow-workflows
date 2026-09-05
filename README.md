@@ -127,6 +127,8 @@ A bug writes `02-diagnose.md`, `03-investigation.md`, `04-fix.md`, `05-validatio
 
 Artifacts are **hand-editable**: rewrite `03-design.md` and the next phase respects it. `meta.json` is the state; without it, commands refuse to continue rather than guess.
 
+**Work you decide not to do does not evaporate.** Every "idea for a separate ticket", out-of-scope piece, unmitigated risk, unchecked edge case and postmortem prevention action becomes a record in `meta.json`, not just a line in an artifact that gets archived unread. The phases that park them ask nothing. `ship` triages the whole set **once**, at the end, with one question per item: *do it* (which opens the tracker issue and offers to start it), *not worth it*, or *later*. Whatever is still open when the MR/PR is created is named in its description, so a reviewer can see what was consciously left out. `status`, `daily` and `next` keep surfacing the undecided ones — including from `_archive/`, because a finished work is exactly when its deferrals become invisible.
+
 **`panel.json`** makes the work readable from outside the chat: every stop is written there too, so a pane or dashboard can show the MR/PR train with links, what runs now, what comes next, whether it waits on you, and any blocker. Each line says *what it is* (`mark`: `done` `current` `pending` `wait` `block` `info`); the reader owns symbols and colours. Overwritten whole, and written *before* a long stretch with an honest `updated_at`, so a step that died halfway never shows as finished. It carries the phase *running*, not the one `meta.json` records. Schema: [work/README](plugins/flow/commands/work/README.md#paneljson-schema).
 
 ## Configuration: `FLOW.md`
