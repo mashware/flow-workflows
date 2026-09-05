@@ -90,6 +90,8 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `quality` | `db_update` | e.g. `make database-update` (empty if not applicable) |
 | `quality` | `db_diff` | command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL) |
 | `quality` | `frontend_test` | e.g. `make test-frontend` (empty if no frontend) |
+| `quality` | `functional_check` | how to drive the running app so `/flow:*:validate` can prove an acceptance criterion itself |
+| `quality` | `evidence` | `on` (default) \| `off`. Whether `/flow:*:validate` captures evidence (screenshots, response |
 | `quality` | `review_depth` | how much of the review panel runs AND at what effort, scaled by work size + risk, in `/flow:*:review`. `proportional` (default) \| `full` \| `light` |
 | `quality` | `respond_max_rounds` | how many rounds of `/flow:work:respond` one MR/PR gets before the command stops and hands the |
 | `quality` | `review_skill` | orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below |

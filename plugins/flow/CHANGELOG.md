@@ -5,6 +5,28 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.43.0 — The one thing validate could not prove, it asked you to prove for it  ·  2026-09-05
+
+**In short**
+- `validate` now **drives the running app itself** over every `needs-manual` acceptance criterion, and only hands over what it genuinely could not — with the reason recorded.
+- What it observed is captured under `.claude/work/<work>/evidence/`, and `ship` attaches it to the MR/PR description as before/after.
+- `/flow:work:try` resolves the work behind the branch and **prints the manual test plan** once the environment is up, collecting Pass/Fail/Blocked there.
+- A bug's original symptom is now re-run against the fixed app: still reproducible is a red gate, whatever the suite says.
+
+**Everything else this phase produced was evidence the agent generated.** A named test, a green suite, a measured execution plan. `needs-manual` was the one bucket where the evidence was the *user's*, taken on the agent's word about what to go and look at — while a browser automation tool or a simulator sat unused on the same machine. New §3.5 exhausts that first: read `quality.functional_check` (or whatever `/flow:doctor` detects), drive the criterion's given/when/then, and record `proven-by-agent`, `needs-manual` **with the reason**, or a failure that blocks the gate exactly as a failed manual check does.
+
+**Reading the code and concluding it must work is `needs-manual`, not proven.** The same rule the data-access duel already applies to an unmeasured plan, and the only thing that makes the new status worth anything.
+
+**`ship` stops describing the result and shows it.** The description carried *Steps to test it* and a collapsed technical block — a reviewer meant to approve with full context and usually without reading code got instructions to reproduce, never the result. `## Evidence` now sits between what changes and how to test it, one entry per criterion, before next to after. Files are **uploaded to the forge**, never linked by a `.claude/work/` path that is git-ignored and renders as broken text for everyone else; when no upload route exists the section survives as a table and the stop says so.
+
+**`try` stopped running blind.** `validate` §4 tells you to go run `/flow:work:try`, and `try` knew nothing about the work: it switched the checkout, re-synced, and left you to come back and ask for the plan again. It now finds the work by branch and prints what is already written — the `needs-manual`/`unproven` criteria in their given/when/then wording, or the acceptance criteria when `validate` has not run yet, or the reproduction steps for a bug — and offers to collect the verdicts into the validation artifact. `--back` closes the loop with what was verified and what is still open.
+
+**A bug fix now has to survive its own reproduction.** `bug:validate` §2.5 re-runs the minimal reproduction from `02-diagnose.md` against the fixed code. The before was captured when the failure was first reproduced — the one moment it exists — so a bug fix ships with the pair that *is* the argument.
+
+Two new `quality` keys: `functional_check` (how to drive this repo's app) and `evidence` (`on` by default; `off` disables capture and attachment). Both empty-safe: with nothing available every criterion stays `needs-manual` and you verify it exactly as before.
+
+Mirrored across the opencode, Gemini CLI and Codex adapters by the generator.
+
 ## v0.42.0 — Every phase knew what it was choosing not to do, and told nobody  ·  2026-09-05
 
 **In short**

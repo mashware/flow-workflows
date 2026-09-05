@@ -37,6 +37,25 @@ Then:
 3. DB touched → verify the schema has no unexpected differences (`quality.db_update` or the FLOW.md equivalent, if defined).
 4. Security or authentication touched → launch the `agents.security` agent from FLOW.md in parallel over the fix files (empty → `Agent general-purpose` with a security role).
 
+## 2.5 Reproduce the original symptom against the running app
+
+The regression test proves the fix at the level the test suite can see. A bug reported as a broken
+screen, a wrong redirect or a mangled export is *also* a claim about what a person observes, and a
+green test is not that observation.
+
+Read `quality.functional_check` from `FLOW.md` (empty → whatever is available: a browser automation
+tool, a simulator, a CLI that drives the app, an HTTP call). Nothing available, or
+`meta.json.worktree` not null (the runnable environment is in the main checkout) → say so in one
+line and leave it to the user, offering `/flow:work:try <meta.branch>` as §1 already does.
+
+Otherwise, run the **minimal reproduction from `02-diagnose.md`** against the fixed code and record
+what you observe. `quality.evidence` not `off` → capture it into `.claude/work/<TICKET>/evidence/`:
+the **before** is whatever `02-diagnose.md` already captured when the failure was reproduced (that
+is the one moment it exists), the **after** is what you see now. `/flow:bug:ship` attaches both.
+
+**Symptom still reproducible → the fix is not done**, whatever the suite says. Report it and stop;
+this is the same gate as a red test.
+
 ## 3. Adjacent areas
 
 "Areas with similar risk" from `03-investigation.md`: do not fix them here, but verify that **at least they do not have the same active symptom** (quick search for the broken pattern).
@@ -57,6 +76,10 @@ Then:
 - `<quality.test>`: ✅ / ❌ (X failures)
 - `<quality.static_analysis>`: ✅ / ❌
 
+## Symptom reproduction (§2.5)
+- Reproduced against the running app: <yes → gone / yes → still present / not attempted, reason>
+- Evidence: <`evidence/…` before + after, or "none captured, <reason>">
+
 ## Adjacent areas
 - Searches done:
 - Other bugs detected: <list to open separate tickets, do NOT fix here. Each one carries an `F<n>` and a `meta.json.followups[]` entry (`kind: "other-bug"`, `source: "validate"`, flow-core §7): `bug:ship` triages them once at Close, so a bug found while validating another one stops depending on whoever remembers this file.>
@@ -64,8 +87,9 @@ Then:
 
 ## 5. Close
 
-- Red test or regressions → `phase` stays at `fix`; the user iterates. A red gate stops in every mode.
+- Red test, regressions, **or the original symptom still reproducible in §2.5** → `phase` stays at `fix`; the user iterates. A red gate stops in every mode.
 - Green → `phase = "validate"`, add to `phases_done`; in the same write record `validated_sha` = `git rev-parse HEAD` — the tree the regression test passed on, which `/flow:bug:ship §0` reads. Suggest `/flow:bug:review`.
+- **Other bugs detected become `followups[]` entries** (flow-core §7), per the output template.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Autonomy handoff** (green only; `autonomy.mode`, flow-core §2): `manual` → propose `/flow:bug:review` with a single `AskUserQuestion`, invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn.
 """

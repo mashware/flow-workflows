@@ -64,7 +64,7 @@ size prunes:  XS  start → build → review → ship     S  + design (abridged)
 | `/flow:feat:brainstorm` | Options, angles and risks before designing |
 | `/flow:feat:design` | Architecture, DB, APIs, risks — before touching code |
 | `/flow:feat:plan` | Split the work into small, independently mergeable MR/PRs |
-| `/flow:feat:validate` | Tests, edge cases and integrity |
+| `/flow:feat:validate` | Tests, edge cases and integrity — drives the app itself before asking you to |
 | `/flow:bug:diagnose` | Reproduce the failure and pin down what is broken |
 | `/flow:bug:investigate` | Find the root cause, not the symptom |
 | `/flow:bug:validate` | Regression test that fails before, passes after |
@@ -77,7 +77,7 @@ size prunes:  XS  start → build → review → ship     S  + design (abridged)
 | `/flow:work:query` | Query duel — fact sheet, blinded challenger, verdict by execution plan |
 | `/flow:work:watch` | Post-deploy watcher — monitors observability, flags regressions |
 | `/flow:work:daily` | Standup across local + forge + tracker; ask a question or get the briefing |
-| `/flow:work:try` | Point the main checkout at a branch to test it (then `--back`) |
+| `/flow:work:try` | Point the main checkout at a branch to test it, and print the manual test plan once it is up (then `--back`) |
 | `/flow:work:clean` | Sweep merged worktrees, dead branches, unarchived folders. Never deletes on a guess |
 | `/flow:work:abandon` | Close a work item without shipping |
 | `/flow:save-knowledge` | Consolidate the branch's findings into the knowledge store (`knowledge.save`, or `KNOWLEDGE.md`) |
@@ -120,7 +120,8 @@ One folder per work under `.claude/work/`, named `<TICKET>-<slug>` (or `<slug>` 
 ├── 06-review.md           # findings and what was done about them
 ├── 07-validation.md       # tests, edge cases, integrity
 ├── 08-feedback.md         # respond: one entry per review round
-└── 09-ci.md               # green: one entry per round of merge blockers
+├── 09-ci.md               # green: one entry per round of merge blockers
+└── evidence/              # what validate observed in the running app; ship attaches it to the MR/PR
 ```
 
 A bug writes `02-diagnose.md`, `03-investigation.md`, `04-fix.md`, `05-validation.md`, `06-review.md` and, on M/L, `99-postmortem.md`. `abandon` writes `99-abandoned.md` and moves the folder to `_archive/`.
@@ -140,7 +141,7 @@ One file at the repo root describes your conventions. Anything left empty is aut
 | `tracker` | Ticket prefix, CLI, view and comment-thread commands, state transitions |
 | `git` | Host and CLI, base branch, branch pattern, MR/PR sections, squash, worktrees, trains, pre-deploy gate |
 | `autonomy` | `manual` · `guided` · `auto` (hard gates always ask) |
-| `quality` | Test / lint / analysis / DB commands, `review_depth`, review panel, `respond_max_rounds` |
+| `quality` | Test / lint / analysis / DB commands, `review_depth`, review panel, `respond_max_rounds`, `functional_check`, `evidence` |
 | `agents` | Role → specialist agent map, fan-out width (`fanout_max`, `fanout_tool`) |
 | `models` | Model per kind of step — `study` · `code` · `test` · `review` · `workers` |
 | `data` | How to read a query's execution plan and the real size of the hot tables |
