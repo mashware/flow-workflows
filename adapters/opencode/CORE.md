@@ -186,3 +186,58 @@ went idle with an empty or truncated result is **asked for it directly** before 
 
 Dropping a silent agent is always allowed, and always reported (`N/M` reported). Waiting on one with
 no deadline is what costs a session.
+
+## 7. Deferred work — `followups[]`
+
+Every chain in this plugin reaches moments where the right call is **not to do it here**: a build
+step finds a neighbouring defect, a plan names a piece as out of scope, a design records a risk it
+does not mitigate, a validation leaves an edge case unchecked, a postmortem lists what would prevent
+the next incident. Refusing to widen the diff is correct. Writing the note into an artifact and
+walking away is where it stops being correct — `.claude/work/` is git-ignored in most repos and
+archived once the work ships, so the note is gone the moment it would have mattered.
+
+**A deferral is a record, not a sentence.** Whenever a phase parks work, it appends to
+`meta.json.followups[]`:
+
+```json
+{ "id": "F1",
+  "kind": "prevention" | "audit" | "out-of-scope" | "risk" | "edge-case" | "other-bug",
+  "title": "one line, what would be done",
+  "why": "one line, why it was parked and why it still matters",
+  "source": "design" | "plan" | "build" | "validate" | "fix" | "postmortem",
+  "status": "proposed" | "accepted" | "declined" | "done",
+  "ticket": null, "work": null, "note": "" }
+```
+
+The artifact keeps its human-readable section exactly as before, with the `F<n>` id in front of each
+row so the prose and the record never drift. **The record is the addition, not a replacement**: a
+reader of `05-implementation.md` still sees the ideas in context.
+
+**One survey, at the end, not one question per phase.** Nothing is asked when the note is written —
+mid-build is the worst moment to judge whether a neighbouring defect is worth a ticket, and a
+question there is exactly the interruption `guided`/`auto` exist to avoid. The triage happens once,
+at `ship`'s Close, when the work is done and the user can see the whole set:
+
+- One `AskUserQuestion` per entry still `proposed`, batched up to 4, options **Do it** ·
+  **Not worth it** · **Later**. The `title` and `why` are the entire prompt.
+- **Not worth it** → `declined`, with the reason if given. Never asked again.
+- **Later** → stays `proposed`, and surfaces in `status`, `daily` and `next` until it is decided.
+- **Do it** → `accepted`, then create the tracker issue with the tool's native command, exactly as
+  `/flow-feat-start` §2.5.4 does for a ticket-less draft — same commands, same best-effort fallback
+  to local-only when `tracker.tool` is `none`/empty or creation fails. Record the id in `ticket`.
+- No entries still `proposed` → **the step does not exist**. Never show an empty survey.
+
+**Creating an issue is outward-facing, so it asks in every mode**, `auto` included — the same
+category as the MR/PR gate, never flow mechanics. Writing a `followups[]` entry asks nothing, ever.
+
+**What stays open is published.** Entries still `proposed` or `accepted` when the MR/PR is created
+get a line in its description: what was consciously left out, and why. A reviewer cannot weigh a
+diff against what the author decided not to do unless someone tells them.
+
+**Where an accepted one goes next.** `/flow-feat-start` and `/flow-bug-start` on that ticket record
+`meta.json.origin` — `{ "work": "<originating work>", "followup": "F1" }` — and carry the `why` into
+`01-context.md` instead of re-deriving it. The originating entry moves to `in_progress` with `work`
+pointing at the new folder, and to `done` when that work does.
+
+**Archiving does not close anything.** `status` and `daily` read `_archive/*/meta.json` for entries
+not `declined`/`done`: a work being finished is precisely when its deferrals become invisible.

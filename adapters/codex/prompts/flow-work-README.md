@@ -48,6 +48,7 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **Every stop opens with where you are** (flow-core §3): stop header, then ≤ ~10 product-altitude lines. Own process → the artifact; subagent notifications never earn a turn.
 - **The stop is also written to disk**: `.claude/work/<work>/panel.json` ([schema below](#paneljson-schema), flow-core §4), **overwritten whole, never patched**, written **before** a long stretch with an honest `updated_at`.
 - **What is never a question is as binding as what always is**: hard gates stop in **every** mode; in `guided`/`auto` flow mechanics, WIP commits, `train_chain` `always`, size confirmation and anything already decided are never asked (flow-core §2). Only new evidence reopens a decision.
+- **Work you decide not to do is recorded, not narrated**: every "idea for a separate ticket", out-of-scope piece, unmitigated risk, unchecked edge case and prevention action becomes a `meta.json.followups[]` entry (flow-core §7) alongside its artifact section. Written without asking, triaged **once** at `ship`'s Close (**Do it** / **Not worth it** / **Later**), published in the MR/PR description while still open, and surfaced by `status`/`daily`/`next` — from `_archive/` too — until decided. Creating the tracker issue for an accepted one is outward-facing: **asks in every mode**.
 - **Code review is mandatory**: `/flow-feat-ship` is not run and `/flow-bug-postmortem` is not closed without passing through `/*:review`.
 - **Existing sub-agents**: commands delegate to the project's agents and skills; work is never duplicated.
 - **The model per kind of step is the repo's call, never the plugin's (`models` in FLOW.md)**: `study` (ticket, brainstorm, design, plan, diagnose, investigate, postmortem) · `code` (build, fix, green) · `test` (validate) · `review` (review, query, respond triage) · `workers` (fan-out). Empty = **inherit**. **An agent cannot switch its own model** (say it, **continue**); **a named agent keeps its own** (`agents.<role>`) — flow-core §1. `/flow-config` prints the resolved map; `quality.review_skill` owns the review panel.
@@ -89,6 +90,16 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
   "related_repos": [
     { "repo": "sibling-project", "scope": "what's needed there", "status": "pending" | "in_progress" | "done", "contract_handoff": "none" | "pending" | "published → <location>" }
   ],
+  "followups": [
+    { "id": "F1",
+      "kind": "prevention" | "audit" | "out-of-scope" | "risk" | "edge-case" | "other-bug",
+      "title": "one line, what would be done",
+      "why": "one line, why it was parked and why it still matters",
+      "source": "design" | "plan" | "build" | "validate" | "fix" | "postmortem",
+      "status": "proposed" | "accepted" | "in_progress" | "declined" | "done",
+      "ticket": null, "work": null, "note": "" }
+  ],
+  "origin": { "work": "{PREFIX}XXXXX", "followup": "F1" },
   "started_at": "2026-05-11T10:00:00Z",
   "updated_at": "2026-05-11T11:30:00Z",
   "notes": "free-form field the user can edit"
@@ -99,6 +110,8 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **`respond_rounds`**: rounds of `/flow-work-respond` on an MR/PR. `/flow-work-respond §1` reads it against `quality.respond_max_rounds` (empty = 3) and refuses the round that would exceed it, handing the open threads back to the user.
 - **`related_repos`**: the **other repos a task touches**. Captured at `/flow-feat-start` / `/flow-bug-start` §cross-repo, refined at `design`/`plan`, reminded at `ship`, shown by `daily`/`resume`/`status`. flow only notes and reminds — never touches the other repo. `[]` for single-repo.
 - **`contract_handoff`**: whether the sibling knows **what shape to build against** (`scope` is prose; distinct from `status`). `none` — consumes no contract declared here. `pending` — consumes one, not handed over yet. `published → <location>` — published where that side reads it (normally the tracker ticket; `/flow-feat-ship` §6.3), picked up by the sibling's `/flow-feat-start` §3.6.
+- **`followups`**: work a phase deliberately did **not** do here — a neighbouring defect found while building, a piece put out of scope while planning, a risk recorded but not mitigated, an edge case left unchecked, a prevention action from a postmortem. Written by the phase that parks it (asks nothing), triaged **once** at `ship`'s Close, published in the MR/PR description while still open, and surfaced by `status`/`daily`/`next` — including from `_archive/` — until `declined` or `done`. Shape and rules: flow-core §7. `[]` when the work deferred nothing.
+- **`origin`**: set when this work *is* a follow-up someone accepted — which work raised it and which entry. Lets `start` carry the recorded "why" into `01-context.md` instead of re-deriving it, and lets that entry move to `done` when this work does. Absent for a work that came straight from a ticket.
 - Ticket format follows `tracker.prefix`; empty → free-form.
 
 **`00-summary.md`** (flow-core §5): **≤ 15 lines, overwritten whole at every `## Close`**, read first by every phase (with `meta.json`) before any full artifact. Contents: what the work is (one line), size and current MR/PR, standing decisions (one line each), contracts declared or received (names and where the literal shape lives), what is pending, what the next phase must open in full. Missing (older work) → read the artifacts, write it at Close.

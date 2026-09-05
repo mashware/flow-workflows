@@ -160,6 +160,8 @@ Create the work directory per §0: `.claude/work/<TICKET>-<slug>/` in ticket mod
 
 Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the fix touches; `[]` for a single-repo fix. `pending` only when the fix **changes a surface that sibling consumes** (a payload key, an error code, a route, an event shape); otherwise `none`.
 
+**This fix *is* an accepted follow-up** (the ticket came from another work's `followups[]` — typically a prevention action or a neighbouring bug, flow-core §7) → set `origin: { "work": "<originating work dir>", "followup": "F<n>" }`, carry that entry's recorded `why` into `01-context.md` verbatim rather than re-deriving it, and move the originating entry to `in_progress` with `work` naming this folder. Not a follow-up → omit `origin`.
+
 `<work-dir>/01-context.md`:
 ```markdown
 # Bug context {TICKET}

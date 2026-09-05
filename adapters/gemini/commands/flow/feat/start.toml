@@ -228,6 +228,7 @@ Create the work directory per §1: `.claude/work/<TICKET>-<slug>/` (ticket mode)
 
 - Ticket-less (§2.5) → `draft_from_conversation: true`, `tracker_issue` = created issue id/url (or `null` if local-only). Ticket mode → defaults above.
 - `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo; `[]` for a single-repo task.
+- **This work *is* an accepted follow-up** (the ticket came from another work's `followups[]`, flow-core §7) → set `origin: { "work": "<originating work dir>", "followup": "F<n>" }`, carry that entry's recorded `why` into `01-context.md` verbatim instead of re-deriving it, and set the originating entry to `in_progress` with `work` naming this folder. Not a follow-up → omit `origin` entirely.
 
 ### `panel.json`
 

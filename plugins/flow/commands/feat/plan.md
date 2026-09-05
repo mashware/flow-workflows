@@ -19,7 +19,7 @@ Delivery planning phase. **No code is written.** Splits the feature into MRs/PRs
 
 Load the project convention skills (`FLOW.md` section `conventions`).
 
-**YAGNI filter before splitting**: plan only what `03-design.md` has validated as necessary. A MR/PR (or part of one) dedicated to a **hypothetical future problem** or to a scenario that **cannot happen in this project** is not a deliverable: mark it "out of scope — idea for a separate ticket" and notify the user. If the design let in unnecessary pieces, return to `/flow:feat:design` to trim them before planning.
+**YAGNI filter before splitting**: plan only what `03-design.md` has validated as necessary. A MR/PR (or part of one) dedicated to a **hypothetical future problem** or to a scenario that **cannot happen in this project** is not a deliverable: mark it "out of scope — idea for a separate ticket", **append it to `meta.json.followups[]`** (`kind: "out-of-scope"`, `source: "plan"`, flow-core §7) and notify the user. Said in the chat and nowhere else, it is lost with the session — this is the one deferral in the flow that used to leave no trace at all. If the design let in unnecessary pieces, return to `/flow:feat:design` to trim them before planning.
 
 Launch a subagent with this brief (self-contained):
 

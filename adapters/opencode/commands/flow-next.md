@@ -26,6 +26,7 @@ runs a phase on its own and never advances `meta.json`.
 1. `FLOW.md` at the repo root — exists?
 2. `git branch --show-current`, and whether `.claude/work/*/meta.json` has a `branch` equal to it (also check `worktree` entries, and `.claude/work/_archive/` is ignored).
 3. `.claude/work/` — how many open works, and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
+3b. `followups[]` across those works **and** `.claude/work/_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
 4. Is the working tree dirty (`git status --porcelain`)?
 
 ## 2. Route
@@ -35,8 +36,10 @@ runs a phase on its own and never advances `meta.json`.
 | No `FLOW.md` | "This repo is not configured for flow yet." One line on what `FLOW.md` is (personal config, auto-detected). | `/flow-init` |
 | A work matches the current branch | Its stop header (flow-core §3: ticket · size · phase · MR #n of N) and the next phase for its size. | `/flow-work-resume` |
 | No match, but open works exist | Count, and the two most recently updated with their phase. | `/flow-work-status`, or `/flow-feat-start` / `/flow-bug-start` if the user said what they want to do |
+| No works at all, but an accepted follow-up is waiting | "Nothing in flight — but `<TICKET>` F1 was accepted and never started: `<title>`." | `/flow-feat-start <ticket>` (or `/flow-bug-start`) for that follow-up · `/flow-feat-start` for something else |
 | No works at all | "Nothing in flight." | `/flow-feat-start <TICKET>` (or with no ticket, from the conversation) · `/flow-bug-start <TICKET>` |
 
+- An `accepted` follow-up exists **and** other works are open → do not reroute; add one line naming it after the options. It is a standing commitment, not an interruption.
 - Dirty tree and no matching work → mention it in one line ("uncommitted changes on `<branch>`, no work is tracking them") before the options; `start` will warn again.
 - `FLOW.md` present but `/flow-doctor` has never been run in this session and the git host CLI is not on `PATH` → add `/flow-doctor` as a secondary option.
 - In `autonomy.mode: guided`/`auto`, the route is still asked: `next` is where a session begins, and the mode governs what happens *inside* a phase, not which work the user wants to pick up.

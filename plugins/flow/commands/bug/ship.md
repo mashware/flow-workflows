@@ -59,6 +59,7 @@ Template (in this order):
 
 ## What has NOT been touched
 <bullets from the "What is NOT touched" section of the Brief. Important so the reviewer knows the fix is minimal.>
+<then, if `meta.json.followups[]` has entries still `proposed` or `accepted`: one line each — the neighbouring bug, the similar-risk pattern, the prevention action — with its ticket id when one exists. Omit the block when there are none.>
 
 ## Steps to reproduce and test
 <from `05-validation.md`:
@@ -156,5 +157,7 @@ With an "all threads resolved before merge" policy, the MR/PR cannot be merged o
 - Summarize: ticket, MR/PR URL, regression test added.
 - **Cross-repo reminder**: for each `meta.json.related_repos` entry not `done`: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow:bug:start <TICKET>` (or `/flow:feat:start`)"*. flow only reminds; this is not a hard gate.
 - **Cross-repo contract handoff**: for each such entry with `contract_handoff: "pending"` — the fix changed a surface that sibling consumes — hand the new shape over as `/flow:feat:ship` §6.3 (publish the **literal** shape to the tracker ticket, mandatory preview in every autonomy mode, then record `published → <location>`; versioned-file fallback when there is no tracker). A bug flow has no §"External contracts": take the literal from the fix itself — the actual key, code, route or event the code now emits — read it off the code, never from memory.
+- **Follow-up triage — `/flow:feat:ship` §6.4, in full and unchanged.** Read `meta.json.followups[]`; nothing `proposed` → skip silently. Otherwise one batched `AskUserQuestion` (**Do it** / **Not worth it** / **Later**), the accepted ones get their tracker issue created (outward-facing → **asks in every mode**), then one offer to start the first. A bug flow is where this matters most: the prevention actions `/flow:bug:postmortem` wrote, the neighbouring bugs `/flow:bug:validate` found and the similar-risk patterns `/flow:bug:fix` flagged all land here, and until now every one of them was archived unread. Repeat for anything still `proposed` on the re-run that confirms the merge.
+- **Close the follow-up that started this work.** `meta.json.origin` set and this ship moved `phase` to `done` → open the originating work's `meta.json` (live folder or `_archive/`) and set that `followups[]` entry to `status: "done"`. Best-effort: the originating folder is gone or unreadable → warn in one line and continue, never block. Without this the entry stays `in_progress` forever and `status`/`daily` keep reporting work that is finished.
 - Ask whether to archive `.claude/work/<TICKET>/` to `.claude/work/_archive/`.
 - If `meta.json.worktree` is not null, offer `git worktree remove <worktree>` once the MR/PR is merged (`--force` only if the user confirms discarding remaining changes). Not before merge, not without confirmation.

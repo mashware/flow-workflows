@@ -32,7 +32,7 @@ Produce an honest analysis:
 - **Root cause** (already in `03-investigation.md` — copy the summary).
 - **Why tests did not catch it**: a real gap, not excuses.
 - **Why code review did not catch it**: if applicable.
-- **Actionable prevention measures** (not generic ones like "improve tests"). Each action with an owner and a suggested ticket.
+- **Actionable prevention measures** (not generic ones like "improve tests"). Each action with an owner and a suggested ticket, and an `F<n>` id — every row here is a `meta.json.followups[]` entry (`kind: "prevention"`, `source: "postmortem"`, flow-core §7). Nothing is asked now; `/flow-bug-ship` triages the whole set at its Close.
 - **Areas with similar risk**: those noted in `03-investigation.md`.
 
 ## 3. Output
@@ -62,11 +62,14 @@ Produce an honest analysis:
 - Monitoring:
 
 ## Prevention actions
-| Action | Owner | Suggested ticket |
-|--------|-------|-----------------|
+| id | Action | Owner | Suggested ticket |
+|----|--------|-------|-----------------|
+| F1 | … | … | … |
 
 ## Areas with similar risk (open separate tickets)
-- pattern to audit
+| id | Pattern to audit | Why it matters |
+|----|------------------|----------------|
+| F2 | … | … |
 ```
 
 ## 4. Domain knowledge (offer)
@@ -84,5 +87,6 @@ Neither role set → skip this block silently.
 
 - Update `meta.json`: `phase = "postmortem"`, add to `phases_done`.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Suggest `/flow-bug-ship`. If prevention actions surfaced, propose opening separate tickets (not done in this flow).
+- **Write every prevention action and similar-risk area to `meta.json.followups[]`** (flow-core §7), ids matching the tables above. This is the whole point of the phase: an action that lives only in `99-postmortem.md` is archived with the work and read by nobody, which is how the incident repeats.
+- Suggest `/flow-bug-ship`. Say how many follow-ups it will ask about at its Close — **do not triage them here**: mid-postmortem is the wrong moment to judge what is worth a ticket, and `ship` asks once with the whole set in view.
 - **Autonomy handoff — stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR, a hard gate in every mode: do **not** chain into it; stop here and propose `/flow-bug-ship` with a single `AskUserQuestion` (recommended option by default).
