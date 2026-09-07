@@ -180,6 +180,28 @@ went idle with an empty or truncated result is **asked for it directly** before 
 Dropping a silent agent is always allowed, and always reported (`N/M` reported). Waiting on one with
 no deadline is what costs a session.
 
+**The budget belongs to the command, not to the round.** `agents.fanout_max` caps *one* parallel
+round; nothing capped what a command spends across all of its rounds, and the phases that fan out
+compose: a review can run a panel, then area reinforcements, then a coverage sweep that relaunches
+the panel, then one skeptic per finding — each round inside its own cap and the command an order of
+magnitude over what anyone intended.
+
+- **`agents.budget_max`** (empty → **12**) is the ceiling on subagents **one command run may launch
+  in total**, summed over every round, including relaunched rounds. `0` = no ceiling (not
+  recommended). A skill invoked as one reviewer counts as the agents it launches when you know the
+  number, and as 1 when you do not.
+- **Count before you launch, not after.** Before each round: budget minus spent = what is left. The
+  round does not fit whole → launch what fits and report the truncation (`4/7`). Nothing left → skip
+  the phase and say which one, in one line, in the artifact.
+- **Each command that fans out declares its own give-up order** — which phase is dropped first when
+  the budget runs out — so a truncation is deterministic and reviewable, never the model's mood on
+  the day.
+- **Grouping does not raise a ceiling.** Both ceilings count *agents launched*, whatever the split
+  of findings, files or hypotheses between them. Twelve agents under `fanout_max: 4` is a breach,
+  not an optimisation; four agents carrying three findings each is the intended shape.
+- **The cost is reported where the user reads it**, as `spent/budget`: a phase silently skipped for
+  budget and a phase that found nothing are not the same result.
+
 ## 7. Deferred work — `followups[]`
 
 Every chain in this plugin reaches moments where the right call is **not to do it here**: a build

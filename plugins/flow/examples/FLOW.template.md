@@ -153,6 +153,13 @@ sweep in `investigate` §3.A, finding verification in `review`) instead of namin
 fan-out runs as plain parallel subagents — the primitive every harness has.
 
 - `fanout_max:`     # max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported
+- `budget_max:`     # max subagents ONE command run may launch in total, summed over every round (flow-core §6). Empty = 12. `0` = no ceiling
+                    #   (not recommended). `fanout_max` bounds a round; this bounds the command — `/flow:*:review` composes a panel, area
+                    #   reinforcements, a coverage sweep that relaunches reviewers, a query duel, two blinded audits and one skeptic per
+                    #   ambiguous finding, each inside its own cap and the command an order of magnitude past what anyone asked for.
+                    #   Each command declares which phase it gives up first, so a truncation is deterministic; the artifact's `Cost:` line
+                    #   reports `spent/budget` and names every phase the ceiling skipped. Both ceilings count AGENTS, not findings or files:
+                    #   grouping three findings into one brief is intended, launching one agent per finding past the cap is a breach
 - `fanout_tool:`    # orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable
 
 Two more govern **what a delegated agent owes you back** (flow-core §6). They apply to every brief a

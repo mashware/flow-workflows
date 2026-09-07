@@ -16,7 +16,7 @@ writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
 - **git**: host and CLI (`github` or `gitlab`), term (MR/PR), default base, branch pattern, assignee, squash, description sections, pre-deploy gate, train chaining (multi-PR stacked branches), worktrees.
 - **autonomy**: `manual` | `guided` | `auto` — how much the flow advances on its own. The hard gates (push/MR-PR, ambiguous branch base, DB schema changes, high-severity review findings, the business brief before code) stop in **every** mode.
 - **quality**: test/analysis/style/DB commands for the repo (empty = auto-discover), plus `review_depth` (`proportional` · `full` · `light`), `review_skill` and `reviewers` — how much of the review panel runs and who is on it.
-- **agents**: role→agent map for the steps that delegate to a specialist, plus the parallel fan-out ceiling (`fanout_max`) and its optional orchestrator (`fanout_tool`).
+- **agents**: role→agent map for the steps that delegate to a specialist, plus the two cost ceilings — `fanout_max` per parallel round (empty → 4) and `budget_max` per command run (empty → 12) — and the fan-out's optional orchestrator (`fanout_tool`).
 - **models**: which model each kind of step runs with (`study`, `code`, `test`, `review`, `workers`). Free text, passed straight to your harness; empty = the step runs with the model you launched the command with.
 - **data**: how to get a query's execution plan and a table's real schema, plus the volumes of the hot tables — what the query duel needs to judge a query on its plan instead of on an argument. Empty = the duel runs on the schema alone and says what it could not prove.
 - **conventions**: code conventions the commands must respect (free text).

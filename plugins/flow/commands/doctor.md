@@ -79,7 +79,10 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
 
 - The tool named in `agents.fanout_tool` is exposed by this harness. Absent → the fan-out falls
   back to plain parallel subagents (the portable path, not an error).
-- `agents.fanout_max` is a positive integer (else the default `4` applies).
+- `agents.fanout_max` is a positive integer (else the default `4` applies) and `agents.budget_max`
+  a non-negative integer (`0` = no ceiling; else the default `12` applies). Report both effective
+  numbers with the count of panel members `quality.review_skill`/`quality.reviewers` defines, so
+  the widest command's cost is visible before it is paid, not after.
 - The `flow-core` skill file exists under the plugin root: `${CLAUDE_PLUGIN_ROOT}/skills/flow-core/SKILL.md`.
   Missing → every phase command runs without its shared rules; fix: reinstall or update the plugin.
 

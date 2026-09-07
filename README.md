@@ -142,7 +142,7 @@ One file at the repo root describes your conventions. Anything left empty is aut
 | `git` | Host and CLI, base branch, branch pattern, MR/PR sections, squash, worktrees, trains, pre-deploy gate |
 | `autonomy` | `manual` · `guided` · `auto` (hard gates always ask) |
 | `quality` | Test / lint / analysis / DB commands, `review_depth`, review panel, `respond_max_rounds`, `functional_check`, `evidence` |
-| `agents` | Role → specialist agent map, fan-out width (`fanout_max`, `fanout_tool`) |
+| `agents` | Role → specialist agent map, cost ceilings (`fanout_max` per round, `budget_max` per command), fan-out orchestrator (`fanout_tool`) |
 | `models` | Model per kind of step — `study` · `code` · `test` · `review` · `workers` |
 | `data` | How to read a query's execution plan and the real size of the hot tables |
 | `conventions` | Rules the code must respect |
@@ -157,8 +157,9 @@ One file at the repo root describes your conventions. Anything left empty is aut
 - The shared rules live in the `flow-core` skill, loaded once per session; a command file carries only its phase.
 - Every phase reads `meta.json` and `00-summary.md` first and opens a full artifact only on demand.
 - `quality.review_depth: light` runs only the base code-review — no panel, reinforcements or skeptics.
-- `agents.fanout_max` caps every parallel round (default 4); what the cap drops is reported.
-- The review output prints its cost: subagents launched, tier and effort.
+- The review tier scales to the **diff under review**, not the size of the feature: a 40-line MR/PR in an L-sized work is reviewed as the 40 lines it is.
+- Two ceilings, both counting agents rather than findings: `agents.fanout_max` per parallel round (default 4) and `agents.budget_max` for everything one command run launches (default 12). Each command declares which phase it gives up first, and what a ceiling drops is reported.
+- The review output prints its cost as `spent/budget`: subagents launched, tier, effort, and every phase the ceiling skipped.
 
 ## Other harnesses
 

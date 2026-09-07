@@ -5,6 +5,70 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.45.0 — Every round obeyed its cap, and the review still launched twenty-nine agents  ·  2026-09-07
+
+**In short**
+- New `agents.budget_max` (empty → **12**) caps what **one command run** launches in total, across every round.
+- Each fan-out command declares **which phase it gives up first**; four phases of `review` are never dropped for cost.
+- Both ceilings count **agents, not findings** — twelve `Verify Vn` under a cap of four is a breach, not thoroughness.
+- The review tier scales to the **diff under review**, not `meta.json.size`, which every MR/PR of a train inherits.
+- The completeness sweep compares two lists: it opens no file, and never runs in parallel with the reviewers it audits.
+- `/flow:init` now writes both ceilings into `FLOW.md` with their values, even when they are the defaults.
+
+`agents.fanout_max` has capped a parallel round since v0.31.0, and every round of `review` obeyed it.
+The command still launched **29 subagents on one MR/PR** — 97 across three reviews of a single train,
+which on one measured feature was the larger half of the bill. Nothing was broken; the phases simply
+compose. A panel, then area reinforcements, then a coverage sweep that relaunches the panel over the
+gaps, then a query duel, two blinded audits, one skeptic per ambiguous finding: each round inside its
+cap, the command an order of magnitude past what anyone asked for. **A ceiling per round is not a
+ceiling per command**, and three separate things were wrong at once.
+
+**The command now has a budget.** `agents.budget_max` (empty → **12**, `0` = no ceiling) bounds every
+subagent one command run launches, summed over all its rounds including relaunched ones. It is counted
+*before* a round goes out, never tallied after: a round that does not fit is truncated and the
+truncation reported (`4/7`); with nothing left the phase is skipped and named. So that a truncation is
+deterministic rather than the model's mood on the day, **each command declares its give-up order** —
+in `/flow:feat:review`: the completeness sweep, then the skeptics, then the idiom audit, then the area
+reinforcements. Four phases are **never** dropped for budget, because they are the review: the built-in
+`code-review`, the panel the tier selected, the query duel and the blinded contract check. A budget too
+small to cover those is a misconfiguration, said in one line, and they run anyway.
+
+**Both ceilings count agents, not findings.** The observed breach was a review with sixteen findings
+launching twelve `Verify Vn` agents under a cap of four — one agent per finding, grouped in pairs where
+they looked related, read as covering more ground. Handing one skeptic three findings is the intended
+shape; adding agents because each finding looks cheap is not. Same rule for the sweep's relaunched
+round: constrained to the named gap paths, capped, and a reviewer relaunched over the whole diff is
+the phase's failure mode rather than its purpose.
+
+**The tier was reading the ticket instead of the diff.** `meta.json.size` describes the whole work, and
+in a multi-MR/PR train **every MR/PR inherits it** — so the third MR/PR of an L-sized feature, 41 lines
+long, was reviewed as an L: panel, sweep, skeptics, the lot. The review now measures the diff in front
+of it (≤ 150 changed lines → XS · 151-600 → S · 601-1500 → M · > 1500 → L) and runs on the **lower** of
+that and the recorded size, with every size-gated step reading that effective size. A diff pointing
+*higher* than the recorded size earns one line in the artifact — the work may be misclassified — not a
+heavier review. The **sensitive-surface bump is applied on top and never scaled away**: a twelve-line
+change to an authorization check still gets the panel.
+
+**The sweep was the single most expensive agent in the round, doing the wrong job.** §3.5's coverage
+auditor is meant to compare two lists — the diff's file paths, and one line per reviewer on what it
+covered — and answer in under 150 words. Launched *before* the reviewers it audits have reported, its
+only possible input is the diff itself, and then it is not an auditor but one more reviewer, reading
+everything the others already read: observed at 20+ minutes while every real reviewer finished in 3-5.
+It is now blinded harder and stated plainly: it runs **after** §2-§3 are consolidated, never in
+parallel; it opens no file, runs no `git diff`, reads no code; an agent here still working after a few
+minutes was handed the wrong job and is relaunched with the two lists alone.
+
+**And the ceilings are visible now.** `/flow:init` never wrote `fanout_max`, so it lived only in the
+command prose — a default nobody could find on the day the bill arrived. Both keys are now written into
+`FLOW.md` with their values even when those are the defaults, `/flow:config` and `/flow:doctor` report
+the effective numbers next to the size of the configured panel, and `/flow:config` flags a `budget_max`
+smaller than the panel it would have to skip. The artifact's cost line reads `spent/budget` and lists
+every phase the ceiling dropped: a phase skipped for cost and a phase that found nothing are not the
+same result.
+
+Lowering it is one line: `8` is a frugal review, `6` a cheap one, and `quality.review_depth: light`
+remains the floor.
+
 ## v0.44.0 — The duel picked the best of three new queries and never asked about the old one  ·  2026-09-05
 
 **In short**
