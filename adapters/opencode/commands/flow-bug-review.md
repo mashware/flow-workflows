@@ -35,6 +35,8 @@ Read `quality.review_depth` from `FLOW.md` (`light` | `proportional` | `full`; e
 
 **The tier is resolved against the diff in front of you**, per `/flow-feat-review §2.0`: measure the real diff (`git diff --shortstat <git.default_base>...HEAD` plus the working tree), derive its size (≤150 lines → XS · 151-600 → S · 601-1500 → M · >1500 → L), and run on the **lower** of that and `meta.json.size` — a one-file fix inside a bug classified M is an XS review. Every size-gated step here (§4.5, §5) reads that effective size. The sensitive-surface bump applies on top and is never scaled away.
 
+**Say what the round will run on** (flow-core §1): the skeptics and the completeness check have no agent of their own, so with the fan-out key empty they inherit this thread's model — one line before the first round of 4 or more naming the count and the inheritance, and the same fact on the artifact's `Agent models` line. Name the key (`models.workers`, then `models.review`), never a model.
+
 **The budget is the command's, not the round's.** Read `agents.budget_max` from `FLOW.md` (empty → **12**; `0` = no ceiling) and hold every round below against it (flow-core §6): count before launching, launch what fits, report what the cap dropped. Give-up order when it runs out, from the top: **§5 skeptics**, then **§4.5 completeness check**, then **§2.2 idiom audit**, then **§3 reinforcements**. Never dropped: the built-in `code-review`, the panel the tier selected, and the query duel (§3.5) — if the budget cannot cover those, the budget is misconfigured: say so in one line and run them anyway.
 
 **Sensitive surface** = auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change.
@@ -126,6 +128,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used>
+- Agent models: <the value of `models.workers`/`models.review` when set; otherwise "inherited from this thread"; agents named in `agents.<role>` keep their own definition's model>
 - Skipped for budget: <phases dropped by §2.0's give-up order, or "none">
 - Blockers: N
 - Suggestions: M
