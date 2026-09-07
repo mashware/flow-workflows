@@ -107,6 +107,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `agents` | `frontend_test` | frontend tests |
 | `agents` | `testing` | backend tests / coverage |
 | `agents` | `fanout_max` | max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported |
+| `agents` | `budget_max` | max subagents ONE command run may launch in total, summed over every round (flow-core §6). Empty = 12. `0` = no ceiling |
 | `agents` | `fanout_tool` | orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable |
 | `agents` | `report_max_words` | word cap every brief you write for a subagent carries. Empty = 250. Not a style rule: a report too long for the harness to carry is truncated in transit and reaches you as silence |
 | `agents` | `stall_after_minutes` | a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 |
@@ -364,6 +365,14 @@ the same treatment as a payments refactor. `proportional` scales the panel by **
 | M | Built-in at high effort + full panel |
 | L | Built-in at xhigh effort + full panel |
 
+**The size that decides is the diff's, not the feature's.** `meta.json.size` describes the whole
+work, and in a multi-MR/PR train every MR/PR inherits it — which is how a 41-line third MR/PR ends
+up reviewed as the L its feature is, the largest single source of wasted review in this plugin. The
+review measures the diff in front of it (≤ 150 changed lines → XS · 151-600 → S · 601-1500 → M ·
+> 1500 → L) and runs on the **lower** of that and the recorded size; a diff pointing higher than the
+recorded size gets one line in the artifact saying the work may be misclassified, not a heavier
+review. The sensitive-surface bump below applies on top and is never scaled away.
+
 A **sensitive surface** — authentication/authorization, secrets, payments/billing,
 personal/sensitive data, a public API or contract shape, a DB migration/schema change — raises
 the built-in reviewer one effort tier (medium → high → xhigh → max) *and* forces the full panel.
@@ -410,6 +419,7 @@ Two more keys configure the **parallel fan-out** rather than naming an agent:
 | Key | What it does | Empty |
 |---|---|---|
 | `fanout_max` | Max subagents launched in one parallel round | `4` |
+| `budget_max` | Max subagents one command run may launch in total | `12` |
 | `fanout_tool` | Orchestration tool to run the fan-out through | Plain parallel subagents |
 
 ### How wide the fan-out goes (`fanout_max`)
@@ -419,6 +429,34 @@ the hypothesis sweep in `/flow:bug:investigate` §3.A, and the finding verificat
 `/flow:feat:review` §6 / `/flow:bug:review` §5. `fanout_max` is the ceiling on **one round**, not
 on the command: a panel that runs advisors and then a critique round launches up to `fanout_max` in
 each.
+
+### What one command may spend (`budget_max`)
+
+A round inside its cap says nothing about what a *command* spends, and the review chain is where
+that bites: a panel, then area reinforcements, then a coverage sweep that relaunches reviewers, then
+a query duel, two blinded audits and one skeptic per ambiguous finding — every round inside
+`fanout_max` and the command an order of magnitude past what anyone asked for. Measured on one real
+feature, three reviews of a single MR/PR train came to 97 subagents.
+
+`budget_max` (empty → **12**, `0` → no ceiling) is the ceiling on everything **one command run**
+launches, summed over every round including relaunched ones. The mechanics:
+
+- **Counted before the launch, not after.** A round that does not fit whole is truncated and the
+  truncation reported (`4/7`); with nothing left, the phase is skipped and named.
+- **Each command declares which phase it gives up first**, so a truncation is deterministic rather
+  than the model's mood on the day. In `/flow:feat:review` the order is the completeness sweep, then
+  the skeptics, then the idiom audit, then the area reinforcements — and the built-in reviewer, the
+  panel the tier selected, the query duel and the blinded contract check are never dropped for
+  budget.
+- **Both ceilings count agents, not findings.** Grouping three findings into one skeptic's brief is
+  the intended shape; launching one agent per finding because each looks cheap is a breach — twelve
+  `Verify Vn` agents under a cap of four is not thoroughness, it is an unbounded round.
+- **The artifact reports `spent/budget`** and lists every phase the ceiling skipped: a phase dropped
+  for cost and a phase that found nothing are not the same result.
+
+Lower it before anything else when reviews feel expensive: `8` is a frugal review, `6` a cheap one.
+`/flow:init` writes both ceilings into `FLOW.md` with their values even when they are the defaults,
+because a ceiling nobody can find is not a ceiling.
 
 Raise it when you want breadth and are paying for it deliberately. Lower it to `1`-`2` on a repo
 where you would rather the flow stayed cheap. What the ceiling drops is always **reported** — a

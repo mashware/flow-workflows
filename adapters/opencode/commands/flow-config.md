@@ -73,9 +73,15 @@ CLIs installed *and authenticated*, agents discoverable, hooks executable, the M
 base branch resolvable — is `/flow-doctor`. Point there in one line whenever a key below names a
 tool, an agent or a command; do not duplicate those checks.
 
-- **Fan-out**: `agents.fanout_max` must be a positive integer; else flag and note the default `4`
-  applies. `agents.fanout_tool` names a harness tool, not an agent: set but not exposed by this
-  harness → note the fan-out falls back to plain parallel subagents (not an error).
+- **Fan-out and cost ceilings**: `agents.fanout_max` must be a positive integer; else flag and note
+  the default `4` applies. `agents.budget_max` must be a non-negative integer (`0` = no ceiling);
+  else flag and note the default `12`. **Both absent → say so as a finding, not a pass**: the review
+  chain is the plugin's most expensive command and these are its only brake, so report the effective
+  numbers and where to lower them. `budget_max` under the count of reviewers `quality.review_skill`
+  or `quality.reviewers` defines → flag: the panel alone will exhaust the command's budget and every
+  later phase gets skipped for cost. `agents.fanout_tool` names a harness tool, not an agent: set
+  but not exposed by this harness → note the fan-out falls back to plain parallel subagents (not an
+  error).
 - **Models**: `models.*` values are **free text for the harness** — never flag a model name as
   invalid, never suggest a "better" one, never invent a default. Report only: a key outside
   `study` / `code` / `test` / `review` / `workers` (flag — a typo, it will be ignored), and whether

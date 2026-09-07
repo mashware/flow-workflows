@@ -97,8 +97,22 @@ base review does not. Used only if `FLOW.md` names them; skipped under `light`. 
 
 **Skeptic fan-out** — the verification gate at the end of `review`: one skeptic subagent per *ambiguous*
 finding, told to refute it with the burden of proof on the finding; refuted findings are listed as
-discarded, with the reason. Opens only on M/L, a diff over 150 lines and at least 4 ambiguous
-findings; capped by `agents.fanout_max`; never under `light`. → `feat/review.md` §6, [CONFIGURATION][cf]
+discarded, with the reason. Opens only on M/L *by effective size*, a diff over 150 lines and at least 4 ambiguous
+findings; capped by `agents.fanout_max` and by what `agents.budget_max` leaves; never under `light`.
+→ `feat/review.md` §6, [CONFIGURATION][cf]
+
+**Effective size** — the size a review actually runs on: the **lower** of `meta.json.size` and the size
+derived from the diff in front of it (≤150 changed lines → XS · 151-600 → S · 601-1500 → M · >1500 → L).
+A multi-MR/PR train has every MR/PR inheriting the feature's size, so without this a 41-line MR/PR is
+reviewed as an L. The sensitive-surface bump applies on top and is never scaled away.
+→ `feat/review.md` §2.0
+
+**Agent budget** — `agents.budget_max` (empty → 12): the ceiling on subagents **one command run** may
+launch, summed over every round, next to `fanout_max`'s ceiling on a single round. Each command that
+fans out declares which phase it gives up first, so truncation is deterministic; four phases of
+`review` are never dropped for cost; the artifact reports `spent/budget` and names what was skipped.
+Both ceilings count agents, not findings — grouping findings into one brief is intended, one agent per
+finding past the cap is a breach. → flow-core §6, `feat/review.md` §2.0b
 
 **Query duel** — a data-access query judged on its execution plan, not on prose: a fact sheet (filter,
 order with direction, bound, joins, real indexes), a challenger blinded to the design's rationale, and

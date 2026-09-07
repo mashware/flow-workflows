@@ -28,8 +28,27 @@ Mandatory review phase. **`/flow:feat:ship` cannot run without passing through h
 
 Scope for every reviewer: the full feature work against the base branch (committed + working tree — commits are opt-in).
 
-### 2.0 Resolve review depth (scale to the work size and the risk)
+### 2.0 Resolve review depth (scale to *this diff* and the risk)
 Read `quality.review_depth` from `FLOW.md` (`proportional` | `full` | `light`; empty → `proportional`) and `meta.json.size`. This decides **what §2.1 launches and at which effort**. Built-in `code-review` effort ladder: **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage, may surface uncertain ones).
+
+**The tier is resolved against the diff in front of you, not against the size of the feature.**
+`meta.json.size` describes the whole work; in a multi-MR/PR train every MR/PR inherits it, so a
+41-line third MR/PR gets reviewed as the L its feature is — the single largest source of wasted
+review in this plugin. Measure the real diff (`git diff --shortstat <git.default_base>...HEAD`, plus
+the working tree) and derive its own size:
+
+| Changed lines in this diff | Diff size |
+|---|---|
+| ≤ 150 | XS |
+| 151-600 | S |
+| 601-1500 | M |
+| > 1500 | L |
+
+**Effective size = the lower of `meta.json.size` and the diff size**, and every size-gated step in
+this command (§3.5, §5.5, §6) reads the effective size, not the recorded one. The diff pointing
+*higher* than the recorded size is worth one line in `06-review.md` (the work may be misclassified),
+not a heavier review. The **sensitive-surface bump below applies on top of the effective size and is
+never scaled away** — a 12-line change to an authorization check still gets the panel.
 
 - **`full`** (any size): built-in `code-review` at **xhigh** + the project panel. Skip the tiering below.
 - **`light`** (any size): built-in `code-review` (or `quality.review_skill`) **only**, at **medium** effort. No project panel, no §3 reinforcements, no §6 skeptic fan-out. The sensitive-surface bump still applies: a sensitive surface upgrades `light` to the `proportional` tier for that work.
@@ -45,6 +64,25 @@ Read `quality.review_depth` from `FLOW.md` (`proportional` | `full` | `light`; e
 - **Sensitive-surface bump** (proportional, any size): the diff touches authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, or a DB migration/schema change → **raise the built-in effort one tier** (medium→high→xhigh→**max**) and always run the panel. S/M on a sensitive surface → **xhigh**; **L on a sensitive surface → `max`**.
 
 Record in `06-review.md` which tier and effort ran and why (e.g. "L + DB migration → built-in at `max` + panel").
+
+### 2.0b Resolve the agent budget (the ceiling is the command's, not the round's)
+This command is the widest fan-out in the plugin: a panel, area reinforcements, a coverage sweep that
+relaunches reviewers, a query duel, two blinded audits and one skeptic per ambiguous finding. Each
+round respects `agents.fanout_max` and the *command* still ends up an order of magnitude over what
+anyone asked for. Read `agents.budget_max` from `FLOW.md` (empty → **12**; `0` = no ceiling) and hold
+every round in §2.1-§6 against it (flow-core §6): count before launching, launch what fits, report
+what the cap dropped.
+
+**Give-up order when the budget runs out** — drop from the top, never from the bottom:
+
+1. **§3.5 completeness sweep** — the most expensive phase and the one whose absence is easiest to state.
+2. **§6 skeptic verification** — a filter against over-reporting; without it findings ship unverified, marked as such.
+3. **§5.5 idiom audit**.
+4. **§3 area reinforcements** — the least covered elsewhere goes last.
+
+**Never dropped for budget**: the built-in `code-review` (§2.1.1), the panel the §2.0 tier selected
+(§2.1.2), the query duel (§3.6) and the blinded contract check (§5) — those four are the review. If
+the budget cannot cover them, the budget is misconfigured: say so in one line and run them anyway.
 
 ### 2.1 Launch and consolidate
 Launch the reviewers selected in §2.0 and **consolidate their findings into a single deduplicated report**:
@@ -78,19 +116,26 @@ Only what §2 does **not** already cover; skipped entirely under `light` (§2.0)
 
 ## 3.5. Completeness sweep (anti-abandonment, M/L only)
 
-Counters a reviewer abandoning a large diff early. **Only if `meta.json.size` is M or L.**
+Counters a reviewer abandoning a large diff early. **Only if `meta.json.size` is M or L**, and only
+if §2.0b's budget still covers it (it is the first phase dropped).
+
+**It runs after §2-§3 are consolidated, never in parallel with them.** The whole phase is an audit of
+*what the other reviewers covered*; launched before their findings exist, its only possible input is
+the diff itself, and then it is not an auditor but one more reviewer — the most expensive of the
+round, reading everything the others already read. If you are tempted to start it early to save
+wall-clock, that is the tell: wait.
 
 Loop, maximum **2 rounds**:
 
 1. **Worklist**: `git diff --stat <git.default_base>...HEAD` → list of changed files/areas.
 2. **Coverage map**: from the consolidated §2-§3 findings, mark which files/areas received at least one finding or were explicitly examined.
-3. **Completeness critic (1 agent, blinded)**: `Agent general-purpose` (takes this command's `models.review` key like every other subagent here), passing **only** the full diff file list (step 1) and, per §2-§3 reviewer, one line on what it covered. **Do not** pass the detailed findings or the design. Prompt:
+3. **Completeness critic (1 agent, blinded and text-only)**: `Agent general-purpose` (takes this command's `models.review` key like every other subagent here), passing **only** the full diff file list (step 1) and, per §2-§3 reviewer, one line on what it covered. **Do not** pass the detailed findings, the design, or the diff. This agent compares two lists and answers in three sentences; it opens no file, runs no `git diff`, reads no code. An agent here that is still working after a few minutes is not being thorough — it was handed the wrong job, and the fix is to kill it and re-launch with the two lists alone. Prompt:
 
-   > You are a coverage auditor for a code review. I give you (1) the list of files changed in this diff and (2) a one-line summary per reviewer of what area each one covered. Your only task: name the files or areas in the diff that **no** reviewer examined, and any claim a reviewer accepted as correct without verifying. Do not opine on existing findings. Output: list of concrete gaps (`file/area` + why it deserves a second look) or exactly "none". Under 150 words.
+   > You are a coverage auditor for a code review. I give you (1) the list of files changed in this diff and (2) a one-line summary per reviewer of what area each one covered. Your only task: name the files or areas in list 1 that **no** reviewer in list 2 examined, and any claim a reviewer accepted as correct without verifying. **Work only from these two lists — do not open files, do not read the diff, do not inspect the repository.** Do not opine on existing findings. Output: list of concrete gaps (`file/area` + why it deserves a second look) or exactly "none". Under 150 words.
 
-4. **Fresh gaps named** → relaunch a targeted round **only on those files/areas** with the applicable `quality.review_skill` reviewers (paths constrained to the gaps). Merge and deduplicate against the consolidated findings.
-5. **Repeat 2-4** until a round returns "none" **or** 2 rounds are reached.
-6. **No silent truncation**: gaps still flagged after 2 rounds → **record them literally** in the output under "Areas not covered after 2 rounds" with their reason.
+4. **Fresh gaps named** → relaunch a targeted round **only on those files/areas**, with the applicable `quality.review_skill` reviewers and their **paths constrained to the named gaps** (a reviewer relaunched over the whole diff is the phase's failure mode, not its purpose). Cap the round at `agents.fanout_max` and at what §2.0b's budget leaves; more gaps than that → take the most consequential and record the rest as gaps. Merge and deduplicate against the consolidated findings.
+5. **Repeat 2-4** until a round returns "none" **or** 2 rounds are reached **or** the budget is spent.
+6. **No silent truncation**: gaps still flagged after 2 rounds or left by the budget → **record them literally** in the output under "Areas not covered after 2 rounds" with their reason.
 
 Sweep findings enter the normal flow: §4, §5, §6 like any other.
 
@@ -167,9 +212,10 @@ A filter against over-reporting, not a second review; narrow gate. Never runs un
 
 | Condition | Threshold |
 |---|---|
-| Size | `meta.json.size` is **M or L** |
+| Size | the **effective size** of §2.0 is **M or L** |
 | Diff | the MR/PR diff is **over 150 changed lines** |
 | Findings | **≥ 4** ambiguous findings across §2-§5 |
+| Budget | §2.0b's budget still covers a round (§6 is the second phase dropped) |
 
 Read the real diff (`git diff --stat` against the target branch), not the recorded size.
 
@@ -177,7 +223,9 @@ When all three hold: in **`manual`**, offer it with `AskUserQuestion` ("Verify t
 
 **What gets verified — only the ambiguous ones.** A defect visible in the diff is already confirmed. Verify only findings resting on code *outside* the diff, a runtime behaviour, or an unchecked convention. Everything else goes straight to the output.
 
-**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**). **One skeptic per finding, in parallel, capped at `fanout_max`** — more ambiguous findings than that: verify the `fanout_max` most consequential, pass the rest through unverified, marked as such. A finding is discarded when its skeptic refutes it.
+**How wide.** Read `agents.fanout_max` from `FLOW.md` (empty → **4**), and take the lower of that and what §2.0b's budget leaves. **One skeptic per finding, in parallel, capped at that number** — more ambiguous findings than the cap: verify the most consequential ones, pass the rest through unverified, marked as such. A finding is discarded when its skeptic refutes it.
+
+**The cap counts agents, not findings.** Handing one skeptic three related findings is fine and often better; launching one agent per finding *because each is cheap* is not — twelve `Verify Vn` agents under a cap of four is a breach of the cap, not a way to cover more ground. If the ambiguous findings do not fit, group them into `fanout_max` briefs or leave the remainder unverified and say so; never widen the round.
 
 > You are a skeptic. This is a code review finding on the project: file `<file:line>`, problem: `<description>`, proposal: `<proposal>`. Try to REFUTE it: read the real code and say whether the problem is NOT real (refuted) or is real (stands). The burden of proof is on the finding — when the evidence is genuinely ambiguous, refute. Be concrete about why, citing what you read.
 
@@ -207,7 +255,8 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 
 ## Summary
 - Review tier: <full | proportional | light — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
-- Cost: <n> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>, effort <medium|high|xhigh|max>
+- Effective size: <diff size (N changed lines) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified>
+- Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>, effort <medium|high|xhigh|max>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Completeness rounds (M/L): N
 - Critical findings (block ship): N
@@ -215,6 +264,9 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 
 ## Areas not covered after 2 rounds
 <only if §3.5 still had gaps after exhausting the cap; literal list with reason, or "none">
+
+## Skipped for budget
+<the phases §2.0b's give-up order dropped because the budget ran out, one line each with what was not looked at, or "none">
 
 ## Data-access duel
 <one row per query added or modified by the diff, per §3.6; "no queries touched" if none, or "renames only" when the change did not alter filter/order/bound/joins/columns>

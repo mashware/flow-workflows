@@ -403,6 +403,21 @@ caps every round; a truncated sweep reports `4/7`, because "a silently truncated
 coverage". Skipped and clean are not the same result.
 *Now:* feat:review §6; bug:review §5; bug:investigate §3.A; feat:brainstorm §3.A.
 
+**A ceiling per round is not a ceiling per command, and the tier must read the diff, not the ticket.**
+v0.45.0: with every round inside `fanout_max`, one review still composed a panel, area reinforcements,
+a coverage sweep that relaunched reviewers, a query duel, two blinded audits and one skeptic per
+finding — 29 agents on a single MR/PR, and 97 across three reviews of one train, most of the bill.
+Three things were wrong at once and they multiplied. `agents.budget_max` (empty → 12) now bounds
+everything **one command run** launches, with a **declared give-up order** per command so truncation
+is deterministic, and four phases that are never dropped for cost. Both ceilings count **agents, not
+findings**: twelve `Verify Vn` agents under a cap of four was read as thoroughness, and is a breach.
+And the review tier resolves against the **diff under review** rather than `meta.json.size`, which in
+a train every MR/PR inherits — a 41-line third MR/PR was being reviewed as the L its feature is. The
+completeness sweep, the most expensive phase, is blinded harder: it compares two lists, opens no file,
+and never runs in parallel with the reviewers whose coverage it audits — launched early its only
+input is the diff, and then it is not an auditor but the most expensive reviewer of the round.
+*Now:* flow-core §6; feat:review §2.0, §2.0b, §3.5, §6; bug:review §2.0, §5.
+
 **The synthesis is never a subagent; fan-out is plain subagents unless a repo opts in.** Judging
 returns to the main agent, which holds the context — delegating "cost an agent and a context hop to get
 markdown copied back". The rounds had been Claude Code `Workflow` DSL, which "exists in Claude Code and

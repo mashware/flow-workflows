@@ -30,8 +30,12 @@ Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already 
 
 Scope for every reviewer: the fix against the base (committed + uncommitted working tree).
 
-### 2.0 Resolve review depth (scale to the work size and the risk)
+### 2.0 Resolve review depth (scale to *this diff* and the risk)
 Read `quality.review_depth` from `FLOW.md` (`light` | `proportional` | `full`; empty → `proportional`) and `meta.json.size`. Built-in `code-review` effort ladder: **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage).
+
+**The tier is resolved against the diff in front of you**, per `/flow-feat-review §2.0`: measure the real diff (`git diff --shortstat <git.default_base>...HEAD` plus the working tree), derive its size (≤150 lines → XS · 151-600 → S · 601-1500 → M · >1500 → L), and run on the **lower** of that and `meta.json.size` — a one-file fix inside a bug classified M is an XS review. Every size-gated step here (§4.5, §5) reads that effective size. The sensitive-surface bump applies on top and is never scaled away.
+
+**The budget is the command's, not the round's.** Read `agents.budget_max` from `FLOW.md` (empty → **12**; `0` = no ceiling) and hold every round below against it (flow-core §6): count before launching, launch what fits, report what the cap dropped. Give-up order when it runs out, from the top: **§5 skeptics**, then **§4.5 completeness check**, then **§2.2 idiom audit**, then **§3 reinforcements**. Never dropped: the built-in `code-review`, the panel the tier selected, and the query duel (§3.5) — if the budget cannot cover those, the budget is misconfigured: say so in one line and run them anyway.
 
 **Sensitive surface** = auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change.
 
@@ -92,11 +96,11 @@ Review the diff for new defensive mechanisms smuggled in "just in case" (validat
 
 ## 4.5. Completeness check (M/L, no loop)
 
-**M/L only**, **one** check, no loop: after consolidating §2-§3, contrast `git diff --stat <git.default_base>...HEAD` against what was reviewed. Any changed file no reviewer looked at → targeted pass with the applicable reviewer, merge. A small diff (normal for a fix) resolves this in seconds or makes it not apply.
+**M/L by effective size (§2.0) only**, **one** check, no loop, and only while the budget covers it: after consolidating §2-§3 — never in parallel with them, since the check's input is what they covered — contrast `git diff --stat <git.default_base>...HEAD` against what was reviewed. Any changed file no reviewer looked at → targeted pass with the applicable reviewer, merge. A small diff (normal for a fix) resolves this in seconds or makes it not apply.
 
 ## 5. Adversarial finding verification (parallel fan-out, optional)
 
-Same as `/flow-feat-review` §6 — its gate, ceiling and autonomy rule, unchanged. Skipped under `light`. Gate: size **M or L**, diff **over 150 changed lines**, **≥ 4 ambiguous** findings (resting on an assumption about code outside the diff, a runtime behaviour, or an unverified convention — not defects visible in the diff). **One skeptic per ambiguous finding, in parallel, capped at `agents.fanout_max`** (empty → 4), refute-by-default. `manual` → offer it with `AskUserQuestion`; `guided`/`auto` → run without asking and note it in the artifact. Refuted findings come off the list into "Discarded by verification" with the reason. Gate closed → say so in one line; skipped and clean are not the same result.
+Same as `/flow-feat-review` §6 — its gate, ceilings and autonomy rule, unchanged. Skipped under `light`. Gate: **effective size** (§2.0) **M or L**, diff **over 150 changed lines**, **≥ 4 ambiguous** findings (resting on an assumption about code outside the diff, a runtime behaviour, or an unverified convention — not defects visible in the diff). **One skeptic per ambiguous finding, in parallel, capped at `agents.fanout_max`** (empty → 4) and at what the budget leaves, refute-by-default. **The cap counts agents, not findings**: group them into that many briefs or leave the remainder unverified and say so — never widen the round because each finding looks cheap. `manual` → offer it with `AskUserQuestion`; `guided`/`auto` → run without asking and note it in the artifact. Refuted findings come off the list into "Discarded by verification" with the reason. Gate closed → say so in one line; skipped and clean are not the same result.
 
 ## 6. Quality gates
 
@@ -120,7 +124,9 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 ## Summary
 - Review tier: <light | full | proportional — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
-- Cost: <n> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
+- Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
+- Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used>
+- Skipped for budget: <phases dropped by §2.0's give-up order, or "none">
 - Blockers: N
 - Suggestions: M
 
@@ -170,5 +176,5 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/flow-bug-postmortem` (M/L) or `/flow-bug-ship` (XS/S).
 - **Record *what* you reviewed**, in the same write: `reviewed_sha` = `git rev-parse HEAD` — `phases_done` says a review happened, the sha says on which tree, and `/flow-bug-ship §0` compares it against what is being pushed. Only when the phase advances: a review that ended in blockers reviewed nothing that stands.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Stop body (after the flow-core §3 header): the findings that survived and what you did with each, plus the same Cost line as the Summary: "- Cost: <n> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>".
+- Stop body (after the flow-core §3 header): the findings that survived and what you did with each, plus the same Cost line as the Summary: "- Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>".
 - **Autonomy handoff.** Only without blockers — with blockers, stop in every mode. **M/L**: `manual` → propose `/flow-bug-postmortem` with a single `AskUserQuestion`; `guided`/`auto` → chain into it in this same turn. **XS/S**: the next step is `ship`, which pushes and opens the MR/PR — a hard gate in **every** mode: stop here and propose `/flow-bug-ship` with a single `AskUserQuestion`, never chaining into it.
