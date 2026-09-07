@@ -44,7 +44,7 @@ Timeout 2 s; on failure continue silently. Record relevant hits in `02-brainstor
 
 **Launch the advisors as parallel subagents** — one per lens, single round, each blind to the others (LLM-council: independent advisors, then a chairman synthesizes; a **cross-critique (peer-review)** round in between for **L** only).
 
-**How wide the fan-out goes** — `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round, and never more than `agents.budget_max` (empty → **12**) across this command run as a whole (flow-core §6); a round that does not fit is truncated and the truncation reported (`3/4`). Rounds are **proportional**, like `review_depth`:
+**How wide the fan-out goes** — `agents.fanout_max` from `FLOW.md` (empty → **4**): never launch more than that many subagents in one round, and never more than `agents.budget_max` (empty → **12**) across this command run as a whole (flow-core §6); a round that does not fit is truncated and the truncation reported (`3/4`). With the fan-out key empty, a round of 4 or more inherits this thread's model — say so in one line before launching, naming the key and not a model (flow-core §1). Rounds are **proportional**, like `review_depth`:
 
 | Size | Rounds |
 |---|---|

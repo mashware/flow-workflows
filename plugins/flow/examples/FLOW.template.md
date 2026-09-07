@@ -174,7 +174,8 @@ Which model each kind of step runs with. **Every key is optional and empty by de
 with the model you launched the command with** (today's behavior — the flow changes nothing).
 
 Values are **free text, passed straight to your harness**. flow never validates a model name, never
-ranks them, and never picks one for you: whatever your harness accepts (`opus`, `sonnet`, `fable`,
+ranks them, and never picks one for you — it only **says** what a wide fan-out is about to inherit
+when these keys are empty, so an unpriced default is at least a visible one: whatever your harness accepts (`opus`, `sonnet`, `fable`,
 `gemini-2.5-pro`, a provider id) is what belongs here. A harness that cannot switch model per
 subagent ignores the value and the step says so once, in one line.
 

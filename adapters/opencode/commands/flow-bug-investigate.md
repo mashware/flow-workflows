@@ -54,7 +54,7 @@ Goal: the change or condition that introduced the bug (commit, deployment, corru
 ### 3.A Hypothesis sweep (parallel fan-out)
 
 - Enumerate the root cause hypotheses from `02-diagnose.md` + the `git blame` of §3.0.
-- **Width**: read `agents.fanout_max` from `FLOW.md` (empty → **4**), bounded also by `agents.budget_max` (empty → **12**) across this command run (flow-core §6); enumerate as many as the evidence supports, sweep the **top `fanout_max`** by prior plausibility. If you dropped any, say so in `03-investigation.md` — a silently truncated sweep reads as complete.
+- **Width**: read `agents.fanout_max` from `FLOW.md` (empty → **4**), bounded also by `agents.budget_max` (empty → **12**) across this command run (flow-core §6); enumerate as many as the evidence supports, sweep the **top `fanout_max`** by prior plausibility. A sweep of 4 or more with the fan-out key empty inherits this thread's model: one line before launching, naming the key and not a model (flow-core §1). If you dropped any, say so in `03-investigation.md` — a silently truncated sweep reads as complete.
 - Launch **one subagent per hypothesis, in parallel**; each pursues **one** and gathers evidence **for and against** (an agent asked only to confirm always finds something).
 
 Brief per subagent:

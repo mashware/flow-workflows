@@ -41,6 +41,20 @@ When set:
   `/model <value>`), record it in the phase artifact, and continue. Never a question, never a gate.
 - A harness that cannot set a model per subagent: note it once, continue with the inherited one.
 
+**A wide round inherits in silence — say what it inherits, never what it should be.** An empty key is
+the right default and stays it: which model is cheap, capable or appropriate changes every few
+months, differs per harness and per account, and belongs to whoever pays for the tokens. But
+inheriting is unremarkable for one subagent and a blank cheque for a round of fifteen. So before
+launching a round of **4 or more** subagents with the fan-out key (`models.workers`, then the
+command's own key) empty, say it in one line: how many agents, and that they run on this thread's
+model because no key is set. **Name the key, never a model** — no default, no suggestion, no ranking.
+A harness that cannot report the model it runs on says the round inherits it, and that is the whole
+line. Never a question, never a gate; the artifact's cost line carries the same fact.
+
+Agents named in `agents.<role>` are the exception here as above: they keep whatever their own
+definition sets, so a round can mix inherited and self-declared models. Report which, not whether it
+was wise.
+
 ## 2. Autonomy — `autonomy.mode`
 
 `manual` (default) · `guided` · `auto`. Read it once and apply it throughout the command.

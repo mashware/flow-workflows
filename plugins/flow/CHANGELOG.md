@@ -5,6 +5,30 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.45.1 — Fifteen agents inherited a model nobody had chosen for them  ·  2026-09-07
+
+**In short**
+- A fan-out of **4 or more** subagents now says, in one line, that it inherits this thread's model when the fan-out key is empty.
+- The review artifact carries an `Agent models` line: the configured values, or "inherited", plus which agents kept their own.
+- It names the **key**, never a model — no default, no suggestion, no ranking. The empty default stays the default.
+
+Most of what a review launches has no agent definition of its own: the skeptics, the coverage
+auditor, the contract verifier. With `models.workers` and `models.review` empty — which is the
+documented default, and how `/flow:init` leaves them — those agents inherit the model of the thread
+that launched them. That is the right behaviour for one subagent and an unpriced blank cheque for a
+round of fifteen, all the more so because the members that *do* carry a definition (the panel's
+specialists) quietly run on whatever their own frontmatter says, so a single round can mix two or
+three models and report none of them.
+
+Nothing about the default changes. **Which model is cheap, capable or appropriate is not this
+plugin's call** — it changes every few months, differs per harness and per account, and belongs to
+whoever pays for the tokens; v0.34.0 removed the two lines that had been handing out vendor tiers and
+they are not coming back. What was missing is not a value but a sentence: before the first round of
+four or more, one line saying how many agents are about to run and that they inherit this thread's
+model because no key is set — **naming the key, never a model** — and the same fact on the artifact's
+new `Agent models` line, next to the cost. A harness that cannot report the model it runs on says the
+round inherits it, and that is the whole line. Never a question, never a gate.
+
 ## v0.45.0 — Every round obeyed its cap, and the review still launched twenty-nine agents  ·  2026-09-07
 
 **In short**

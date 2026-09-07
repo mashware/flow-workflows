@@ -82,6 +82,13 @@ what the cap dropped.
 (§2.1.2), the query duel (§3.6) and the blinded contract check (§5) — those four are the review. If
 the budget cannot cover them, the budget is misconfigured: say so in one line and run them anyway.
 
+**Say what the round will run on.** Most of what this command launches has no agent of its own —
+the skeptics (§6), the coverage auditor (§3.5), the contract verifier (§5) — so with the fan-out
+key empty they inherit this thread's model, whatever that is, fifteen at a time. Per flow-core §1:
+one line before the first wide round naming the count and the fact that they inherit, and the same
+fact on the artifact's `Agent models` line. Name the key (`models.workers`, then `models.review`),
+never a model.
+
 ### 2.1 Launch and consolidate
 Launch the reviewers selected in §2.0 and **consolidate their findings into a single deduplicated report**:
 
@@ -254,6 +261,7 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 ## Summary
 - Review tier: <full | proportional | light — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified>
+- Agent models: <the value of `models.workers`/`models.review` when set; otherwise "inherited from this thread" — plus, when the panel ran, that agents named in `agents.<role>` kept the model their own definition sets. The values as they are, no judgement on them>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>, effort <medium|high|xhigh|max>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Completeness rounds (M/L): N
