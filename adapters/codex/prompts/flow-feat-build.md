@@ -190,6 +190,8 @@ If during the build the temptation arises to add something **not in the §2 brie
 
 Anything unforeseen **always** goes through the user before entering code.
 
+A **product decision** the build turns out to need is neither option — not scope to add, not work to park: ask it the moment it surfaces, in every mode, and write the answer under "Decisions made during implementation" (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. A gap in the repo's own machinery (a guard that did not bind, a floor with slack) is `kind: "tooling"`, headed for the debt log rather than the tracker.
+
 ## 3. Log
 
 Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at the end). Structure:

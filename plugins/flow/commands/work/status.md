@@ -12,7 +12,7 @@ Overview of works in progress; detects divergences between artifacts and actual 
 ## 1. List works
 
 - `ls -1 .claude/work/` (ignore `_archive`).
-- **Then `_archive/*/meta.json` for `followups[]` alone** — entries not `declined`/`done` (§5). Nothing else about an archived work is shown; a finished work is exactly when its deferred items stop being visible, which is the point of reading them here.
+- **Then `_archive/*/meta.json` for `followups[]` alone** — entries not `declined`/`logged`/`done` (§5). Nothing else about an archived work is shown; a finished work is exactly when its deferred items stop being visible, which is the point of reading them here.
 - Read the `meta.json` of **every** folder (named `<TICKET>-<slug>`, `<slug>` for ticket-less/local works, or just `<TICKET>` for older ones). Identify each work by `meta.json.ticket`, not by the folder name.
 - Read `00-summary.md` per work when it exists and use it for the recap (`Next:` line, what is pending) instead of reading every artifact (flow-core §5); missing → fall back to the artifacts.
 
@@ -32,7 +32,7 @@ Overview of works in progress; detects divergences between artifacts and actual 
 
 - "MR"/"PR" from `git.request_term` in FLOW.md; empty → "MR/PR".
 - `Cross-repo:` only when `meta.json.related_repos` has entries not `done`: each as `<repo>: <scope>`, appending ` — contract not handed over` when that entry's `contract_handoff` is `pending`. It flags that a **sibling repo still has a pending part**; flow never scans or touches the other repo.
-- `Follow-ups:` only when `meta.json.followups[]` has entries not `declined`/`done` (flow-core §7): count the `proposed` ones as *awaiting a decision* and the `accepted` ones without a `work` as *accepted, not started*, naming the ticket id when there is one. `in_progress` entries are already visible as their own work — do not double-count them.
+- `Follow-ups:` only when `meta.json.followups[]` has entries not `declined`/`logged`/`done` (flow-core §7): count the `proposed` ones as *awaiting a decision* and the `accepted` ones without a `work` as *accepted, not started*, naming the ticket id when there is one. `in_progress` entries are already visible as their own work — do not double-count them.
 - `MR/PRs:` only when `meta.json.mrs` exists with >0 entries:
   - Summary: `<merged>/<total> merged`.
   - `closed` or `superseded` MR/PRs present → add to the count: `2/4 merged · 1 closed · 1 pending`.
@@ -91,7 +91,7 @@ Follow-ups awaiting a decision
 ```
 
 - Source: `followups[]` of every `meta.json`, live folders **and** `_archive/`, entries not
-  `declined`/`done`. Show the originating ticket, the id, the `title`, and the created ticket when
+  `declined`/`logged`/`done`. Show the originating ticket, the id, the `title`, and the created ticket when
   `ticket` is set. Mark archived origins so it is clear the work itself is finished.
 - `proposed` entries are listed under *awaiting a decision*; `accepted` ones without a `work` under
   *accepted, not started*. Suggest `/flow:feat:start <ticket>` for the latter.

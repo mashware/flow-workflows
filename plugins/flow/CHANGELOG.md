@@ -5,6 +5,52 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.46.0 — Three product questions became three tickets, and each ticket a day's work  ·  2026-09-08
+
+**In short**
+- A **product decision the current diff depends on is asked the moment it surfaces**, in every mode, `auto` included; a new `decision` kind records only the ones the user chose to defer, and `ship` re-asks them as questions, never as *do it / not worth it*.
+- `bug:fix` gains **§4.2 Is it still a bug?**: a fix that grows a mechanism is reclassified as a feature **in place**, before a line exists; the brief gate has exactly two options, never a widening third.
+- Every `review` and `validate` Close **stages what it taught** — the phase that finds the most was the only one that never did.
+- New `tooling` kind and `tracker.debt_log` (empty → `docs/DEBT.md`): gaps in the repo's own machinery are **logged** in a versioned file, not opened as issues.
+
+**One afternoon, one repo: two bugs closed, twelve issues opened, backlog from 28 to 32.** Three of
+the twelve were questions — *what does the window say when a console goes quiet?*, *does closing a
+pane kill what it left running?*, *may a notice fill the whole console?* — each two minutes of the
+user's, each filed as a ticket because the flow said deferred work is triaged once, at `ship`. That
+rule is right for **work**: mid-build is the worst moment to decide whether a neighbouring defect
+deserves a ticket. It is wrong for a **decision the diff depends on**, because parking it does not
+shrink the diff — it makes the diff guess, and the guess ships, gets reviewed, and comes back as a
+work with its own start, diagnosis, fix and review to answer what was one question. The test is a
+line: *if the answer changes what the code being written does now, ask now; if it changes what someone
+builds later, record it.* The never-ask list of `auto` is about flow mechanics; a product decision is
+the opposite of mechanics. A `followups[]` entry whose title is a question is now named as the
+mistake it is.
+
+**The same afternoon's other lesson: a size-S "fix" that took three review rounds, seventeen
+blockers and two redesigns.** The first seven blockers lived entirely in the half a third option on
+the brief gate had let in — *include the click too* — and every one of them was a design finding, not a
+code finding. The bug chain has no design phase: a mechanism written inside «apply the fix» is designed
+while it is typed, reviewed after it exists, and redesigned in review, which is the most expensive place
+to design anything. `bug:fix` §4.2 checks twice — at the brief, and the moment the diff grows a type two
+modules must agree on — and stops to reclassify **in place**: same ticket, same branch, `type = "feat"`,
+the diagnosis kept as the feature's «why», then `design` (or `brainstorm`) before a line is written. And
+the gate is two options again: a user who wants more says *no*, and the wider brief is asked whole.
+
+**Seventeen blockers and zero knowledge cards.** `investigate` and `design` staged findings; `review`
+— where this plugin learns most about a project — never did, so a lesson like *a mutation series only
+tests what its author imagined to mutate* lived in a work folder that gets archived unread. Both
+reviews and both validates now stage at their Close, under the same evidence rule as `design`: one
+line of evidence per finding or it is not staged, and never a `save` there.
+
+**Eighteen of thirty-two open issues were about the repo's own machinery**, not the product: a floor
+without a subject, a ratchet never checked against the tree, a stale card. Real, and nobody's next
+task. They competed for attention with defects a user would notice and made the backlog's number lie.
+The new `tooling` kind goes to a **debt log** — `tracker.debt_log`, a versioned Markdown file the
+survey offers as *Log it* first — read by whoever next touches the machinery and triaged by nobody.
+`status` and `daily` stop showing what was logged.
+
+Mirrored across the opencode, Gemini CLI and Codex adapters by the generator.
+
 ## v0.45.1 — Fifteen agents inherited a model nobody had chosen for them  ·  2026-09-07
 
 **In short**

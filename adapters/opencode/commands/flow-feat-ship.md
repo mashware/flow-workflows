@@ -325,7 +325,10 @@ phases that parked it asked nothing, deliberately.
 
 1. **Present them together.** One `AskUserQuestion`, batched up to 4 entries, each entry's `title`
    and `why` as the whole prompt — the user does not reopen `05-implementation.md` to answer.
-   Options per entry: **Do it** · **Not worth it** · **Later**.
+   Options per entry: **Do it** · **Not worth it** · **Later**. Two kinds differ (flow-core §7):
+   **`tooling` entries are batched apart**, with **Log it** first and recommended; **`decision`
+   entries are asked as their product question**, the options being the answers on the table —
+   never *do it / not worth it*.
 2. **Not worth it** → `status: "declined"`, the reason in `note` if the user gave one. Never asked
    again, in this work or any later one.
 3. **Later** → stays `proposed`. `/flow-work-status`, `/flow-work-daily` and `/flow-next` surface it
@@ -337,6 +340,17 @@ phases that parked it asked nothing, deliberately.
    `tracker.tool` `none`/empty or creation fails → warn in one line, leave `ticket: null` and the
    entry `accepted`; the record survives either way.
    **Creating an issue is outward-facing: this asks in every `autonomy.mode`, `auto` included.**
+4b. **Log it** (`tooling`) → `status: "logged"` and one line appended to the **debt log**:
+   `tracker.debt_log` from FLOW.md, empty → `docs/DEBT.md`, created with a two-line header on first
+   use. The line: `- <date> · <ticket> · <title> — <why>`. Commit it on the work branch; pushing it
+   is a push like any other (flow-core §2, gate 1) — offer it in the same breath as the survey's
+   result, one question, and a declined push leaves the commit local for the next one. No issue is
+   opened and nothing else is asked: it is a file on the branch, for whoever next works on the
+   machinery.
+4c. **A `decision` answered** → write the answer into the artifact that owns it (the brief, the
+   ADR-light) and set the entry `done` with the answer in `note`. When the answer changes code that
+   has already shipped, that is the moment a real follow-up is born: record it as `out-of-scope` with
+   the answer as its `why`, and it takes the normal path above.
 5. **Offer to start one, once.** Any entry now `accepted` → a single `AskUserQuestion`: start the
    first one here (`/flow-feat-start <ticket>`, or `/flow-bug-start` when the action is itself a
    fix)? On yes, the new work records `meta.json.origin` pointing back at this work and this entry,

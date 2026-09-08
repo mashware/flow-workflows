@@ -200,6 +200,7 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 - Suite green **and** every acceptance criterion `proven-by-test`, `proven-by-agent` or `proven-manually` → `phase = "validate"`, add to `phases_done`. **Multi-MR/PR work** → also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow:feat:ship §1` gates on. Suggest `/flow:feat:ship`.
 - **Record *what* you validated**, in the same write and only when the phase advances: `validated_sha` = `git rev-parse HEAD`, work-level and in this MR/PR's `mrs[]` entry. `/flow:feat:ship §1` reads it to tell "the suite passed here" from "the suite passed on something else".
 - **Unchecked edge cases and open risks become `followups[]` entries** (flow-core §7) before advancing — see the output template above.
+- **Stage what the validation taught** (`knowledge.stage` set; silence by default): a mutation that stayed green, a disguise the scenario wore, a fixture that could not produce the case — findings about how this codebase is tested, not about this diff. Same rule and evidence line as the review's Close.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Autonomy handoff — this one stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR: a hard gate in every mode, so do **not** chain into it. Stop here and propose `/flow:feat:ship` with a single `AskUserQuestion` (recommended option by default), invoking it only when the user confirms. This is the deliberate end of the unattended run.
 
