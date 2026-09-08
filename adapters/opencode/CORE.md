@@ -232,6 +232,26 @@ the next incident. Refusing to widen the diff is correct. Writing the note into 
 walking away is where it stops being correct — `.claude/work/` is git-ignored in most repos and
 archived once the work ships, so the note is gone the moment it would have mattered.
 
+**The bar — most of what a phase notices is not a deferral.** A developer who spends a day inside
+unfamiliar code sees twenty things: something that works but is not pretty, a failure mode that
+needs three unlikely events at once, a name that stopped fitting, a coupling nobody enjoys. They
+report one or two, and they are right to. Left without a bar, this section produces seven entries
+out of one ticket — and seven entries is not seven problems, it is one problem and six reading
+notes wearing its clothes. An entry is written only when it clears three questions, in order:
+
+1. **Who notices, and when?** Name them — a user, an operator, a consumer of this API, the next
+   person who has to change this file — and the moment they notice. No subject, no entry.
+2. **How likely is what it describes?** A path that needs a conjunction nobody has ever seen is a
+   note, not deferred work. Frequency is part of the finding, not colour on top of it.
+3. **Does waiting cost more than doing it now?** When it does not, waiting is free — and free is
+   the answer.
+
+Three yeses → `followups[]`. Anything less stays in the phase artifact, where it is already written
+in context, and travels no further: not lost, **not escalated**. What fails this bar nearly every
+time: «this could be extracted», «the state is not trimmed», a coupling with no symptom, generic
+missing coverage, a correct-but-unpretty shape, a rename. None of those is thoroughness; each is
+one more thing the user has to decide about.
+
 **A deferral is a record, not a sentence.** Whenever a phase parks work, it appends to
 `meta.json.followups[]`:
 
@@ -257,7 +277,8 @@ reader of `05-implementation.md` still sees the ideas in context.
   drifted from the code. Real, worth writing down, and nobody's next task — a tracker where these
   outnumber the product's defects makes the number lie and buries «a console goes silent and says
   nothing» under «a floor has no subject». Their destination is the **debt log**, a versioned file
-  in the repo, not the tracker (survey below).
+  in the repo, not the tracker — **and it is not a question**: choosing the kind already decided it
+  (survey below).
 - **`decision`** — a product question the current diff depends on: what the user sees when X,
   whether closing Y also does Z, how much of the surface a notice may take. **A missing decision is
   not deferred work.** Parking it does not shrink the diff, it makes the diff guess — and the guess
@@ -276,18 +297,45 @@ reader of `05-implementation.md` still sees the ideas in context.
 **One survey, at the end, not one question per phase.** Nothing is asked when the note is written —
 mid-build is the worst moment to judge whether a neighbouring defect is worth a ticket, and a
 question there is exactly the interruption `guided`/`auto` exist to avoid. The triage happens once,
-at `ship`'s Close, when the work is done and the user can see the whole set:
+at `ship`'s Close, when the work is done and the user can see the whole set.
 
-- One `AskUserQuestion` per entry still `proposed`, batched up to 4, options **Do it** ·
-  **Not worth it** · **Later**. The `title` and `why` are the entire prompt. **`tooling` entries are
-  batched apart**, with **Log it** as the first and recommended option; **`decision` entries are
-  asked as their product question**, the options being the answers on the table.
+**A skeptic sorts them before the user sees them.** `/flow-*-review` already refuses to hand over an
+unverified finding: its §6 gives each ambiguous one to a skeptic whose job is to *refute* it, burden
+of proof on the finding. Deferred work reached the user through no filter at all, judged only by the
+phase that parked it — the one party that cannot judge it, having just found it. So at Close, when
+**3 or more** entries are still `proposed`, they go to a skeptic first (grouped into at most
+`agents.fanout_max` briefs, the ceilings of §6 unchanged; **fewer than 3 → no agent**, the command
+applies the bar itself):
+
+> You are a skeptic. These are pieces of work a phase deliberately parked while shipping a ticket:
+> <entries, each with `id`, `kind`, `title`, `why`, `source`>. For each one, try to REFUTE that it
+> deserves a tracker issue. **The burden of proof is on the entry**: read the real code and say who
+> notices it, how likely the path is, and what waiting actually costs. One verdict per entry —
+> `ticket` (named subject, plausible path, waiting costs more), `log` (real, and nobody's next
+> task), `drop` (no subject, or a path needing a conjunction nobody has seen). When the evidence is
+> genuinely ambiguous, **do not** say `ticket`. Be concrete about why, citing what you read.
+
+- **`drop`** → `declined`, the skeptic's reason in `note`. Still readable in the artifact and in
+  `meta.json`, never asked, never counted, never shown again by `status`/`daily`/`next`.
+- **`log`** → straight to the debt log, no question, same destination as `tooling`.
+- **`ticket`** → these are what the user is asked about, and **only the strongest
+  `tracker.followup_ask_max`** of them (empty → **2**). The rest are logged, with one line saying
+  how many and where they went. **A finished work never becomes more than `followup_ask_max`
+  questions**, whatever the phases found. `0` → nothing is ever asked and everything is logged.
+
+Then, and only then, the survey:
+
+- One `AskUserQuestion`, **one batch**, at most `followup_ask_max` entries, options **Do it** ·
+  **Not worth it** · **Later**. The `title` and `why` are the entire prompt. **`decision` entries
+  are asked as their product question** — they never go to the skeptic, a question's value not being
+  a thing to refute — and sit outside the ceiling.
+- **`tooling` asks nothing.** One line in the debt log, `logged`, and a count on screen. Asking
+  **Log it** about a lint floor with slack in it was one question too many.
 - **Not worth it** → `declined`, with the reason if given. Never asked again.
-- **Log it** (`tooling` only) → `logged`, and one line goes to the **debt log**: `tracker.debt_log`
-  from FLOW.md (empty → `docs/DEBT.md`), a versioned Markdown file created on first use —
-  `- <date> · <ticket> · <title> — <why>` — and committed on the work branch so it travels with the
-  MR/PR. Read by whoever next works on the machinery, triaged by nobody; `status` and `daily` stop
-  showing it. No issue, and no question beyond the survey itself: it is a file on the branch.
+- **The debt log**: `tracker.debt_log` from FLOW.md (empty → `docs/DEBT.md`), a versioned Markdown
+  file created on first use — `- <date> · <ticket> · <title> — <why>` — committed on the work branch
+  so it travels with the MR/PR. Read by whoever next works on the machinery, triaged by nobody;
+  `status` and `daily` stop showing it. It is a file on the branch, not a queue.
 - **A `decision` answered** → the answer is written into the artifact that owns it and the entry
   becomes `done` with the answer in `note`. Deferred again → stays `proposed`.
 - **Later** → stays `proposed`, and surfaces in `status`, `daily` and `next` until it is decided.
@@ -295,6 +343,11 @@ at `ship`'s Close, when the work is done and the user can see the whole set:
   `/flow-feat-start` §2.5.4 does for a ticket-less draft — same commands, same best-effort fallback
   to local-only when `tracker.tool` is `none`/empty or creation fails. Record the id in `ticket`.
 - No entries still `proposed` → **the step does not exist**. Never show an empty survey.
+
+**One line on screen, not one per entry.** However many were written, a stop mentions deferred work
+in **at most one line** (§3): the one that escalated, named in product terms, plus a count and a
+destination for the rest — «2 more went to `docs/DEBT.md`». Never a list of seven titles, and never
+«7 findings are waiting for triage» as the last thing the user reads before closing the pane.
 
 **Creating an issue is outward-facing, so it asks in every mode**, `auto` included — the same
 category as the MR/PR gate, never flow mechanics. Writing a `followups[]` entry asks nothing, ever.
