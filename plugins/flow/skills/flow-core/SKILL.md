@@ -230,11 +230,12 @@ archived once the work ships, so the note is gone the moment it would have matte
 
 ```json
 { "id": "F1",
-  "kind": "prevention" | "audit" | "out-of-scope" | "risk" | "edge-case" | "other-bug",
+  "kind": "prevention" | "audit" | "out-of-scope" | "risk" | "edge-case" | "other-bug"
+        | "tooling" | "decision",
   "title": "one line, what would be done",
   "why": "one line, why it was parked and why it still matters",
   "source": "design" | "plan" | "build" | "validate" | "fix" | "postmortem",
-  "status": "proposed" | "accepted" | "declined" | "done",
+  "status": "proposed" | "accepted" | "declined" | "logged" | "done",
   "ticket": null, "work": null, "note": "" }
 ```
 
@@ -242,14 +243,46 @@ The artifact keeps its human-readable section exactly as before, with the `F<n>`
 row so the prose and the record never drift. **The record is the addition, not a replacement**: a
 reader of `05-implementation.md` still sees the ideas in context.
 
+**Two kinds are not work, and are treated apart.**
+
+- **`tooling`** — a gap in the repository's own machinery rather than in what it ships: a test that
+  does not bind, a guard, ratchet or lint floor with slack in it, a stale knowledge card, prose that
+  drifted from the code. Real, worth writing down, and nobody's next task — a tracker where these
+  outnumber the product's defects makes the number lie and buries «a console goes silent and says
+  nothing» under «a floor has no subject». Their destination is the **debt log**, a versioned file
+  in the repo, not the tracker (survey below).
+- **`decision`** — a product question the current diff depends on: what the user sees when X,
+  whether closing Y also does Z, how much of the surface a notice may take. **A missing decision is
+  not deferred work.** Parking it does not shrink the diff, it makes the diff guess — and the guess
+  ships, gets reviewed, and comes back as a ticket that costs a whole work to answer what was two
+  minutes of the user's. The test is one line: **if the answer changes what the code being written
+  does now, ask now; if it changes what someone builds later, record it.** Asked now means one
+  `AskUserQuestion` the moment it surfaces, **in every `autonomy.mode`, `auto` included** — the
+  never-ask list of §2 is about flow mechanics, and a product decision is the opposite of mechanics —
+  phrased as the question itself with the options that were on the table, recommended one first. The
+  answer goes where the phase keeps its decisions (the brief in `04-fix.md`, the ADR-light in
+  `03-design.md`, `05-implementation.md`), never into `followups[]`. A `decision` entry exists only
+  when the user, asked, chose to defer: it stays `proposed` and is asked again at `ship` — **as its
+  question, never as *do it / not worth it***. A `followups[]` entry whose `title` is a question is
+  the signature of this mistake: rewrite it as the question and ask it.
+
 **One survey, at the end, not one question per phase.** Nothing is asked when the note is written —
 mid-build is the worst moment to judge whether a neighbouring defect is worth a ticket, and a
 question there is exactly the interruption `guided`/`auto` exist to avoid. The triage happens once,
 at `ship`'s Close, when the work is done and the user can see the whole set:
 
 - One `AskUserQuestion` per entry still `proposed`, batched up to 4, options **Do it** ·
-  **Not worth it** · **Later**. The `title` and `why` are the entire prompt.
+  **Not worth it** · **Later**. The `title` and `why` are the entire prompt. **`tooling` entries are
+  batched apart**, with **Log it** as the first and recommended option; **`decision` entries are
+  asked as their product question**, the options being the answers on the table.
 - **Not worth it** → `declined`, with the reason if given. Never asked again.
+- **Log it** (`tooling` only) → `logged`, and one line goes to the **debt log**: `tracker.debt_log`
+  from FLOW.md (empty → `docs/DEBT.md`), a versioned Markdown file created on first use —
+  `- <date> · <ticket> · <title> — <why>` — and committed on the work branch so it travels with the
+  MR/PR. Read by whoever next works on the machinery, triaged by nobody; `status` and `daily` stop
+  showing it. No issue, and no question beyond the survey itself: it is a file on the branch.
+- **A `decision` answered** → the answer is written into the artifact that owns it and the entry
+  becomes `done` with the answer in `note`. Deferred again → stays `proposed`.
 - **Later** → stays `proposed`, and surfaces in `status`, `daily` and `next` until it is decided.
 - **Do it** → `accepted`, then create the tracker issue with the tool's native command, exactly as
   `/flow:feat:start` §2.5.4 does for a ticket-less draft — same commands, same best-effort fallback
@@ -269,4 +302,4 @@ diff against what the author decided not to do unless someone tells them.
 pointing at the new folder, and to `done` when that work does.
 
 **Archiving does not close anything.** `status` and `daily` read `_archive/*/meta.json` for entries
-not `declined`/`done`: a work being finished is precisely when its deferrals become invisible.
+not `declined`/`logged`/`done`: a work being finished is precisely when its deferrals become invisible.

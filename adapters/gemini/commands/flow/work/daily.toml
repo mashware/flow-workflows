@@ -36,7 +36,7 @@ Your **work assistant**: a Scrum-style daily standup — *"what was I working on
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.
 - Per work: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending** — synthesized from the most recent artifact(s) (`NN-*.md`) and `meta.notes`, not re-derived from code.
 - **Cross-repo parts**: `meta.json.related_repos` entries not `done` → a *sibling repo* still needs work. Surface only what is recorded — never scan or open the other repo.
-- **Open follow-ups**: `followups[]` entries not `declined`/`done`, from the live works **and** from `_archive/*/meta.json` (flow-core §7). The archive is read for this and nothing else.
+- **Open follow-ups**: `followups[]` entries not `declined`/`logged`/`done`, from the live works **and** from `_archive/*/meta.json` (flow-core §7). The archive is read for this and nothing else.
 
 ## 2. Forge layer (best-effort, via `git.cli`)
 

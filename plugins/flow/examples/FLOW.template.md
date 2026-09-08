@@ -40,6 +40,7 @@ How tickets are identified and read.
                       # they are asked before running in `autonomy.mode: manual` and run automatically in `guided`/`auto`;
                       # a failure or an already-in-state ticket warns and continues, never blocks. They run only in
                       # ticket mode with a real tracker id (skipped for ticket-less / local-only works).
+- `debt_log:`         # optional. Versioned Markdown file where `ship` appends the `tooling` follow-ups the user chooses to **Log it** (flow-core §7): gaps in the repo's own machinery — a test that does not bind, a guard with slack, stale prose — that deserve a record but not a ticket. Empty = `docs/DEBT.md`, created on first use. One file per repo.
 
 ## git
 Branch and Pull/Merge Request conventions.

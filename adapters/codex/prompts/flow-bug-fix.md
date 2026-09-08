@@ -46,6 +46,12 @@ In `guided`/`auto` this is one of the only two stops of the whole flow (this one
 - **Yes, go ahead** → apply the fix.
 - **No, something is missing or wrong** → adjust the brief, ask again. No code until confirmed.
 
+**Exactly these two — never a third that widens the brief** («also include X», «and the click too»).
+A user who wants more answers *No*; the brief is rewritten with the wider scope and asked again, so
+the whole of what will be built is seen at once before any code exists. A widening offered as a
+bullet on the gate is scope that was never briefed: in one delivery every one of the first seven
+blockers lived in the half a third option let in.
+
 Save the brief at the top of `04-fix.md`. Any "also fix X while we're at it" during implementation → §2.3.
 
 ## 2.1 Work
@@ -67,6 +73,8 @@ Save the brief at the top of `04-fix.md`. Any "also fix X while we're at it" dur
 Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this rename fits here", "this extra test covers another case"): **pause before touching it** and ask with `AskUserQuestion`:
 - **Yes, add it to the brief** — update the brief in `04-fix.md`, continue.
 - **No, leave it out** — note it under "Areas with similar risk" (a risk from the same pattern) or under "Ideas for separate tickets" in `04-fix.md`, **and append it to `meta.json.followups[]`** as `kind: "audit"` (similar risk) or `kind: "out-of-scope"`, `source: "fix"` (flow-core §7).
+
+A **product decision** the fix turns out to need is neither of these — not scope to add, not work to park. It is asked the moment it surfaces, in every mode, and its answer is written into the brief (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. And a gap in the repo's own machinery the fix exposes (a guard that did not bind, a floor with slack) is `kind: "tooling"`, headed for the debt log rather than the tracker.
 
 ## 3. Log
 
@@ -113,6 +121,17 @@ Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this ren
 ## 4.1 Is the investigation still valid?
 
 If the fix reveals the **root cause** was not what `03-investigation.md` pointed to (the suspected commit was not the culprit, the broken pattern is elsewhere), **pause and go back to `/flow-bug-investigate`** to update the cause before continuing. Never proceed on an investigation you know is incomplete.
+
+## 4.2 Is it still a bug?
+
+A fix that turns out to need **a mechanism the product does not have** is not a minimal fix any more, whatever the ticket is called: state that outlives the request or frame and crosses modules, a surface the user sees or answers that did not exist, a new vocabulary (a reason, a status) travelling from where it is produced to where it is shown, a rule about who receives an event. The bug chain has **no design phase** — a mechanism written inside «apply the fix» is designed while it is typed, reviewed only after it exists, and redesigned in review rounds, which is the most expensive place to design anything. Measured once: a size-S «fix» that grew a mechanism took three review rounds, seventeen blockers and two redesigns, and the first seven were design findings, not code findings.
+
+Check it twice: when writing the §2 brief (the «What is changed» line needs more than one sentence, or names something that does not exist yet) and again the moment the diff grows a type, or a state two modules must agree on. Either signal → **stop before writing the mechanism** and ask once with `AskUserQuestion`, in every mode:
+
+- **Reclassify as a feature (recommended when the mechanism is unavoidable)** → in place, same ticket, same branch: `meta.json.type = "feat"`, `phase = "context"`, `phases_done = ["context"]`; the bug artifacts stay as evidence (`02-diagnose.md` and `03-investigation.md` are the feature's «why» — nothing is re-derived). Record the reclassification and its reason in `01-context.md`, then chain per size: `/flow-feat-design` (S), `/flow-feat-brainstorm` (M/L). The design is discussed before a line exists, and the idiom audit runs blind to it.
+- **Keep it a bug, narrower** → rewrite the §2 brief to the minimal fix that needs no mechanism (often: stop the wrong thing, say nothing new yet), ask the gate again, and record the mechanism as a `followups[]` entry (`kind: "out-of-scope"`) — or as a `decision`, when what is missing is the user's answer rather than code.
+
+Never the third way: building the mechanism here because the ticket says bug.
 
 ## 5. Close
 
