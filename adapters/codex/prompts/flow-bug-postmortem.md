@@ -32,7 +32,7 @@ Produce an honest analysis:
 - **Root cause** (already in `03-investigation.md` — copy the summary).
 - **Why tests did not catch it**: a real gap, not excuses.
 - **Why code review did not catch it**: if applicable.
-- **Actionable prevention measures** (not generic ones like "improve tests"). Each action with an owner and a suggested ticket, and an `F<n>` id — every row here is a `meta.json.followups[]` entry (`kind: "prevention"`, `source: "postmortem"`, flow-core §7). Nothing is asked now; `/flow-bug-ship` triages the whole set at its Close.
+- **Actionable prevention measures** (not generic ones like "improve tests"), each clearing the bar of flow-core §7 — a postmortem that lists six preventions has written one prevention and five wishes, and `ship`'s skeptic will say so. Each action with an owner and a suggested ticket, and an `F<n>` id — every row here is a `meta.json.followups[]` entry (`kind: "prevention"`, `source: "postmortem"`, flow-core §7). Nothing is asked now; `/flow-bug-ship` triages the whole set at its Close.
 - **Areas with similar risk**: those noted in `03-investigation.md`.
 
 ## 3. Output

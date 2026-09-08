@@ -40,7 +40,12 @@ How tickets are identified and read.
                       # they are asked before running in `autonomy.mode: manual` and run automatically in `guided`/`auto`;
                       # a failure or an already-in-state ticket warns and continues, never blocks. They run only in
                       # ticket mode with a real tracker id (skipped for ticket-less / local-only works).
-- `debt_log:`         # optional. Versioned Markdown file where `ship` appends the `tooling` follow-ups the user chooses to **Log it** (flow-core §7): gaps in the repo's own machinery — a test that does not bind, a guard with slack, stale prose — that deserve a record but not a ticket. Empty = `docs/DEBT.md`, created on first use. One file per repo.
+- `debt_log:`         # optional. Versioned Markdown file where `ship` appends the follow-ups that are recorded but never asked about (flow-core §7): `tooling` gaps in the repo's own
+                      #   machinery — a test that does not bind, a guard with slack, stale prose — plus whatever the skeptic ruled real-but-nobody's-next-task and whatever sat above
+                      #   `followup_ask_max`. Empty = `docs/DEBT.md`, created on first use. One file per repo.
+- `followup_ask_max:` # how many parked findings one finished work may turn into questions at `ship`'s Close (flow-core §7). Empty = 2. `0` = never ask, log everything. A ticket where
+                      #   seven phases each notice something is not seven problems: with 3+ candidates a skeptic tries to refute each one (burden of proof on the finding), the ones
+                      #   without a named subject are dropped, and only the strongest survivors up to this number are put to you. Raise it if you would rather triage than be handed a log.
 
 ## git
 Branch and Pull/Merge Request conventions.

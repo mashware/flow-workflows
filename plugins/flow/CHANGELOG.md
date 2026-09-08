@@ -5,6 +5,42 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.47.0 — One ticket, seven parked findings, and nobody had tried to refute a single one  ·  2026-09-08
+
+**In short**
+- **A skeptic now sorts deferred work before you see it.** 3 or more parked findings at `ship`'s Close go to an agent whose job is to *refute* that each deserves a ticket — burden of proof on the finding, exactly as `review` §6 already treats an ambiguous code finding.
+- **New `tracker.followup_ask_max` (empty → 2)**: a finished work can turn into at most two questions, whatever the phases found. Everything above the ceiling, and everything the skeptic ruled real-but-nobody's-next-task, goes to the debt log without a question.
+- **`tooling` stops asking altogether** — choosing the kind already decided its destination; asking *Log it* about a lint floor with slack in it was one question too many.
+- **The bar is written down** (flow-core §7): who notices and when · how likely the path actually is · whether waiting costs more than doing it now. Three yeses or it stays in the phase artifact, where it is already written in context.
+- **One line on screen, never one per entry**: the one that escalated, in product terms, plus a count and a destination for the rest.
+
+**Seven findings out of one ticket is not seven problems.** It is one problem and six reading notes
+wearing its clothes — «the state is not trimmed», «the multi-product subscription», «the coupling
+through the identity map» — each true, none of them anybody's next task, all seven handed to the user
+at Close as *«seven parked findings await a decision»*. Say yes to that list and it is seven new
+tickets; say no seven times and the survey is a tax on finishing. A developer who spends a day inside
+unfamiliar code sees twenty such things and reports one or two, and is right to: they weigh who
+notices, how likely it is, and what waiting costs. The flow weighed nothing. §7 told a phase **how**
+to record a deferral and never **what deserves recording**, and the eight capture points — design,
+plan, build, validate, review, fix, postmortem — each contributed one, in good faith.
+
+**The filter already existed, on the other half of the plugin.** `/flow:*:review` refuses to hand
+over an unverified finding: its §6 gives each ambiguous one to a skeptic told to refute it, with the
+burden of proof on the finding and *«when the evidence is genuinely ambiguous, refute»*. Deferred work
+reached the user through no filter at all, judged only by the phase that parked it — the one party
+that cannot judge it, having just found it. So the same gate now stands on this side, with the same
+ceilings (`agents.fanout_max`, `budget_max`, and it is the first phase dropped when the budget is
+spent) and three verdicts: `ticket` (a named subject, a path someone has seen, waiting costing more),
+`log` (real, and nobody's next task), `drop` (no subject at all). Ambiguous is not `ticket`. Under
+three candidates no agent runs — the command applies the bar itself.
+
+**Nothing is lost; things stop being escalated.** A `drop` stays readable in the artifact and in
+`meta.json` with the skeptic's reason, and never appears again in `status`, `daily` or `next`. A `log`
+becomes a line in `tracker.debt_log`, on the branch, travelling with the MR/PR, read by whoever next
+works on the machinery and triaged by nobody. What survives — at most `followup_ask_max` of them — is
+the only thing that becomes a question, and it is asked once. `followup_ask_max: 0` for repos that
+would rather read a log than answer a survey.
+
 ## v0.46.0 — Three product questions became three tickets, and each ticket a day's work  ·  2026-09-08
 
 **In short**

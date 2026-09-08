@@ -89,7 +89,7 @@ this is the same gate as a red test.
 
 - Red test, regressions, **or the original symptom still reproducible in §2.5** → `phase` stays at `fix`; the user iterates. A red gate stops in every mode.
 - Green → `phase = "validate"`, add to `phases_done`; in the same write record `validated_sha` = `git rev-parse HEAD` — the tree the regression test passed on, which `/flow:bug:ship §0` reads. Suggest `/flow:bug:review`.
-- **Other bugs detected become `followups[]` entries** (flow-core §7), per the output template.
+- **Other bugs detected become `followups[]` entries** (flow-core §7) when they clear its bar — a reproducible symptom with someone who suffers it, not «this looks fragile» — per the output template.
 - **Stage what the validation taught** (`knowledge.stage` set; silence by default): a mutation that stayed green, a disguise the scenario wore, a fixture that could not produce the case — findings about how this codebase is tested, not about this diff. Same rule and evidence line as the review's Close.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Autonomy handoff** (green only; `autonomy.mode`, flow-core §2): `manual` → propose `/flow:bug:review` with a single `AskUserQuestion`, invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn.

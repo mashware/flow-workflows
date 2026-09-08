@@ -321,12 +321,26 @@ Read `meta.json.followups[]` (flow-core §7). **No entries with `status: "propos
 section entirely and say nothing.** This is the only place the flow asks about deferred work: the
 phases that parked it asked nothing, deliberately.
 
-1. **Present them together.** One `AskUserQuestion`, batched up to 4 entries, each entry's `title`
-   and `why` as the whole prompt — the user does not reopen `05-implementation.md` to answer.
-   Options per entry: **Do it** · **Not worth it** · **Later**. Two kinds differ (flow-core §7):
-   **`tooling` entries are batched apart**, with **Log it** first and recommended; **`decision`
-   entries are asked as their product question**, the options being the answers on the table —
-   never *do it / not worth it*.
+0. **Sort them before showing them — the skeptic gate (flow-core §7).** Count the `proposed`
+   entries, excluding `decision` (asked as their own question) and `tooling` (already destined for
+   the debt log, never asked).
+   - **3 or more** → one skeptic round before anything reaches the user: group them into at most
+     `agents.fanout_max` briefs (flow-core §6 ceilings apply; `agents.budget_max` already spent by
+     this run → skip the round, say so in one line and apply the bar yourself) with the prompt of
+     flow-core §7, burden of proof on the entry. Each comes back `ticket`, `log` or `drop`. `drop` → `declined` with the skeptic's reason in `note`, and it
+     is never mentioned again. `log` → step 4b, no question.
+   - **Fewer than 3** → no agent. Apply the bar of flow-core §7 yourself, in one line each: no named
+     subject, or a path needing a conjunction nobody has seen → `declined`; real but nobody's next
+     task → 4b.
+   - Then **keep only the strongest `tracker.followup_ask_max`** (FLOW.md, empty → **2**; `0` →
+     nothing is asked and everything is logged). Anything above that ceiling goes to 4b, and the
+     result says how many and where — never a seven-title list, never «N are waiting for triage».
+1. **Present the survivors together.** One `AskUserQuestion`, **one batch**, at most
+   `followup_ask_max` entries, each entry's `title` and `why` as the whole prompt — the user does
+   not reopen `05-implementation.md` to answer. Options per entry: **Do it** · **Not worth it** ·
+   **Later**. Outside that ceiling, and outside the skeptic: **`decision` entries are asked as their
+   product question**, the options being the answers on the table — never *do it / not worth it*.
+   **`tooling` entries are not asked at all** — they go straight to 4b (flow-core §7).
 2. **Not worth it** → `status: "declined"`, the reason in `note` if the user gave one. Never asked
    again, in this work or any later one.
 3. **Later** → stays `proposed`. `/flow:work:status`, `/flow:work:daily` and `/flow:next` surface it
@@ -338,7 +352,8 @@ phases that parked it asked nothing, deliberately.
    `tracker.tool` `none`/empty or creation fails → warn in one line, leave `ticket: null` and the
    entry `accepted`; the record survives either way.
    **Creating an issue is outward-facing: this asks in every `autonomy.mode`, `auto` included.**
-4b. **Log it** (`tooling`) → `status: "logged"` and one line appended to the **debt log**:
+4b. **Logged** — `tooling`, a skeptic's `log`, or anything past the `followup_ask_max` ceiling →
+   `status: "logged"` and one line appended to the **debt log**:
    `tracker.debt_log` from FLOW.md, empty → `docs/DEBT.md`, created with a two-line header on first
    use. The line: `- <date> · <ticket> · <title> — <why>`. Commit it on the work branch; pushing it
    is a push like any other (flow-core §2, gate 1) — offer it in the same breath as the survey's

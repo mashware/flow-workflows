@@ -64,7 +64,7 @@ Save the brief at the top of `04-fix.md`. Any "also fix X while we're at it" dur
 
 Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this rename fits here", "this extra test covers another case"): **pause before touching it** and ask with `AskUserQuestion`:
 - **Yes, add it to the brief** — update the brief in `04-fix.md`, continue.
-- **No, leave it out** — note it under "Areas with similar risk" (a risk from the same pattern) or under "Ideas for separate tickets" in `04-fix.md`, **and append it to `meta.json.followups[]`** as `kind: "audit"` (similar risk) or `kind: "out-of-scope"`, `source: "fix"` (flow-core §7).
+- **No, leave it out** — note it under "Areas with similar risk" (a risk from the same pattern) or under "Ideas for separate tickets" in `04-fix.md`, **and append it to `meta.json.followups[]`** as `kind: "audit"` (similar risk) or `kind: "out-of-scope"`, `source: "fix"` (flow-core §7). **Only when it clears the bar of flow-core §7** — a named subject, a path that has actually been seen, and waiting costing more than doing it now; short of that the artifact section keeps it and `followups[]` never sees it.
 
 A **product decision** the fix turns out to need is neither of these — not scope to add, not work to park. It is asked the moment it surfaces, in every mode, and its answer is written into the brief (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. And a gap in the repo's own machinery the fix exposes (a guard that did not bind, a floor with slack) is `kind: "tooling"`, headed for the debt log rather than the tracker.
 

@@ -69,7 +69,8 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `tracker` | `start_cmd` | optional, run when a work STARTS (`/flow:feat:start`, `/flow:bug:start`) to move the ticket to "in progress" and/or assign it. `{TICKET}` and `{ASSIGNEE}` substituted; chain two calls with `&&`. Empty = do not transition on start. e.g.: |
 | `tracker` | `done_cmd` | optional, run when a work SHIPS and is merged (`phase` reaches `done`) to move the ticket to "done". `{TICKET}` substituted. Empty = do not transition. **Leave empty on GitHub/GitLab** — the `Closes #N` in the MR/PR body already auto-closes the issue on merge. e.g.: |
 | `tracker` | `abandon_cmd` | optional, run when a work is ABANDONED (`/flow:work:abandon`) to move the ticket to a cancelled / won't-do state. `{TICKET}` substituted. Empty = do not transition. e.g.: |
-| `tracker` | `debt_log` | optional. Versioned Markdown file where `ship` appends the `tooling` follow-ups the user chooses to **Log it** (flow-core §7): gaps in the repo's own machinery — a test that does not bind, a guard with slack, stale prose — that deserve a record but not a ticket. Empty = `docs/DEBT.md`, created on first use. One file per repo |
+| `tracker` | `debt_log` | optional. Versioned Markdown file where `ship` appends the follow-ups that are recorded but never asked about (flow-core §7): `tooling` gaps in the repo's own |
+| `tracker` | `followup_ask_max` | how many parked findings one finished work may turn into questions at `ship`'s Close (flow-core §7). Empty = 2. `0` = never ask, log everything. A ticket where |
 | `git` | `host` | `gitlab` \| `github`. Determines the terminology and default CLI |
 | `git` | `cli` | `glab` \| `gh`. Empty = inferred from `host` |
 | `git` | `request_term` | `MR` \| `PR`. How to name the request in text. Empty = inferred from `host` |
