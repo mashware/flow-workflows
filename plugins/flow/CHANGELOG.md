@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.56.1 — Fourteen commands named a model key that had been retired  ·  2026-09-09
+
+**In short**
+- **Every command's `Models:` line now names only the two keys that exist** — `models.agents` and `models.workers` — instead of the phase-shaped `study`/`code`/`test`/`review` that v0.50.0 removed.
+- **A command that launches no subagent says so**: `feat:start`, `bug:start` and `bug:postmortem` no longer imply there is anything to configure for them.
+- **The preflight pins that line to its three legal forms**, closing the blind spot that let the stale one survive six releases.
+
+v0.50.0 collapsed the five phase-named `models.*` keys into two, because an agent cannot switch its
+own model and the value only ever reached the subagents. The keys went; the fourteen headers that
+advertised them did not. A reader following `Models key for this command: \`review\`` was being sent
+to configuration that no longer resolves, and `/flow:doctor` would not print it because the key is
+not in the template any more.
+
+Each line was rewritten against what its command actually launches: nothing (the model you launched
+it with), improvised subagents (`models.agents`), or those plus parallel rounds (`models.workers`).
+`check_template_keys_are_read` could not have caught this — it walks template → commands, and the
+stale clause named its key bare, not section-qualified. So `check_models_clause` pins the clause
+itself to its three legal forms.
+
 ## v0.56.0 — A Claude model no longer leaks into Codex  ·  2026-09-09
 
 **In short**

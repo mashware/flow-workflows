@@ -5,7 +5,7 @@ argument-hint: "[TICKET]  (empty: draft the work from this conversation)"
 
 # `/flow:feat:start $ARGUMENTS`
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `study`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
 
 `$ARGUMENTS` is **optional**:
 

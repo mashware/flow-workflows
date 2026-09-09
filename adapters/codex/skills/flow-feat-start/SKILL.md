@@ -18,7 +18,7 @@ description: "Start a new feature (read the tracker, classify size, create branc
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 > - `$ARGUMENTS` → whatever the user typed after the skill name, empty if nothing — Codex substitutes nothing, so read it off their message.
 
-Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `study`.**
+Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
 `$ARGUMENTS` is **optional**:
 

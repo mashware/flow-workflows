@@ -24,7 +24,7 @@ Goal: capture lessons that prevent recurrence — not to blame anyone.
 
 ## 1. Pre-flight
 
-Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `study`.**
+Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
 - Read `meta.json` and `00-summary.md`; open in full every previous artifact (`01-context.md` … `06-review.md`) — §2 needs the whole history. (flow-core §5)
 - Require `review` in `phases_done`.
