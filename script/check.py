@@ -10,6 +10,7 @@ Run it by hand, or wire it as a pre-commit hook:
     ln -s ../../script/check.py .git/hooks/pre-commit
 """
 
+import glob
 import json
 import os
 import re
@@ -122,6 +123,42 @@ def check_all_json(files):
             json.loads(read(f))
         except json.JSONDecodeError as e:
             fail(f, f"invalid JSON ({e})")
+
+
+def check_example_config():
+    """The worked example under `examples/<stack>/` must use keys that exist.
+
+    `examples/symfony/FLOW.md` is a complete configuration a reader copies. A key
+    renamed or retired in the template leaves it advertising a key nothing reads —
+    the same drift `config-keys.py` prevents in the reference table, one directory
+    over. `conventions` and `notes` are free text (any command id is a valid note
+    key), so only their section headings are checked.
+    """
+    template = read("plugins/flow/examples/FLOW.template.md")
+    known, section = {}, None
+    for line in template.splitlines():
+        if line.startswith("## "):
+            section = line[3:].strip()
+            known.setdefault(section, set())
+        elif section:
+            m = re.match(r"^- `([a-z_]+):`", line)
+            if m:
+                known[section].add(m.group(1))
+
+    for rel in sorted(glob.glob(os.path.join(ROOT, "plugins/flow/examples/*/FLOW.md"))):
+        rel = os.path.relpath(rel, ROOT)
+        section = None
+        for n, line in enumerate(read(rel).splitlines(), 1):
+            if line.startswith("## "):
+                section = line[3:].strip()
+                if section not in known:
+                    fail(rel, f"line {n}: section `{section}` is not in the template")
+                continue
+            if section in (None, "conventions", "notes"):
+                continue
+            m = re.match(r"^- ([a-z_]+):", line)
+            if m and section in known and m.group(1) not in known[section]:
+                fail(rel, f"line {n}: `{section}.{m.group(1)}` is not a key in the template")
 
 
 def check_hooks_executable(files):
@@ -386,6 +423,7 @@ def main():
     check_no_empty_tracked_files(files)
     check_manifests()
     check_all_json(files)
+    check_example_config()
     check_hooks_executable(files)
     check_hooks_have_tests(files)
     check_version_matches_changelog()

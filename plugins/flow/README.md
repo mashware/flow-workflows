@@ -39,6 +39,7 @@ with more questions and auto-discovery.
 - `skills/flow-core/SKILL.md` — the rules every command shares (step 0 `FLOW.md`, models, autonomy and hard gates, how a stop reads, `panel.json`, `00-summary.md`), loaded once per session.
 - `hooks/` — the push guard, the update notice, and the work notice that says where you left off.
 - `examples/FLOW.template.md` — every key with its default; `/flow:init` writes only the keys you set.
+- `examples/symfony/` — one worked stack: a filled-in `FLOW.md` and the four review agents a Symfony + Doctrine repo wants. An example, never loaded; copy and edit.
 
 ## Install
 
@@ -58,7 +59,9 @@ language/project-specific). Review invokes the skill/agents you declare in `FLOW
 (`quality.review_skill`, `quality.reviewers`, `agents.*`), or the built-in `code-review` if you
 define none. Reinforcement agents (performance, queues, frontend…) are used only if your project
 has them; commands reference them by role, not by name. It never picks a model for you either —
-`models` is yours to fill or leave empty.
+`models` is yours to fill or leave empty. What it does ship is one **example** of both, under
+`examples/symfony/`, which nothing loads and which exists so a fresh install has something concrete
+to copy.
 
 It does ship three hooks (`hooks/`), all generic: a guard that refuses a `git push` aimed at
 `master`/`main`; a session-start notice when the plugin has been updated since you last looked

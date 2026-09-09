@@ -86,6 +86,8 @@ Write a **compact** file at the repo root — every command reads it in every ph
 - No `review` section: the panel is configured by `quality.review_depth`, `quality.review_skill` and `quality.reviewers`.
 - In doubt about a key or its default → read the template, never reproduce it from here.
 
+- **A worked example exists for one stack.** When detection says PHP (a `composer.json`, a `symfony.lock`, a `bin/console`), add **one line** to the close: *"an example `FLOW.md` and agent set for Symfony ship with the plugin under `examples/symfony/` — copy what applies."* Never copy anything on your own, and never mention it for another stack: it is one stack's answer, not a default.
+
 ## 5. Close
 
 - Summarize on screen: what was configured, what was left **empty (= auto-discover)**; mention `models.*` exists and where it is documented (§3).
