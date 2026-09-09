@@ -213,7 +213,7 @@ usable on real work.
 
 ## Other harnesses
 
-`adapters/install.sh <tool>` installs the same commands for opencode, Gemini CLI and Codex CLI; only the invocation syntax differs (`/flow:feat:start` · `/flow-feat-start` · `$flow-feat-start` on Codex, where they install as skills).
+`adapters/install.sh <tool>` installs the same commands for opencode, Gemini CLI and Codex CLI; only the invocation syntax differs (`/flow:feat:start` · `/flow-feat-start` · `$flow-feat-start` on Codex, where they install as skills). Codex can also install this repo as a plugin — `codex plugin marketplace add https://github.com/mashware/flow-workflows.git` then `codex plugin add flow@flow-plugins` — and invoke `$flow:feat-start`.
 The mirrors are **generated** from the plugin commands by `script/adapter-build.py` and checked mechanically on every preflight (format, prefix, cited paths, install location).
 They have **not** been executed end to end in those harnesses — validate as you use them. → [adapters/README](adapters/README.md)
 

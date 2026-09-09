@@ -17,9 +17,29 @@ adapters/codex/
 
 `skills/*/SKILL.md` and `CORE.md` are written by `script/adapter-build.py` from the plugin — do not edit them by hand. Skill names follow the plugin's paths with `:` flattened to `-` (`feat/start.md` → `$flow-feat-start`); `ls skills/` is the current list.
 
-### Why skills and not the plugin itself
+### Two ways in, and when to pick which
 
-Codex can install this repo as a plugin, and it will: it reads the manifest, the `skills/` folder and the hooks. What it does **not** read is Claude Code's `commands/`. On install it converts them into skills — and its converter silently drops any command whose rendered skill exceeds ~4 KB or whose body uses `$ARGUMENTS`, which is every `flow` command but one. Installing the plugin in Codex therefore gives you a single workflow; this adapter gives you all of them.
+**As a Codex plugin** — nothing to clone, upgrades with one command:
+
+```bash
+codex plugin marketplace add https://github.com/mashware/flow-workflows.git
+codex plugin add flow@flow-plugins
+codex plugin marketplace upgrade      # later, to update
+```
+
+Codex namespaces a plugin's skills, so those are invoked `$flow:feat-start`, `$flow:bug-fix`,
+`$flow:work-status`, and the shared rules are the sibling skill `$flow:flow-core`. They are
+generated into `plugins/flow/codex-skills/` and declared by `plugins/flow/.codex-plugin/plugin.json`;
+Claude Code never reads either. One cosmetic wart: Codex's own importer also adds
+`$flow:source-command-next`, a duplicate of `$flow:next`, and there is no way to turn it off.
+
+**As loose skills** — this adapter, `../install.sh codex`. Pick it to install into a single repo's
+`.agents/skills/`, or to run a build you have not published. The names keep their `flow-` prefix
+because `~/.codex/skills/` is one flat namespace, so they are invoked `$flow-feat-start`.
+
+Either way it is skills, never the Claude commands: Codex does not read `commands/`. On install it
+converts them into skills itself — and that converter silently drops any command whose rendered
+skill exceeds ~4 KB or whose body uses `$ARGUMENTS`, which is every `flow` command but one.
 
 ## Installation
 

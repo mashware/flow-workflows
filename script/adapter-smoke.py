@@ -38,11 +38,14 @@ ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=HERE,
 
 PLUGIN_COMMANDS = "plugins/flow/commands/"
 
-# name, directory, extension, flatten, invocation separator, invocation sigil
+# name, directory, extension, flatten, what every invocation starts with, what joins
+# its segments. Codex appears twice: loose skills in `~/.codex/skills/` keep the `flow-`
+# prefix in their own name, the ones packaged in the plugin are namespaced by Codex.
 ADAPTERS = (
-    ("opencode", "adapters/opencode/commands/flow-", ".md", False, "-", "/"),
-    ("codex", "adapters/codex/skills/flow-", "/SKILL.md", False, "-", "$"),
-    ("gemini", "adapters/gemini/commands/flow/", ".toml", True, ":", "/"),
+    ("opencode", "adapters/opencode/commands/flow-", ".md", False, "/flow-", "-"),
+    ("codex", "adapters/codex/skills/flow-", "/SKILL.md", False, "$flow-", "-"),
+    ("codex-plugin", "plugins/flow/codex-skills/", "/SKILL.md", False, "$flow:", "-"),
+    ("gemini", "adapters/gemini/commands/flow/", ".toml", True, "/flow:", ":"),
 )
 
 problems = []
@@ -90,7 +93,7 @@ def check_format(name, path, body):
     """Each harness reads one shape, and only one. A mirror in the wrong shape is
     not a degraded mirror: opencode shows a command with no description, Codex
     prints the YAML as prose, Gemini does not load the file at all."""
-    if name in ("opencode", "codex"):
+    if name in ("opencode", "codex", "codex-plugin"):
         if not body.startswith("---\n"):
             fail(path, f"{name} reads a `description:` frontmatter — this file has none")
             return
@@ -100,7 +103,7 @@ def check_format(name, path, body):
             return
         if not re.search(r"^description:\s*\S", fm[1], re.M):
             fail(path, "frontmatter has no non-empty `description:`")
-        if name == "codex":
+        if name.startswith("codex"):
             # Codex keys the skill by `name:`, and it must match the folder it lives in
             want = os.path.basename(os.path.dirname(path))
             m = re.search(r"^name:\s*(\S+)", fm[1], re.M)
@@ -121,32 +124,33 @@ def check_format(name, path, body):
                 fail(path, f"TOML is missing a non-empty `{key}`")
 
 
-# `(?<![\w/])` keeps repo URLs out of it: `github.com/mashware/flow-workflows` is not
-# an invocation, and reading it as one made this check cry wolf on every news mirror.
-INVOCATION = re.compile(r"(?<![\w/])(?P<sigil>[/$])flow(?P<sep>[-:])(?P<rest>[a-zA-Z0-9:*-]+)")
+# The lookbehind keeps paths out of it: `github.com/mashware/flow-workflows` is not an
+# invocation (reading it as one made this check cry wolf on every news mirror), and
+# neither is `../flow-core/SKILL.md`, the packaged flavour's pointer at its shared rules.
+INVOCATION = re.compile(r"(?<![\w/.-])(?P<prefix>[/$]flow[-:])(?P<rest>[a-zA-Z0-9:*-]+)")
 
 
-def check_invocations(name, path, body, sep, sigil, plugin_stems):
+def check_invocations(name, path, body, prefix, sep, plugin_stems):
     """A mirror that teaches the prefix of the harness it was generated *from* hands
     the user a command that does not exist. The generator rewrites every invocation;
     this is what proves it did."""
-    wrong = ":" if sep == "-" else "-"
     cited = set()
     for m in INVOCATION.finditer(body):
-        found, rest, found_sigil = m.group("sep"), m.group("rest"), m.group("sigil")
-        if found == wrong and not re.match(r"^[-:]?$", rest):
-            fail(path, f"uses `{found_sigil}flow{found}{rest}` — {name} invokes with `{sep}`"
-                       f" (`{sigil}flow{sep}...`)")
-        elif found_sigil != sigil:
-            fail(path, f"uses `{found_sigil}flow{found}{rest}` — {name} invokes with "
-                       f"`{sigil}` (`{sigil}flow{sep}...`)")
-        if found == sep and "*" not in rest:
-            cited.add(rest.replace(":", "-").replace("-", "-").strip("-"))
+        found, rest = m.group("prefix"), m.group("rest")
+        if found != prefix:
+            if re.match(r"^[-:]?$", rest):        # `/flow-` on its own, not an invocation
+                continue
+            fail(path, f"uses `{found}{rest}` — {name} invokes as `{prefix}…`")
+            continue
+        if "*" not in rest:
+            cited.add(rest.replace(sep, "-").strip("-"))
     for token in sorted(cited):
-        if token in ("news", "init", "doctor"):
+        # `flow-core` is a command in no harness: in the packaged flavour it is the
+        # sibling skill holding the shared rules, cited by name like any other.
+        if token in ("news", "init", "doctor", "flow-core"):
             continue
         if token not in plugin_stems:
-            fail(path, f"cites `{sigil}flow{sep}{token.replace('-', sep)}`, which is not a command")
+            fail(path, f"cites `{prefix}{token.replace('-', sep)}`, which is not a command")
 
 
 PATH_REF = re.compile(r"(?:\.\./)*plugins/flow/[\w./{}-]+")
@@ -168,8 +172,8 @@ def static(files):
     plugin_stems = set(stems(files, PLUGIN_COMMANDS, ".md", True))
     if not plugin_stems:
         fail("adapters", "no plugin commands found — wrong repo root?")
-    for name, prefix, suffix, flatten, sep, sigil in ADAPTERS:
-        mirror = stems(files, prefix, suffix, flatten)
+    for name, directory, suffix, flatten, prefix, sep in ADAPTERS:
+        mirror = stems(files, directory, suffix, flatten)
         if not mirror:
             fail(f"adapters/{name}", "no mirrored commands found at all")
         for stem, path in sorted(mirror.items()):
@@ -178,7 +182,7 @@ def static(files):
                 fail(path, "is empty")
                 continue
             check_format(name, path, body)
-            check_invocations(name, path, body, sep, sigil, plugin_stems)
+            check_invocations(name, path, body, prefix, sep, plugin_stems)
             check_paths(path, body)
 
 
@@ -202,6 +206,7 @@ def install(files):
         return
     for tool, (subdir, pattern) in LANDING.items():
         expected = len(stems(files, *[a[1:4] for a in ADAPTERS if a[0] == tool][0]))
+
         home = tempfile.mkdtemp(prefix=f"flow-smoke-{tool}-")
         try:
             env = dict(os.environ, HOME=home)
