@@ -6,12 +6,24 @@ You get named phases, an artifact on disk after each one, hard gates the agent n
 
 ## Quickstart
 
+**Claude Code**
+
 ```
 /plugin marketplace add mashware/flow-workflows
 /plugin install flow@flow-plugins
 /flow:init      # writes FLOW.md for this repo — auto-detects, asks the minimum
 /flow:next      # routes you to init, resume or status, depending on where you are
 ```
+
+**Codex CLI** — same plugin, and its skills are invoked with `$flow:`
+
+```bash
+codex plugin marketplace add https://github.com/mashware/flow-workflows.git
+codex plugin add flow@flow-plugins
+# then, in a new session: $flow:init · $flow:next
+```
+
+opencode and Gemini CLI install from a clone — see [Other harnesses](#other-harnesses).
 
 No ticket? `/flow:feat:start` with no arguments drafts the work from the conversation you just had.
 
@@ -213,7 +225,15 @@ usable on real work.
 
 ## Other harnesses
 
-`adapters/install.sh <tool>` installs the same commands for opencode, Gemini CLI and Codex CLI; only the invocation syntax differs (`/flow:feat:start` · `/flow-feat-start` · `$flow-feat-start` on Codex, where they install as skills). Codex can also install this repo as a plugin — `codex plugin marketplace add https://github.com/mashware/flow-workflows.git` then `codex plugin add flow@flow-plugins` — and invoke `$flow:feat-start`.
+The same commands, in each harness's own shape. Only the invocation syntax differs:
+
+| Harness | Install | Invoked as |
+|---|---|---|
+| **Codex CLI** | `codex plugin add flow@flow-plugins` (see [Quickstart](#quickstart)) | `$flow:feat-start` |
+| **Codex CLI**, one repo only | `adapters/install.sh codex project` → `.agents/skills/` | `$flow-feat-start` |
+| **opencode** | `adapters/install.sh opencode` | `/flow-feat-start` |
+| **Gemini CLI** | `adapters/install.sh gemini` | `/flow:feat:start` |
+
 The mirrors are **generated** from the plugin commands by `script/adapter-build.py` and checked mechanically on every preflight (format, prefix, cited paths, install location).
 They have **not** been executed end to end in those harnesses — validate as you use them. → [adapters/README](adapters/README.md)
 
