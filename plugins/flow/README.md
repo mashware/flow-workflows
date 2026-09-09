@@ -37,7 +37,7 @@ with more questions and auto-discovery.
 
 - `commands/` — one file per `/flow:*` command, each reduced to its contract. Start with `/flow:next`.
 - `skills/flow-core/SKILL.md` — the rules every command shares (step 0 `FLOW.md`, models, autonomy and hard gates, how a stop reads, `panel.json`, `00-summary.md`), loaded once per session.
-- `hooks/` — the push guard and the update notice.
+- `hooks/` — the push guard, the update notice, and the work notice that says where you left off.
 - `examples/FLOW.template.md` — every key with its default; `/flow:init` writes only the keys you set.
 
 ## Install
@@ -60,9 +60,11 @@ define none. Reinforcement agents (performance, queues, frontend…) are used on
 has them; commands reference them by role, not by name. It never picks a model for you either —
 `models` is yours to fill or leave empty.
 
-It does ship two hooks (`hooks/`), both generic: a guard that refuses a `git push` aimed at
-`master`/`main`, and a session-start notice when the plugin has been updated since you last
-looked (what `/flow:news` then explains).
+It does ship three hooks (`hooks/`), all generic: a guard that refuses a `git push` aimed at
+`master`/`main`; a session-start notice when the plugin has been updated since you last looked
+(what `/flow:news` then explains); and a second session-start hook that, when the branch you
+opened on has a work behind it, prints its phase and what the last session was doing. All three
+are silent when they have nothing to say — including in a repo that does not use flow.
 
 ## Other harnesses
 

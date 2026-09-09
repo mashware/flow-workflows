@@ -68,6 +68,8 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
 - **Every tracked `.json` parses**, `hooks/hooks.json` included — nothing but the loader reads it,
   so a stray comma there ships hooks that are simply absent.
 - **Hooks are executable.** A lost `chmod +x` is a guard that silently stops guarding.
+- **Every hook is named by a test** under `script/tests/`. Shell against a JSON event and a git
+  checkout is exactly the code that works on one machine and fails on a worktree.
 - **`version` equals the newest changelog heading.**
 - **Command frontmatter** exists, is closed, and has a `description`.
 - **Every `.toml` parses** (the Gemini mirrors). On Python < 3.11 there is no `tomllib` and the
@@ -92,9 +94,9 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
 
 `.github/workflows/preflight.yml` runs on every push and pull request: `script/check.py`,
 `script/adapter-smoke.py` whole (static + install against a throwaway `HOME`), both generators'
-`--check` (`adapter-build.py`, `config-keys.py`), and the two hook tests
-(`script/tests/push-guard.sh`, `script/tests/notify-update.sh`). It is the same list as below, so a
-red CI is a tree the pre-tag steps would have rejected.
+`--check` (`adapter-build.py`, `config-keys.py`), and the three hook tests
+(`script/tests/push-guard.sh`, `script/tests/notify-update.sh`, `script/tests/session-start.sh`).
+It is the same list as below, so a red CI is a tree the pre-tag steps would have rejected.
 
 ## Before the tag, run it whole
 
@@ -102,11 +104,14 @@ red CI is a tree the pre-tag steps would have rejected.
 python3 script/adapter-smoke.py
 bash script/tests/push-guard.sh
 bash script/tests/notify-update.sh
+bash script/tests/session-start.sh
 ```
 
 The half of the smoke test the preflight skips is the slow one: it executes `adapters/install.sh`
 for each harness against a throwaway `HOME` and checks the files land where that harness reads
 them, in the expected number, with the `CORE.<tool>.md` every command opens and the changelog
 `/flow-news` needs. It needs none of the three harnesses installed, and it is the only thing that
-would notice `install.sh` copying into a path that no longer exists. The two hook tests exercise
-the push guard and the SessionStart update notice the same way, against a throwaway `HOME`.
+would notice `install.sh` copying into a path that no longer exists. The three hook tests exercise
+the push guard, the SessionStart update notice and the SessionStart work notice the same way,
+against a throwaway `HOME` and throwaway repos — and the preflight now refuses a hook that has
+none.

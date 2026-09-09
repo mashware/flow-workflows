@@ -45,12 +45,13 @@ Stated as plainly as the README states what the plugin does not ship, and for th
    `adapters/opencode/`, `adapters/codex/` and `adapters/gemini/` are generated. Run
    `python3 script/adapter-build.py` and commit both — a mirror edited by hand is undone by the next
    build. → [RELEASING §Keeping the adapters in step](RELEASING.md#keeping-the-adapters-in-step)
-2. **A hook change ships with its test.** Under `script/tests/`, in the shape of the two that are
-   there, wired into `script/check.py` and `.github/workflows/preflight.yml`.
+2. **A hook change ships with its test.** Under `script/tests/`, in the shape of the three that
+   are there, and wired into `.github/workflows/preflight.yml`. The preflight refuses a hook that
+   no test file names.
 3. **Version and CHANGELOG move together.** `plugins/flow/.claude-plugin/plugin.json`'s `version`
    must equal the newest heading in `plugins/flow/CHANGELOG.md`; the preflight refuses the drift,
    because `/flow:news` reads the changelog while the loader reads the manifest.
-4. **Run the preflight before you open the PR** — the four commands in
+4. **Run the preflight before you open the PR** — the five commands in
    [README §Before tagging](README.md#before-tagging-a-release). CI runs the same four, so a red CI
    is a tree the release steps would have rejected anyway.
 
