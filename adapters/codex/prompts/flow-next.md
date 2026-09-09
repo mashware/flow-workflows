@@ -35,6 +35,7 @@ runs a phase on its own and never advances `meta.json`.
 | No works at all, but an accepted follow-up is waiting | "Nothing in flight — but `<TICKET>` F1 was accepted and never started: `<title>`." | `/flow-feat-start <ticket>` (or `/flow-bug-start`) for that follow-up · `/flow-feat-start` for something else |
 | No works at all | "Nothing in flight." | `/flow-feat-start <TICKET>` (or with no ticket, from the conversation) · `/flow-bug-start <TICKET>` |
 
+- The SessionStart hook (`hooks/session-start.sh`) has already printed the first two rows of this table's second case — the header and what the last session was doing — off disk, without reading a ticket or an artifact. Say them again anyway: `next` is where the user asked, and a line they scrolled past is not an answer.
 - An `accepted` follow-up exists **and** other works are open → do not reroute; add one line naming it after the options. It is a standing commitment, not an interruption.
 - Dirty tree and no matching work → mention it in one line ("uncommitted changes on `<branch>`, no work is tracking them") before the options; `start` will warn again.
 - `FLOW.md` present but `/flow-doctor` has never been run in this session and the git host CLI is not on `PATH` → add `/flow-doctor` as a secondary option.
