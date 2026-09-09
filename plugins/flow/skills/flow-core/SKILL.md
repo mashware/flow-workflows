@@ -355,3 +355,52 @@ pointing at the new folder, and to `done` when that work does.
 
 **Archiving does not close anything.** `status` and `daily` read `_archive/*/meta.json` for entries
 not `declined`/`logged`/`done`: a work being finished is precisely when its deferrals become invisible.
+
+## 8. Conventions learned — `conventions_candidates[]`
+
+Mid-phase, the user corrects you. *«We don't put that in a listener here, use a message handler.»*
+*«Never mock the repository in that layer.»* *«The test command is `make test-unit`, not
+`bin/phpunit`.»* *«Stop proposing a DTO for that, we pass the entity.»* You comply, the phase closes,
+and the next work on the same repo proposes the same thing again. The place for these exists —
+`FLOW.md`'s `conventions` and `quality` — and nothing on the path from the correction to that file is
+automatic: the user has to notice they have said it three times and go and edit it.
+
+**The test is one question: would the same correction apply to an unrelated ticket in this repo?**
+Yes → it is a convention. No → it is this ticket, and the artifact of the phase that heard it is
+where it belongs. A scope change, a naming preference about this diff, the answer to a product
+question: all about the work, none about the repo.
+
+**Capture, never interpret, never ask.** When the user's reply to a stop overrides something you
+proposed and it passes that test, append to `meta.json.conventions_candidates[]`:
+
+```json
+{ "id": "C1",
+  "text": "the rule, one line, in the user's own words",
+  "target": "conventions" | "quality.<key>",
+  "phase": "build",
+  "evidence": "the stop it came from" }
+```
+
+and write the same row under a `## Conventions learned` heading in the phase artifact, same `C<n>`
+id — as `followups[]` does with its own sections. Do not rewrite the sentence into policy prose: the
+value of the line is that it is what they said. `target` is `quality.<key>` when the correction names
+a command the flow runs (a test, a linter, a formatter) and `conventions` for everything else.
+
+**`review` reads them in the same work.** The idiom audit is already handed *the project's primitive
+vocabulary from its conventions*; this work's candidates join that input, so a rule learned during
+`build` is enforced in the review of that same MR/PR, not of the next one.
+
+**`ship` offers them once, at Close** — one `AskUserQuestion`, batched up to 4, options **Add to
+FLOW.md** · **Not a rule** · **Later**, the `text` being the whole prompt. *Add* appends one line
+under `conventions`, or sets the named `quality` key. `FLOW.md` is personal config, so this is not a
+team decision — but it is still an edit to a file in the tree, so **it is asked in every mode**, like
+`KNOWLEDGE.md`'s first creation. No candidates → the step does not exist and says nothing.
+
+**Duplicates and contradictions, before anything is shown.** Already in `conventions`, in any wording
+→ dropped silently, no question. Contradicting a line that is there → the option is **Replace**
+rather than **Add**, and both lines are shown, the existing one first. A candidate the user declines
+is `declined` and never offered again, in this work or a later one.
+
+**These are not domain knowledge.** `knowledge.stage`/`save` is for the *why* of the business, and
+that filter does not move: a repo convention is the *what* of the code, it goes to `FLOW.md`, and it
+never reaches the knowledge store. Two buckets, two destinations, no overlap.

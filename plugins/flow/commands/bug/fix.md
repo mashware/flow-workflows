@@ -66,6 +66,8 @@ Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this ren
 - **Yes, add it to the brief** — update the brief in `04-fix.md`, continue.
 - **No, leave it out** — note it under "Areas with similar risk" (a risk from the same pattern) or under "Ideas for separate tickets" in `04-fix.md`, **and append it to `meta.json.followups[]`** as `kind: "audit"` (similar risk) or `kind: "out-of-scope"`, `source: "fix"` (flow-core §7). **Only when it clears the bar of flow-core §7** — a named subject, a path that has actually been seen, and waiting costing more than doing it now; short of that the artifact section keeps it and `followups[]` never sees it.
 
+A correction the user makes here is a **convention** when it would apply to an unrelated ticket in this repo: one row in `meta.json.conventions_candidates[]` and under `## Conventions learned` in `04-fix.md`, nothing asked (flow-core §8).
+
 A **product decision** the fix turns out to need is neither of these — not scope to add, not work to park. It is asked the moment it surfaces, in every mode, and its answer is written into the brief (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. And a gap in the repo's own machinery the fix exposes (a guard that did not bind, a floor with slack) is `kind: "tooling"`, headed for the debt log rather than the tracker.
 
 ## 3. Log
@@ -96,6 +98,9 @@ A **product decision** the fix turns out to need is neither of these — not sco
 
 ## Ideas for separate tickets
 <things that came up during the fix and were decided NOT to include; each with its `F<n>` and a `meta.json.followups[]` entry (`kind: "out-of-scope"`, `source: "fix"`) — flow-core §7>
+
+## Conventions learned
+<rules the user taught here that would apply to any ticket in this repo, `C<n>` + their own words + the stop it came from; also `meta.json.conventions_candidates[]` (flow-core §8). Offered to `FLOW.md` once, at `ship`'s Close.>
 
 ## Relevant commands
 - <commands used to install dependencies, etc.>

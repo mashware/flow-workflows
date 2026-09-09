@@ -250,6 +250,10 @@ seeding or dropping any database is a hard gate in every autonomy mode.
 Free text: conventions the commands must respect when writing/reviewing code
 (layers, patterns, prohibitions). Empty = no specific conventions.
 
+Lines mostly arrive here by being said: a correction you make mid-work that would apply to any
+ticket in this repo is offered to this section once, at `ship`'s Close (flow-core §8). Nothing is
+written without that question.
+
 <!-- e.g.: DDD (Domain/Application/Infrastructure); no #[AsMessageHandler]; etc. -->
 
 ## notes

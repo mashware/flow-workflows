@@ -192,6 +192,8 @@ If during the build the temptation arises to add something **not in the §2 brie
 
 Anything unforeseen **always** goes through the user before entering code.
 
+A correction the user makes here — *«not a listener, a message handler»*, *«never mock the repository in that layer»* — is a **convention** when it would apply to an unrelated ticket in this repo: one row in `meta.json.conventions_candidates[]` and under `## Conventions learned` in `05-implementation.md`, nothing asked (flow-core §8). `ship` offers it to `FLOW.md` once, at the end.
+
 A **product decision** the build turns out to need is neither option — not scope to add, not work to park: ask it the moment it surfaces, in every mode, and write the answer under "Decisions made during implementation" (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. A gap in the repo's own machinery (a guard that did not bind, a floor with slack) is `kind: "tooling"`, headed for the debt log rather than the tracker.
 
 ## 3. Log
@@ -232,6 +234,9 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at th
 
 ## Pending
 - [ ] …
+
+## Conventions learned
+<rules the user taught here that would apply to any ticket in this repo, `C<n>` + the line in their own words + the stop it came from. Also `meta.json.conventions_candidates[]` (flow-core §8). Nothing is asked; `ship` offers them to `FLOW.md` once, at Close. Empty for most builds — a correction about this ticket is not a convention.>
 
 ## Ideas for separate tickets
 <things that came up during the build and were decided NOT to include; each with one line: `F<n>` + "what" + "why it makes sense as its own ticket". Each row is also a `meta.json.followups[]` entry (`kind: "out-of-scope"`, `source: "build"`) — flow-core §7, and only for what clears its bar: an unpretty-but-correct shape, a coupling with no symptom or a state that is not trimmed belongs in this section and nowhere else. Nothing is asked here; `ship` puts the survivors of one skeptic round to the user, once, at the end.>

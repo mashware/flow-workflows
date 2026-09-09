@@ -56,7 +56,7 @@ Pass `03-investigation.md` and `04-fix.md` as context. The root cause and the co
 
 ## 2.2 Idiom / primitive audit (only if the fix introduces new architectural pieces)
 
-Skip unless the fix adds a new service, handler, command/query, interface, or bus/dispatch wiring. Then run the blind idiom check of `/flow:feat:review §5.5`: the `agents.architecture` agent from `FLOW.md` (empty → `Agent general-purpose`) receives **only** the new pieces + their wiring and the project's primitive vocabulary (`FLOW.md` `conventions`), **without** the fix's justifications. Per piece: does the class do what its name/role promises? Why does it depend on what it depends on (a bus injected only to call another handler, a service dressed as something else, an interface with a single handler consumer)? Is there a simpler, more honest primitive? Findings enter the flow like any other.
+Skip unless the fix adds a new service, handler, command/query, interface, or bus/dispatch wiring. Then run the blind idiom check of `/flow:feat:review §5.5`: the `agents.architecture` agent from `FLOW.md` (empty → `Agent general-purpose`) receives **only** the new pieces + their wiring and the project's primitive vocabulary (`FLOW.md` `conventions` plus this work's `meta.json.conventions_candidates[]`, flow-core §8), **without** the fix's justifications. Per piece: does the class do what its name/role promises? Why does it depend on what it depends on (a bus injected only to call another handler, a service dressed as something else, an interface with a single handler consumer)? Is there a simpler, more honest primitive? Findings enter the flow like any other.
 
 ## 3. Reinforcements by area
 

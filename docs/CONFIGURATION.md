@@ -643,6 +643,18 @@ test database reported as evidence is not.
 Free text: the conventions commands must respect when writing and reviewing code — layers,
 patterns, prohibitions. Empty = no specific conventions.
 
+**Most lines here arrive by being said, not by being typed.** When you correct a phase mid-work —
+*«not a listener, a message handler»*, *«never mock the repository in that layer»*, *«the test
+command is `make test-unit`»* — the phase records it as a candidate and `ship` offers it to this
+section once, at the end of the work: **Add to FLOW.md** · **Not a rule** · **Later**, or
+**Replace** when it contradicts a line already here. Nothing is written without that question, in
+any autonomy mode, because it edits a file in your tree. A correction that is about the *current
+ticket* rather than about the repo never becomes a candidate — the test is whether the same
+sentence would apply to an unrelated ticket here. Mechanics: flow-core §8.
+
+A correction that names a command flow runs (a test runner, a linter, a formatter) is offered as
+the `quality` key it belongs to instead, with the value it would replace shown next to it.
+
 ---
 
 ## `notes`
