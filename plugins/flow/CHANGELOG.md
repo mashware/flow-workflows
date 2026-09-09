@@ -5,6 +5,47 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.48.0 — Every session began by asking the flow where you were  ·  2026-09-09
+
+**In short**
+- **A new SessionStart hook prints where you left off**: `PROJ-123 · M · phase build · MR #2 of 3`, and one line with what the last session was actually doing — read off `meta.json`, `panel.json` and `00-summary.md`, before you type anything.
+- **A follow-up somebody accepted and nobody started gets one line too**, from open works and from `_archive/`, where it is otherwise invisible.
+- **Silent unless it has something to say.** No `.claude/work/`, no work on this branch, no git — nothing printed. It runs in every repo the plugin is installed in, so noise there was the failure mode to design against.
+- **Degrades, never lies.** No `jq` anywhere; an unreadable `meta.json` still prints *"a work exists on this branch"*, and a `panel.json` whose phase disagrees with `meta.json` says which phase was still running when the session ended.
+- **The preflight now refuses a hook with no test.** Thirteen cases for this one, including a worktree checkout and the hook being run from the wrong directory.
+
+**The state was all on disk and nothing read it.** `meta.json` holds the phase, `00-summary.md` the
+fifteen-line handoff, `panel.json` what was running when the last session ended — and none of it was
+touched until the user typed `/flow:next` or `/flow:work:resume`. The one hook that fired at session
+start talked about the plugin's own version. So the first thing a user did in every session was ask
+the flow where they were, and the answer was one `cat` away the whole time. It now arrives before
+the first prompt:
+
+```
+PROJ-123 · M · phase build · MR #2 of 3
+Last stop: unit suite and the test agent over #2 — /flow:work:resume
+```
+
+**The hook runs in every repo the plugin is installed in, which decides most of its design.** It
+resolves the work exactly as `/flow:next` §1 does — the branch, then a `meta.json` whose `branch`,
+`mrs[].branch` or `worktree` matches — and exits without a word when there is no match, no work
+folder, or no git. In a worktree it looks in the main checkout too, because `.claude/work/` is
+git-ignored in most repos and never travelled; and it reads the repo from the event's `cwd`, not
+from wherever the harness happened to run it, which is the bug the push guard shipped in v0.35.1.
+There is no `jq` dependency: `grep`, `sed` and `awk` over two JSON files, and every failure path
+falls back to a shorter true line rather than to silence.
+
+**`panel.json` earns its keep here.** It carries the phase that was *running*, while `meta.json`
+advances only when a phase closes — so when the two disagree, the last session stopped inside a
+phase that never finished, and the hook says which one. That is the case the panel was built to
+expose, and until now nothing looked at it between sessions.
+
+**A hook without a test is now a preflight failure.** Three hooks ship, three case files exercise
+them, and `check.py` refuses a fourth that no test names. This one is covered against a throwaway
+repo per case: no work · no match · a match with and without a panel · panel and meta disagreeing ·
+an MR/PR train · an archived work alone · an accepted follow-up nobody started · a worktree · an
+unreadable `meta.json` · the hook invoked from `/`.
+
 ## v0.47.1 — The first screen explained the machinery before anyone had seen a work run  ·  2026-09-09
 
 **In short**

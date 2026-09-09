@@ -32,3 +32,5 @@ jobs:
         run: bash script/tests/push-guard.sh
       - name: update-notice hook
         run: bash script/tests/notify-update.sh
+      - name: session-start hook
+        run: bash script/tests/session-start.sh

@@ -136,6 +136,23 @@ def check_hooks_executable(files):
                 fail(f, "hook is not executable (chmod +x)")
 
 
+def check_hooks_have_tests(files):
+    """A hook ships with its test, or it ships untested.
+
+    The three hooks here are shell against a JSON event and a git checkout — the
+    kind of code that works on the maintainer's machine and fails on a worktree,
+    an empty repo or a missing `jq`. Each already has a case file under
+    `script/tests/`; this is what stops the fourth one from arriving without.
+    """
+    tests = "\n".join(
+        read(f) for f in files if f.startswith("script/tests/") and f.endswith(".sh")
+    )
+    for f in files:
+        if f.startswith("plugins/flow/hooks/") and f.endswith(".sh"):
+            if os.path.basename(f) not in tests:
+                fail(f, "no file under script/tests/ exercises this hook")
+
+
 def check_version_matches_changelog():
     """The manifest version and the newest changelog heading must agree.
 
@@ -370,6 +387,7 @@ def main():
     check_manifests()
     check_all_json(files)
     check_hooks_executable(files)
+    check_hooks_have_tests(files)
     check_version_matches_changelog()
     check_command_frontmatter(files)
     check_toml(files)

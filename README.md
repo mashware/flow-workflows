@@ -243,7 +243,7 @@ flow-workflows/
 ├── plugins/flow/
 │   ├── commands/      feat/ bug/ work/ + next, init, config, doctor, news, save-knowledge
 │   ├── skills/flow-core/             # shared rules, loaded once per session
-│   ├── hooks/         push guard · update notice
+│   ├── hooks/         push guard · update notice · where-you-left-off notice
 │   └── examples/FLOW.template.md
 ├── docs/              CONCEPTS · PHILOSOPHY · DESIGN · CONFIGURATION · WORKFLOWS
 ├── script/check.py                   # release preflight
@@ -261,13 +261,14 @@ python3 script/check.py              # preflight: manifest, JSON/TOML, hooks, fr
 python3 script/adapter-smoke.py      # also runs install.sh against a throwaway HOME
 bash script/tests/push-guard.sh      # the push guard's cases
 bash script/tests/notify-update.sh   # the update-notice hook's cases
+bash script/tests/session-start.sh   # the where-you-left-off hook's cases
 ```
 
-CI runs the same four on every PR. The preflight refuses what has shipped broken before: an empty tracked file, unparsable JSON or TOML, a manifest version out of step with `CHANGELOG.md`, a hook without its executable bit, a stale or unusable mirror. → [RELEASING](RELEASING.md)
+CI runs the same five on every PR. The preflight refuses what has shipped broken before: an empty tracked file, unparsable JSON or TOML, a manifest version out of step with `CHANGELOG.md`, a hook without its executable bit, a stale or unusable mirror. → [RELEASING](RELEASING.md)
 
 ## What it does not ship (on purpose)
 
-No agents and no review skill — those are stack-specific; you name yours in `FLOW.md`. Two generic hooks ship: a guard against pushing to `master`/`main`, and an update notice at session start. Optional dependencies (a knowledge source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific steps; without them those steps degrade and the rest works.
+No agents and no review skill — those are stack-specific; you name yours in `FLOW.md`. Three generic hooks ship: a guard against pushing to `master`/`main`, an update notice at session start, and a session-start line saying which work this branch belongs to and where it stands. Optional dependencies (a knowledge source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific steps; without them those steps degrade and the rest works.
 
 ## License
 

@@ -77,8 +77,9 @@ one long undifferentiated session is the wrong tool for a session made of phases
 purpose.
 
 **When the context is genuinely heavy, the move is a new session, not a summary.** Open one and run
-`/flow:work:resume`: it rebuilds from `meta.json`, `00-summary.md` and the artifacts the current
-phase actually needs — from the record, that is, and not from a paraphrase of the record made by a
+`/flow:work:resume` — the session's first two lines already tell you which work the branch belongs
+to and what the last one was doing, because a SessionStart hook reads them off disk. `resume`
+rebuilds from `meta.json`, `00-summary.md` and the artifacts the current phase actually needs — from the record, that is, and not from a paraphrase of the record made by a
 model that could not know what the next phase would ask for. It costs one command and it starts
 clean.
 
