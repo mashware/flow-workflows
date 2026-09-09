@@ -13,17 +13,50 @@ You get named phases, an artifact on disk after each one, hard gates the agent n
 /flow:next      # routes you to init, resume or status, depending on where you are
 ```
 
-Your first feature:
-
-```
-/flow:feat:start PROJ-123   # read the ticket, size it (XS/S/M/L), create the branch
-/flow:feat:design           # architecture, DB, APIs, risks → 03-design.md
-/flow:feat:build            # implement following the design, keep a log
-/flow:feat:review           # multi-agent code review (mandatory)
-/flow:feat:ship             # commit, push, open the MR/PR — after you confirm the preview
-```
-
 No ticket? `/flow:feat:start` with no arguments drafts the work from the conversation you just had.
+
+## The first minute
+
+One XS work, start to ship. Four commands; each one stops with the same header and waits for you.
+
+```
+$ /flow:feat:start PROJ-412
+PROJ-412 · XS · phase start
+Now: ticket read, sized XS, branch PROJ-412-digest-unsubscribe created
+I need: confirm the brief — an unsubscribe link in the digest footer, no template rework
+
+$ /flow:feat:build
+PROJ-412 · XS · phase build
+Now: footer partial and the opt-out check, 2 files, suite green
+I need: nothing, review is next
+
+$ /flow:feat:review
+PROJ-412 · XS · phase review
+Now: 3 reviewers, one finding — the link skipped the locale fallback — fixed · spent 3/12
+I need: nothing, XS skips validate; ship is next
+
+$ /flow:feat:ship
+PROJ-412 · XS · phase ship
+Now: MR preview ready — 2 files, +34 −4, description and test notes below
+I need: confirm the preview and I push
+```
+
+`design`, `plan` and `validate` never ran: XS prunes them. What is on disk afterwards is the work
+itself, readable and editable without the agent:
+
+```
+.claude/work/PROJ-412-digest-unsubscribe/
+├── 00-summary.md          # the ≤15-line handoff every phase reads first
+├── meta.json              # phase, size, branch, the MR it opened
+├── panel.json             # live state, for a pane outside the chat
+├── 01-context.md          # ticket, size, the questions asked at the brief
+├── 05-implementation.md   # what was built, and where it left the plan
+└── 06-review.md           # every finding, and what was done about it
+```
+
+**Not everything is a work.** A typo, a version bump, a log level: edit it and commit — a folder, a
+branch and a review panel cost more than that change is worth. `/flow:feat:start` makes that call
+itself and offers you the two-line alternative. → [PHILOSOPHY §When not to use it](docs/PHILOSOPHY.md#when-not-to-use-it)
 
 ## The two chains
 
@@ -40,6 +73,39 @@ after ship, before merge:  green ⟲   pipeline red / conflicts / behind base
 size prunes:  XS  start → build → review → ship     S  + design (abridged) + validate
               M/L full chain; plan splits the work into stacked MR/PRs
 ```
+
+## Three ideas you will not find in the other workflow plugins
+
+- **An autonomy dial that does not decay.** `auto` is only worth having if it never drifts back into
+  asking, so the list of what `guided`/`auto` must **never** ask about is written down and enforced,
+  next to the hard gates that stop in every mode. → [Autonomy](#autonomy)
+- **A cost ceiling per command, and the cost printed in the output.** Two ceilings that count agents
+  rather than findings — one per parallel round, one for everything a command run launches — each
+  command declaring which phase it gives up first, and `review` reporting `spent/budget` and what
+  the ceiling skipped. → [Token budget](#token-budget)
+- **Work you decide not to do does not evaporate.** Every out-of-scope piece, unmitigated risk and
+  unchecked edge case becomes a record in `meta.json`, triaged once at `ship` with one question
+  each, and named in the MR/PR description if it is still open. → [How it works](#how-it-works)
+
+## Autonomy
+
+`autonomy.mode` in `FLOW.md`, changeable at any time:
+
+| Mode | Decisions | Next phase |
+|---|---|---|
+| `manual` *(default)* | Stops at every one | Proposed as a one-click confirmation, never run unconfirmed |
+| `guided` | Resolves low-risk ones and records them; asks at the real ones | Chains automatically |
+| `auto` | Also resolves the rest, with recorded defaults | Chains without pausing |
+
+Hard gates — the flow stops and asks in **every** mode:
+
+1. Any push or MR/PR creation (all of `ship`).
+2. Creating a branch when the base is ambiguous.
+3. A DB schema change or migration.
+4. Shipping a review with high-severity findings.
+5. The business brief before touching code — what you get afterwards, and what is *not* included.
+
+Symmetrically, `guided`/`auto` never ask about the flow's own machinery (panels, reviewer counts, WIP commits, the next MR/PR of a train). → [CONFIGURATION §autonomy](docs/CONFIGURATION.md#autonomy)
 
 ## Commands you will use every day
 
@@ -83,26 +149,6 @@ size prunes:  XS  start → build → review → ship     S  + design (abridged)
 | `/flow:save-knowledge` | Consolidate the branch's findings into the knowledge store (`knowledge.save`, or `KNOWLEDGE.md`) |
 | `/flow:news` | What changed in the plugin since the version you last saw |
 
-## Autonomy
-
-`autonomy.mode` in `FLOW.md`, changeable at any time:
-
-| Mode | Decisions | Next phase |
-|---|---|---|
-| `manual` *(default)* | Stops at every one | Proposed as a one-click confirmation, never run unconfirmed |
-| `guided` | Resolves low-risk ones and records them; asks at the real ones | Chains automatically |
-| `auto` | Also resolves the rest, with recorded defaults | Chains without pausing |
-
-Hard gates — the flow stops and asks in **every** mode:
-
-1. Any push or MR/PR creation (all of `ship`).
-2. Creating a branch when the base is ambiguous.
-3. A DB schema change or migration.
-4. Shipping a review with high-severity findings.
-5. The business brief before touching code — what you get afterwards, and what is *not* included.
-
-Symmetrically, `guided`/`auto` never ask about the flow's own machinery (panels, reviewer counts, WIP commits, the next MR/PR of a train). → [CONFIGURATION §autonomy](docs/CONFIGURATION.md#autonomy)
-
 ## What a work looks like on disk
 
 One folder per work under `.claude/work/`, named `<TICKET>-<slug>` (or `<slug>` when ticket-less):
@@ -128,10 +174,6 @@ A bug writes `02-diagnose.md`, `03-investigation.md`, `04-fix.md`, `05-validatio
 
 Artifacts are **hand-editable**: rewrite `03-design.md` and the next phase respects it. `meta.json` is the state; without it, commands refuse to continue rather than guess.
 
-**Work you decide not to do does not evaporate.** Every "idea for a separate ticket", out-of-scope piece, unmitigated risk, unchecked edge case and postmortem prevention action becomes a record in `meta.json`, not just a line in an artifact that gets archived unread. The phases that park them ask nothing. `ship` triages the whole set **once**, at the end, with one question per item: *do it* (which opens the tracker issue and offers to start it), *not worth it*, or *later*. Whatever is still open when the MR/PR is created is named in its description, so a reviewer can see what was consciously left out. `status`, `daily` and `next` keep surfacing the undecided ones — including from `_archive/`, because a finished work is exactly when its deferrals become invisible. Two things are deliberately **not** deferred work: a **product decision** the current diff depends on is asked the moment it surfaces, in every mode, because parking it makes the diff guess; and a gap in the repo's own **tooling** goes to a versioned debt log (`tracker.debt_log`) with *log it*, not to the tracker.
-
-**`panel.json`** makes the work readable from outside the chat: every stop is written there too, so a pane or dashboard can show the MR/PR train with links, what runs now, what comes next, whether it waits on you, and any blocker. Each line says *what it is* (`mark`: `done` `current` `pending` `wait` `block` `info`); the reader owns symbols and colours. Overwritten whole, and written *before* a long stretch with an honest `updated_at`, so a step that died halfway never shows as finished. It carries the phase *running*, not the one `meta.json` records. Schema: [work/README](plugins/flow/commands/work/README.md#paneljson-schema).
-
 ## Configuration: `FLOW.md`
 
 One file at the repo root describes your conventions. Anything left empty is auto-detected or asked for — a repo with no `FLOW.md` still works, with more questions.
@@ -152,6 +194,15 @@ One file at the repo root describes your conventions. Anything left empty is aut
 
 `/flow:init` writes a compact `FLOW.md` with only the keys you set, and offers to git-ignore `FLOW.md` and `.claude/work/`. It is personal config, not team config ([why](docs/PHILOSOPHY.md#personal-config-not-team-config)). Reference: [CONFIGURATION](docs/CONFIGURATION.md).
 
+## How it works
+
+Two mechanisms that are easy to miss in the command list and are most of what makes the flow
+usable on real work.
+
+**Work you decide not to do does not evaporate.** Every "idea for a separate ticket", out-of-scope piece, unmitigated risk, unchecked edge case and postmortem prevention action becomes a record in `meta.json`, not just a line in an artifact that gets archived unread. The phases that park them ask nothing. `ship` triages the whole set **once**, at the end, with one question per item: *do it* (which opens the tracker issue and offers to start it), *not worth it*, or *later*. Whatever is still open when the MR/PR is created is named in its description, so a reviewer can see what was consciously left out. `status`, `daily` and `next` keep surfacing the undecided ones — including from `_archive/`, because a finished work is exactly when its deferrals become invisible. Two things are deliberately **not** deferred work: a **product decision** the current diff depends on is asked the moment it surfaces, in every mode, because parking it makes the diff guess; and a gap in the repo's own **tooling** goes to a versioned debt log (`tracker.debt_log`) with *log it*, not to the tracker.
+
+**`panel.json`** makes the work readable from outside the chat: every stop is written there too, so a pane or dashboard can show the MR/PR train with links, what runs now, what comes next, whether it waits on you, and any blocker. Each line says *what it is* (`mark`: `done` `current` `pending` `wait` `block` `info`); the reader owns symbols and colours. Overwritten whole, and written *before* a long stretch with an honest `updated_at`, so a step that died halfway never shows as finished. It carries the phase *running*, not the one `meta.json` records. Schema: [work/README](plugins/flow/commands/work/README.md#paneljson-schema).
+
 ## Token budget
 
 - The shared rules live in the `flow-core` skill, loaded once per session; a command file carries only its phase.
@@ -160,6 +211,7 @@ One file at the repo root describes your conventions. Anything left empty is aut
 - The review tier scales to the **diff under review**, not the size of the feature: a 40-line MR/PR in an L-sized work is reviewed as the 40 lines it is.
 - Two ceilings, both counting agents rather than findings: `agents.fanout_max` per parallel round (default 4) and `agents.budget_max` for everything one command run launches (default 12). Each command declares which phase it gives up first, and what a ceiling drops is reported.
 - The review output prints its cost as `spent/budget`: subagents launched, tier, effort, and every phase the ceiling skipped.
+- Which is why nothing here ever asks you to `/compact`: the phase boundary already is the compaction point, and it is selective, on disk and reversible. → [PHILOSOPHY](docs/PHILOSOPHY.md#nothing-here-asks-you-to-compact)
 
 ## Other harnesses
 
@@ -180,13 +232,14 @@ They have **not** been executed end to end in those harnesses — validate as yo
 | [CHANGELOG](plugins/flow/CHANGELOG.md) | What changed, version by version |
 | [adapters/README](adapters/README.md) | Installing on opencode / Gemini CLI / Codex CLI |
 | [RELEASING](RELEASING.md) | Release procedure and what the preflight enforces |
+| [CONTRIBUTING](CONTRIBUTING.md) | What a good contribution looks like, and what we will not take |
 
 ## Structure
 
 ```
 flow-workflows/
 ├── .claude-plugin/marketplace.json   # catalog (Claude Code)
-├── .github/workflows/preflight.yml   # CI: the checks below, on every PR
+├── .github/           preflight CI · issue forms · PR template
 ├── plugins/flow/
 │   ├── commands/      feat/ bug/ work/ + next, init, config, doctor, news, save-knowledge
 │   ├── skills/flow-core/             # shared rules, loaded once per session
@@ -197,7 +250,7 @@ flow-workflows/
 ├── script/adapter-build.py           # generates the adapter mirrors
 ├── script/adapter-smoke.py           # are the mirrors usable?
 ├── script/tests/                     # hook tests
-├── RELEASING.md
+├── RELEASING.md · CONTRIBUTING.md
 └── adapters/          install.sh · opencode/ · gemini/ · codex/
 ```
 

@@ -53,6 +53,42 @@ looking elsewhere. The same header has a twin on disk, `panel.json`, because the
 and the question you actually have is a state — something a pane or a status bar can answer without
 you scrolling or asking.
 
+## Nothing here asks you to compact
+
+Every long agent session meets the same wall — the context fills — and the usual answer is to
+compact: summarise what has happened so far and carry on from the summary. Flow never suggests it,
+in any mode, and the reason is not that context is free.
+
+**The phase boundary is already the compaction point, and it is already there.** A phase closes by
+writing its artifact and rewriting `00-summary.md`; the next one starts from `meta.json` plus those
+fifteen lines and opens a full artifact only when it needs one. That is a compaction — but one
+chosen by the phase that knows what matters, written to disk instead of into the transcript, and
+reversible, because everything it left out is still in `03-design.md` for whoever needs it. A
+summary you can re-expand is a different object from one you cannot.
+
+**What `/compact` costs is two things, and both land badly here.** The first is the cache: the
+session's prefix is what the provider has already priced and stored, and replacing it with a fresh
+summary means the next turn pays for the whole context again at write price. Compaction is not a
+saving on the next turn; it is a bill now against a ceiling later. The second is the loss itself,
+and it falls on exactly the material the next phase reads most carefully — `review` compares the
+diff against the design's contract shapes and the build log's deviations *verbatim*, and a
+paraphrased contract is a new contract ([CONCEPTS](CONCEPTS.md#design-and-review)). A tool built for
+one long undifferentiated session is the wrong tool for a session made of phases that hand off on
+purpose.
+
+**When the context is genuinely heavy, the move is a new session, not a summary.** Open one and run
+`/flow:work:resume`: it rebuilds from `meta.json`, `00-summary.md` and the artifacts the current
+phase actually needs — from the record, that is, and not from a paraphrase of the record made by a
+model that could not know what the next phase would ask for. It costs one command and it starts
+clean.
+
+**The honest exception is a single phase that runs long on its own.** An L-sized `build` with a
+dozen subagent reports inside it can reach the ceiling with no boundary in sight. The answer there
+is the discipline the phase already has: the implementation log holds the state, not the chat, so
+starting over costs a `resume` rather than a re-derivation. And if it happens routinely, it is
+saying something about `plan` — work that cannot be built in one sitting was work that should have
+been split into another MR/PR, and the fix belongs one phase earlier, not in a summariser.
+
 ## When not to use it
 
 The size dial prunes *phases*; it never says "this is not a work at all", and XS is still four
