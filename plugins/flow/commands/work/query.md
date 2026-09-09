@@ -93,6 +93,12 @@ Read `data` from `FLOW.md`. **All optional, empty by default**; empty → the du
 
 **Order of preference**: (a) plan on realistic volume — the only evidence settling items 1 and 2; (b) plan on the development database, noting its row counts may change the optimizer's choice; (c) schema alone — collation, types, index definitions and directions, not a plan; (d) nothing, declared.
 
+**A duel that came back schema-only is the moment `data` is worth filling.** In `manual`, add one
+option to the verdict this command was already stopping with (flow-core §0, one key per work):
+`data.volumes` when the cardinality had to be assumed, `data.explain_cmd` when no plan could be read
+at all. In `guided`/`auto`, record what defaulted in `meta.json.defaults_used[]` and let the verdict
+say, as it already does, what it could not settle.
+
 **The functional test database proves nothing about a plan.** A handful of fixture rows makes the optimizer pick what is cheapest at that size. A plan measured there is not evidence — say "not measured".
 
 When you measure: build the data set to the **shape** that matters, not just the size (one key with thousands of rows next to twenty thousand keys with one; the real batch size; heavy columns populated). Then a table, **three runs per variant**, plan next to time:

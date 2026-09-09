@@ -396,6 +396,13 @@ Read `meta.json.conventions_candidates[]` (flow-core §8). **No entries with `st
 5. **One line on screen**: how many rules were added and where, never a list of the texts —
    the user has just read them in the question.
 
+### 6.4ter Defaults that were used (one line, no question)
+
+`meta.json.defaults_used[]` non-empty → **one line** in the Close: how many empty `FLOW.md` keys this
+work resolved with their default, and that `/flow:config` lists which ones and prints the line to
+paste. Never a list here, and never a question: in `guided`/`auto` not asking is the contract
+(flow-core §0, §2), and in `manual` the phases already offered what they were allowed to offer.
+
 ### 6.5 Archive and cleanup
 
 Only if `phase = "done"`:

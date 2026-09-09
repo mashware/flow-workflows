@@ -58,6 +58,12 @@ tool, a simulator, a CLI that drives the app, an HTTP call against a local endpo
 signals `/flow:doctor` reports). **Nothing available → skip this section in one line and go to §4**;
 that is a legitimate outcome, not a failure.
 
+An app that **is** runnable with `quality.functional_check` empty — you found a way to drive it and
+the file does not describe one — is the moment that key is worth writing. In `manual`, add
+*"write `quality.functional_check: <what you used>` to FLOW.md"* as an option on the stop this phase
+was already making (flow-core §0, at most one key per work). In `guided`/`auto`, record it in
+`meta.json.defaults_used[]` and say nothing.
+
 `meta.json.worktree` not null → the runnable environment lives in the main checkout, not here. Do
 not fight it: say so once and go to §4, whose first move is `/flow:work:try` (§4 owns that handover).
 

@@ -63,6 +63,29 @@ workers  (empty)  →  fan-out rounds — falls back to `agents`
 - One line: a role set in `agents.*` keeps its own agent definition's model, so a round can mix
   configured and self-declared models.
 
+### 2.2 Defaults that keep being used
+
+`FLOW.md` is written small on purpose and grows by use (flow-core §0): a phase that resolves an
+empty key in `guided`/`auto` records it rather than asking. This block is where that record is read
+back.
+
+Aggregate `defaults_used[]` from every `.claude/work/*/meta.json`, **`_archive/` included**. One row
+per key: the key, the default that was used, in how many works, and the last phase that used it.
+Sort by count, most-used first, and cap the block at the ten busiest keys with a count of the rest.
+
+```
+agents.security      general-purpose   4 works   last: review
+quality.review_depth proportional      4 works   last: review
+data.volumes         (none — duel ran schema-only)  2 works   last: query
+```
+
+- **Print the line to paste**, per row, so pinning one is a copy: `- security: <agent name>` under
+  `## agents`. `/flow-config` writes nothing — that has not changed.
+- No `defaults_used[]` anywhere (a fresh repo, or every work ran in `manual`) → skip the block
+  entirely, no empty table.
+- One line under it: a default used in four works out of four is a decision that has already been
+  taken four times; a default used once is not yet worth a key.
+
 ## 3. Validate (flag, do not fix)
 
 Report problems, change nothing. **Scope: this file.** Whether the world it describes exists —

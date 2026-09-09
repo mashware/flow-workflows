@@ -5,6 +5,37 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.52.0 — The wizard asked on day one about things that matter in week three  ·  2026-09-09
+
+**In short**
+- **`/flow:init` asks five questions**: tracker, base branch (only when detection fails), autonomy mode, the quality commands as one block, and git-ignore. Everything §2 detects is one confirmation screen, not a questionnaire.
+- **Every other key is offered by the phase that first needs it**, at a stop it was making anyway — `agents.<role>` when a panel improvises a role, `quality.review_depth` when a review goes over budget, `data.volumes` when the duel comes back schema-only, `quality.functional_check` when `validate` finds a runnable app and no way to drive it, `tracker.*_cmd` the first time a ticket could be transitioned.
+- **`manual` only, one key per work, never its own question** — it is an extra option on a stop that was already happening.
+- **`guided`/`auto` never ask**: the default is taken and recorded in the new `meta.json.defaults_used[]`. Asking there is the never-a-question contract breaking one reasonable question at a time.
+- **`/flow:config` adds them up** across every work, `_archive/` included, and prints the line to paste for the keys that keep defaulting.
+
+**Half of the wizard's questions had no answer yet.** Which agent reviews security — none exist on a
+fresh machine. How deep reviews should go — you have not seen a cost line. How big the hot tables are
+— that is a lookup, and being asked to do one in the middle of a wizard is homework, not
+configuration. The honest answer to each was *skip*, and skipping was final: `FLOW.md` got written
+once, in the dark, and the keys that would actually have helped never got a second chance to be
+asked.
+
+**The fix is not fewer keys, it is a better moment.** A review that had to improvise
+`agents.security` on a diff touching authentication knows exactly which key is missing and why it
+matters, and it is already stopping to report its findings. So it adds one option to that stop —
+*"write `agents.security: <name>` to FLOW.md"* — and nothing else changes: no new question, no
+interruption, at most one key per work, and only for keys on a short list in flow-core §0. A key
+whose default is fine forever (`request_sections`, `worktree_path`, `knowledge.timeout_s`) never
+appears there, in any mode.
+
+**In `guided` and `auto` the answer is to record, not to ask.** Those modes exist so a run can go
+from brief to `ship` unattended; a phase that stops to offer a configuration line, however
+reasonable, is the exact failure the never-ask list was written to prevent. Instead the resolution
+lands in `meta.json.defaults_used[]` — key, default, phase — and `/flow:config` aggregates it across
+every work on disk. A default used in four works out of four is a decision that has been taken four
+times, and that is the sentence the block is there to let you read.
+
 ## v0.51.0 — You said it once, the agent complied, and the next work proposed the same thing again  ·  2026-09-09
 
 **In short**
