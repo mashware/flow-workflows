@@ -5,7 +5,7 @@ argument-hint: "[file | pasted query | reviewer objection]  (empty: every query 
 
 # `/flow:work:query $ARGUMENTS`
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `review`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 **A query is approved by its plan, not by prose.** Fact sheet → challenger attacks → each point settled with a **plan or a number**. **Cross-cutting** (feat or bug), **repeatable**, does **not** advance `meta.json.phase`; runs with or without a work folder.
 

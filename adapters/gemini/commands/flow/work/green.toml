@@ -28,7 +28,7 @@ Usage: `/flow:work:green [mr-iid-or-url]` — optional; default is the MR/PR of 
 
 Extract from `git`: `host`, `cli` (empty → the default for that host), `default_base`. The term MR/PR follows `host`. From `tracker`: `tool`, `prefix`. From `quality`: `test`, `test_one`, `static_analysis`, `style_fix` (local reproduce/verify commands, §5; empty → auto-discover from Makefile / npm / composer scripts), `review_skill` (§5, non-trivial fixes). `agents`: expert sub-agents to delegate fixes to. `knowledge.search` set → `knowledge.search` in §3.
 
-Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `code`.**
+Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`.**
 
 **Autonomy.** Modes as in flow-core §2; `guided`/`auto` record their choices in `09-ci.md` (e.g. a pure formatter auto-fix). **Hard gates — ALWAYS stop and ask, in every mode, no exceptions:**
 1. **Any push** (§6).

@@ -24,7 +24,7 @@ Apply the fix. **Minimum viable**: no refactor of adjacent areas. Note other pro
 
 ## 1. Pre-flight
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `code`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (root cause, constraints for the fix) (minimal reproduction, root cause, constraints for the fix). (flow-core §5)
 - `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix.

@@ -8,7 +8,7 @@ Investigation phase: reproduce the failure, then find **why it happened** — no
 
 ## 1. Pre-flight
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `study`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
 - `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow:bug:fix` and stop.

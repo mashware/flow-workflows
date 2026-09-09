@@ -16,7 +16,7 @@ description: Put a data-access query on trial — schema, indexes, execution pla
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
-Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `review`.**
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 **A query is approved by its plan, not by prose.** Fact sheet → challenger attacks → each point settled with a **plan or a number**. **Cross-cutting** (feat or bug), **repeatable**, does **not** advance `meta.json.phase`; runs with or without a work folder.
 
