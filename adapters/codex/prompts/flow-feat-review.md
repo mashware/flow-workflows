@@ -197,7 +197,7 @@ No "Contracts to respect" (build recorded "N/A") → skip this step.
 
 **When to run**: only if the diff **introduces new architectural pieces** (new classes, new wiring, new use of a stack primitive — not renames or tweaks). Then: **always on M/L**; on **S** only if it introduces such pieces or touches a sensitive surface; **skip on XS**. Launch the `agents.architecture` agent from `FLOW.md` (or `Agent general-purpose` if empty) with this self-contained brief:
 
-> You audit the **idiom** of the new code — not its correctness, not whether it respects the design. You receive ONLY: (1) the new/changed architectural pieces of this diff (new classes, their constructor dependencies, how they are wired), and (2) the project's primitive vocabulary from its conventions (see `FLOW.md` `conventions`). **You do NOT receive the design document or its justifications.** If a choice was rationalized in prose elsewhere, that rationale is exactly what you must not inherit — your value is asking "why does this exist?" *without* the paper answer.
+> You audit the **idiom** of the new code — not its correctness, not whether it respects the design. You receive ONLY: (1) the new/changed architectural pieces of this diff (new classes, their constructor dependencies, how they are wired), and (2) the project's primitive vocabulary from its conventions — `FLOW.md` `conventions` **plus every `text` in `meta.json.conventions_candidates[]`**, which is what the user has taught during *this* work and is not in the file yet (flow-core §8). **You do NOT receive the design document or its justifications.** If a choice was rationalized in prose elsewhere, that rationale is exactly what you must not inherit — your value is asking "why does this exist?" *without* the paper answer.
 >
 > For each new piece, ask what a fresh senior reviewer asks on first read:
 > - **Does this class do what its role/name promises?** A `Command`/`Query` doing the opposite (a command that only reads, a query that mutates); a `Service`/`Finder` that is a thin pass-through; a `Handler` with no handling logic.
@@ -207,7 +207,7 @@ No "Contracts to respect" (build recorded "N/A") → skip this step.
 >
 > Output: per finding, `file:line`, the smell in one line, and the honest alternative primitive. Say nothing about pieces that are idiomatic. Do not invent smells to fill space — "the new pieces are idiomatic" is a valid, good result. Under 250 words.
 
-Findings enter the normal flow: §6, then the output. Blinded for the same reason as §5.
+Findings enter the normal flow: §6, then the output. Blinded for the same reason as §5. A rule learned in `build` is therefore enforced in the review of the same MR/PR, not of the next one; a correction the user makes *here* is captured the same way (flow-core §8) and reaches `ship`.
 
 ## 6. Adversarial finding verification (parallel fan-out, optional)
 

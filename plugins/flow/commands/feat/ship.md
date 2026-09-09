@@ -364,6 +364,28 @@ deferred with **Later** is meant to come back, and this is when it does.
 
 - **Close the follow-up that started this work.** `meta.json.origin` set and this ship moved `phase` to `done` → open the originating work's `meta.json` (live folder or `_archive/`) and set that `followups[]` entry to `status: "done"`. Best-effort: the originating folder is gone or unreadable → warn in one line and continue, never block. Without this the entry stays `in_progress` forever and `status`/`daily` keep reporting work that is finished.
 
+### 6.4bis Conventions learned — offer them to `FLOW.md`, once
+
+Read `meta.json.conventions_candidates[]` (flow-core §8). **No entries with `status` unset or
+`"proposed"` → skip this section entirely and say nothing.**
+
+1. **Drop what is already there.** Compare each `text` with the current `conventions` (and with the
+   `quality` key when `target` names one). Already said, in any wording → silently `declined`,
+   `note: "already in FLOW.md"`. Nobody is asked to confirm a rule they wrote.
+2. **Ask about the rest in one batch** — one `AskUserQuestion`, at most 4 entries, the `text` as the
+   whole prompt with the phase and the stop it came from underneath. Options: **Add to FLOW.md** ·
+   **Not a rule** · **Later**. A candidate that *contradicts* an existing line replaces the first
+   option with **Replace**, showing both lines, the current one first. More than 4 candidates → ask
+   about the 4 most recent and leave the rest `proposed`, saying how many, in one line.
+3. **This is asked in every mode**, `auto` included: it edits a file in the tree. It is not a team
+   decision — `FLOW.md` is personal config — so it is one question, never a negotiation.
+4. **Add / Replace** → edit `FLOW.md`: append one line under `conventions` in the user's own words,
+   or set the `quality.<key>` the candidate names (replacing its value, showing the old one in the
+   result). Then `status: "added"`. **Not a rule** → `declined`, never offered again in any work.
+   **Later** → stays `proposed` and is offered again by the next `ship` of a work that has it.
+5. **One line on screen**: how many rules were added and where, never a list of the texts —
+   the user has just read them in the question.
+
 ### 6.5 Archive and cleanup
 
 Only if `phase = "done"`:

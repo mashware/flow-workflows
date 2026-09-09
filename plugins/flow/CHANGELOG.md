@@ -5,6 +5,40 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.51.0 — You said it once, the agent complied, and the next work proposed the same thing again  ·  2026-09-09
+
+**In short**
+- **A correction you make mid-phase is now recorded as a candidate convention**: `meta.json.conventions_candidates[]` plus a `## Conventions learned` row in the phase artifact. Nothing is asked while you are working.
+- **The test is one question**: would the same correction apply to an unrelated ticket in this repo? Yes → a convention. No → it stays in the artifact of the phase that heard it.
+- **`review`'s idiom audit reads them in the same work**, so a rule learned in `build` is enforced on that MR/PR rather than the next one.
+- **`ship` offers them once, at Close** — Add to FLOW.md · Not a rule · Later, or **Replace** when it contradicts a line already there. In every mode, because it edits a file in your tree.
+- **Never domain knowledge.** The *why* of the business still goes to the knowledge store; the *what* of the code goes to `FLOW.md`. Two buckets, two destinations.
+
+**Four sentences a repo hears over and over.** *«We don't put that in a listener here, use a message
+handler.»* *«Never mock the repository in that layer.»* *«The test command is `make test-unit`, not
+`bin/phpunit`.»* *«Stop proposing a DTO for that, we pass the entity.»* Each is said once, in `build`
+or in `review`, the agent complies, and the next work on the same repo proposes the same thing again.
+The destination existed the whole time — `FLOW.md`'s `conventions` and `quality` — and nothing on the
+path from the correction to that file was automatic: you had to notice you had said it three times
+and go and edit it by hand.
+
+**The knowledge store was deliberately not that place.** `knowledge.stage`/`save` is about the *why*
+of the business, never the *what* of the code, and that filter is right and unchanged. What it left
+without a home is this other bucket, and this release gives it one: capture at the moment of the
+correction, no interpretation and no question, and one offer at the end of the work.
+
+**Flow can do this precisely because it knows when a correction happens** — at a stop, in a named
+phase, about a specific diff. The candidate keeps the user's own sentence rather than a policy
+rewrite of it, records which stop it came from, and marks whether it belongs in `conventions` or in a
+`quality` key. Duplicates never reach the question: a rule already in the file, in any wording, is
+dropped silently, and one that contradicts a line that is there is offered as **Replace**, both lines
+shown, the current one first.
+
+**Asked in every mode, `auto` included, and asked exactly once.** `FLOW.md` is personal config, so
+this is not a team decision — but it is an edit to a file in the tree, which is the same bar
+`KNOWLEDGE.md`'s first creation has to clear. Declining a candidate is permanent: it is never offered
+again, in this work or a later one.
+
 ## v0.50.0 — Seventy-five keys, two of which nothing read and five that promised what the harness cannot do  ·  2026-09-09
 
 **In short**
