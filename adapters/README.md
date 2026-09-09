@@ -4,23 +4,24 @@ The `flow` plugin (in `../plugins/flow`) is for **Claude Code**. These adapters 
 `feat`/`bug`/`work` workflows to other terminal agents. They are **build output, not source**:
 [`../script/adapter-build.py`](../script/adapter-build.py) reads every plugin command and the shared
 rules in `../plugins/flow/skills/flow-core/SKILL.md`, and writes every file under
-`opencode/commands/`, `codex/prompts/`, `gemini/commands/flow/` plus one `<harness>/CORE.md` each.
+`opencode/commands/`, `codex/skills/`, `gemini/commands/flow/` plus one `<harness>/CORE.md` each.
 The **logic and prose are the plugin's, verbatim** — only the wrapper changes.
 
 | Harness | Commands | Subagents | MCP | Autopilot watch |
 |---|---|---|---|---|
 | **opencode** | `commands/*.md` (`/flow-feat-start`) | `agents/*.md` `mode:subagent`, `@name` | `opencode.json` | cron + `opencode run -p` |
 | **Gemini CLI** | `commands/**/*.toml` (`/flow:feat:start`) | `.gemini/agents/*.md`, `@name` | `settings.json` `mcpServers` | cron + `gemini -p` |
-| **Codex CLI** | `prompts/*.md` (`/flow-feat-start`) | `[agents.*]` in `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
+| **Codex CLI** | `skills/*/SKILL.md` (`$flow-feat-start`) | `[agents.*]` in `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
 
 ## What the generator changes per harness
 
 Only the mechanics, and only these:
 
-- **The wrapper** — opencode a `description:` frontmatter, Codex none, Gemini a TOML `description`
-  + `prompt` string (backslashes and triple quotes escaped).
+- **The wrapper** — opencode a `description:` frontmatter, Codex a skill folder whose `SKILL.md`
+  carries `name:` + `description:`, Gemini a TOML `description` + `prompt` string (backslashes and
+  triple quotes escaped).
 - **The prefix** — every `/flow…` invocation rewritten to the harness's own: `/flow-feat-build` for
-  opencode and Codex, `/flow:feat:build` for Gemini.
+  opencode, `$flow-feat-build` for Codex (skills are invoked with `$`), `/flow:feat:build` for Gemini.
 - **`$ARGUMENTS`** → `{{args}}` for Gemini.
 - **The CORE pointer** — the plugin's `flow:flow-core` skill and `${CLAUDE_PLUGIN_ROOT}` become
   `~/.claude/flow/CORE.<tool>.md`, the file `install.sh` places there.
@@ -90,8 +91,8 @@ Every preflight runs [`../script/adapter-smoke.py`](../script/adapter-smoke.py) 
 
 ⚠️ **What none of that proves**: that the harness *runs* a workflow the way Claude Code does. These
 have never been executed inside opencode, Gemini CLI or Codex end to end. Validate as you use them,
-and adjust paths if your version differs — especially Codex, where the prompts location changes
-between versions (see `codex/README.md`).
+and adjust paths if your version differs — especially Codex, whose discovery layout has already
+changed once between versions (see `codex/README.md`).
 
 > Single source of truth: `../plugins/flow/commands/` and `../plugins/flow/skills/flow-core/`.
 > Change there, run `python3 script/adapter-build.py`, commit both.

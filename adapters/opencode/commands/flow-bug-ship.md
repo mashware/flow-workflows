@@ -23,7 +23,7 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow-feat-ship`, wi
 
 ## 0. Pre-flight
 
-Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
 - Read `meta.json` and `00-summary.md`; open in full only `04-fix.md` (the Brief), `06-review.md` (the verdict), `05-validation.md`, the §"Root cause identified" of `03-investigation.md`, and `99-postmortem.md` if it exists. (flow-core §5)
 - Require `review` in `phases_done`; also `validate` if `size` ≥ S, and `postmortem` if `size` is M or L (the same sizes `/flow-bug-review §8` routes to postmortem — one rule). Missing → refuse and redirect to the missing step.

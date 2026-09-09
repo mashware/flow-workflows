@@ -19,35 +19,41 @@ If `FLOW.md` doesn't exist, each workflow command auto-discovers values or uses 
 
 ## Available workflows
 
-Workflows are invoked as custom prompts with the `/` prefix:
+Workflows are installed as Codex **skills** and invoked with the `$` prefix. Codex does not
+read Claude Code's `commands/` — a skill is what it discovers, in `~/.codex/skills/` (global)
+or `.agents/skills/` (this repo).
 
-| Command | Description |
-|---------|-------------|
-| `/flow-feat-start {TICKET}` | Start a new feature |
-| `/flow-feat-brainstorm` | Generate options and risks before designing |
-| `/flow-feat-design` | Technical design (no code) |
-| `/flow-feat-plan` | Split work into independent MRs/PRs (M/L) |
-| `/flow-feat-build` | Implement the feature |
-| `/flow-feat-review` | Mandatory multi-agent code review |
-| `/flow-feat-validate` | Validate tests, edge cases, and integrity |
-| `/flow-feat-ship` | Commit, push, MR/PR, and offer to save knowledge |
-| `/flow-bug-start {TICKET}` | Start a bug |
-| `/flow-bug-diagnose` | Reproduce the failure and delimit what is broken |
-| `/flow-bug-investigate` | Find the root cause |
-| `/flow-bug-fix` | Apply the minimal fix |
-| `/flow-bug-validate` | Regression test and verification |
-| `/flow-bug-review` | Code review of the fix |
-| `/flow-bug-postmortem` | Lessons learned (M/L) |
-| `/flow-bug-ship` | Commit, push, MR/PR of the fix |
-| `/flow-work-daily [question]` | Work assistant — Scrum-style daily standup across all your work (local + forge + tracker) |
-| `/flow-work-status` | Overview of all open work |
-| `/flow-work-resume` | Resume work on the current branch |
-| `/flow-work-try {BRANCH}` | Point the main checkout at a branch to test it (`--back` to return), re-syncing per FLOW.md |
-| `/flow-work-watch {TICKET} [duration]` | Post-deployment monitoring (one cycle) |
-| `/flow-work-abandon` | Close a work without shipping |
-| `/flow-init` | Generate this repo's FLOW.md (auto-detects, asks the minimum) |
-| `/flow-config` | Show this repo's effective FLOW.md config and validate it (read-only) |
-| `/flow-save-knowledge` | Consolidate findings to the domain-memory store |
+| Skill | Description |
+|---|---|
+| `$flow-feat-start [TICKET]` | Start a new feature (read the tracker, classify size, create branch and initial artifact) |
+| `$flow-feat-design` | Design the technical solution (architecture, DB, APIs, risks) before touching code |
+| `$flow-feat-plan` | Split the work into small, independently mergeable MRs/PRs before implementing |
+| `$flow-feat-build` | Implement the feature following the approved design and keep a running log |
+| `$flow-feat-review` | Mandatory multi-agent code review before shipping |
+| `$flow-feat-validate` | Validate tests, edge cases, and integrity before shipping |
+| `$flow-feat-ship` | Commit, push, MR/PR, and offer to save domain knowledge |
+| `$flow-bug-start [TICKET]` | Start the bug flow (tracker, knowledge, size, branch, initial artifact) |
+| `$flow-bug-investigate` | Find the root cause of the bug (not just the symptom) |
+| `$flow-bug-fix` | Implement the minimal fix and keep a log |
+| `$flow-bug-validate` | Regression test and verification that the bug does not return |
+| `$flow-bug-review` | Multi-agent code review of the fix before submitting |
+| `$flow-bug-postmortem` | Lessons learned, areas to watch, and offer to save to the knowledge store |
+| `$flow-bug-ship` | Commit, push, MR/PR the fix |
+| `$flow-next` | Entry point — routes to init, resume or status depending on where you are (no FLOW.md → init; a work on this branch → resume; otherwise status) |
+| `$flow-init` | Assistant that generates the FLOW.md for this repo (auto-detects what it can, asks the minimum) |
+| `$flow-doctor` | What this repo's FLOW.md actually says, and whether the environment it assumes exists — CLIs, auth, agents, hooks, MCP, repo state |
+| `$flow-news [vX.Y.Z \| N \| all] [full]` | Show what changed in the flow plugin since the version you last saw |
+| `$flow-work-daily [question]` | Your work assistant — a Scrum-style daily standup across all your work (local + forge + tracker) |
+| `$flow-work-status` | Summary of all open works in .claude/work/ |
+| `$flow-work-resume` | Resume the work associated with the current branch and suggest the next step |
+| `$flow-work-respond [mr-iid-or-url]` | Respond to review threads on an open MR/PR — triage, debate, implement the agreed changes, reply (never resolve) |
+| `$flow-work-green [mr-iid-or-url]` | Get an open MR/PR that cannot merge back to mergeable — red pipeline, conflicts or any other blocker: triage, fix at the root, push (never green-wash) |
+| `$flow-work-query [file | pasted query | reviewer objection]` | Put a data-access query on trial — schema, indexes, execution plan and measured numbers decide it, never prose |
+| `$flow-work-try <branch> \| --back` | Point the main checkout at a branch to test it (then return), re-syncing per FLOW.md |
+| `$flow-work-clean [--dry-run]` | Sweep what finished work left behind — merged worktrees, dead branches, unarchived work folders |
+| `$flow-work-watch [TICKET]` | Monitor the observability platform after a deploy and alert on errors or performance regressions (autopiloted) |
+| `$flow-work-abandon` | Close a work without shipping (discarded feature, non-issue, etc.) |
+| `$flow-work-README` | Guide to the /feat and /bug workflow system |
 
 ## Artifact structure
 

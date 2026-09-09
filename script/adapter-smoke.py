@@ -38,11 +38,11 @@ ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=HERE,
 
 PLUGIN_COMMANDS = "plugins/flow/commands/"
 
-# name, directory, extension, flatten, invocation separator the harness uses
+# name, directory, extension, flatten, invocation separator, invocation sigil
 ADAPTERS = (
-    ("opencode", "adapters/opencode/commands/flow-", ".md", False, "-"),
-    ("codex", "adapters/codex/prompts/flow-", ".md", False, "-"),
-    ("gemini", "adapters/gemini/commands/flow/", ".toml", True, ":"),
+    ("opencode", "adapters/opencode/commands/flow-", ".md", False, "-", "/"),
+    ("codex", "adapters/codex/skills/flow-", "/SKILL.md", False, "-", "$"),
+    ("gemini", "adapters/gemini/commands/flow/", ".toml", True, ":", "/"),
 )
 
 problems = []
@@ -90,18 +90,24 @@ def check_format(name, path, body):
     """Each harness reads one shape, and only one. A mirror in the wrong shape is
     not a degraded mirror: opencode shows a command with no description, Codex
     prints the YAML as prose, Gemini does not load the file at all."""
-    if name == "opencode":
+    if name in ("opencode", "codex"):
         if not body.startswith("---\n"):
-            fail(path, "opencode reads a `description:` frontmatter — this file has none")
+            fail(path, f"{name} reads a `description:` frontmatter — this file has none")
             return
         fm = body.split("---\n", 2)
         if len(fm) < 3:
             fail(path, "frontmatter opened and never closed")
-        elif not re.search(r"^description:\s*\S", fm[1], re.M):
+            return
+        if not re.search(r"^description:\s*\S", fm[1], re.M):
             fail(path, "frontmatter has no non-empty `description:`")
-    elif name == "codex":
-        if body.startswith("---\n"):
-            fail(path, "Codex prompts have no frontmatter — this one starts with a YAML block")
+        if name == "codex":
+            # Codex keys the skill by `name:`, and it must match the folder it lives in
+            want = os.path.basename(os.path.dirname(path))
+            m = re.search(r"^name:\s*(\S+)", fm[1], re.M)
+            if not m:
+                fail(path, "a Codex skill needs a `name:` in its frontmatter")
+            elif m.group(1) != want:
+                fail(path, f"`name: {m.group(1)}` does not match its folder `{want}`")
     elif name == "gemini":
         if tomllib is None:
             return
@@ -117,27 +123,30 @@ def check_format(name, path, body):
 
 # `(?<![\w/])` keeps repo URLs out of it: `github.com/mashware/flow-workflows` is not
 # an invocation, and reading it as one made this check cry wolf on every news mirror.
-INVOCATION = re.compile(r"(?<![\w/])/flow(?P<sep>[-:])(?P<rest>[a-zA-Z0-9:*-]+)")
+INVOCATION = re.compile(r"(?<![\w/])(?P<sigil>[/$])flow(?P<sep>[-:])(?P<rest>[a-zA-Z0-9:*-]+)")
 
 
-def check_invocations(name, path, body, sep, plugin_stems):
+def check_invocations(name, path, body, sep, sigil, plugin_stems):
     """A mirror that teaches the prefix of the harness it was generated *from* hands
     the user a command that does not exist. The generator rewrites every invocation;
     this is what proves it did."""
-    wrong = sep_other = ":" if sep == "-" else "-"
+    wrong = ":" if sep == "-" else "-"
     cited = set()
     for m in INVOCATION.finditer(body):
-        found, rest = m.group("sep"), m.group("rest")
+        found, rest, found_sigil = m.group("sep"), m.group("rest"), m.group("sigil")
         if found == wrong and not re.match(r"^[-:]?$", rest):
-            fail(path, f"uses `/flow{found}{rest}` — {name} invokes with `{sep}`"
-                       f" (`/flow{sep}...`)")
+            fail(path, f"uses `{found_sigil}flow{found}{rest}` — {name} invokes with `{sep}`"
+                       f" (`{sigil}flow{sep}...`)")
+        elif found_sigil != sigil:
+            fail(path, f"uses `{found_sigil}flow{found}{rest}` — {name} invokes with "
+                       f"`{sigil}` (`{sigil}flow{sep}...`)")
         if found == sep and "*" not in rest:
             cited.add(rest.replace(":", "-").replace("-", "-").strip("-"))
     for token in sorted(cited):
         if token in ("news", "init", "doctor"):
             continue
         if token not in plugin_stems:
-            fail(path, f"cites `/flow{sep}{token.replace('-', sep)}`, which is not a command")
+            fail(path, f"cites `{sigil}flow{sep}{token.replace('-', sep)}`, which is not a command")
 
 
 PATH_REF = re.compile(r"(?:\.\./)*plugins/flow/[\w./{}-]+")
@@ -159,7 +168,7 @@ def static(files):
     plugin_stems = set(stems(files, PLUGIN_COMMANDS, ".md", True))
     if not plugin_stems:
         fail("adapters", "no plugin commands found — wrong repo root?")
-    for name, prefix, suffix, flatten, sep in ADAPTERS:
+    for name, prefix, suffix, flatten, sep, sigil in ADAPTERS:
         mirror = stems(files, prefix, suffix, flatten)
         if not mirror:
             fail(f"adapters/{name}", "no mirrored commands found at all")
@@ -169,7 +178,7 @@ def static(files):
                 fail(path, "is empty")
                 continue
             check_format(name, path, body)
-            check_invocations(name, path, body, sep, plugin_stems)
+            check_invocations(name, path, body, sep, sigil, plugin_stems)
             check_paths(path, body)
 
 
@@ -179,7 +188,7 @@ def static(files):
 LANDING = {
     "opencode": (".config/opencode/commands", "flow-*.md"),
     "gemini": (".gemini/commands/flow", "*.toml"),
-    "codex": (".codex/prompts", "flow-*.md"),
+    "codex": (".codex/skills", "SKILL.md"),
 }
 
 

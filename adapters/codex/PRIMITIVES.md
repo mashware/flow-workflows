@@ -2,8 +2,8 @@
 
 How each Claude Code-specific primitive maps to the Codex CLI adapter, and what has no equivalent.
 
-> The generated prompts carry a short **legend** right after their title; it comes from the `LEGEND`
-> dict in `script/adapter-build.py`. This document is the long form of that legend. The prompt body
+> The generated skills carry a short **legend** right after their title; it comes from the `LEGEND`
+> dict in `script/adapter-build.py`. This document is the long form of that legend. The skill body
 > itself is the plugin's, untouched — the legend defines the terms, the body keeps using them.
 
 ## Translation table
@@ -15,7 +15,7 @@ How each Claude Code-specific primitive maps to the Codex CLI adapter, and what 
 | `ScheduleWakeup` (watch autopilot) | Re-wake in N min within the current session | **Does not exist in Codex CLI**. See "What does NOT port 1:1" below. |
 | Parallel fan-out | N subagents in one round + synthesis by the main agent | **Ports directly** — the plugin describes fan-out as parallel subagents, and Codex supports multiple simultaneous subagents in the same response. Cap the round at `agents.fanout_max` from FLOW.md (empty → 4); leave `agents.fanout_tool` empty, it names a harness-specific orchestrator Codex does not have. |
 | `Skill commit-commands:commit-push-pr` | Create commit + push + MR/PR | Manual sequence: `git add`, `git commit`, `git push -u origin HEAD`, and the `git.cli` CLI from FLOW.md (e.g. `glab mr create` or `gh pr create`). |
-| `Skill save-knowledge` | Consolidate the branch's knowledge findings | `/flow-save-knowledge` from this adapter. |
+| `Skill save-knowledge` | Consolidate the branch's knowledge findings | `$flow-save-knowledge` from this adapter. |
 | `Skill flow:flow-core` | Load the shared rules once per session | **Read `~/.claude/flow/CORE.codex.md`** — `install.sh` puts it there from `CORE.md`. |
 | `/model <value>` | Switch the session's model | The `--model` flag at launch (or `/model` if your Codex version has it). Reported, not enforced — see `models` below. |
 | `mcp__domain-memory__<tool>` | Call the domain-memory MCP | The **same MCP server** (same tool name). Only the configuration changes: in Claude Code it's referenced from `.mcp.json`; in Codex it's declared in `~/.codex/config.toml` under `[mcp_servers.domain-memory]`. See `config.snippet.toml`. |
@@ -29,10 +29,10 @@ Claude Code has an `AskUserQuestion` tool that presents options as buttons in th
 ### ScheduleWakeup (watch autopilot)
 The `ScheduleWakeup` primitive in Claude Code lets the agent automatically re-wake N minutes later within the same session, creating a self-piloted loop. **Codex CLI does not have this in-session auto-reschedule capability.**
 
-What the legend asks of `/flow-work-watch` instead:
+What the legend asks of `$flow-work-watch` instead:
 - One invocation is **one watch cycle**.
 - State between cycles is persisted in `.claude/work/<TICKET>/monitor.md` (watched surface, approved plan, concrete queries, baseline values, last readings).
-- For continuous monitoring, the user sets up an OS cron job + `codex exec "/flow-work-watch {TICKET}"` at the desired interval; or uses the native Codex app Automations if available.
+- For continuous monitoring, the user sets up an OS cron job + `codex exec "$flow-work-watch {TICKET}"` at the desired interval; or uses the native Codex app Automations if available.
 - On re-entry the plugin prose already finds the approved plan in `monitor.md` and skips straight to the cycle without repeating discovery or asking for confirmation again.
 
 ### TaskCreate / TaskStop

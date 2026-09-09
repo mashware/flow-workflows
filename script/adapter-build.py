@@ -9,9 +9,10 @@ written by this script from `plugins/flow/commands/**/*.md` and
 
 What changes per harness is mechanical, and only this:
 
-  * the wrapper — opencode `description:` frontmatter, Codex none, Gemini a TOML
-    `description` + `prompt` string (backslashes and triple quotes escaped)
-  * every `/flow…` invocation rewritten to that harness's prefix
+  * the wrapper — opencode `description:` frontmatter, Codex a skill folder with a
+    `name:`/`description:` `SKILL.md`, Gemini a TOML `description` + `prompt` string
+    (backslashes and triple quotes escaped)
+  * every `/flow…` invocation rewritten to that harness's sigil and separator
   * `$ARGUMENTS` → `{{args}}` for Gemini
   * the `flow:flow-core` skill pointer → the CORE.md file `install.sh` places under
     `~/.claude/flow/`, and `${CLAUDE_PLUGIN_ROOT}` → that same directory
@@ -37,11 +38,16 @@ PLUGIN_COMMANDS = "plugins/flow/commands"
 CORE_SKILL = "plugins/flow/skills/flow-core/SKILL.md"
 STATE_DIR = "~/.claude/flow"
 
-# name → (mirror path template, invocation separator, args token)
+# name → (mirror path template, invocation separator, args token, invocation sigil)
+#
+# Codex is a skill folder, not a prompt file: since 0.15x it discovers `~/.codex/skills/
+# <name>/SKILL.md` (and `.agents/skills/` per repo) and invokes them with `$`, and its
+# importer for Claude-format plugins silently drops any command over ~4 KB or using
+# `$ARGUMENTS` — which is every command here but one.
 TARGETS = {
-    "opencode": ("adapters/opencode/commands/flow-{flat}.md", "-", "$ARGUMENTS"),
-    "codex": ("adapters/codex/prompts/flow-{flat}.md", "-", "$ARGUMENTS"),
-    "gemini": ("adapters/gemini/commands/flow/{stem}.toml", ":", "{{args}}"),
+    "opencode": ("adapters/opencode/commands/flow-{flat}.md", "-", "$ARGUMENTS", "/"),
+    "codex": ("adapters/codex/skills/flow-{flat}/SKILL.md", "-", "$ARGUMENTS", "$"),
+    "gemini": ("adapters/gemini/commands/flow/{stem}.toml", ":", "{{args}}", "/"),
 }
 
 # The primitives the plugin prose names, and what each harness has instead. The prose
@@ -67,6 +73,7 @@ LEGEND = {
         "`Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).",
         "`/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).",
         "`knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).",
+        "`$ARGUMENTS` → whatever the user typed after the skill name, empty if nothing — Codex substitutes nothing, so read it off their message.",
     ],
     "gemini": [
         "`AskUserQuestion` → ask in plain text with numbered options and wait for the reply.",
@@ -114,10 +121,10 @@ def plugin_stems():
     return dict(sorted(out.items()))
 
 
-def retarget(text, sep, flat_to_stem):
+def retarget(text, sep, flat_to_stem, sigil="/"):
     """Rewrite every `/flow…` invocation into this harness's prefix, both directions."""
     def to_dashes(m):
-        return "/flow" + m.group("rest").replace(":", "-")
+        return sigil + "flow" + m.group("rest").replace(":", "-")
 
     def to_colons(m):
         real = flat_to_stem.get(m.group("rest").lstrip("-"))
@@ -132,47 +139,50 @@ def core_path(name):
     return f"{STATE_DIR}/CORE.{name}.md"
 
 
-def translate(body, name, sep, args_token, flat_to_stem):
+def translate(body, name, sep, args_token, flat_to_stem, sigil="/"):
     body = SKILL_POINTER.sub(
-        lambda m: f"Read `{core_path(name)}` first (\\g<what>) — skip if you already read it in this session.", body)
+        # a function replacement expands no backreference: `\g<what>` here would ship literally
+        lambda m: f"Read `{core_path(name)}` first ({m.group('what')}) — skip if you already read it in this session.", body)
     body = body.replace("`flow:flow-core` skill", f"`{core_path(name)}`")
     body = body.replace("${CLAUDE_PLUGIN_ROOT}/skills/flow-core/SKILL.md", core_path(name))
     body = body.replace("${CLAUDE_PLUGIN_ROOT}", STATE_DIR)
     if args_token != "$ARGUMENTS":
         body = body.replace("$ARGUMENTS", args_token)
-    return retarget(body, sep, flat_to_stem)
+    return retarget(body, sep, flat_to_stem, sigil)
 
 
-def legend(name, sep, flat_to_stem):
-    lines = "\n".join(f"- {retarget(l, sep, flat_to_stem)}" for l in LEGEND[name])
+def legend(name, sep, flat_to_stem, sigil="/"):
+    lines = "\n".join(f"- {retarget(l, sep, flat_to_stem, sigil)}" for l in LEGEND[name])
     return (f"> **{name} adapter — how the Claude Code primitives named below map here.**\n"
             + "\n".join("> " + l for l in lines.splitlines()) + "\n")
 
 
 def render_command(name, stem, frontmatter, body, flat_to_stem):
-    _template, sep, args_token = TARGETS[name]
+    _template, sep, args_token, sigil = TARGETS[name]
     desc = description(frontmatter)
-    body = translate(body, name, sep, args_token, flat_to_stem).strip("\n")
+    body = translate(body, name, sep, args_token, flat_to_stem, sigil).strip("\n")
     # the title already carries this harness's prefix (retarget ran on it); legend goes right after it
-    body = re.sub(r"^(#\s+.*\n)", lambda m: m.group(1) + "\n" + legend(name, sep, flat_to_stem), body, count=1, flags=re.M)
+    body = re.sub(r"^(#\s+.*\n)", lambda m: m.group(1) + "\n" + legend(name, sep, flat_to_stem, sigil), body, count=1, flags=re.M)
     src = f"{PLUGIN_COMMANDS}/{stem}.md"
-    return wrap(name, desc, body, src)
+    return wrap(name, desc, body, src, stem)
 
 
 def render_core(name, flat_to_stem):
     _fm, body = split_frontmatter(read(CORE_SKILL))
-    _template, sep, args_token = TARGETS[name]
-    body = translate(body, name, sep, args_token, flat_to_stem).strip("\n")
-    body = re.sub(r"^(#\s+.*\n)", lambda m: m.group(1) + "\n" + legend(name, sep, flat_to_stem), body, count=1, flags=re.M)
+    _template, sep, args_token, sigil = TARGETS[name]
+    body = translate(body, name, sep, args_token, flat_to_stem, sigil).strip("\n")
+    body = re.sub(r"^(#\s+.*\n)", lambda m: m.group(1) + "\n" + legend(name, sep, flat_to_stem, sigil), body, count=1, flags=re.M)
     return f"<!-- {BANNER.format(src=CORE_SKILL)} -->\n\n{body}\n"
 
 
-def wrap(name, desc, body, src):
+def wrap(name, desc, body, src, stem):
     banner = BANNER.format(src=src)
     if name == "opencode":
         return f"---\ndescription: {desc}\n---\n\n<!-- {banner} -->\n\n{body}\n"
     if name == "codex":
-        return f"<!-- {banner} -->\n\n{body}\n"
+        skill = "flow-" + stem.replace("/", "-")
+        return (f"---\nname: {skill}\ndescription: \"{desc.replace(chr(34), chr(39))}\"\n---\n\n"
+                f"<!-- {banner} -->\n\n{body}\n")
     # Gemini: a TOML basic multi-line string. Backslashes are escapes there and a
     # triple quote would end the string, so both are escaped.
     escaped = body.replace("\\", "\\\\").replace('"""', '""\\"')
@@ -190,7 +200,7 @@ def expected():
         frontmatter, body = split_frontmatter(read(src))
         if not description(frontmatter):
             sys.exit(f"{src}: no `description:` in the frontmatter")
-        for name, (template, _sep, _args) in TARGETS.items():
+        for name, (template, _sep, _args, _sigil) in TARGETS.items():
             rel = template.format(stem=stem, flat=stem.replace("/", "-"))
             out[rel] = render_command(name, stem, frontmatter, body, flat_to_stem)
     for name in TARGETS:
@@ -198,19 +208,26 @@ def expected():
     return out
 
 
+# name → (directory walked for orphans, what counts as one of ours in it)
+MIRROR_ROOTS = {
+    "opencode": ("adapters/opencode/commands",
+                 lambda rel: os.path.basename(rel).startswith("flow-") and rel.endswith(".md")),
+    "codex": ("adapters/codex/skills",
+              lambda rel: os.path.basename(rel) == "SKILL.md"
+              and os.path.basename(os.path.dirname(rel)).startswith("flow-")),
+    "gemini": ("adapters/gemini/commands/flow", lambda rel: rel.endswith(".toml")),
+}
+
+
 def on_disk():
     """Mirror files currently present (tracked or not), to catch orphans."""
     found = set()
-    for name, (template, _sep, _args) in TARGETS.items():
-        base = os.path.join(ROOT, os.path.dirname(template.format(stem="x/y", flat="x")))
-        base = base if name != "gemini" else os.path.join(ROOT, "adapters/gemini/commands/flow")
-        suffix = ".toml" if name == "gemini" else ".md"
-        for dirpath, _d, names in os.walk(base):
+    for name, (base, is_ours) in MIRROR_ROOTS.items():
+        for dirpath, _d, names in os.walk(os.path.join(ROOT, base)):
             for n in names:
-                if n.endswith(suffix):
-                    rel = os.path.relpath(os.path.join(dirpath, n), ROOT)
-                    if name == "gemini" or os.path.basename(rel).startswith("flow-"):
-                        found.add(rel)
+                rel = os.path.relpath(os.path.join(dirpath, n), ROOT)
+                if is_ours(rel):
+                    found.add(rel)
         core = f"adapters/{name}/CORE.md"
         if os.path.exists(os.path.join(ROOT, core)):
             found.add(core)
@@ -250,6 +267,9 @@ def main():
             fh.write(content)
     for rel in sorted(have - set(want)):
         os.remove(os.path.join(ROOT, rel))
+        parent = os.path.dirname(os.path.join(ROOT, rel))
+        if os.path.isdir(parent) and not os.listdir(parent):
+            os.rmdir(parent)
         print(f"removed orphan {rel}")
     print(f"wrote {len(want)} files")
     return 0

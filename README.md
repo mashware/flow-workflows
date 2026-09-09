@@ -213,7 +213,7 @@ usable on real work.
 
 ## Other harnesses
 
-`adapters/install.sh <tool>` installs the same commands for opencode, Gemini CLI and Codex CLI; only the invocation syntax differs (`/flow:feat:start` vs `/flow-feat-start`).
+`adapters/install.sh <tool>` installs the same commands for opencode, Gemini CLI and Codex CLI; only the invocation syntax differs (`/flow:feat:start` · `/flow-feat-start` · `$flow-feat-start` on Codex, where they install as skills).
 The mirrors are **generated** from the plugin commands by `script/adapter-build.py` and checked mechanically on every preflight (format, prefix, cited paths, install location).
 They have **not** been executed end to end in those harnesses — validate as you use them. → [adapters/README](adapters/README.md)
 

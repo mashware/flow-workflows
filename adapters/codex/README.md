@@ -1,41 +1,40 @@
 # `flow` workflow adapter for Codex CLI
 
-Brings the `/flow-feat-*`, `/flow-bug-*`, and `/flow-work-*` workflows from the `flow` plugin to the **Codex CLI** (OpenAI) format.
+Brings the `feat`, `bug` and `work` workflows from the `flow` plugin to the **Codex CLI** (OpenAI)
+format: one **skill** per command, invoked as `$flow-feat-start`, `$flow-bug-fix`, `$flow-work-status`.
 
 ## Adapter contents
 
 ```
 adapters/codex/
-├── prompts/              — one custom prompt per plugin command, generated (see ../README.md)
-├── CORE.md               — the shared flow-core rules every prompt reads once per session (generated)
+├── skills/               — one skill folder per plugin command, generated (see ../README.md)
+├── CORE.md               — the shared flow-core rules every skill reads once per session (generated)
 ├── config.snippet.toml   — sections to merge into ~/.codex/config.toml
 ├── AGENTS.md             — repo guide that Codex reads as context
-├── PRIMITIVES.md         — primitive translation table, the long form of each prompt's legend
+├── PRIMITIVES.md         — primitive translation table, the long form of each skill's legend
 └── README.md             — this file
 ```
 
-`prompts/*.md` and `CORE.md` are written by `script/adapter-build.py` from the plugin — do not edit them by hand. Prompt names follow the plugin's paths with `:` flattened to `-` (`feat/start.md` → `/flow-feat-start`); `ls prompts/` is the current list.
+`skills/*/SKILL.md` and `CORE.md` are written by `script/adapter-build.py` from the plugin — do not edit them by hand. Skill names follow the plugin's paths with `:` flattened to `-` (`feat/start.md` → `$flow-feat-start`); `ls skills/` is the current list.
+
+### Why skills and not the plugin itself
+
+Codex can install this repo as a plugin, and it will: it reads the manifest, the `skills/` folder and the hooks. What it does **not** read is Claude Code's `commands/`. On install it converts them into skills — and its converter silently drops any command whose rendered skill exceeds ~4 KB or whose body uses `$ARGUMENTS`, which is every `flow` command but one. Installing the plugin in Codex therefore gives you a single workflow; this adapter gives you all of them.
 
 ## Installation
 
-The shared script does steps 1 and the `~/.claude/flow/` copies (`CORE.codex.md`, the changelog, the manifest) in one go: `../install.sh codex`. By hand:
+The shared script does step 1 and the `~/.claude/flow/` copies (`CORE.codex.md`, the changelog, the manifest) in one go: `../install.sh codex` (globally) or `../install.sh codex project` (into this repo's `.agents/skills/`). By hand:
 
-### 1. Custom prompts
-
-> **Note on prompts path**: the exact path where Codex CLI looks for custom prompts **may vary by Codex version**. The common path in recent versions is `~/.codex/prompts/`, but confirm it with `/help` inside Codex or by checking your version's documentation before copying.
->
-> **Skills alternative**: if your version of Codex supports skills in `.agents/skills/` in the repo (format `$name`), copy the files from `prompts/` to `.agents/skills/<name>/SKILL.md` inside the repository. The workflows will work the same way, invoked as `$flow-feat-start`, `$flow-bug-fix`, etc.
+### 1. Skills
 
 ```bash
-# Common path (confirm with /help or your version's docs):
-cp prompts/*.md ~/.codex/prompts/
+cp -r skills/. ~/.codex/skills/                     # every user, every repo
 mkdir -p ~/.claude/flow && cp CORE.md ~/.claude/flow/CORE.codex.md
 
-# If the path is different, replace it:
-cp prompts/*.md /path/indicated-by-your-version/of/codex/prompts/
+cp -r skills/. /root/of/your/repo/.agents/skills/   # or: this repo only
 ```
 
-Prompts are invoked with `/flow-feat-start {TICKET}`, `/flow-bug-diagnose`, `/flow-work-status`, etc.
+Skills are invoked with `$flow-feat-start {TICKET}`, `$flow-bug-investigate`, `$flow-work-status`. A running session does not pick up new skills — start a new one.
 
 ### 2. MCP and subagent configuration
 
@@ -70,22 +69,22 @@ cp /path/to/adapters/codex/AGENTS.md /root/of/your/repo/AGENTS.md
 
 ```
 # Start a feature
-/flow-feat-start PROJ-12345
+$flow-feat-start PROJ-12345
 
 # Resume where you left off
-/flow-work-resume
+$flow-work-resume
 
 # Morning standup across all your work (local + forge + tracker)
-/flow-work-daily
+$flow-work-daily
 
 # See all open work
-/flow-work-status
+$flow-work-status
 
 # Start a bug
-/flow-bug-start PROJ-99999
+$flow-bug-start PROJ-99999
 
 # Watch after a deployment (one cycle; set up cron to repeat)
-/flow-work-watch PROJ-12345 30m
+$flow-work-watch PROJ-12345 30m
 ```
 
 ## Dependencies
@@ -96,8 +95,9 @@ cp /path/to/adapters/codex/AGENTS.md /root/of/your/repo/AGENTS.md
 
 ## Differences from the original plugin (Claude Code)
 
-Each prompt opens with a legend mapping the Claude Code primitives to Codex; `PRIMITIVES.md` has the full table. The most important points:
+Each skill opens with a legend mapping the Claude Code primitives to Codex; `PRIMITIVES.md` has the full table. The most important points:
 
 - **AskUserQuestion**: no structured UI → questions become plain text.
-- **ScheduleWakeup** (watch autopilot): does not exist in Codex → `/flow-work-watch` runs one cycle and exits; use OS cron or Codex app Automations to repeat it.
+- **ScheduleWakeup** (watch autopilot): does not exist in Codex → `$flow-work-watch` runs one cycle and exits; use OS cron or Codex app Automations to repeat it.
+- **`$ARGUMENTS`**: Codex substitutes nothing into a skill, so the body's legend tells the agent to read the arguments off the user's message.
 - **Parallel fan-out**: ports directly — the plugin describes it as parallel subagents, which Codex has. Leave `agents.fanout_tool` empty in `FLOW.md`; `agents.fanout_max` (empty → 4) caps each round.

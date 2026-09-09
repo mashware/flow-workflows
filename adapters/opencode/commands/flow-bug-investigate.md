@@ -20,7 +20,7 @@ Investigation phase: reproduce the failure, then find **why it happened** — no
 
 ## 1. Pre-flight
 
-Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `study`.**
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `study`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
 - `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow-bug-fix` and stop.

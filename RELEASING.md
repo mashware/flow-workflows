@@ -42,7 +42,7 @@ block falls back to its first paragraph.
 
 `plugins/flow/` is the source of truth; `adapters/opencode/`, `adapters/codex/` and
 `adapters/gemini/` are **generated from it** by `script/adapter-build.py`. Every file under
-`opencode/commands/`, `codex/prompts/`, `gemini/commands/flow/` and each `<harness>/CORE.md` is
+`opencode/commands/`, `codex/skills/`, `gemini/commands/flow/` and each `<harness>/CORE.md` is
 written from the plugin commands and `plugins/flow/skills/flow-core/SKILL.md`. The prose is not
 rewritten; only the wrapper, the invocation prefix, `$ARGUMENTS` → `{{args}}` for Gemini, the
 pointer to `~/.claude/flow/CORE.<tool>.md`, and a legend after the title mapping the Claude Code

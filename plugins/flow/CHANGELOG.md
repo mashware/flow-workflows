@@ -5,6 +5,38 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.54.0 — Codex installed the plugin and kept one command out of twenty-nine  ·  2026-09-09
+
+**In short**
+- **The Codex adapter is a set of skills now**, not custom prompts: `install.sh codex` writes `~/.codex/skills/flow-*/SKILL.md`, and `install.sh codex project` writes the repo's own `.agents/skills/`. They are invoked with `$flow-feat-start`, `$flow-bug-fix`, `$flow-work-status`.
+- **Installing this repo as a Codex plugin gives you one workflow, not twenty-nine.** Codex converts Claude Code `commands/` into skills on install and silently drops any whose rendered skill passes ~4 KB or whose body uses `$ARGUMENTS` — every `flow` command but `next`.
+- **`~/.codex/prompts/` is no longer a target.** Recent Codex versions discover skills; the directory the installer used to write into does not exist on a current install.
+- **Every generated adapter file said `\g<what>`** where it should have said what the shared rules contain — 87 files across all three harnesses, one line each, since the generator landed.
+- **The smoke test reads the new shape**: a Codex mirror must carry a `name:` matching its folder, and every invocation in it must use `$`.
+
+**A plugin Codex can install is not a plugin Codex can run.** Codex reads this repo's marketplace,
+the manifest, `skills/` and the hooks, so installing it looks like it worked. What it does not read
+is `commands/`: on install it renders each one into a skill of its own under
+`.codex-plugin/migrated-command-skills/`, and its converter has two limits nothing reports — a
+rendered skill over roughly 4 000 characters is dropped, and so is any command whose body contains
+`$ARGUMENTS`. The `flow` commands run from 3 KB to 36 KB and ten of them take an argument, so
+exactly one survived: `next`, as `$source-command-next`. Measured on Codex CLI 0.153.4 by installing
+probe plugins with graded sizes; the cut sits between 3 800 and 4 000 bytes of source.
+
+**So the adapter stops pretending to be a prompt.** `adapters/codex/prompts/*.md` is now
+`adapters/codex/skills/flow-*/SKILL.md`: the same generated body, wrapped in the frontmatter Codex
+keys a skill by, with every `/flow-…` invocation in the prose rewritten to `$flow-…`. Because skills
+substitute nothing into the body, the legend after each title now also defines `$ARGUMENTS` as
+whatever the user typed after the skill name. And because Codex discovers `.agents/skills/` inside a
+repo, `install.sh codex project` finally means something — it used to warn that Codex had no
+per-project directory and install globally instead.
+
+**`\g<what>`, 87 times.** The generator rewrites the plugin's *"Load the `flow:flow-core` skill
+first (shared rules: …)"* into *"Read `~/.claude/flow/CORE.<tool>.md` first (…)"*, and it built the
+replacement with a lambda — where a backreference is just text. Every opencode, Gemini and Codex
+mirror has been telling its agent to read the core rules `(\g<what>)` since the adapters became
+build output. The parenthetical is back.
+
 ## v0.53.0 — Four commands that were steps of another one  ·  2026-09-09
 
 **In short**
