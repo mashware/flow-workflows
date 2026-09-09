@@ -184,9 +184,12 @@ A bug writes `03-investigation.md` (reproduction, then root cause), `04-fix.md`,
 
 Artifacts are **hand-editable**: rewrite `03-design.md` and the next phase respects it. `meta.json` is the state; without it, commands refuse to continue rather than guess.
 
-## Configuration: `FLOW.md`
+## Configuration: base plus harness overlay
 
-One file at the repo root describes your conventions. Anything left empty is auto-detected or asked for — a repo with no `FLOW.md` still works, with more questions.
+`FLOW.md` at the repo root is the shared base. `FLOW.claude.md`, `FLOW.codex.md`,
+`FLOW.opencode.md`, or `FLOW.gemini.md` can sparsely override values for the product executing the
+command. Existing repos with only `FLOW.md` behave exactly as before; anything effectively empty
+is auto-detected or asked for.
 
 | Section | What it configures |
 |---|---|
@@ -202,7 +205,11 @@ One file at the repo root describes your conventions. Anything left empty is aut
 | `knowledge` | Knowledge sources by role — `search`, `stage`, `read_staging`, `save` — any MCP ([`domain-memory`](https://github.com/mashware/domain-memory), `codegraph`…), CLI or skill |
 | `observability` | The profile `/flow:work:watch` monitors after a deploy |
 
-`/flow:init` writes a compact `FLOW.md` with only the keys you set, and offers to git-ignore `FLOW.md` and `.claude/work/`. It is personal config, not team config ([why](docs/PHILOSOPHY.md#personal-config-not-team-config)). Reference: [CONFIGURATION](docs/CONFIGURATION.md).
+`/flow:init` writes a compact base and creates the active overlay only when it has a
+harness-specific value. It offers to git-ignore `/FLOW.md`, `/FLOW.*.md`, and `.claude/work/`.
+Both files are personal config, not team config
+([why](docs/PHILOSOPHY.md#personal-config-not-team-config)). Resolution and examples:
+[CONFIGURATION](docs/CONFIGURATION.md#harness-overlays).
 
 ## How it works
 
@@ -286,7 +293,14 @@ CI runs the same five on every PR. The preflight refuses what has shipped broken
 
 ## What it does not ship (on purpose)
 
-No agents and no review skill — those are stack-specific; you name yours in `FLOW.md`. One worked set ships as an *example* and is never loaded: [`examples/symfony/`](plugins/flow/examples/symfony/) is a filled-in `FLOW.md` plus four reviewers for a Symfony + Doctrine repo, to copy and edit. Three generic hooks ship: a guard against pushing to `master`/`main`, an update notice at session start, and a session-start line saying which work this branch belongs to and where it stands. Optional dependencies (a knowledge source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific steps; without them those steps degrade and the rest works.
+No agents and no review skill — those are stack-specific; you name yours in the effective FLOW
+configuration, normally the active harness overlay. One worked set ships as an *example* and is
+never loaded: [`examples/symfony/`](plugins/flow/examples/symfony/) is a filled-in `FLOW.md` plus
+four reviewers for a Symfony + Doctrine repo, to copy and edit. Three generic hooks ship: a guard
+against pushing to `master`/`main`, an update notice at session start, and a session-start line
+saying which work this branch belongs to and where it stands. Optional dependencies (a knowledge
+source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific
+steps; without them those steps degrade and the rest works.
 
 ## License
 

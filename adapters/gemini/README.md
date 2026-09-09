@@ -10,7 +10,8 @@ The commands are a format adapter, not a reimplementation: the logic and prose a
 
 - [Gemini CLI](https://github.com/google-gemini/gemini-cli) installed and authenticated.
 - Node.js 18+ (for the `domain-memory` MCP server, if you use it).
-- A `FLOW.md` file at the root of the repo you want to work on. Start from the template at:
+- A shared `FLOW.md` at the root of the repo you want to work on, plus an optional sparse
+  `FLOW.gemini.md` for values that differ on this harness. Start from the template at:
   `../../plugins/flow/examples/FLOW.template.md`
 
 ---
@@ -57,9 +58,11 @@ cp settings.snippet.json ~/.gemini/settings.json
 
 If you do not want to use `domain-memory`, you can skip this step. The commands read the `knowledge.*` roles in `FLOW.md` and degrade silently when a tool is not available.
 
-### 3. Create FLOW.md in the repo
+### 3. Create the FLOW configuration in the repo
 
-All commands read `FLOW.md` at the repo root in their step 0. Without it, each command uses default behavior or auto-discovers what it can.
+All commands read `FLOW.md` and then an optional `FLOW.gemini.md` at the repo root in their step 0.
+An overlay key wins even when explicitly empty, which masks the base. Without either file, each
+command uses default behavior or auto-discovers what it can; existing base-only repos are unchanged.
 
 ```bash
 cp ../../plugins/flow/examples/FLOW.template.md ./FLOW.md

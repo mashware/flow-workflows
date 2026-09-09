@@ -86,7 +86,8 @@ authorization, payments, personal data, a public contract, a migration):
 Each advisor gets this brief, with its lens substituted:
 
 > Propose ONE approach to solve ticket `<TICKET>`, from this lens: `<lens brief>`. Read
-> `.claude/work/<TICKET>/01-context.md` for context and `FLOW.md` for project conventions. Do not
+> `.claude/work/<TICKET>/01-context.md` for context and the effective FLOW configuration (base plus
+> active harness overlay) for project conventions. Do not
 > write code. Be specific about real modules and layers of this project. Report: name, what it is
 > (one sentence), modules/layers affected, main risk, and why it could be a bad idea. Under 250 words.
 
@@ -116,7 +117,8 @@ approaches alone.
 Launch a `general-purpose` subagent with this short, self-contained brief:
 
 > Generate 3-5 distinct approaches to solve `<title>` following the project conventions (see
-> `FLOW.md` and `.claude/work/<TICKET>/01-context.md`). For each: a one-sentence description,
+> the effective FLOW configuration and `.claude/work/<TICKET>/01-context.md`). For each: a
+> one-sentence description,
 > modules/layers affected, main risk, and why it could be a bad idea. Do not write code. Report in
 > markdown, under 400 words.
 

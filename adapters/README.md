@@ -62,13 +62,16 @@ session), the **`CHANGELOG.md`** `/flow-news` · `/flow:news` shows, and the **`
 takes the installed version from. It tells you which **config fragment** (MCP/subagents) to merge
 by hand into your `opencode.json` / `settings.json` / `config.toml` — it never touches your configs.
 
-After that: place a **`FLOW.md`** at the root of your repo (template at
-`../plugins/flow/examples/FLOW.template.md`). It configures the tracker, git, test commands,
-observability, and the subagent map for YOUR project.
+After that: place a shared **`FLOW.md`** at the root of your repo (template at
+`../plugins/flow/examples/FLOW.template.md`). Add a sparse `FLOW.opencode.md`, `FLOW.gemini.md`, or
+`FLOW.codex.md` when that harness needs different model, agent, skill, orchestration, or MCP names.
+The active overlay wins key by key; an explicitly empty value masks the base. A base-only setup is
+unchanged.
 
 ## What ports and what doesn't (honest)
 
-- **Ports unchanged**: phases (start→ship, diagnose→postmortem), rules, gates, `FLOW.md`, MCP
+- **Ports unchanged**: phases (start→ship, diagnose→postmortem), rules, gates, effective FLOW
+  configuration (base plus active overlay), MCP
   (`knowledge.*` roles, e.g. `domain-memory`), Pre-deploy + blocking thread, and **subagents** (review/investigate) —
   all three harnesses support them; only the declaration format changes.
 - **Translated by the legend** (long form in each adapter's `PRIMITIVES.md`):

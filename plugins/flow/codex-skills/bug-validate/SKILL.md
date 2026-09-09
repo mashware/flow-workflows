@@ -35,7 +35,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Mandatory regression test**: launch the `agents.testing` agent from FLOW.md (empty → `Agent general-purpose` with a test-writing role):
 
-> Write a test that **fails** before the fix and **passes** after. Read `.claude/work/<TICKET>/03-investigation.md` (minimal reproduction), `04-fix.md` (what was changed). Follow the conventions in `FLOW.md` (section `conventions`). Report the path of the added test.
+> Write a test that **fails** before the fix and **passes** after. Read `.claude/work/<TICKET>/03-investigation.md` (minimal reproduction), `04-fix.md` (what was changed). Follow the effective conventions from `FLOW.md` plus the active harness overlay. Report the path of the added test.
 
 Then:
 1. Run only that test with `quality.test_one` from FLOW.md; it must pass.

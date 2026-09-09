@@ -17,18 +17,32 @@ Every `$flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-## 0. `FLOW.md` — the repo's configuration
+## 0. Effective FLOW config — base plus harness overlay
 
-- Read `FLOW.md` at the repo root (tracker, git, autonomy, quality, agents, models, data,
-  conventions, notes, knowledge, observability). Missing file or empty key → the default or
-  the auto-discovery each step names. Never stop because a key is empty.
+- Read `FLOW.md` at the repo root as the base, then the optional overlay for the harness running
+  this command: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, or `FLOW.gemini.md`. The
+  harness is the product executing the command, never guessed from a model name. An overlay is
+  valid without a base file; unknown `FLOW.*.md` names are ignored. Throughout every command,
+  **"FLOW.md" means this effective merged configuration** unless the command explicitly names a
+  file it will edit.
+- Merge by section and key. A key present in the active overlay replaces the base value; a key
+  absent there inherits the base. **A present-but-empty overlay key masks the base** and resolves
+  to the normal empty-key fallback — this is how Codex can inherit its session model while a legacy
+  `FLOW.md` still names a Claude model. A list-valued key is replaced as a whole, never appended.
+  `conventions` is the one unkeyed section: its overlay lines are added after the base lines, so
+  both sets apply. Keep the source file of every effective value; `doctor` reports it and later
+  edits preserve it.
+- The sections in either file are tracker, git, autonomy, quality, agents, models, data,
+  conventions, notes, knowledge, and observability. Both files missing, or an effective empty key
+  → the default or auto-discovery each step names. Never stop because a file or key is empty.
 - **An empty key that is a real decision for this repo is offered where it first matters**, and
   nowhere else. Three steps, in order:
   1. Resolve the default or auto-discover, as above. The step never waits for configuration.
   2. The key is on the short list below **and** this phase was going to stop anyway **and** the mode
-     is `manual` → add **one option** to that stop: *"write `<key>: <value>` to FLOW.md"*, alongside
-     whatever it was already asking. Never a question of its own, never a key off the list, and at
-     most **one key per work** — the second one waits for the next work or for `$flow-init`.
+     is `manual` → add **one option** to that stop: *"write `<key>: <value>` to `<destination>`"*,
+     alongside whatever it was already asking. Resolve the destination by the ownership rule below.
+     Never a question of its own, never a key off the list, and at most **one key per work** — the
+     second one waits for the next work or for `$flow-init`.
   3. `guided`/`auto` → take the default and **record** it: one line in the phase artifact as today,
      plus an entry in `meta.json.defaults_used[]` — `{ "key": "agents.security", "default":
      "general-purpose", "phase": "review" }`. Asking here would break the never-a-question contract
@@ -42,9 +56,12 @@ carries what is specific to its phase. Read this once per session; a command tha
   transitioned. A key whose default is fine forever — `request_sections`, `worktree_path`,
   `knowledge.timeout_s` — never appears here, in any mode.
 
-  `FLOW.md` is personal config, so writing a line is not a team decision; it is still an edit to the
+  The FLOW config is personal, so writing a line is not a team decision; it is still an edit to the
   tree, so the option is an explicit choice the user makes, never a default action (same bar as
-  flow-core §8's convention offer, and the two share their wording).
+  flow-core §8's convention offer, and the two share their wording). Update a value in the file it
+  came from. A new repo fact or shared preference goes to `FLOW.md`; a new harness-owned model,
+  agent, skill, orchestration tool, or knowledge-tool name goes to the active overlay. Never edit an
+  inactive harness's overlay.
 - **Knowledge sources, by role** (`knowledge` section): `search` (one or more tools or commands
   that return context for a query — all consulted in parallel, results merged as material to weigh),
   `stage` (record one finding for this branch), `read_staging` (what this branch staged), `save`
@@ -79,7 +96,8 @@ A tool call that fails is **reported, never swallowed** — this is the one know
 explicit rather than degrading in silence.
 
 - `notes.<command>` (or `notes.all`) → mandatory extra instructions for that command.
-- Key names and defaults: the template shipped with the plugin (`examples/FLOW.template.md`).
+- Key names, merge rules, and defaults: the template shipped with the plugin
+  (`examples/FLOW.template.md`).
 
 ## 1. Models — which model runs a step
 
@@ -443,14 +461,16 @@ value of the line is that it is what they said. `target` is `quality.<key>` when
 a command the flow runs (a test, a linter, a formatter) and `conventions` for everything else.
 
 **`review` reads them in the same work.** The idiom audit is already handed *the project's primitive
-vocabulary from its conventions*; this work's candidates join that input, so a rule learned during
-`build` is enforced in the review of that same MR/PR, not of the next one.
+vocabulary from its effective conventions*; this work's candidates join that input, so a rule
+learned during `build` is enforced in the review of that same MR/PR, not of the next one.
 
 **`ship` offers them once, at Close** — one `AskUserQuestion`, batched up to 4, options **Add to
-FLOW.md** · **Not a rule** · **Later**, the `text` being the whole prompt. *Add* appends one line
-under `conventions`, or sets the named `quality` key. `FLOW.md` is personal config, so this is not a
-team decision — but it is still an edit to a file in the tree, so **it is asked in every mode**, like
-`KNOWLEDGE.md`'s first creation. No candidates → the step does not exist and says nothing.
+FLOW.md** · **Not a rule** · **Later**, the `text` being the whole prompt. *Add* appends a convention
+to the base `FLOW.md`. A `quality` correction updates the file its effective value came from, or the
+base when the key was absent: otherwise an overlay would immediately hide the correction. The FLOW
+config is personal, but this is still an edit to a file in the tree, so **it is asked in every
+mode**, like `KNOWLEDGE.md`'s first creation. No candidates → the step does not exist and says
+nothing.
 
 **Duplicates and contradictions, before anything is shown.** Already in `conventions`, in any wording
 → dropped silently, no question. Contradicting a line that is there → the option is **Replace**

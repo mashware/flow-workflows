@@ -95,9 +95,9 @@ that does not answer is the cue to open it, never a licence to guess. (Introduce
 condensation; no incident yet.)
 *Now:* flow-core §5.
 
-**`FLOW.md` is personal config.** It mixes repo facts with one developer's machine and tastes;
-committed as-is it imposes preferences and assumes tools. `init` offers to git-ignore it (v0.18.0).
-*Now:* init §5; CONFIGURATION "Getting a FLOW.md".
+**The FLOW files are personal config.** They mix repo facts with one developer's machine and tastes;
+committed as-is they impose preferences and assume tools. `init` offers to git-ignore them
+(v0.18.0). *Now:* init §5; CONFIGURATION "Getting the FLOW configuration".
 
 **`domain-memory` is optional, silent, and saves only the why.** Searched per phase with a different
 question, staged only on a clear signal, consolidated at `ship`/`postmortem`; 2 s timeout, failure

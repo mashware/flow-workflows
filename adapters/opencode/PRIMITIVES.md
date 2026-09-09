@@ -94,14 +94,16 @@ If subagent `@name` does not exist in `agents/`, opencode will report an error. 
 
 ---
 
-## `models` in `FLOW.md` — model per kind of step
+## `models` in the effective FLOW config
 
-`FLOW.md` has a `models` section with one key per **kind of step**: `study` (start, brainstorm,
-design, plan, diagnose, investigate, postmortem), `code` (build, fix, green), `test` (validate),
-`review` (review, query, respond triage) and `workers` (the parallel fan-out rounds only). **Every
-key is empty by default, and empty means the step runs with the model the session was launched
-with** — a repo that never fills the section behaves exactly as before. The values are free text
-handed to the harness: flow neither validates nor ranks model names.
+The `models` section has two keys: `agents` for every improvised subagent and `workers` for the
+parallel fan-out rounds (`workers` falls back to `agents`). Both are optional; empty means inherit
+the model the session was launched with. Values are free text handed to the harness: flow neither
+validates nor ranks model names.
+
+Put opencode-specific values in `FLOW.opencode.md`. opencode reads it after `FLOW.md`, key by key;
+an explicitly empty overlay key masks the base, and an absent key inherits it. A repo with only
+`FLOW.md` behaves exactly as before.
 
 How it lands here:
 
@@ -110,9 +112,7 @@ How it lands here:
   A subagent named in `agents.<role>` keeps whatever its own definition sets; the `models` keys apply
   where the command falls back to a general-purpose subagent, and to the fan-out workers.
 - **What the conductor does itself** — reading the ticket, designing, and writing the code in
-  `build`/`fix` (single-thread on XS/S/M): a session cannot switch its own model. There the
-  configured value is **reported, not enforced**: the phase handoff says it in one line (opencode's model picker, `/models`),
-  records it in the phase artifact, and continues. It is deliberately not a gate — model choice is
-  flow mechanics, and `guided`/`auto` never stop for mechanics.
+  `build`/`fix` (single-thread on XS/S/M): neither key applies, because a session cannot switch its
+  own model. It continues with the model it was launched with.
 
 Full reference: `docs/CONFIGURATION.md` §`models` in the repo.

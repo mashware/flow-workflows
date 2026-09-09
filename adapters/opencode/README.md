@@ -23,11 +23,14 @@ The logic and prose of each command are identical; only the invocation name chan
 ## Requirements
 
 - opencode installed and configured.
-- A `FLOW.md` file at the root of each repo where you want to use the flows. You can start from the template:
+- A shared `FLOW.md` at the root of each repo where you want to use the flows, plus an optional
+  sparse `FLOW.opencode.md` for values that differ on this harness. You can start from the template:
   ```
   ../../plugins/flow/examples/FLOW.template.md
   ```
-  If `FLOW.md` does not exist, the commands work with default behavior (they auto-discover repo conventions).
+  The active overlay wins key by key, including an explicitly empty value that masks the base. If
+  neither file exists, the commands work with default behavior and auto-discovery. Existing
+  base-only repos are unchanged.
 
 ## Installation
 

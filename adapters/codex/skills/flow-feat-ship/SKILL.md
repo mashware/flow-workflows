@@ -392,10 +392,11 @@ Read `meta.json.conventions_candidates[]` (flow-core §8). **No entries with `st
    option with **Replace**, showing both lines, the current one first. More than 4 candidates → ask
    about the 4 most recent and leave the rest `proposed`, saying how many, in one line.
 3. **This is asked in every mode**, `auto` included: it edits a file in the tree. It is not a team
-   decision — `FLOW.md` is personal config — so it is one question, never a negotiation.
-4. **Add / Replace** → edit `FLOW.md`: append one line under `conventions` in the user's own words,
-   or set the `quality.<key>` the candidate names (replacing its value, showing the old one in the
-   result). Then `status: "added"`. **Not a rule** → `declined`, never offered again in any work.
+   decision — the FLOW config is personal — so it is one question, never a negotiation.
+4. **Add / Replace** → append a `conventions` line to the base `FLOW.md`. For a `quality.<key>`,
+   update the file its effective value came from, or the base when it was absent; otherwise an
+   overlay would immediately hide the correction. Show the old value and source in the result.
+   Then `status: "added"`. **Not a rule** → `declined`, never offered again in any work.
    **Later** → stays `proposed` and is offered again by the next `ship` of a work that has it.
 5. **One line on screen**: how many rules were added and where, never a list of the texts —
    the user has just read them in the question.
