@@ -7,7 +7,7 @@ description: Commit, push, MR/PR the fix
 Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow:feat:ship`, with two differences:
 
 1. If `99-postmortem.md` exists, **include the link or the executive summary** in the MR/PR description.
-2. The `save-knowledge` offer was already made in `/flow:bug:postmortem` — do not ask again here.
+2. The knowledge-consolidation offer was already made in `/flow:bug:postmortem` — do not ask again here.
 
 ## 0. Pre-flight
 
@@ -62,7 +62,7 @@ Template (in this order):
 <then, if `meta.json.followups[]` has entries still `proposed` or `accepted`: one line each — the neighbouring bug, the similar-risk pattern, the prevention action — with its ticket id when one exists. Omit the block when there are none.>
 
 ## Evidence
-<only if `.claude/work/<TICKET>/evidence/` has files and `quality.evidence` is not `off`. The **before** is what `02-diagnose.md` captured when the failure was reproduced — the one moment it exists — and the **after** is §2.5 of `05-validation.md`. A bug fix is the change where a before/after pair carries the most: it *is* the argument. Same upload rules as `/flow:feat:ship`. Omit when there is nothing.>
+<only if `.claude/work/<TICKET>/evidence/` has files and `quality.evidence` is not `off`. The **before** is what `03-investigation.md` captured when the failure was reproduced — the one moment it exists — and the **after** is §2.5 of `05-validation.md`. A bug fix is the change where a before/after pair carries the most: it *is* the argument. Same upload rules as `/flow:feat:ship`. Omit when there is nothing.>
 
 ## Steps to reproduce and test
 <from `05-validation.md`:

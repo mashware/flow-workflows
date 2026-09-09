@@ -8,14 +8,14 @@
 > - Parallel fan-out → several subagents in one response, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `codex exec "<command>"` with cron or Codex automations.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow-feat-ship`, with two differences:
 
 1. If `99-postmortem.md` exists, **include the link or the executive summary** in the MR/PR description.
-2. The `save-knowledge` offer was already made in `/flow-bug-postmortem` — do not ask again here.
+2. The knowledge-consolidation offer was already made in `/flow-bug-postmortem` — do not ask again here.
 
 ## 0. Pre-flight
 
@@ -70,7 +70,7 @@ Template (in this order):
 <then, if `meta.json.followups[]` has entries still `proposed` or `accepted`: one line each — the neighbouring bug, the similar-risk pattern, the prevention action — with its ticket id when one exists. Omit the block when there are none.>
 
 ## Evidence
-<only if `.claude/work/<TICKET>/evidence/` has files and `quality.evidence` is not `off`. The **before** is what `02-diagnose.md` captured when the failure was reproduced — the one moment it exists — and the **after** is §2.5 of `05-validation.md`. A bug fix is the change where a before/after pair carries the most: it *is* the argument. Same upload rules as `/flow-feat-ship`. Omit when there is nothing.>
+<only if `.claude/work/<TICKET>/evidence/` has files and `quality.evidence` is not `off`. The **before** is what `03-investigation.md` captured when the failure was reproduced — the one moment it exists — and the **after** is §2.5 of `05-validation.md`. A bug fix is the change where a before/after pair carries the most: it *is* the argument. Same upload rules as `/flow-feat-ship`. Omit when there is nothing.>
 
 ## Steps to reproduce and test
 <from `05-validation.md`:

@@ -118,13 +118,13 @@ Another repo referenced but **no** contract → say so in one line — *"the `<r
 
 ## 4. Classify size
 
-Propose a size. **`manual`** → confirm with one `AskUserQuestion`. **`guided`/`auto` → do not ask**: record your estimate in `01-context.md` with a one-line reason and continue — the size is a route, not a commitment; `/flow:feat:brainstorm §7` and `/flow:feat:plan §5` reclassify.
+Propose a size. **`manual`** → confirm with one `AskUserQuestion`. **`guided`/`auto` → do not ask**: record your estimate in `01-context.md` with a one-line reason and continue — the size is a route, not a commitment; `/flow:feat:design §1.5.5`, `§7` and `/flow:feat:plan §5` reclassify.
 
 | Size | Criteria | Suggested phases |
 |------|----------|-----------------|
 | XS | < 50 lines, no DB, no new API, no domain logic | start → build → review → ship |
 | S | Contained change, 1-3 relevant files, no migrations | start → design (short) → build → review → validate → ship |
-| M | New domain logic, possible migrations, multiple modules | start → brainstorm → design → build → review → validate → ship |
+| M | New domain logic, possible migrations, multiple modules | start → design (approaches + design) → plan → build → review → validate → ship |
 | L | Cross-module, external integrations, major model changes | full flow, consider splitting |
 
 Mark your estimate "(Recommended)".

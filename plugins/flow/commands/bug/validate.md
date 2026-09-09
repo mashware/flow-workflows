@@ -10,7 +10,7 @@ Validate that the fix works and that the bug does not return.
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `test`.**
 
-- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (§3 areas with similar risk) — the testing agent reads `02-diagnose.md` and `04-fix.md` itself. (flow-core §5)
+- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (§3 areas with similar risk, and the minimal reproduction) — the testing agent reads it and `04-fix.md` itself. (flow-core §5)
 - Require `fix` in `phases_done`.
 - `size` `XS` → suggest skipping to `/flow:bug:review` unless the user insists.
 - Fix developed in a worktree (`meta.json.worktree` not null) → offer once, do not run it yourself: "run `/flow:work:try <meta.branch>` (switches the main checkout and re-syncs per `git.worktree_resync`); `/flow:work:try --back` to return."
@@ -19,7 +19,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Mandatory regression test**: launch the `agents.testing` agent from FLOW.md (empty → `Agent general-purpose` with a test-writing role):
 
-> Write a test that **fails** before the fix and **passes** after. Read `.claude/work/<TICKET>/02-diagnose.md` (minimal reproduction), `04-fix.md` (what was changed). Follow the conventions in `FLOW.md` (section `conventions`). Report the path of the added test.
+> Write a test that **fails** before the fix and **passes** after. Read `.claude/work/<TICKET>/03-investigation.md` (minimal reproduction), `04-fix.md` (what was changed). Follow the conventions in `FLOW.md` (section `conventions`). Report the path of the added test.
 
 Then:
 1. Run only that test with `quality.test_one` from FLOW.md; it must pass.
@@ -38,9 +38,9 @@ tool, a simulator, a CLI that drives the app, an HTTP call). Nothing available, 
 `meta.json.worktree` not null (the runnable environment is in the main checkout) → say so in one
 line and leave it to the user, offering `/flow:work:try <meta.branch>` as §1 already does.
 
-Otherwise, run the **minimal reproduction from `02-diagnose.md`** against the fixed code and record
+Otherwise, run the **minimal reproduction from `03-investigation.md`** against the fixed code and record
 what you observe. `quality.evidence` not `off` → capture it into `.claude/work/<TICKET>/evidence/`:
-the **before** is whatever `02-diagnose.md` already captured when the failure was reproduced (that
+the **before** is whatever `03-investigation.md` already captured when the failure was reproduced (that
 is the one moment it exists), the **after** is what you see now. `/flow:bug:ship` attaches both.
 
 **Symptom still reproducible → the fix is not done**, whatever the suite says. Report it and stop;

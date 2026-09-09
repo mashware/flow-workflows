@@ -1,7 +1,7 @@
 # flow — guided development workflows (stack-agnostic)
 
 `feat`/`bug`/`work` flows with a shared skeleton (`start → … → ship`,
-`diagnose → … → postmortem`, post-deploy monitoring) and consistent patterns (loop-until-done in
+`start → investigate → fix → … → postmortem`, post-deploy monitoring) and consistent patterns (loop-until-done in
 review, quarantine of untrusted input, adversarial verification, human gate before MR/PR),
 **with nothing tied to a specific repo**. Each repository is configured with a `FLOW.md`.
 
@@ -47,7 +47,7 @@ with more questions and auto-discovery.
 /plugin marketplace add mashware/flow-workflows
 /plugin install flow@flow-plugins
 ```
-Namespaced commands: `/flow:init`, `/flow:feat:start`, `/flow:bug:diagnose`, `/flow:work:watch`, etc.
+Namespaced commands: `/flow:init`, `/flow:feat:start`, `/flow:bug:investigate`, `/flow:work:watch`, etc.
 They coexist with any other plugin or local command.
 
 Try without installing: `claude --plugin-dir <path>/flow-workflows/plugins/flow`.

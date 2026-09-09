@@ -6,7 +6,7 @@ description: Close a work without shipping (discarded feature, non-issue, etc.)
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
 
-Clean closure for works that will not reach the base branch: a feature discarded after `brainstorm` or `design`, a bug that is not one (expected behavior, external problem, user misconfiguration), a work absorbed by another ticket.
+Clean closure for works that will not reach the base branch: a feature discarded after `design`, a bug that is not one (expected behavior, external problem, user misconfiguration), a work absorbed by another ticket.
 
 ## 1. Pre-flight
 
@@ -57,7 +57,7 @@ Write `.claude/work/<TICKET>/99-abandoned.md`:
 
 ## 4. Domain knowledge (conditional offer)
 
-**Only if any `knowledge` role is set and the analysis left non-obvious findings** (why the domain works as it does, legal constraints, surprising integrations): ask whether to invoke `Skill save-knowledge`. Silence by default; the role empty → skip silently.
+**Only if any `knowledge` role is set and the analysis left non-obvious findings** (why the domain works as it does, legal constraints, surprising integrations): ask whether to consolidate them (flow-core §0). Silence by default; the role empty → skip silently. An abandoned work is where this matters most: nobody comes back to read `99-abandoned.md`, and what the analysis learned about the domain is true whether or not the feature shipped.
 
 ## 5. Git state
 

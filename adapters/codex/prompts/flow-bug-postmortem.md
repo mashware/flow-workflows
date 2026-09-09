@@ -8,7 +8,7 @@
 > - Parallel fan-out → several subagents in one response, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `codex exec "<command>"` with cron or Codex automations.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
@@ -79,7 +79,7 @@ Produce an honest analysis:
 1. Call `knowledge.read_staging` (empty → the findings recorded in `03-investigation.md`) — the findings staged in `/flow-bug-investigate` are the primary material.
 2. Review the postmortem for additional "why" items not staged at the time (business decisions, legal constraints, integrations, false model assumptions). The "what" (code, paths) is not saved.
 3. Combine staging + new findings. Empty or only obvious things → do not insist.
-4. 1+ relevant findings → ask the user whether to save them. Yes → `Skill save-knowledge` with the right angle (the lesson, not the code). No → do not insist.
+4. 1+ relevant findings → ask the user whether to save them. Yes → run the consolidation of flow-core §0, with the right angle (the lesson, not the code). No → do not insist.
 
 Neither role set → skip this block silently.
 

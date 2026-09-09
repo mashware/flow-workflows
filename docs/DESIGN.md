@@ -38,7 +38,7 @@ design was the mistake: fix the artifact before the code.
 
 **Ask everything at once, before starting.** Open questions that affect the design go in one
 `AskUserQuestion`; "inventing answers the user would later have to correct is worse than asking".
-*Now:* feat:start §3, feat:brainstorm §5.
+*Now:* feat:start §3, feat:design §1.5.5.
 
 **Reuse before creating.** `design` inventories what exists first; every new piece in the design
 implicitly claims "I found nothing that fits". Not forcing a poor fit — not adding out of habit.
@@ -145,9 +145,9 @@ resolves from `meta.json`. See §5.
 
 **Size drives which phases run, and it is revisable.** Later phases reclassify; a wrong size
 "contaminates subsequent phases (wrong skips, unnecessary MR/PR plans, unneeded postmortems)". `plan`
-and the brainstorm panel are skipped on XS/S because the cost does not justify them.
-*Now:* work/README "Shortcuts by size"; feat:start §4; feat:brainstorm §3.0/§6; feat:design §7;
-feat:plan §1/§5; bug:diagnose §5; bug:investigate §6.
+and the approach panel are skipped on XS/S because the cost does not justify them.
+*Now:* work/README "Shortcuts by size"; feat:start §4; feat:design §1.5.2/§1.5.5; feat:design §7;
+feat:plan §1/§5; bug:investigate §1.5/§6.
 
 **Size confirmation is never a question in `guided`/`auto`.** One of the four machinery questions
 that made an unattended run attended (v0.26.0).
@@ -203,7 +203,7 @@ trust that a decision stays decided." Only new evidence reopens it, and the evid
 **A mode-less "ask" beats a mode-aware handoff.** `plan` said "ask for approval" and three lines
 later "in `auto`, record and chain"; the unconditioned instruction won (v0.26.0). Every decision point
 is now written per mode.
-*Now:* feat:design §9; feat:plan §6; feat:brainstorm §3.0/§7; bug:investigate §3.1.
+*Now:* feat:design §9; feat:plan §6; feat:design §1.5.2/§1.5.5; bug:investigate §3.1.
 
 **A named next command is not a handoff.** v0.25.0: ten of twelve phase commands closed with "next
 command: …" and nothing else; naming a command is an instruction to stop, and "a specific instruction
@@ -401,7 +401,7 @@ labelled M. Now M/L **and** over 150 changed lines ("a work labelled M can perfe
 since a wrongly-discarded finding stays recorded in the artifact". `agents.fanout_max` (empty → 4)
 caps every round; a truncated sweep reports `4/7`, because "a silently truncated fan-out reads as full
 coverage". Skipped and clean are not the same result.
-*Now:* feat:review §6; bug:review §5; bug:investigate §3.A; feat:brainstorm §3.A.
+*Now:* feat:review §6; bug:review §5; bug:investigate §3.A; feat:design §1.5.3.
 
 **A ceiling per round is not a ceiling per command, and the tier must read the diff, not the ticket.**
 v0.45.0: with every round inside `fanout_max`, one review still composed a panel, area reinforcements,
@@ -423,13 +423,13 @@ returns to the main agent, which holds the context — delegating "cost an agent
 markdown copied back". The rounds had been Claude Code `Workflow` DSL, which "exists in Claude Code and
 nowhere else"; plain subagents are the one primitive every harness has, `agents.fanout_tool` opts back
 in (v0.31.0).
-*Now:* feat:brainstorm §3.A; bug:investigate §3.A; work:query §3; CONFIGURATION "agents".
+*Now:* feat:design §1.5.3; bug:investigate §3.A; work:query §3; CONFIGURATION "agents".
 
-**Panels are proportional too.** The brainstorm's cross-critique "keeps the chairman from ranking on
+**Panels are proportional too.** The approach panel's cross-critique "keeps the chairman from ranking on
 presentation instead of substance — and it is also the expensive one", so L only. The hypothesis sweep
 gathers evidence for *and against*, because "an agent asked only to confirm will always find
 something".
-*Now:* feat:brainstorm §3.A; bug:investigate §3.A.
+*Now:* feat:design §1.5.3; bug:investigate §3.A.
 
 **The net that worked is not thickened.** In v0.24.0 the panel caught what reached it; the lesson was
 cheaper detection upstream, and the review was left alone.

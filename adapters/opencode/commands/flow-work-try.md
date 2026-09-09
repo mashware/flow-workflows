@@ -12,7 +12,7 @@ description: Point the main checkout at a branch to test it (then return), re-sy
 > - Parallel fan-out → several `@name` in one prompt, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `opencode run -p "<command>"` with cron.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
@@ -59,7 +59,7 @@ The plan already exists; the user should not have to ask for it. Source it in th
    `proven-by-agent` or `proven-manually` get **one line together** saying so — never repeat them.
 2. **No validation artifact yet** → the enumerated acceptance criteria from `03-design.md`, all of
    them, flagged *not yet classified — `validate` has not run*. For a bug with no validation
-   artifact, the reproduction steps from `02-diagnose.md`.
+   artifact, the reproduction steps from `03-investigation.md` §Minimal reproduction.
 3. **Neither** → say so plainly and stop. Do not compose a plan out of the diff.
 
 **Offer to collect the verdicts here.** One `AskUserQuestion`, the same shape as

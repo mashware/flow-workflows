@@ -96,7 +96,7 @@ Write a **compact** file at the repo root — every command reads it in every ph
 ## 5. Close
 
 - Summarize on screen: what was configured, what was left **empty (= auto-discover)**; mention `models.*` exists and where it is documented (§3).
-- **One line on how the rest of the file gets written**: *"the other keys are offered the first time a phase needs one — agents when a panel improvises a role, review depth when a review goes over budget, table volumes when a query duel comes back schema-only."* Then `/flow:config` shows which defaults keep being used, so a key worth pinning can be pinned.
+- **One line on how the rest of the file gets written**: *"the other keys are offered the first time a phase needs one — agents when a panel improvises a role, review depth when a review goes over budget, table volumes when a query duel comes back schema-only."* Then `/flow:doctor` shows which defaults keep being used, so a key worth pinning can be pinned.
 - `FLOW.md` is **personal config, not team config** (repo facts mixed with one developer's flow preferences, tools and agents; **no secrets**) — it should not be committed. One `AskUserQuestion`, both parts in the same question:
   - `FLOW.md` not already git-ignored → **offer to add it to `.gitignore`** (append a `FLOW.md` line). This edits a tracked file — confirm before writing. A team wanting the repo-fact subset can still commit it deliberately.
   - Git-ignore `.claude/work/` too — recommended default: ignore it (artifacts are personal working state; teams that want to share them commit deliberately). `git.worktree` not `off` → offer `.worktrees/` in the same gesture.

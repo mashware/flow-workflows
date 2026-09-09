@@ -8,22 +8,62 @@
 > - Parallel fan-out → several subagents in one response, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `codex exec "<command>"` with cron or Codex automations.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
-Investigation phase: **why it happened**, not just what is failing.
+Investigation phase: reproduce the failure, then find **why it happened** — not just what is failing.
 
 ## 1. Pre-flight
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `study`.**
 
-- Read `meta.json` and `00-summary.md`; open in full only `02-diagnose.md` (and `01-context.md` when the summary leaves the symptom unclear). (flow-core §5)
-- Require `diagnose` in `phases_done`; if missing, redirect to `/flow-bug-diagnose`.
+- Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
+- `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow-bug-fix` and stop.
+- Require `context` in `phases_done`. A work whose `phase` is the retired `diagnose` (written before
+  v0.53.0) is treated as having finished §1.5: read its `02-diagnose.md`, carry it into
+  `03-investigation.md`, and go straight to §3.
+
+## 1.5 Reproduce — what is failing, before why
+
+Isolate **what** fails before looking for **why**. On **S** this is the whole of this command's
+first half and the chain is `start → investigate (reproduce only) → fix → …`; on **M/L** it is the
+ground §3 stands on. **XS** skips straight to `/flow-bug-fix`.
+
+*(This was the `bug:diagnose` command until v0.53.0. Reproducing and finding the cause were two commands
+sharing five headings, and the S-size chain already ran them back to back.)*
+
+1. **Focused knowledge query on the symptom.** `knowledge.search` set → 2-3 parallel queries about
+   the **suspected component** (handler, worker, endpoint, module): the same root cause often
+   returns wearing a different symptom. Dead-letter queue → `"DLX <handler-name>"`, `"retry policy
+   worker"`; endpoint → `"endpoint <path>"`, `"validation <DTO>"`; frontend → `"<component>"`,
+   `"<flow-name>"`. Two seconds, then continue regardless. Findings go under "Prior domain
+   knowledge".
+2. **Get to a minimal reproducible case**, by surface:
+   - **Dead-letter queue / messaging** — the project's dead-message agent if one exists; otherwise
+     the payload and headers for that handler, the retry history and the initial cause.
+   - **API/HTTP** — the endpoint, a reproducible `curl`, expected versus actual response.
+   - **Frontend** — component, route, steps, the browser's console and network panels.
+   - **Worker/consumer** — job type, source message, supervisor logs (`quality.test_one`, or the
+     observability command from `FLOW.md`, filtered by worker type).
+   - **Database** — the failing query, its execution plan, the input that triggers it.
+3. **Locate the code** with `Agent general-purpose`, given a self-contained prompt carrying the
+   symptom and the initial clues. Suspected files are *suspects*: naming a cause here is exactly the
+   anchoring §3 exists to avoid.
+4. **Write the first half of `03-investigation.md`** — reproduction, expected versus actual,
+   components involved, the bug's data (stack trace, request, triggering input) and the initial
+   hypotheses. §4's template holds all of it.
+5. **Is the size still correct?** A trivial bug (a null check, a typo) classified M/L out of
+   uncertainty → propose XS/S; an apparent XS that turns out to span several components → raise it.
+   `AskUserQuestion` before touching `meta.json.size`.
+
+**Cannot reproduce it?** Say so plainly and stop — a fix for a bug nobody has reproduced is a guess
+with a diff attached. Record what you tried, and what you would need (an environment, a payload, an
+account). That is a legitimate outcome of this command.
 
 ## 2. Focused knowledge query
 
-`knowledge.search` set → 2-3 `knowledge.search` queries in parallel about **the hypothetical cause** (the symptom was already queried in diagnose). Maximum wait 2 s; continue on failure. Record findings in `03-investigation.md`.
+`knowledge.search` set → 2-3 `knowledge.search` queries in parallel about **the hypothetical cause** (the symptom was already queried in §1.5). Maximum wait 2 s; continue on failure. Record findings in `03-investigation.md`.
 
 - Race condition → `"lock <resource>"`, `"idempotency <handler>"`.
 - Broken external integration → `"<API> retry"`, `"webhook signature"`.
@@ -49,13 +89,13 @@ Goal: the change or condition that introduced the bug (commit, deployment, corru
 
 ### 3.A Hypothesis sweep (parallel fan-out)
 
-- Enumerate the root cause hypotheses from `02-diagnose.md` + the `git blame` of §3.0.
+- Enumerate the root cause hypotheses from §1.5 + the `git blame` of §3.0.
 - **Width**: read `agents.fanout_max` from `FLOW.md` (empty → **4**), bounded also by `agents.budget_max` (empty → **12**) across this command run (flow-core §6); enumerate as many as the evidence supports, sweep the **top `fanout_max`** by prior plausibility. A sweep of 4 or more with the fan-out key empty inherits this thread's model: one line before launching, naming the key and not a model (flow-core §1). If you dropped any, say so in `03-investigation.md` — a silently truncated sweep reads as complete.
 - Launch **one subagent per hypothesis, in parallel**; each pursues **one** and gathers evidence **for and against** (an agent asked only to confirm always finds something).
 
 Brief per subagent:
 
-> Investigate ONLY this root cause hypothesis for bug `<TICKET>`: "`<hypothesis>`". Read `.claude/work/<TICKET>/02-diagnose.md` and the relevant code. Gather evidence IN FAVOUR and, deliberately, evidence AGAINST — try to refute it. Do not propose a fix. Report: the hypothesis, evidence for, evidence against, and your confidence (high / medium / low). Be honest about confidence: "low" if the evidence is circumstantial.
+> Investigate ONLY this root cause hypothesis for bug `<TICKET>`: "`<hypothesis>`". Read `.claude/work/<TICKET>/03-investigation.md` (the reproduction half, written in §1.5) and the relevant code. Gather evidence IN FAVOUR and, deliberately, evidence AGAINST — try to refute it. Do not propose a fix. Report: the hypothesis, evidence for, evidence against, and your confidence (high / medium / low). Be honest about confidence: "low" if the evidence is circumstantial.
 
 **You are the convergence.** Rank by **net** evidence (for minus against), not by the prior plausibility you started with; flag a winner that still rests on thin evidence (the shape of a symptom mistaken for a cause). Fill §4: "Root cause identified" = the winner, the rest as context. The challenger in §5 still runs — the sweep does not replace it.
 
@@ -65,7 +105,7 @@ If `agents.fanout_tool` is set in `FLOW.md`, run the sweep through that tool; br
 
 ### 3.B Single agent (default case)
 
-3. Launch `Agent general-purpose`: "Investigate the root cause of <symptom> knowing that <diagnosis findings>. Focus: why it started failing, what change or condition triggers it, what code assumptions are false. Read `.claude/work/<TICKET>/02-diagnose.md`. Report hypotheses ranked by probability."
+3. Launch `Agent general-purpose`: "Investigate the root cause of <symptom> knowing that <diagnosis findings>. Focus: why it started failing, what change or condition triggers it, what code assumptions are false. Read `.claude/work/<TICKET>/03-investigation.md` (the reproduction half). Report hypotheses ranked by probability."
 4. **Performance or concurrency** → also launch the `agents.performance` agent from FLOW.md (empty → `Agent general-purpose` with a performance role). **Queues or dead messages** → also the `agents.queues` agent (empty → `Agent general-purpose` with a messaging role).
 
    **Slowness, timeout or load spike → the root cause is a plan until proven otherwise.** A plan changes with no code change (a table crossed a size threshold, a key's distribution skewed, a dropped index, a collation or column type changed under a join, stale statistics, a larger batch) — `git blame` cannot find these. Run **`/flow-work-query`** on the queries of the slow path (its §2 fact sheet and §4 measurement) as one hypothesis, with the same for-and-against discipline; its checklist doubles as a hypothesis list.
@@ -79,7 +119,27 @@ If `agents.fanout_tool` is set in `FLOW.md`, run the sweep through that tool; br
 # Investigation {TICKET}
 
 ## Prior domain knowledge
-<findings from the focused search_knowledge in §2, or "no findings">
+<findings from the focused knowledge queries in §1.5 and §2, or "no findings">
+
+## Minimal reproduction
+<numbered steps that reproduce the bug (§1.5), or what stopped you reproducing it and what you would need>
+
+## Expected vs actual behaviour
+- Expected:
+- Actual:
+
+## Components involved
+- Suspected files: <suspects, not the cause>
+- Services: backend / worker / frontend / DB
+
+## Bug data
+- Stack trace / log:
+- Request / payload:
+- Input that triggers it:
+
+## Initial hypotheses
+1. …
+2. …
 
 ## Root cause identified
 <clear sentence: "The bug occurs because …" — if uncertain, say "most probable hypothesis">
@@ -109,7 +169,7 @@ Before closing, launch a `Agent general-purpose` challenger with this task:
 
 > You are the critical reviewer of the investigation in `.claude/work/<TICKET>/03-investigation.md`. **Do not propose a fix.** Challenge the root cause from 3 angles:
 >
-> 1. **Is there a more probable root cause that was not considered?** Read `02-diagnose.md` (symptom) and `03-investigation.md` (proposed cause). Does all the evidence fit this cause, or are there pieces it does not explain? What alternative causes would also explain the symptom?
+> 1. **Is there a more probable root cause that was not considered?** Read `03-investigation.md` — its first half is the symptom, its second the proposed cause. Does all the evidence fit this cause, or are there pieces it does not explain? What alternative causes would also explain the symptom?
 > 2. **Are there gaps in the evidence chain?** Reasoning steps without support from logs/commits/data. Flag them.
 > 3. **Is the symptom being confused with the cause?** (e.g. "null pointer" is a symptom; the cause is "the data arrives null because X").
 >

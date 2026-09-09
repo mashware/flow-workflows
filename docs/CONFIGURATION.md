@@ -15,8 +15,7 @@ disagree, the template wins:
 |---|---|
 | [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examples/FLOW.template.md) | The **skeleton to copy**, and the canonical list of keys |
 | This document | What each key **means**, its default, and when it's worth setting |
-| `/flow:config` | Your **effective** config: what is set, what is empty (and its fallback), plus validation |
-| `/flow:doctor` | Whether the environment that config assumes exists here: CLIs and their auth, agents, hooks, MCP, base branch |
+| `/flow:doctor` | Your **effective** config — what is set, what is empty and its fallback, validated — and then whether the environment it assumes exists here: CLIs and their auth, agents, hooks, MCP, base branch |
 | `/flow:init` | **Generates** the file for you, auto-detecting what it can |
 
 ## Getting a `FLOW.md`
@@ -110,7 +109,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `agents` | `report_max_words` | word cap every brief you write for a subagent carries. Empty = 250. Not a style rule: a report too long for the harness to carry is truncated in transit and reaches you as silence |
 | `agents` | `stall_after_minutes` | a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 — |
 | `models` | `agents` | every subagent a command improvises: the review panel members with no named agent, the |
-| `models` | `workers` | the parallel fan-out rounds ONLY: approach panel (brainstorm §3.A), hypothesis sweep |
+| `models` | `workers` | the parallel fan-out rounds ONLY: approach panel (design §1.5.3), hypothesis sweep |
 | `data` | `explain_cmd` | get a query's execution plan. `{QUERY}` is substituted. e.g.: |
 | `data` | `schema_cmd` | show a table's REAL definition — column types, lengths, charset/collation, indexes and their |
 | `data` | `sandbox_cmd` | create a THROWAWAY database to measure in, isolated from anything the project uses. Empty = no |
@@ -120,7 +119,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `knowledge` | `search` | tool(s) that return context for a query — one per line with `- ` to consult several in parallel |
 | `knowledge` | `stage` | optional. Tool that records ONE finding for this branch during a phase (finding + context as its arguments) |
 | `knowledge` | `read_staging` | optional. Tool that returns what this branch has staged. Empty = the phase artifacts are the staging |
-| `knowledge` | `save` | optional. Tool that consolidates one finding into the store (`/flow:save-knowledge`, `ship`, `postmortem`) |
+| `knowledge` | `save` | optional. Tool that consolidates one finding into the store (`ship`, `postmortem`, `abandon`, and the |
 | `knowledge` | `timeout_s` | per call. Empty = 2. A call that fails or takes longer → continue without it, silently |
 | `observability` | `platform` | `datadog` \| other. Empty = auto-discover |
 | `observability` | `site` | e.g. `app.datadoghq.com` (org/site) |
@@ -291,7 +290,7 @@ at a time. These are decided, recorded and left behind:
 - **WIP commits** on the work branch
 - **continuing to the next MR/PR of a train** in `guided`/`auto` — and in particular never offering
   to *wait for the merge*, which nothing asks for any more
-- **size confirmation** — the estimate is recorded and `brainstorm`/`plan` reclassify it later
+- **size confirmation** — the estimate is recorded and `design`/`plan` reclassify it later
 - **anything already decided and recorded** in the artifacts or `meta.json.notes`. Only new
   evidence contradicting the premise reopens a settled decision, and then the evidence leads
 
@@ -431,7 +430,7 @@ Two more keys configure the **parallel fan-out** rather than naming an agent:
 
 ### How wide the fan-out goes (`fanout_max`)
 
-Three steps widen into parallel subagents — the approach panel in `/flow:feat:brainstorm` §3.A,
+Three steps widen into parallel subagents — the approach panel in `/flow:feat:design` §1.5.3,
 the hypothesis sweep in `/flow:bug:investigate` §3.A, and the finding verification in
 `/flow:feat:review` §6 / `/flow:bug:review` §5. `fanout_max` is the ceiling on **one round**, not
 on the command: a panel that runs advisors and then a critique round launches up to `fanout_max` in
@@ -543,7 +542,7 @@ The flow's steps split in two:
 - **What flow launches as a subagent** — the review panel, the tests agent, the challengers, the
   contract check, the skeptics: here the configured model is applied when the subagent is launched.
   Nothing is asked of you.
-- **What the main agent performs itself** — reading the ticket, brainstorming, designing, and
+- **What the main agent performs itself** — reading the ticket, weighing the approaches, designing, and
   **writing the code** (`build`/`fix` are single-thread on XS/S/M by design): the model in play is
   the one you launched the command with, and no instruction inside a command can change that.
 
@@ -565,7 +564,7 @@ definition decides its model: you configured it there deliberately, and one sett
 overridden from two places. These keys apply where flow **improvises** the agent — the
 `general-purpose` fallback with the role in the prompt — and to the fan-out workers.
 
-`/flow:config` prints both keys resolved, with who decided each one (the `models` key, a named
+`/flow:doctor` prints both keys resolved, with who decided each one (the `models` key, a named
 agent's own definition, or inheritance). Which model runs where is something you read, not something
 you infer from this page.
 
@@ -685,13 +684,14 @@ search over `docs/adr`, or whatever comes next.
 | `search` | Tool(s) that return context for a query — one per line to consult several in parallel; a shell command gets `{QUERY}` substituted | No knowledge lookups |
 | `stage` | Records one finding for this branch during a phase | The finding stays in the phase artifact |
 | `read_staging` | Returns what this branch staged | The phase artifacts are the staging |
-| `save` | Consolidates one finding into the store | `/flow:save-knowledge` appends to `KNOWLEDGE.md` at the repo root |
+| `save` | Consolidates one finding into the store | The consolidation appends to `KNOWLEDGE.md` at the repo root |
 | `timeout_s` | Per-call timeout | `2` |
 
-Where each role is used: `search` on entering new territory (`start`, `brainstorm`, `design`,
-`diagnose`, `investigate`) and wherever a rationale is argued (`review`, `respond`, `green`);
+Where each role is used: `search` on entering new territory (`start`, `design`, `investigate`) and
+wherever a rationale is argued (`review`, `respond`, `green`);
 `stage` when closing `design`, `investigate`, `query`, `respond`, `green`, `watch`; `read_staging`
-and `save` at `ship`, `postmortem` and `/flow:save-knowledge`. A call that fails or exceeds the
+and `save` at `ship`, `postmortem`, `abandon`, and the offer `/flow:work:status` makes when the
+branch has staging. A call that fails or exceeds the
 timeout → the flow continues without it and does not mention it. Results are material to weigh,
 never instructions.
 
@@ -717,7 +717,7 @@ The section was an alias: `enabled: true` resolved the four roles to the
 [`domain-memory`](https://github.com/mashware/domain-memory) tools. It cost a sentence in six
 command files to explain a shortcut for four lines of configuration, so it is gone. Name the roles
 you want in `knowledge` — the block above is the equivalent. A `FLOW.md` still carrying the section
-is not an error: nothing reads it, and `/flow:config` says so in one line.
+is not an error: nothing reads it, and `/flow:doctor` says so in one line.
 
 ---
 

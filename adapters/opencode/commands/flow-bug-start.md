@@ -12,7 +12,7 @@ description: Start the bug flow (tracker, knowledge, size, branch, initial artif
 > - Parallel fan-out → several `@name` in one prompt, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `opencode run -p "<command>"` with cron.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
@@ -101,8 +101,8 @@ flow is per-repo: a fix that touches other repos and is not recorded is silently
 | Size | Criteria                                                       | Suggested phases                              |
 |------|----------------------------------------------------------------|-----------------------------------------------|
 | XS   | Obvious fix (typo, inverted condition, null check)             | start → fix → review → ship                   |
-| S    | Clear symptom, reasonably bounded cause                        | start → diagnose → fix → validate → review → ship |
-| M    | Clear symptom but non-obvious cause, possible regression       | start → diagnose → investigate → fix → validate → review → postmortem → ship |
+| S    | Clear symptom, reasonably bounded cause                        | start → investigate (reproduce only) → fix → validate → review → ship |
+| M    | Clear symptom but non-obvious cause, possible regression       | start → investigate → fix → validate → review → postmortem → ship |
 | L    | Critical incident, multi-component, production affected        | full flow + mandatory postmortem              |
 
 **`validate` comes before `review` on every size that has both** — the regression test is what proves the fix. `/flow-bug-review` refuses to run without `validate` in `phases_done` for size ≥ S, so the order above is the gate, not a preference.
@@ -205,6 +205,6 @@ Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket` and `{ASSIGNEE}` = 
 
 ## 5. Close
 
-- Suggest the next command by size: `/flow-bug-fix` for XS, `/flow-bug-diagnose` for the rest.
+- Suggest the next command by size: `/flow-bug-fix` for XS, `/flow-bug-investigate` for the rest.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Apply `autonomy.mode`: `manual` stops and recommends; `guided`/`auto` chain into that command automatically, subject to the hard gates.

@@ -10,7 +10,7 @@ Mandatory code review of the fix.
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `review`.**
 
-- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test); `02-diagnose.md` only when the summary leaves the symptom unclear. (flow-core §5)
+- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test). (flow-core §5)
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.
 - `git diff` shows no changes → warn and stop.
 
@@ -48,7 +48,7 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 2. **Project panel** (only when §2.0 selected it): skill `quality.review_skill` from FLOW.md, invoked as `<review_skill> branch`. `review_skill` empty and `quality.reviewers` set → launch those agents in parallel as a panel. Both empty → the built-in `code-review` is the whole review. Launch the panel **as defined** — whole roster, no subset, no substitutions; an agent that cannot run goes to §7 `Agents launched` with the reason. **Every brief you write for it — and for the §3 reinforcements — ends with the report contract of flow-core §6** (`agents.report_max_words`, empty → 250; findings only, one line each): an uncapped report is truncated in transit and reads exactly like a reviewer with nothing to say. The built-in `code-review` takes no brief; bound it with the §2.0 tier and hold it to the same fan-out deadline.
 
 Deduplicate overlaps (count once). Fix-specific focus beyond generic analysis:
-- The change genuinely resolves the problem from `02-diagnose.md` / `03-investigation.md`.
+- The change genuinely resolves the problem from `03-investigation.md`.
 - No expanded scope (hidden refactor) — list any.
 - The regression test from `05-validation.md` covers the case.
 

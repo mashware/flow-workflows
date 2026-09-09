@@ -12,19 +12,135 @@ description: Design the technical solution (architecture, DB, APIs, risks) befor
 > - Parallel fan-out → several `@name` in one prompt, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `opencode run -p "<command>"` with cron.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
 Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `study`.**
 
-Technical design phase. **Still no production code is written.** Output: a plan the next step executes.
+Technical design phase. **Still no production code is written.** Opens the option space first (M/L), then designs the approach that was chosen. Output: a plan the next step executes.
 
 ## 1. Pre-flight
 
 - Load `meta.json` by current branch. Missing → ask the user to start with `/flow-feat-start`.
-- Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received) and `02-brainstorm.md` if it exists. (flow-core §5)
+- Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received), and `02-brainstorm.md` when a work started before v0.53.0 has one — its options are §1.5's output, already done. (flow-core §5)
 - `size` is `XS` → suggest jumping to `/flow-feat-build` and stop unless the user insists.
+
+## 1.5 Approaches — open the option space first (M/L)
+
+Design that starts from the first idea is design that never had a second one. **M and L run this
+section; XS and S skip it** and go straight to §2 — the cost does not pay on a change whose shape is
+obvious.
+
+*(This was the `feat:brainstorm` command until v0.53.0: a command whose whole output only this one ever
+read.)*
+
+**No code, and no design yet.** The output of this section is a ranked set of options and one chosen
+approach; §3 onwards designs *that* approach.
+
+### 1.5.1 Focused knowledge query
+
+`knowledge.search` set → 2-3 parallel queries on the **concept or pattern** the feature covers, not
+its title (`/flow-feat-start` already queried that): tracking → `"tracking deduplication"`,
+`"hash collision"`; payments → `"trial expiration"`, `"plan downgrade flow"`; an integration →
+`"attachment handler"`, `"tax rules integration"`. Two seconds, then continue regardless. Hits go
+under "Additional domain context" in §5's template.
+
+### 1.5.2 Panel or single agent?
+
+- **M or L**, in `manual`: offer the **parallel approach panel** with `AskUserQuestion` ("Generate
+  options with a parallel multi-agent panel? Higher token cost, less single-line-of-thought bias.").
+  Accepted → §1.5.3; declined → §1.5.4. In `guided`/`auto` **do not ask** — flow mechanics: take the
+  panel, note it in one line of `03-design.md`, go to §1.5.3.
+- Declined, or the user insisted on running this on S → §1.5.4.
+
+### 1.5.3 Approach panel (parallel fan-out — LLM-council pattern)
+
+**Launch the advisors as parallel subagents** — one per lens, single round, each blind to the others
+(LLM-council: independent advisors, then a chairman synthesises; a **cross-critique** round in
+between for **L** only).
+
+**How wide the fan-out goes** — `agents.fanout_max` from `FLOW.md` (empty → **4**): never more than
+that in one round, and never more than `agents.budget_max` (empty → **12**) across this whole
+command run (flow-core §6); a round that does not fit is truncated and the truncation reported
+(`3/4`). With `models.workers` and `models.agents` empty, a round of 4 or more inherits this thread's
+model — say so in one line before launching, naming the key and never a model (flow-core §1).
+
+| Size | Rounds |
+|---|---|
+| M | Advisors → you synthesise |
+| L | Advisors → cross-critique → you synthesise |
+
+**You are the chairman.** Round 1 (and round 2 on L) are subagents; the synthesis and the ranking are
+yours, never a subagent's — you hold the work's context and you write `03-design.md`.
+
+**Round 1 — advisors (parallel, blind to each other).** One subagent per lens, up to `fanout_max`.
+M → the first three lenses; L → add `operations`, and also on a sensitive surface (authentication or
+authorization, payments, personal data, a public contract, a migration):
+
+| Lens | Brief |
+|---|---|
+| `minimum` | The **smallest** approach that solves the declared use case, nothing more (strict MVP) |
+| `reuse` | The approach that **most reuses** existing pieces in the affected module or its neighbours |
+| `reframe` | **Challenge the premise**: what if the problem is solved without building what was asked, or somewhere else? |
+| `operations` | The most production-solid approach (observability, integration failure, data at scale) |
+
+Each advisor gets this brief, with its lens substituted:
+
+> Propose ONE approach to solve ticket `<TICKET>`, from this lens: `<lens brief>`. Read
+> `.claude/work/<TICKET>/01-context.md` for context and `FLOW.md` for project conventions. Do not
+> write code. Be specific about real modules and layers of this project. Report: name, what it is
+> (one sentence), modules/layers affected, main risk, and why it could be a bad idea. Under 250 words.
+
+**Round 2 — cross-critique (L only, parallel).** Each advisor receives the full set and attacks the
+*others* from its own lens:
+
+> You are the "`<lens>`" advisor. These are the approaches proposed for `<TICKET>`: `<the round-1
+> set>`. Read `.claude/work/<TICKET>/01-context.md`. From your lens (`<lens brief>`), critique the
+> OTHER approaches — not your own. For each one name its single biggest flaw for THIS project, or
+> "none". Then say which is strongest and which weakest, and why. Be concrete and grounded in the
+> project; do not invent flaws to fill space.
+
+**Round 3 — you synthesise.** Rank the approaches best to worst *for this case* (project fit and
+simplicity, not generic merit), weighing the fatal flaws the critique surfaced. State explicitly
+where the advisors **agreed** and where they **disagreed** — the disagreement is the useful part.
+
+`agents.fanout_tool` set → run the rounds through that tool instead of plain parallel subagents; the
+rounds, the briefs and the ceiling do not change.
+
+**A subagent that comes back empty is asked once for its answer and then dropped, never relaunched**
+(flow-core §6 — an empty result is as often a truncated report as an advisor with nothing to say):
+synthesise from those that answered and record `N/M`. An empty critique round → rank from the
+approaches alone.
+
+### 1.5.4 Single agent (the S case, or a declined panel)
+
+Launch a `general-purpose` subagent with this short, self-contained brief:
+
+> Generate 3-5 distinct approaches to solve `<title>` following the project conventions (see
+> `FLOW.md` and `.claude/work/<TICKET>/01-context.md`). For each: a one-sentence description,
+> modules/layers affected, main risk, and why it could be a bad idea. Do not write code. Report in
+> markdown, under 400 words.
+
+A sensitive domain (payments, authentication, tracking) → launch **in parallel** a second
+`general-purpose` subagent focused on what can go wrong in that domain.
+
+### 1.5.5 Choose, and ask what the options surfaced
+
+- Write the ranked set into `03-design.md` under "## Approaches considered" (§5's template), each
+  with what it is, the modules it touches, its main risk and why it could be a bad idea. Panel run →
+  prefix the recommendation with one line of *"Panel consensus / disagreement"*.
+- **New questions the options surfaced** that `/flow-feat-start` did not catch (*"does this only
+  apply to paid plans?"*, *"what happens if the user already has N of these?"*) → ask them now with
+  `AskUserQuestion`, before designing. Answers go under "Decisions clarified while choosing the
+  approach".
+- **Choosing is a genuine decision point**: `manual` and `guided` ask which approach to design; in
+  `auto`, take the recommended one and **record the choice and the reason** in `meta.json.notes`.
+- **Is the size still correct?** Much simpler or more complex than assumed → propose reclassifying
+  (`AskUserQuestion`) with the new estimate and one line of justification; §7 does this again at the
+  end of the design, on what the design actually turned out to be.
+
+
 
 ## 2. Focused knowledge query
 
@@ -53,7 +169,7 @@ Save the result at the top of `03-design.md` under "## What already exists". Des
 | Critical performance / hot paths | `agents.performance` | Anticipate N+1, repeated out-of-process calls, load risks. |
 | Security (auth, payments, sensitive data) | `agents.security` | Threats and mitigations for the proposed design. |
 
-3. Each subagent receives `01-context.md`, `02-brainstorm.md` (if it exists) and "What already exists", and every brief ends with the report contract of flow-core §6 (`agents.report_max_words`, empty → 250) — a design proposal long enough for the harness to truncate reaches you as an agent that proposed nothing. Explicit brief instructions:
+3. Each subagent receives `01-context.md`, the chosen approach from §1.5 and "What already exists", and every brief ends with the report contract of flow-core §6 (`agents.report_max_words`, empty → 250) — a design proposal long enough for the harness to truncate reaches you as an agent that proposed nothing. Explicit brief instructions:
    - **Before proposing a new entity/column/repository/service, check whether something from the inventory works.** Knowing duplicate → justify in the decision table.
    - **Do not add defensive mechanisms "just in case".** Every validation, guard, retry, lock, fallback or cache carries the **real and present** scenario that requires it, with evidence (a knowledge finding, a file, a known traffic pattern). Hypothetical, or already prevented by the system → **do not propose it**. Solve today's ticket (YAGNI).
 
@@ -63,6 +179,12 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 
 ```markdown
 # Design <TICKET>
+
+## Approaches considered
+<M/L only, from §1.5: one block per option — what it is, modules/layers affected, main risk, why it could be a bad idea — then the ranking, the "Panel consensus / disagreement" line when the panel ran, the chosen approach and why. XS/S: "not run at this size".>
+
+## Decisions clarified while choosing the approach
+<the questions §1.5.5 asked and their answers, or omit>
 
 ## Additional domain context
 <hits from the focused search_knowledge in §2, or "no findings">
@@ -220,7 +342,7 @@ Consolidate findings at the end of `03-design.md` under:
 | Type | Options |
 |---|---|
 | **unnecessary** (fit/YAGNI) | **Cut it** (remove the piece — default) · **Keep and justify** (fill "Response" with the real scenario; if none can be named, it is unnecessary). |
-| **missing** (assumption/operation) | **Reopen brainstorm/design** to incorporate it · **Assume and document** (fill "Response" with the conscious assumption — `"We assume X because Y"`). |
+| **missing** (assumption/operation) | **Reopen §1.5 or the design** to incorporate it · **Assume and document** (fill "Response" with the conscious assumption — `"We assume X because Y"`). |
 | **idiom** (false dichotomy / rationale smell / primitive mismatch) | **Adopt the third option or correct the primitive** (update the ADR row and the affected plan — default when option C is clearly better) · **Keep and make the "Why" concrete** (replace the manual-sounding phrase with a checkable reason; if you cannot, the decision is not justified). Never leave a textbook phrase as rationale. |
 
 - Do not advance to close with unresolved high severities. Medium and low stay on record for code review.

@@ -106,3 +106,9 @@ If a work's branch matches the current one, suggest:
 - An `in_progress` MR/PR waiting for merge confirmation → `/flow:feat:ship` should update the state.
 - A `closed` MR/PR with no subsequent decision → warn so the user can decide (retry build or abandon).
 - Otherwise → the concrete next command.
+
+**A mid-work knowledge save lives here.** `knowledge.read_staging` is set and returns entries for the
+current branch → offer, as one more action, to consolidate them now (flow-core §0) instead of waiting
+for `ship` or `postmortem`. Only when there are entries, only as an option among the others, and
+never as a question of its own: this is the last place a session that is about to end can bank what
+it learned.

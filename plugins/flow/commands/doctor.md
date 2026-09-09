@@ -1,5 +1,5 @@
 ---
-description: Check that the environment the flow assumes actually exists here — CLIs, auth, agents, hooks, MCP, repo state
+description: What this repo's FLOW.md actually says, and whether the environment it assumes exists — CLIs, auth, agents, hooks, MCP, repo state
 allowed-tools: Read, Glob, Grep, Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(git diff:*), Bash(git rev-parse:*), Bash(ls:*), Bash(cat:*), Bash(command -v:*), Bash(gh auth status:*), Bash(glab auth status:*), Bash(test:*)
 ---
 
@@ -9,17 +9,127 @@ Read-only. Answers one question: **will the flow actually work in this repo, rig
 **Writes nothing, runs nothing with side effects, never fixes anything** — it reports, with the
 one-line fix next to each problem.
 
-`/flow:config` reads the *configuration*; this command checks the *world it assumes* — binaries,
-credentials, agents, hooks, branch — so failures surface here, not mid-phase. Run it in an unfamiliar
-repo, after changing machines, after `/flow:init`, or when a command failed like the environment did.
+It answers it in two halves: **what this repo's `FLOW.md` actually says** (§1.5), and **whether the
+world it assumes exists** — binaries, credentials, agents, hooks, branch (§2) — so failures surface
+here rather than mid-phase. Run it in an unfamiliar repo, after changing machines, after
+`/flow:init`, or when a command failed the way an environment fails.
 
 ## 1. Load
 
 - Read `FLOW.md` at the repo root. Absent is **not** an error: say so in one line, check what needs
   no config (git, hooks, harness, base branch, plugin files), and note that `/flow:init` would let
   this command check the rest.
-- Do not re-print the effective config — that is `/flow:config`. Name a key only when something
-  about it is broken.
+- Parse by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`,
+  `conventions`, `notes`, `knowledge`, `observability`. Absent → §1.5 runs with **every** key empty
+  (all fallbacks), which is a legitimate and complete answer.
+
+## 1.5 What the configuration says
+
+Print this **before** the environment checks: a key nobody set is the commonest reason a check
+below looks broken. Read against `examples/FLOW.template.md` — do not invent keys, and do report
+keys documented there and absent from this repo's `FLOW.md` (the "empty → fallback" rows).
+
+**This was the `config` command until v0.53.0.** One question — *what will the flow do in this repo* —
+had two commands answering different halves of it.
+
+### 1.5.1 Effective config, per section
+
+For **every** documented key in `examples/FLOW.template.md`, one row:
+
+- **set** → the value (list keys like `git.worktree_resync` or `quality.reviewers`: the items).
+- **empty / absent** → `(empty → <what happens>)`, taken from the key's comment in the template
+  (e.g. `quality.test` → "auto-discover from Makefile/npm/composer/Gradle/dotnet/Xcode/Flutter"; `tracker.tool` → "manual paste";
+  `agents.security` → "general-purpose with the role"; `git.worktree` → "off / in-place";
+  `git.worktree_resync` → "`/flow:work:try` only switches, no re-sync"; `quality.review_depth` →
+  "proportional" — the other depths are `light` and `full`). Never leave a reader guessing what an empty key does.
+
+For `knowledge`, print the four roles resolved with who decided each: the `knowledge` key, or empty with its fallback (`search` → no lookups; `stage` → artifact only; `read_staging` → artifacts; `save` → `KNOWLEDGE.md`). A `domain_memory` section still in the file → one line: *"`domain_memory` is no longer read; name the tools you want under `knowledge`"* — it is retired configuration, not an error.
+
+Group by section with a short header each, so it scans as a table; keep set-vs-empty visually
+distinct (e.g. `✓` vs `·`).
+
+#### 1.5.2 Resolved models (only if the `models` section exists and has any key set)
+
+Two keys, both about subagents. Print what each one actually reaches:
+
+```
+agents   fable    →  improvised subagents: review panel members with no named agent, blinded
+                     auditors, delegated build pieces, the general-purpose challenger
+workers  (empty)  →  fan-out rounds — falls back to `agents`
+```
+
+- State once, plainly: **the main agent's own steps are not covered by either key** — reading the
+  ticket, the design, and the single-thread `build`/`fix` run on the model the command was launched
+  with, because an agent cannot switch its own model. A phase that wants another one says so at the
+  handoff; nothing enforces it.
+- One line: a role set in `agents.*` keeps its own agent definition's model, so a round can mix
+  configured and self-declared models.
+
+#### 1.5.3 Defaults that keep being used
+
+`FLOW.md` is written small on purpose and grows by use (flow-core §0): a phase that resolves an
+empty key in `guided`/`auto` records it rather than asking. This block is where that record is read
+back.
+
+Aggregate `defaults_used[]` from every `.claude/work/*/meta.json`, **`_archive/` included**. One row
+per key: the key, the default that was used, in how many works, and the last phase that used it.
+Sort by count, most-used first, and cap the block at the ten busiest keys with a count of the rest.
+
+```
+agents.security      general-purpose   4 works   last: review
+quality.review_depth proportional      4 works   last: review
+data.volumes         (none — duel ran schema-only)  2 works   last: query
+```
+
+- **Print the line to paste**, per row, so pinning one is a copy: `- security: <agent name>` under
+  `## agents`. This command writes nothing, here or anywhere.
+- No `defaults_used[]` anywhere (a fresh repo, or every work ran in `manual`) → skip the block
+  entirely, no empty table.
+- One line under it: a default used in four works out of four is a decision that has already been
+  taken four times; a default used once is not yet worth a key.
+
+### 1.5.4 Problems in the file itself (flag, do not fix)
+
+Report problems, change nothing. **Scope: this file.** Whether the world it describes exists —
+CLIs installed *and authenticated*, agents discoverable, hooks executable, the MCP reachable, the
+base branch resolvable — is §2 below; flag the key here, check the world there, never both.
+
+- **Fan-out and cost ceilings**: `agents.fanout_max` must be a positive integer; else flag and note
+  the default `4` applies. `agents.budget_max` must be a non-negative integer (`0` = no ceiling);
+  else flag and note the default `12`. **Both absent → say so as a finding, not a pass**: the review
+  chain is the plugin's most expensive command and these are its only brake, so report the effective
+  numbers and where to lower them. `budget_max` under the count of reviewers `quality.review_skill`
+  or `quality.reviewers` defines → flag: the panel alone will exhaust the command's budget and every
+  later phase gets skipped for cost. `agents.fanout_tool` names a harness tool, not an agent: set
+  but not exposed by this harness → note the fan-out falls back to plain parallel subagents (not an
+  error).
+- **Models**: `models.*` values are **free text for the harness** — never flag a model name as
+  invalid, never suggest a "better" one, never invent a default. Report only: a key outside
+  `agents` / `workers` (flag — a typo, it will be ignored; the retired `study` / `code` / `test` /
+  `review` keys get one line saying they are no longer read and that `agents` covers the subagents
+  they used to name), and whether this harness can set a model per subagent (if not, every value
+  degrades to inheritance).
+- **Coherence**: `git.worktree` is `ask`/`always` with `git.worktree_path` empty → note the default
+  `.worktrees/{branch}` applies. `git.host` and `git.cli` disagree → flag. Whether the declared
+  commands, agents and MCP exist here is §2.1-§2.3.
+- **Tracker transitions**: any of `tracker.start_cmd` / `done_cmd` / `abandon_cmd` set while
+  `tracker.tool` is `none`/empty → flag (no ticket to move). `start_cmd` references `{ASSIGNEE}` with
+  both `tracker.assignee` and `git.assignee` empty → note the token won't substitute. `git.host` is
+  `github`/`gitlab` and `done_cmd` is set → note it is usually redundant with `Closes #N` auto-close
+  (harmless). These `*_cmd` run best-effort and never block.
+- **Data access**: `data.explain_cmd` / `schema_cmd` / `sandbox_cmd` / `seed_cmd` are commands, not
+  agents — never run them; "does the binary exist" is §2.1. Whole `data` section empty →
+  not an error: note the query duel in `/flow:work:query` and `/flow:feat:review §3.6` runs on the
+  schema alone and declares what it cannot prove; if the repo clearly talks to a database (a
+  migrations directory, an ORM config), say what filling `volumes` alone buys — a reviewer arguing
+  about real row counts. `explain_cmd`/`schema_cmd` without a `{QUERY}` / `{TABLE}` token → flag
+  (nothing substituted). Anything that looks like the **production** database → flag loudly: these
+  run against a development or throwaway database, never a live one.
+- **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and, at the
+  end, proposes the next command as a one-click confirmation — never runs it unconfirmed). Set →
+  echo the mode and remind that the hard gates stop and ask in every mode and that `guided`/`auto`
+  never ask about the flow's own mechanics or anything already decided (both lists: `flow:flow-core`
+  skill §2). Unrecognized value → flag, `manual` assumed.
 
 ## 2. Checks
 
@@ -88,8 +198,11 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
 
 ## 3. Output
 
-**Quiet on success.** Print one line per check that is *not* ok, grouped by the six areas above,
-plus a single summary line:
+§1.5 always prints — it is the answer to half the question. **The checks are quiet on success**:
+one line per check that is *not* ok, grouped by the six areas above, plus a summary line. Close with
+`N keys set, M using fallbacks, K warnings` from §1.5 next to the findings count.
+
+
 
 ```
 flow doctor — 3 findings

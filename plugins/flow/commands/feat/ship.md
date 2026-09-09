@@ -212,7 +212,7 @@ Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip wi
 1. **Read the staging accumulated during the branch**: `knowledge.read_staging` (empty → what the artifacts recorded) — what `/flow:feat:design` (and other phases) already staged. Main material.
 2. **Review** `03-design.md`, `05-implementation.md`, `06-review.md` for "why" findings (domain decisions, legal constraints, integrations, business motivations) **not staged at the time**. The "what" (code, paths) is NOT saved.
 3. **Combine staging + new findings** into a short list. Empty or only code-derivable → do not insist.
-4. 1+ relevant findings → ask the user whether to consolidate. Yes → `Skill save-knowledge` (it does `knowledge.read_staging` internally and orchestrates the save; you provide the context of what to consolidate). No → do not insist.
+4. 1+ relevant findings → ask the user whether to consolidate. Yes → run the consolidation of flow-core §0 (`read_staging`, then one decision and one `knowledge.save` per finding). No → do not insist.
 
 ## 6. Close
 
@@ -389,7 +389,7 @@ Read `meta.json.conventions_candidates[]` (flow-core §8). **No entries with `st
 ### 6.4ter Defaults that were used (one line, no question)
 
 `meta.json.defaults_used[]` non-empty → **one line** in the Close: how many empty `FLOW.md` keys this
-work resolved with their default, and that `/flow:config` lists which ones and prints the line to
+work resolved with their default, and that `/flow:doctor` lists which ones and prints the line to
 paste. Never a list here, and never a question: in `guided`/`auto` not asking is the contract
 (flow-core §0, §2), and in `manual` the phases already offered what they were allowed to offer.
 

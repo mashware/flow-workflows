@@ -137,7 +137,7 @@ a runnable app and no way to drive it. That is also the first moment you have an
 answer on.
 
 In `guided` and `auto` nothing is asked — that would be the never-a-question contract breaking, one
-reasonable question at a time — and the default is **recorded** instead, in `meta.json`. `/flow:config`
+reasonable question at a time — and the default is **recorded** instead, in `meta.json`. `/flow:doctor`
 adds them up across every work, archived ones included, so *"this key defaulted in four works out of
 four"* is a fact you read rather than a pattern you have to notice.
 

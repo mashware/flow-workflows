@@ -157,7 +157,7 @@ another plugin) — this only states **which** one to invoke, it does not create
 - `frontend:`       # components/UI
 - `testing:`        # tests and coverage, whichever suite the diff touches
 
-Two keys below configure the **parallel fan-out** (approach panel in `brainstorm` §3.A, hypothesis
+Two keys below configure the **parallel fan-out** (approach panel in `design` §1.5.3, hypothesis
 sweep in `investigate` §3.A, finding verification in `review`) instead of naming an agent. The
 fan-out runs as plain parallel subagents — the primitive every harness has.
 
@@ -193,7 +193,7 @@ subagent ignores the value and the step says so once, in one line.
 - `agents:`   # every subagent a command improvises: the review panel members with no named agent, the
               #   blinded auditors, the delegated pieces of a `build`, the `general-purpose` challenger.
               #   Empty = they inherit the model the command runs on.
-- `workers:`  # the parallel fan-out rounds ONLY: approach panel (brainstorm §3.A), hypothesis sweep
+- `workers:`  # the parallel fan-out rounds ONLY: approach panel (design §1.5.3), hypothesis sweep
               #   (investigate §3.A), finding skeptics (review §6 / §5), the deferred-work skeptic
               #   (ship). Empty = falls back to `agents`, then to what the command runs on.
 
@@ -211,7 +211,7 @@ so in one line at the handoff (`/model <value>`) and **continues**: flow mechani
 question in `guided`/`auto` and never a gate.
 
 **A named agent keeps its own model.** If `agents.<role>` names a real agent, that agent's own
-definition wins — you configured it, and it is not overridden from two places. `/flow:config` prints
+definition wins — you configured it, and it is not overridden from two places. `/flow:doctor` prints
 both keys resolved, with who decided each.
 
 ## data
@@ -282,8 +282,9 @@ command or skill fits. Section empty or absent = every knowledge step is skipped
 - `stage:`          # optional. Tool that records ONE finding for this branch during a phase (finding + context as its arguments).
                     # Empty = the finding is written to the phase artifact only (no staging).
 - `read_staging:`   # optional. Tool that returns what this branch has staged. Empty = the phase artifacts are the staging.
-- `save:`           # optional. Tool that consolidates one finding into the store (`/flow:save-knowledge`, `ship`, `postmortem`).
-                    # Empty = `/flow:save-knowledge` appends the consolidated findings to `KNOWLEDGE.md` at the repo root instead.
+- `save:`           # optional. Tool that consolidates one finding into the store (`ship`, `postmortem`, `abandon`, and the
+                    # offer in `/flow:work:status` when there is staging). Empty = the consolidation appends the findings to
+                    # `KNOWLEDGE.md` at the repo root instead.
 - `timeout_s:`      # per call. Empty = 2. A call that fails or takes longer → continue without it, silently.
 
 ## observability

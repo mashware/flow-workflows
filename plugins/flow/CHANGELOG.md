@@ -5,6 +5,47 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.53.0 — Four commands that were steps of another one  ·  2026-09-09
+
+**In short**
+- **32 commands → 28.** `config` folds into `doctor`, `feat:brainstorm` into `feat:design` §1.5, `bug:diagnose` into `bug:investigate` §1.5, and `save-knowledge` into flow-core §0 as the step it always was.
+- **`/flow:doctor` now answers the whole question**: what this repo's `FLOW.md` resolves to (§1.5), then whether the world it assumes exists (§2). One question had two commands answering different halves.
+- **The bug chain on S is `start → investigate (reproduce only) → fix → …`**, which is what it already was under two names. The feature chain on M/L is `start → design → plan → …`, with the approach panel as `design` §1.5.
+- **Nothing is lost from an existing work.** `phase: "brainstorm"` maps to `design`, `phase: "diagnose"` to `investigate`; `resume` says which mapping it applied, and the old `02-*.md` artifacts are read as that section's output.
+- **The preflight refuses an orphan command** — one nothing links to from another command, `flow-core`, or the README. `save-knowledge` would have shown up.
+
+**Two commands answering one question.** `/flow:config` printed what `FLOW.md` says; `/flow:doctor`
+checked whether the environment honours it. Nobody wants one of those answers on its own: a key
+nobody set is the commonest reason a `doctor` finding looks broken, and a tool that is missing is the
+commonest reason a `config` value does nothing. So `doctor` prints the effective configuration first
+— the resolved knowledge roles, the two model keys, the defaults that keep being used, the problems
+in the file itself — and then runs the six areas of environment checks. `config` is gone; the
+description of `doctor` says what it now covers.
+
+**`brainstorm` wrote a file only `design` ever read.** 124 lines whose whole output was
+`02-brainstorm.md`, consumed by exactly one command, on M/L only. It is now `design` §1.5
+"Approaches": the same panel, the same lenses, the same cross-critique on L, the same ceilings, the
+same *"choosing is a genuine decision point"* — and its output is the first section of
+`03-design.md` instead of a file of its own. XS and S skip §1.5 exactly as they skipped the command.
+
+**`diagnose` and `investigate` were reproduce-then-explain.** Five shared headings, and the S-size
+table already ran `diagnose → fix` with no `investigate` between them, which is to say: on S the
+"investigation" was the reproduction. Now `investigate` §1.5 reproduces — the symptom knowledge
+query, the minimal case by surface, locating the code, the size re-check, and *"cannot reproduce it"*
+as a legitimate stop — and §3 finds the cause. `03-investigation.md` carries both halves.
+
+**`save-knowledge` was already a step.** `ship` and `postmortem` invoked it as a skill; nothing
+linked to it as a command. Its 24 lines are now flow-core §0 — *how a consolidation runs* — called by
+`ship`, `postmortem` and, new, `abandon`, which is where it matters most: nobody comes back to read
+`99-abandoned.md`, and what the analysis learned about the domain is true whether or not the feature
+shipped. A mid-work save is an extra option in `/flow:work:status` when the branch has staging.
+
+**Not merged, on purpose.** `feat:review` vs `bug:review`, `feat:ship` vs `bug:ship`, `feat:validate`
+vs `bug:validate`, `feat:start` vs `bug:start`: line similarity 0.23-0.34, at most 7 of ~20 headings
+shared. They diverged deliberately and merging them would save nothing. `next` / `resume` / `status`
+stay three entry points with clear roles. And the five commands outside both chains — `watch`,
+`clean`, `daily`, `try`, `news` — stay in the core plugin.
+
 ## v0.52.0 — The wizard asked on day one about things that matter in week three  ·  2026-09-09
 
 **In short**

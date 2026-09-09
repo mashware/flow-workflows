@@ -8,7 +8,7 @@
 > - Parallel fan-out → several subagents in one response, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `codex exec "<command>"` with cron or Codex automations.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
@@ -18,7 +18,7 @@ Mandatory code review of the fix.
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `review`.**
 
-- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test); `02-diagnose.md` only when the summary leaves the symptom unclear. (flow-core §5)
+- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test). (flow-core §5)
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.
 - `git diff` shows no changes → warn and stop.
 
@@ -56,7 +56,7 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 2. **Project panel** (only when §2.0 selected it): skill `quality.review_skill` from FLOW.md, invoked as `<review_skill> branch`. `review_skill` empty and `quality.reviewers` set → launch those agents in parallel as a panel. Both empty → the built-in `code-review` is the whole review. Launch the panel **as defined** — whole roster, no subset, no substitutions; an agent that cannot run goes to §7 `Agents launched` with the reason. **Every brief you write for it — and for the §3 reinforcements — ends with the report contract of flow-core §6** (`agents.report_max_words`, empty → 250; findings only, one line each): an uncapped report is truncated in transit and reads exactly like a reviewer with nothing to say. The built-in `code-review` takes no brief; bound it with the §2.0 tier and hold it to the same fan-out deadline.
 
 Deduplicate overlaps (count once). Fix-specific focus beyond generic analysis:
-- The change genuinely resolves the problem from `02-diagnose.md` / `03-investigation.md`.
+- The change genuinely resolves the problem from `03-investigation.md`.
 - No expanded scope (hidden refactor) — list any.
 - The regression test from `05-validation.md` covers the case.
 
