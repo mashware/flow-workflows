@@ -8,13 +8,13 @@
 > - Parallel fan-out → several subagents in one response, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `codex exec "<command>"` with cron or Codex automations.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session.
 
-Clean closure for works that will not reach the base branch: a feature discarded after `brainstorm` or `design`, a bug that is not one (expected behavior, external problem, user misconfiguration), a work absorbed by another ticket.
+Clean closure for works that will not reach the base branch: a feature discarded after `design`, a bug that is not one (expected behavior, external problem, user misconfiguration), a work absorbed by another ticket.
 
 ## 1. Pre-flight
 
@@ -65,7 +65,7 @@ Write `.claude/work/<TICKET>/99-abandoned.md`:
 
 ## 4. Domain knowledge (conditional offer)
 
-**Only if any `knowledge` role is set and the analysis left non-obvious findings** (why the domain works as it does, legal constraints, surprising integrations): ask whether to invoke `Skill save-knowledge`. Silence by default; the role empty → skip silently.
+**Only if any `knowledge` role is set and the analysis left non-obvious findings** (why the domain works as it does, legal constraints, surprising integrations): ask whether to consolidate them (flow-core §0). Silence by default; the role empty → skip silently. An abandoned work is where this matters most: nobody comes back to read `99-abandoned.md`, and what the analysis learned about the domain is true whether or not the feature shipped.
 
 ## 5. Git state
 

@@ -12,7 +12,7 @@ description: Implement the minimal fix and keep a log
 > - Parallel fan-out → several `@name` in one prompt, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `opencode run -p "<command>"` with cron.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
@@ -22,9 +22,9 @@ Apply the fix. **Minimum viable**: no refactor of adjacent areas. Note other pro
 
 Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `code`.**
 
-- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (root cause, constraints for the fix) — or `02-diagnose.md` when investigate was skipped. (flow-core §5)
-- `size` `XS`: may start without `diagnose`/`investigate`, but require a 2-3 line description of the fix.
-- `size` ≥ S: require `diagnose` (and `investigate` for M/L) in `phases_done`.
+- Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (root cause, constraints for the fix) (minimal reproduction, root cause, constraints for the fix). (flow-core §5)
+- `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix.
+- `size` ≥ S: require `investigate` in `phases_done` (on S it will have run its reproduction half only).
 
 ## 2. Fix brief (before touching code)
 
@@ -137,7 +137,7 @@ A fix that turns out to need **a mechanism the product does not have** is not a 
 
 Check it twice: when writing the §2 brief (the «What is changed» line needs more than one sentence, or names something that does not exist yet) and again the moment the diff grows a type, or a state two modules must agree on. Either signal → **stop before writing the mechanism** and ask once with `AskUserQuestion`, in every mode:
 
-- **Reclassify as a feature (recommended when the mechanism is unavoidable)** → in place, same ticket, same branch: `meta.json.type = "feat"`, `phase = "context"`, `phases_done = ["context"]`; the bug artifacts stay as evidence (`02-diagnose.md` and `03-investigation.md` are the feature's «why» — nothing is re-derived). Record the reclassification and its reason in `01-context.md`, then chain per size: `/flow-feat-design` (S), `/flow-feat-brainstorm` (M/L). The design is discussed before a line exists, and the idiom audit runs blind to it.
+- **Reclassify as a feature (recommended when the mechanism is unavoidable)** → in place, same ticket, same branch: `meta.json.type = "feat"`, `phase = "context"`, `phases_done = ["context"]`; the bug artifacts stay as evidence (`03-investigation.md` are the feature's «why» — nothing is re-derived). Record the reclassification and its reason in `01-context.md`, then chain into `/flow-feat-design` (its §1.5 opens the option space on M/L, and is skipped on S). The design is discussed before a line exists, and the idiom audit runs blind to it.
 - **Keep it a bug, narrower** → rewrite the §2 brief to the minimal fix that needs no mechanism (often: stop the wrong thing, say nothing new yet), ask the gate again, and record the mechanism as a `followups[]` entry (`kind: "out-of-scope"`) — or as a `decision`, when what is missing is the user's answer rather than code.
 
 Never the third way: building the mechanism here because the ticket says bug.

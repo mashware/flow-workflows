@@ -8,7 +8,7 @@
 > - Parallel fan-out → several subagents in one response, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `codex exec "<command>"` with cron or Codex automations.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 
@@ -113,3 +113,9 @@ If a work's branch matches the current one, suggest:
 - An `in_progress` MR/PR waiting for merge confirmation → `/flow-feat-ship` should update the state.
 - A `closed` MR/PR with no subsequent decision → warn so the user can decide (retry build or abandon).
 - Otherwise → the concrete next command.
+
+**A mid-work knowledge save lives here.** `knowledge.read_staging` is set and returns entries for the
+current branch → offer, as one more action, to consolidate them now (flow-core §0) instead of waiting
+for `ship` or `postmortem`. Only when there are entries, only as an option among the others, and
+never as a question of its own: this is the last place a session that is about to end can bank what
+it learned.

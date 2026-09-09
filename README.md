@@ -61,11 +61,14 @@ itself and offers you the two-line alternative. → [PHILOSOPHY §When not to us
 ## The two chains
 
 ```
-feat  start → brainstorm → design → plan → build → review → validate → ship
-                (M/L)              (M/L)  └─── repeats per MR/PR of a train ───┘
+feat  start → design → plan → build → review → validate → ship
+              (§1.5    (M/L)  └─── repeats per MR/PR of a train ───┘
+              approaches
+              on M/L)
 
-bug   start → diagnose → investigate → fix → validate → review → postmortem → ship
-                                                                   (M/L)
+bug   start → investigate → fix → validate → review → postmortem → ship
+              (§1.5 reproduce,                                     (M/L)
+               then the cause)
 
 after ship, before merge:  green ⟲   pipeline red / conflicts / behind base
                            respond ⟲ reviewer threads: triage, debate, change, reply
@@ -127,26 +130,22 @@ Symmetrically, `guided`/`auto` never ask about the flow's own machinery (panels,
 
 | Command | What it does |
 |---|---|
-| `/flow:feat:brainstorm` | Options, angles and risks before designing |
-| `/flow:feat:design` | Architecture, DB, APIs, risks — before touching code |
+| `/flow:feat:design` | Options and angles first (M/L), then architecture, DB, APIs and risks — before touching code |
 | `/flow:feat:plan` | Split the work into small, independently mergeable MR/PRs |
 | `/flow:feat:validate` | Tests, edge cases and integrity — drives the app itself before asking you to |
-| `/flow:bug:diagnose` | Reproduce the failure and pin down what is broken |
-| `/flow:bug:investigate` | Find the root cause, not the symptom |
+| `/flow:bug:investigate` | Reproduce the failure, then find the root cause and not the symptom |
 | `/flow:bug:validate` | Regression test that fails before, passes after |
 | `/flow:bug:review` | Multi-agent code review of the fix |
 | `/flow:bug:postmortem` | Lessons learned, areas to monitor (M/L incidents) |
 | `/flow:bug:ship` | Commit, push, MR/PR for the fix (carries the postmortem summary) |
 | `/flow:init` | Wizard that generates this repo's `FLOW.md` |
-| `/flow:config` | Effective `FLOW.md`: set vs empty (and its fallback), plus validation |
-| `/flow:doctor` | Environment check — CLIs installed *and authenticated*, agents, hooks, MCP |
+| `/flow:doctor` | What `FLOW.md` resolves to — set vs empty and its fallback — then whether the environment honours it: CLIs installed *and authenticated*, agents, hooks, MCP |
 | `/flow:work:query` | Query duel — fact sheet, blinded challenger, verdict by execution plan against the base version |
 | `/flow:work:watch` | Post-deploy watcher — monitors observability, flags regressions |
 | `/flow:work:daily` | Standup across local + forge + tracker; ask a question or get the briefing |
 | `/flow:work:try` | Point the main checkout at a branch to test it, and print the manual test plan once it is up (then `--back`) |
 | `/flow:work:clean` | Sweep merged worktrees, dead branches, unarchived folders. Never deletes on a guess |
 | `/flow:work:abandon` | Close a work item without shipping |
-| `/flow:save-knowledge` | Consolidate the branch's findings into the knowledge store (`knowledge.save`, or `KNOWLEDGE.md`) |
 | `/flow:news` | What changed in the plugin since the version you last saw |
 
 ## What a work looks like on disk
@@ -159,8 +158,7 @@ One folder per work under `.claude/work/`, named `<TICKET>-<slug>` (or `<slug>` 
 ├── meta.json              # source of truth: phase, size, branch, MR/PRs, related repos
 ├── panel.json             # live state for an external reader (below)
 ├── 01-context.md          # ticket, size, branch, first questions
-├── 02-brainstorm.md       # options, angles, risks
-├── 03-design.md           # architecture + ADR-light + external contracts
+├── 03-design.md           # approaches considered + architecture + ADR-light + external contracts
 ├── 04-mr-plan.md          # the MR/PR split, order and dependencies
 ├── 05-implementation.md   # running log, deviations from the design
 ├── 06-review.md           # findings and what was done about them
@@ -170,7 +168,7 @@ One folder per work under `.claude/work/`, named `<TICKET>-<slug>` (or `<slug>` 
 └── evidence/              # what validate observed in the running app; ship attaches it to the MR/PR
 ```
 
-A bug writes `02-diagnose.md`, `03-investigation.md`, `04-fix.md`, `05-validation.md`, `06-review.md` and, on M/L, `99-postmortem.md`. `abandon` writes `99-abandoned.md` and moves the folder to `_archive/`.
+A bug writes `03-investigation.md` (reproduction, then root cause), `04-fix.md`, `05-validation.md`, `06-review.md` and, on M/L, `99-postmortem.md`. `abandon` writes `99-abandoned.md` and moves the folder to `_archive/`.
 
 Artifacts are **hand-editable**: rewrite `03-design.md` and the next phase respects it. `meta.json` is the state; without it, commands refuse to continue rather than guess.
 
@@ -241,7 +239,7 @@ flow-workflows/
 ├── .claude-plugin/marketplace.json   # catalog (Claude Code)
 ├── .github/           preflight CI · issue forms · PR template
 ├── plugins/flow/
-│   ├── commands/      feat/ bug/ work/ + next, init, config, doctor, news, save-knowledge
+│   ├── commands/      feat/ bug/ work/ + next, init, doctor, news
 │   ├── skills/flow-core/             # shared rules, loaded once per session
 │   ├── hooks/         push guard · update notice · where-you-left-off notice
 │   └── examples/       FLOW.template.md · symfony/ (a worked example, never loaded)

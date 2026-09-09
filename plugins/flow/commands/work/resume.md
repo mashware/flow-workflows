@@ -14,6 +14,7 @@ Use when returning to a work after a break (next morning, another session).
 - `git branch --show-current`.
 - Search `.claude/work/` for the `meta.json` whose `branch` matches.
 - None found → ask the user for the ticket or whether to start a new one.
+- **A `phase` retired in v0.53.0** — `brainstorm` or `diagnose`, from a work started before it — is mapped, never refused: `brainstorm` → `design` (its `02-brainstorm.md` is that command's §1.5 output, already done), `diagnose` → `investigate` (its `02-diagnose.md` is that command's §1.5 output). Say which mapping you applied, in one line, and suggest the mapped command. Do not rewrite `meta.json` for it; the phase advances normally at the next Close.
 - `meta.json.worktree` non-null and the current directory is not that worktree → tell the user the work lives in a worktree and to `cd <worktree>` before continuing; run the repo-state checks below from there (`git -C <worktree> …`).
 
 ## 2. Recap

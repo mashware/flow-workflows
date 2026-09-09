@@ -164,7 +164,7 @@ def check_example_config():
 def check_template_keys_are_read(files):
     """A key in the template that no command and no skill names is a key nothing reads.
 
-    `models.study` and `models.test` were documented, printed by `/flow:config` and
+    `models.study` and `models.test` were documented, printed by `/flow:doctor` and
     resolved by nobody for eight releases: the commands that were supposed to name
     them never did. A key costs a paragraph in the template, a row in CONFIGURATION,
     a branch in `init`, a row in `config` and a check in `doctor` — all of it wasted
@@ -191,6 +191,34 @@ def check_template_keys_are_read(files):
             continue
         fail("plugins/flow/examples/FLOW.template.md",
              f"`{section}.{key}` is documented but no command or skill names it")
+
+
+def check_no_orphan_commands(files):
+    """A command nothing links to is a command nobody runs.
+
+    `/flow:save-knowledge` was invoked as a skill by `ship` and `postmortem` and
+    linked from nowhere as a command: its standalone entry existed for a mid-work
+    save that no other file mentioned. A command earns its file by being reachable
+    — from another command, from `flow-core`, from `next`, or from the README's
+    tables.
+    """
+    commands = [f for f in files
+                if f.startswith("plugins/flow/commands/") and f.endswith(".md")
+                and not f.endswith("/README.md")]
+    corpus = "\n".join(
+        read(f) for f in files
+        if (f.startswith("plugins/flow/commands/") or f.startswith("plugins/flow/skills/")
+            or f in ("README.md", "plugins/flow/README.md"))
+        and f.endswith(".md")
+    )
+    for f in commands:
+        rel = f[len("plugins/flow/commands/"):-len(".md")]
+        invocation = "/flow:" + rel.replace("/", ":")
+        # a command may not cite itself
+        own = read(f)
+        elsewhere = corpus.replace(own, "")
+        if invocation not in elsewhere:
+            fail(f, f"nothing links to `{invocation}` — no command, skill or README names it")
 
 
 def check_hooks_executable(files):
@@ -457,6 +485,7 @@ def main():
     check_all_json(files)
     check_example_config()
     check_template_keys_are_read(files)
+    check_no_orphan_commands(files)
     check_hooks_executable(files)
     check_hooks_have_tests(files)
     check_version_matches_changelog()

@@ -134,7 +134,7 @@ def check_invocations(name, path, body, sep, plugin_stems):
         if found == sep and "*" not in rest:
             cited.add(rest.replace(":", "-").replace("-", "-").strip("-"))
     for token in sorted(cited):
-        if token in ("news", "init", "config", "doctor", "save-knowledge"):
+        if token in ("news", "init", "doctor"):
             continue
         if token not in plugin_stems:
             fail(path, f"cites `/flow{sep}{token.replace('-', sep)}`, which is not a command")

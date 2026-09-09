@@ -90,8 +90,8 @@ flow is per-repo: a fix that touches other repos and is not recorded is silently
 | Size | Criteria                                                       | Suggested phases                              |
 |------|----------------------------------------------------------------|-----------------------------------------------|
 | XS   | Obvious fix (typo, inverted condition, null check)             | start → fix → review → ship                   |
-| S    | Clear symptom, reasonably bounded cause                        | start → diagnose → fix → validate → review → ship |
-| M    | Clear symptom but non-obvious cause, possible regression       | start → diagnose → investigate → fix → validate → review → postmortem → ship |
+| S    | Clear symptom, reasonably bounded cause                        | start → investigate (reproduce only) → fix → validate → review → ship |
+| M    | Clear symptom but non-obvious cause, possible regression       | start → investigate → fix → validate → review → postmortem → ship |
 | L    | Critical incident, multi-component, production affected        | full flow + mandatory postmortem              |
 
 **`validate` comes before `review` on every size that has both** — the regression test is what proves the fix. `/flow:bug:review` refuses to run without `validate` in `phases_done` for size ≥ S, so the order above is the gate, not a preference.
@@ -194,6 +194,6 @@ Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket` and `{ASSIGNEE}` = 
 
 ## 5. Close
 
-- Suggest the next command by size: `/flow:bug:fix` for XS, `/flow:bug:diagnose` for the rest.
+- Suggest the next command by size: `/flow:bug:fix` for XS, `/flow:bug:investigate` for the rest.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Apply `autonomy.mode`: `manual` stops and recommends; `guided`/`auto` chain into that command automatically, subject to the hard gates.

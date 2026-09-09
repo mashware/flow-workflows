@@ -48,7 +48,7 @@ The plan already exists; the user should not have to ask for it. Source it in th
    `proven-by-agent` or `proven-manually` get **one line together** saying so — never repeat them.
 2. **No validation artifact yet** → the enumerated acceptance criteria from `03-design.md`, all of
    them, flagged *not yet classified — `validate` has not run*. For a bug with no validation
-   artifact, the reproduction steps from `02-diagnose.md`.
+   artifact, the reproduction steps from `03-investigation.md` §Minimal reproduction.
 3. **Neither** → say so plainly and stop. Do not compose a plan out of the diff.
 
 **Offer to collect the verdicts here.** One `AskUserQuestion`, the same shape as

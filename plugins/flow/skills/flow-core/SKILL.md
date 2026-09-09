@@ -24,7 +24,7 @@ carries what is specific to its phase. Read this once per session; a command tha
   3. `guided`/`auto` → take the default and **record** it: one line in the phase artifact as today,
      plus an entry in `meta.json.defaults_used[]` — `{ "key": "agents.security", "default":
      "general-purpose", "phase": "review" }`. Asking here would break the never-a-question contract
-     (§2); recording keeps the decision readable afterwards, and `/flow:config` aggregates it.
+     (§2); recording keeps the decision readable afterwards, and `/flow:doctor` aggregates it.
 
   **The list, and it is short on purpose**: `agents.<role>` when a panel is about to improvise that
   role on an M/L or sensitive diff · `quality.review_depth` after a review's cost line went over
@@ -43,8 +43,33 @@ carries what is specific to its phase. Read this once per session; a command tha
   (consolidate into the store). A step names the role, never a product. Missing role → that step
   degrades: no `search` → skip the lookup silently; no `stage` → the finding goes to the phase
   artifact only; no `read_staging` → the artifacts are the staging; no `save` →
-  `/flow:save-knowledge` appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
+  the consolidation appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
   `knowledge.timeout_s` (empty = 2 s); a failure or timeout → continue without it, silently.
+**How a consolidation runs** (`ship`, `postmortem`, `abandon`, and the offer in `/flow:work:status`
+when `read_staging` has entries). No role set at all → say so in one line and stop; nothing here is
+worth a command of its own, which is why there is no longer one:
+
+1. **Read the staging** for this branch with `knowledge.read_staging`; the role empty → the "why"
+   findings already written in this work's artifacts (`03-design.md` ADR-light and challenges,
+   `03-investigation.md`, `06-review.md`, `99-postmortem.md`). Nothing there and nothing new in the
+   session → *"nothing to consolidate on this branch"*, and stop.
+2. **Combine** the staged findings with what this session learned and has not staged, applying the
+   why-vs-what rule: anything the code already states — a path, a class, how it works — is discarded
+   here, not saved.
+3. **Per finding**: `knowledge.search` set → query it with the topic and the finding's paths, then
+   decide *create* · *update* · *enrich with a new angle* · *conflict*. A conflict is asked
+   immediately (`AskUserQuestion`) and nothing is saved until it is resolved. Then `knowledge.save`,
+   one call per finding; the role empty → append to **`KNOWLEDGE.md` at the repo root** under a
+   `## <topic>` heading — the finding, its evidence line, the date and the branch. Creating that file
+   the first time edits the tree, so it is asked once, in every mode; appending to an existing one is
+   recorded, not asked.
+4. **Report** in one line: *"Created N · Updated M · Conflicts resolved J"*, or *"Appended N
+   finding(s) to KNOWLEDGE.md"*.
+5. **Clear the staging** for the branch afterwards, when the store has that notion.
+
+A tool call that fails is **reported, never swallowed** — this is the one knowledge path that is
+explicit rather than degrading in silence.
+
 - `notes.<command>` (or `notes.all`) → mandatory extra instructions for that command.
 - Key names and defaults: the template shipped with the plugin (`examples/FLOW.template.md`).
 

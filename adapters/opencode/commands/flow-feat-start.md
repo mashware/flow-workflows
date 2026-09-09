@@ -12,7 +12,7 @@ description: Start a new feature (read the tracker, classify size, create branch
 > - Parallel fan-out → several `@name` in one prompt, capped at `agents.fanout_max` (empty → 4); `agents.fanout_tool` is Claude Code-only, ignore it.
 > - `ScheduleWakeup` / `Monitor` / `/loop` → not available in-session: run one cycle, persist state in `monitor.md`, let the user schedule `opencode run -p "<command>"` with cron.
 > - `TaskCreate` → a markdown checklist in the phase artifact.
-> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`). `Skill save-knowledge` → `/flow-save-knowledge`.
+> - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
@@ -129,13 +129,13 @@ Another repo referenced but **no** contract → say so in one line — *"the `<r
 
 ## 4. Classify size
 
-Propose a size. **`manual`** → confirm with one `AskUserQuestion`. **`guided`/`auto` → do not ask**: record your estimate in `01-context.md` with a one-line reason and continue — the size is a route, not a commitment; `/flow-feat-brainstorm §7` and `/flow-feat-plan §5` reclassify.
+Propose a size. **`manual`** → confirm with one `AskUserQuestion`. **`guided`/`auto` → do not ask**: record your estimate in `01-context.md` with a one-line reason and continue — the size is a route, not a commitment; `/flow-feat-design §1.5.5`, `§7` and `/flow-feat-plan §5` reclassify.
 
 | Size | Criteria | Suggested phases |
 |------|----------|-----------------|
 | XS | < 50 lines, no DB, no new API, no domain logic | start → build → review → ship |
 | S | Contained change, 1-3 relevant files, no migrations | start → design (short) → build → review → validate → ship |
-| M | New domain logic, possible migrations, multiple modules | start → brainstorm → design → build → review → validate → ship |
+| M | New domain logic, possible migrations, multiple modules | start → design (approaches + design) → plan → build → review → validate → ship |
 | L | Cross-module, external integrations, major model changes | full flow, consider splitting |
 
 Mark your estimate "(Recommended)".
