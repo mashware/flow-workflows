@@ -108,12 +108,13 @@ of opening a work.
 
 ## Stack-agnostic, and what that costs
 
-Nothing about a stack is hardcoded. Each repo is described by a `FLOW.md` at its root — tracker,
-git host, test commands, review agents, observability — and anything left empty is auto-detected or
-asked for. The price of that is deliberate: flow ships **no** agents and **no** review skill, because
-those are language- and project-specific, and it never picks a model for you, because a plugin that
-shipped one vendor's tiers as gospel would be wrong on three of the four harnesses it runs on. You
-name what you have; the flow delegates to it and degrades where it is missing.
+Nothing about a stack is hardcoded. Each repo is described by a shared `FLOW.md` at its root and,
+when a harness differs, a sparse `FLOW.<harness>.md` — tracker, git host, test commands, review
+agents, observability — and anything effectively empty is auto-detected or asked for. The price of
+that is deliberate: flow ships **no** agents and **no** review skill, because those are language-
+and project-specific, and it never picks a model for you, because a plugin that shipped one
+vendor's tiers as gospel would be wrong on three of the four harnesses it runs on. You name what
+you have; the flow delegates to it and degrades where it is missing.
 
 The price is paid on day one, when `agents:` has nothing to name yet, so the plugin carries one
 worked answer without making it a default: `examples/symfony/` is a complete `FLOW.md` and the four
@@ -143,9 +144,10 @@ four"* is a fact you read rather than a pattern you have to notice.
 
 ## Personal config, not team config
 
-`FLOW.md` mixes repo facts (tracker, quality commands) with your own preferences (autonomy mode, the
-agents and MCPs *you* have installed, review depth, your assignee name). The same file on a
-teammate's machine may point at agents that are not there. So it is personal by default — `/flow:init`
-offers to git-ignore it, along with `.claude/work/` — and it holds no secrets, which stay in your
-credential store. A team that wants to share the repo-fact subset can commit it deliberately; the
-default just refuses to make one person's preferences everyone's.
+The FLOW files mix repo facts (tracker, quality commands) with your own preferences (autonomy mode,
+the agents and MCPs *you* have installed, review depth, your assignee name). An overlay makes the
+harness-specific half explicit, but neither file becomes team config: a teammate may still lack
+those agents or prefer another mode. So they are personal by default — `/flow:init` offers to
+git-ignore `/FLOW.md`, `/FLOW.*.md`, and `.claude/work/` — and they hold no secrets, which stay in
+your credential store. A team that wants to share the repo-fact subset can commit the base
+deliberately; the default just refuses to make one person's preferences everyone's.

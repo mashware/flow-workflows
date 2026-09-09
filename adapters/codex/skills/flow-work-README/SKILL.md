@@ -20,15 +20,25 @@ description: "Guide to the /feat and /bug workflow system"
 
 This system **orchestrates** the project's existing sub-agents and skills (it does not replace them): it persists context across phases, keeps each step from starting from scratch, and enforces a code-review gate before closing.
 
-## Per-repo configuration: `FLOW.md`
+## Per-repo configuration: base plus harness overlay
 
-- `FLOW.md` at the repo root adapts the plugin: tracker, branch and MR/PR conventions, quality commands, code conventions, knowledge sources by role, observability profile. Every command reads it in its step 0.
+- `FLOW.md` at the repo root is the shared base: tracker, branch and MR/PR conventions, quality
+  commands, code conventions, and observability profile.
+- The active `FLOW.<harness>.md` is an optional sparse overlay (`claude`, `codex`, `opencode`, or
+  `gemini`) for model names, agents, skills, orchestration, knowledge tools, or any other value that
+  differs on that harness. Every command reads the base and then the active overlay in step 0;
+  existing repos with only `FLOW.md` behave exactly as before.
+- An overlay key replaces the base even when explicitly empty; an absent key inherits it. Lists
+  replace whole lists. Overlay `conventions` are added after base conventions. In the rest of this
+  document, `FLOW.md` means the effective merged configuration unless a write target is explicit.
 - Template: [`examples/FLOW.template.md`](../../examples/FLOW.template.md).
 - Missing file or empty key → auto-discovery or the default described in each command's section.
 
 ## Principles
 
-- **Shared rules live in the `flow-core` skill** (`skills/flow-core/SKILL.md`): FLOW.md step 0, `models`, autonomy and hard gates, never-a-question list, stop header, `panel.json`, `00-summary.md`. Every command loads it once per session.
+- **Shared rules live in the `flow-core` skill** (`skills/flow-core/SKILL.md`): configuration merge,
+  `models`, autonomy and hard gates, never-a-question list, stop header, `panel.json`,
+  `00-summary.md`. Every command loads it once per session.
 - **One folder per ticket**: `.claude/work/{TICKET}/` holds `meta.json`, `00-summary.md`, `panel.json` and the numbered markdown artifacts.
 - **Numbered artifacts**: each phase writes a `NN-phase.md` that the next step reads.
 - **`evidence/`**: what `$flow-*-validate` actually observed when it drove the running app — a screenshot, a response body, a log excerpt, one file per criterion, with a **before** where the change alters something already visible. `$flow-*-ship` attaches it to the MR/PR description. `quality.evidence: off` disables both halves.
@@ -211,7 +221,8 @@ Two signals arrive on an open MR/PR, each with its own cross-cutting loop (feat 
 
 ## Cross-cutting commands
 
-- `$flow-next` — the entry point: no `FLOW.md` → init; work on the current branch → resume; otherwise status.
+- `$flow-next` — the entry point: no base or active overlay → init; work on the current branch →
+  resume; otherwise status.
 - `$flow-work-daily [question]` — the **work assistant** (daily standup), read-only. **Local** (`.claude/work/` + git) + **forge** (open MRs/PRs, reviews awaiting you, red CI, unmergeable, unresolved threads via `git.cli`) + **tracker** (assigned tickets, priority changes via `tracker.tool`); where they cross, concrete commands (`$flow-feat-start`, `$flow-work-green`, `$flow-work-respond`). No argument → *yesterday · today · blockers*; a question → just that. External sources best-effort, never blocking; the only write is a "last seen" marker, like `$flow-news`.
 - `$flow-work-status` — all works in `.claude/work/`, current phase, divergence with git.
 - `$flow-work-resume` — detects the branch, reads `meta.json`, recaps, suggests the next step. **Re-reads the ticket's comment thread** (§2.5), reports only what is new since `01-context.md`, appends it to the artifact; never amends the design on its own.
@@ -220,7 +231,8 @@ Two signals arrive on an open MR/PR, each with its own cross-cutting loop (feat 
 - `$flow-work-respond [mr-iid-or-url]` — the phase **between `ship` and `merge`** for reviewer comments. Triages threads (question / nitpick / change request / design debate / out-of-scope / obsolete), drafts a response per thread **grounded in the recorded design rationale** (`03-design.md` ADR-light + the knowledge search), implements agreed changes with `build`/`fix` mechanics, replies — hard gates on every posting and push; **never resolves a thread**. One invocation per round, logged to `08-feedback.md`; does not advance `meta.json.phase`.
 - `$flow-work-green [mr-iid-or-url]` — the **machine** half: the MR/PR **cannot merge**. Reads via `git.cli` the failing jobs **and** the forge's merge verdict (`detailed_merge_status`/`has_conflicts` · `mergeable`/`mergeStateStatus`/`reviewDecision`) — green ≠ mergeable. Triages every blocker (lint/style, test failure, type/build, flaky/infra, quality-gate, **conflict/behind-base**, **human**), fixes machine ones **at the root** (flow's sub-agents, `quality.*` locally), integrates the base and resolves conflicts on their merits (merge by default — no history rewrite, no force-push), pushes — hard gates on every push, rerun and base integration. **Never green-washes** (no blind reruns, no skipping a check, no `--ours`/`--theirs`); human blockers routed, not bypassed. One invocation per round, logged to `09-ci.md`; does not advance `meta.json.phase`.
 - `$flow-work-query [file|query|objection]` — the **query duel**: settles a data-access query with an execution plan. Fact sheet (filter, order **with direction**, bound, join sides with real types and collations, heavy columns, rows per key, indexes from the schema), a **blinded challenger** over the twelve classic failures, judgement by the main agent (never a subagent), **measures** when the schema cannot settle it (per `data.*`; three runs per variant, plan next to time, plus `keys served`), **one** recommendation with the number. Invoked by `feat:review §3.6`, `bug:review §3.5`, `work:respond §4.G`, `feat:design`'s Access-paths table, `feat:build`, `feat:validate`, `bug:investigate` — and directly. Judges, never patches; creating or seeding a database is a hard gate in every mode, never against production. `data.*` empty → schema alone, and says so.
-- `$flow-doctor` — effective FLOW.md config (set vs empty-with-fallback), validated. Read-only.
+- `$flow-doctor` — effective merged FLOW config, with each value's source and
+  empty-overlay masks, validated. Read-only.
 - `$flow-doctor` — the environment config assumes: CLIs installed *and* authenticated, agents discoverable, hooks executable, MCP reachable, base branch resolvable. Read-only, quiet on success.
 - `$flow-work-watch {TICKET} [30m]` — autopiloted post-deploy monitoring (FLOW.md `observability`) scoped to the change, against a baseline (preceding window + same weekday of the prior week, ratios over counts); alerts immediately on any regression. Polls via `ScheduleWakeup`; touches neither code nor production.
 

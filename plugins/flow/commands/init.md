@@ -1,18 +1,31 @@
 ---
-description: Assistant that generates the FLOW.md for this repo (auto-detects what it can, asks the minimum)
+description: Assistant that generates FLOW.md and its optional harness overlay (auto-detects what it can, asks the minimum)
 ---
 
 # `/flow:init`
 
-Creates or updates `FLOW.md` at the repo root — the configuration every other `/flow:*` command
-reads. The user answers the **minimum**: what the repo can tell is auto-detected and only confirmed.
+Creates or updates the effective FLOW configuration at the repo root: shared values in `FLOW.md`
+and optional harness-owned values in the active `FLOW.<harness>.md`. The active filename is
+`FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, or `FLOW.gemini.md`; identify it from the
+product executing this command, never from the selected model. Every other `/flow:*` command reads
+the base and then that overlay. The user answers the **minimum**: what the repo can tell is
+auto-detected and only confirmed.
 
 Key names and contract: `examples/FLOW.template.md` from the plugin. Do not invent keys that are not there.
 
-## 1. If `FLOW.md` already exists
+## 1. If either configuration file already exists
 
-Show it and ask: **update** (re-detect and re-ask, preserving what the user keeps) or **cancel**.
-Never overwrite without confirmation.
+Show `FLOW.md` and the active overlay when each exists, then show their effective merged values.
+Ask: **update** (re-detect and re-ask, preserving what the user keeps) or **cancel**. Never read,
+change, or display another harness's overlay. Never overwrite either file without confirmation.
+Label harness-sensitive values that currently come from the base as **shared across harnesses**;
+that is information, not an error and not evidence that a free-text model name is invalid.
+
+An old `FLOW.md` is already valid and stays where it is. Do not move a model, agent, skill, or tool
+to the active overlay merely because it looks harness-specific: model names are free text, and the
+file may intentionally be the default for several harnesses. Only split existing values when the
+user explicitly asks to split or migrate them; show the exact keys and both resulting files before
+editing. This is an optional migration, not part of a normal update.
 
 ## 2. Auto-detection (do NOT ask about what you can infer)
 
@@ -37,7 +50,7 @@ Run, deduce, show what was found for confirmation or correction:
   - Several stacks in one repo (a backend plus a mobile client) → propose one command per key that chains them (`make test` if a Makefile already does, else `a && b`), and say so.
   - Schema migrations (Doctrine, Alembic, Rails, Prisma…) → propose `quality.db_diff` and raise `git.predeploy_gate`.
 - **Data access** (`data.*`, all optional) — only if the repo talks to a database. Find the client and the local stack (a `docker-compose.yml` service, a `DATABASE_URL`/`DB_*` env var, a `Makefile` target that opens a shell). Propose `data.explain_cmd` and `data.schema_cmd` in the engine's dialect against the **development** database — MySQL over Docker Compose: `docker compose exec -T <db-service> mysql <db> -e "EXPLAIN {QUERY}"` and `… -e "SHOW CREATE TABLE {TABLE}"`; PostgreSQL: `psql -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"` / `\d+ {TABLE}`. Leave `sandbox_cmd`/`seed_cmd`/`volumes` empty unless the user has something ready. Nothing detected → leave the section out (the query duel degrades to schema-only and says so).
-- **Knowledge sources** (`knowledge.*`) — look at the MCP tools exposed in this session: `mcp__domain-memory__*` → propose `search: mcp__domain-memory__search_knowledge`, `stage: mcp__domain-memory__stage_finding`, `read_staging: mcp__domain-memory__read_staging`, `save: mcp__domain-memory__save_knowledge`; any other tool whose name says search / query / knowledge / memory / graph (e.g. `mcp__codegraph__*`) → propose it as an additional `search` entry, roles it cannot fill left empty. A `docs/adr` or similar folder with no MCP → propose `search: rg -n -i "{QUERY}" docs/adr`. Nothing found → leave the section out.
+- **Knowledge sources** (`knowledge.*`) — look at the MCP tools exposed in this session: `mcp__domain-memory__*` → propose `search: mcp__domain-memory__search_knowledge`, `stage: mcp__domain-memory__stage_finding`, `read_staging: mcp__domain-memory__read_staging`, `save: mcp__domain-memory__save_knowledge`; any other tool whose name says search / query / knowledge / memory / graph (e.g. `mcp__codegraph__*`) → propose it as an additional `search` entry, roles it cannot fill left empty. A `docs/adr` or similar folder with no MCP → propose `search: rg -n -i "{QUERY}" docs/adr`. Nothing found → leave the section out. MCP and harness tool names detected in this session belong in the active overlay; a plain repo command such as the `rg` example belongs in `FLOW.md`.
 
 ## 3. Ask five things
 
@@ -65,7 +78,7 @@ review, not a questionnaire. Then, and only then, five questions:
 4. **The quality commands as one block** (`quality.test`, `test_one`, `static_analysis`, `style_fix`,
    `db_update`, `db_diff`) — confirm or edit what §2 found, all in one question, each may stay empty
    (= auto-discover at the moment it is needed). Several suites chain into `test` with `&&`.
-5. **Git-ignore** `FLOW.md` and `.claude/work/` — see §5.
+5. **Git-ignore** `FLOW.md`, `FLOW.*.md`, and `.claude/work/` — see §5.
 
 **Two keys are written without being asked**: `agents.fanout_max` (`4`) and `agents.budget_max`
 (`12`), with their default values, because they are the only brake on what a review costs and a key
@@ -79,15 +92,30 @@ do not exist yet, nobody has seen a review's cost line, and looking up row count
 wizard is not configuration, it is homework. Each of those is offered by the phase that first needs
 it, at a stop it was making anyway (flow-core §0), which is also the first moment the user has
 anything to base the answer on. Do not ask about them here, and do not ask about `models.*` either
-unless the user brings it up.
+unless the user brings it up. When the user does configure `models.*`, write it to the active
+overlay, never the base.
 
-## 4. Write `FLOW.md`
+## 4. Write the base and, only when needed, the active overlay
 
-Write a **compact** file at the repo root — every command reads it in every phase, so its size is paid on every step:
+Write compact files at the repo root — every command reads the base and active overlay in every
+phase, so their size is paid on every step:
 
-- Two-line header: what the file is, and that the plugin's `examples/FLOW.template.md` documents every key and default.
+- `FLOW.md` holds repo facts and shared preferences: tracker, git, autonomy, quality commands, cost
+  ceilings, data, conventions, repo commands, and observability.
+- The active overlay holds values owned by the current harness: `models.*`, agent role names,
+  `agents.fanout_tool`, `quality.review_skill`, `quality.reviewers`, and MCP or harness-specific
+  `knowledge.*` tool names. A manually configured overlay may override any documented key; init
+  preserves it, but does not duplicate a common value there.
+- Do not create an empty overlay. Do not touch inactive overlays. Existing values remain in their
+  current file unless the user explicitly requested a split.
+- Two-line header in each file: whether it is the shared base or which harness it overlays, and that
+  the plugin's `examples/FLOW.template.md` documents every key, merge rule, and default.
 - Sections in the template's order — tracker, git, autonomy, quality, agents, models, data, conventions, notes, knowledge, observability — but **only the sections and keys that have a value**. One line per key: `- key: value`. No template comments.
-- Empty keys are omitted entirely (absent = default, same as empty; each command degrades gracefully). A section with no set key is omitted too. **The two exceptions are `agents.fanout_max` and `agents.budget_max`**: write them with their value even when it is the default, per §3 — a cost ceiling is only a ceiling if the person paying can find it.
+- Empty keys are omitted from the base (absent = default). In an overlay, preserve or write an empty
+  key only when it intentionally masks a non-empty base value; removing it would change the
+  effective config. A section with no set or masking key is omitted. **The two base-file exceptions
+  are `agents.fanout_max` and `agents.budget_max`**: write them with their value even when it is the
+  default, per §3 — a cost ceiling is only a ceiling if the person paying can find it.
 - No `review` section: the panel is configured by `quality.review_depth`, `quality.review_skill` and `quality.reviewers`.
 - In doubt about a key or its default → read the template, never reproduce it from here.
 
@@ -95,9 +123,16 @@ Write a **compact** file at the repo root — every command reads it in every ph
 
 ## 5. Close
 
-- Summarize on screen: what was configured, what was left **empty (= auto-discover)**; mention `models.*` exists and where it is documented (§3).
+- Summarize on screen: what was written to the base, what was written to the active overlay, and
+  what was left **empty (= auto-discover)**; mention `models.*` exists and where it is documented
+  (§3).
 - **One line on how the rest of the file gets written**: *"the other keys are offered the first time a phase needs one — agents when a panel improvises a role, review depth when a review goes over budget, table volumes when a query duel comes back schema-only."* Then `/flow:doctor` shows which defaults keep being used, so a key worth pinning can be pinned.
-- `FLOW.md` is **personal config, not team config** (repo facts mixed with one developer's flow preferences, tools and agents; **no secrets**) — it should not be committed. One `AskUserQuestion`, both parts in the same question:
-  - `FLOW.md` not already git-ignored → **offer to add it to `.gitignore`** (append a `FLOW.md` line). This edits a tracked file — confirm before writing. A team wanting the repo-fact subset can still commit it deliberately.
+- The base and overlays are **personal config, not team config** (repo facts mixed with one
+  developer's flow preferences, tools and agents; **no secrets**) — they should not be committed.
+  One `AskUserQuestion`, both parts in the same question:
+  - The root files not already git-ignored → **offer to add `/FLOW.md` and `/FLOW.*.md` to
+    `.gitignore`**. This edits a tracked file — confirm before writing. A team wanting the repo-fact
+    subset can still commit it deliberately. Do not use a recursive pattern: examples under the
+    plugin must remain visible.
   - Git-ignore `.claude/work/` too — recommended default: ignore it (artifacts are personal working state; teams that want to share them commit deliberately). `git.worktree` not `off` → offer `.worktrees/` in the same gesture.
 - Suggest `/flow:next` as the next step (it routes to `/flow:feat:start`, `/flow:work:resume` or `/flow:work:status`).

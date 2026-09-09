@@ -75,6 +75,7 @@ fi
 cp "$HERE/../plugins/flow/.claude-plugin/plugin.json" "$HOME/.claude/flow/plugin.json" 2>/dev/null || true
 
 echo
-echo "→ One key step remaining: place a FLOW.md at the root of your repo."
+echo "→ One key step remaining: place a shared FLOW.md at the root of your repo."
+echo "  Optional for this harness: FLOW.$TOOL.md (sparse overrides only)."
 echo "  Template: $HERE/../plugins/flow/examples/FLOW.template.md"
-echo "  (without FLOW.md everything still works, just with more prompting)"
+echo "  (without either file everything still works, just with more prompting)"

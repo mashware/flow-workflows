@@ -68,9 +68,12 @@ Adjust the `command` and `args` values in `[mcp_servers.domain-memory]` to match
 
 For subagents, define the `[agents.<name>]` sections you need in `~/.codex/config.toml`, using the names you set in the `agents.*` map in `FLOW.md`.
 
-### 3. FLOW.md in the repo
+### 3. FLOW configuration in the repo
 
-Every repo using these workflows needs a `FLOW.md` at its root. Without it, workflows run with default values (auto-discovery), but having it is recommended for project-specific conventions.
+Use `FLOW.md` for shared repo configuration and an optional `FLOW.codex.md` for model, agent,
+skill, orchestration, or MCP names that differ from the other harnesses. Codex reads the base and
+then its overlay; an explicitly empty overlay value masks the base. Existing base-only repos are
+unchanged. Without either file, workflows run with default values and auto-discovery.
 
 ```bash
 cp ../../plugins/flow/examples/FLOW.template.md FLOW.md

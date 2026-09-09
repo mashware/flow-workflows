@@ -27,7 +27,8 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 
 ## 1. Pre-flight
 
-- Read `FLOW.md`; missing file → each step's default. This command **creates** `00-summary.md` (§6) instead of reading it (flow-core §5).
+- Read the effective FLOW configuration per flow-core §0; neither base nor active overlay → each
+  step's default. This command **creates** `00-summary.md` (§6) instead of reading it (flow-core §5).
 - No recognizable project structure → warn and stop.
 - **Determine the mode**: `$ARGUMENTS` non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less* (identifier = the §2.5 slug).
 - Once the identifier is known, check the work does not exist: ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after the slug is decided in §2.5. Exists → do not overwrite; warn and suggest `$flow-work-resume`.

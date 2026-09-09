@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.56.0 — A Claude model no longer leaks into Codex  ·  2026-09-09
+
+**In short**
+- **`FLOW.md` remains the shared base**, so every existing repository behaves exactly as before.
+- **Each harness may add one sparse overlay**: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, or `FLOW.gemini.md`; the active file wins key by key, and an explicitly empty key masks the base.
+- **`/flow:init` separates new harness-owned values without migrating old files**, creates no empty overlay, and offers root-only gitignore patterns for both shapes.
+- **`/flow:doctor` shows each effective value's source**, while `/flow:next` recognises a base, an active overlay, or both as configured.
+
+One personal configuration file was being read by four products with different model catalogues,
+agent registries, skills, and orchestration tools. A value valid in Claude could therefore be handed
+unchanged to Codex. Commands now resolve the common base and only the overlay belonging to the
+product executing them. Lists replace as a unit; overlay conventions are additive; inactive and
+unknown overlays never affect a run.
+
 ## v0.55.0 — Installing it on Codex no longer means cloning the repo  ·  2026-09-09
 
 **In short**
@@ -1493,4 +1507,3 @@ Tracker integration stays **read-only and symmetric with Jira**: the flow reads 
 - **Adapters (opencode/gemini/codex)**: pull and re-run `adapters/install.sh`.
 
 To switch a project to GitLab: set `tracker.tool: glab` and `tracker.view_cmd: glab issue view {TICKET}` in its `FLOW.md` (or re-run `/flow:init`).
-

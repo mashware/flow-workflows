@@ -1,12 +1,13 @@
-# Configuring flow: `FLOW.md`
+# Configuring flow: base plus harness overlay
 
-`FLOW.md` is a single markdown file at your repo root that tells the `/flow:*` commands about
-your conventions: how tickets are named and read, how branches and MR/PRs are made, which
-commands run your tests, how much review a change earns, which agents to delegate to, and what
-to watch after a deploy. Every command reads it in its step 0.
+`FLOW.md` is the shared configuration at your repo root. An optional sparse
+`FLOW.<harness>.md` overrides the values that differ between Claude Code, Codex, opencode, and
+Gemini CLI. Together they tell the `/flow:*` commands how tickets are read, branches and MR/PRs are
+made, tests run, review is staffed, models are selected, and deploys are watched. Every command
+resolves the base plus the active overlay in its step 0.
 
-**Anything you leave empty is auto-detected or asked for.** A repo with no `FLOW.md` still works,
-just with more questions and fewer shortcuts. Nothing here is required.
+**Anything effectively empty is auto-detected or asked for.** A repo with neither the base nor its
+active overlay still works, just with more questions and fewer shortcuts. Nothing here is required.
 
 Four things surround this file, each with one job — if the template and this document ever
 disagree, the template wins:
@@ -15,22 +16,74 @@ disagree, the template wins:
 |---|---|
 | [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examples/FLOW.template.md) | The **skeleton to copy**, and the canonical list of keys |
 | This document | What each key **means**, its default, and when it's worth setting |
-| `/flow:doctor` | Your **effective** config — what is set, what is empty and its fallback, validated — and then whether the environment it assumes exists here: CLIs and their auth, agents, hooks, MCP, base branch |
-| `/flow:init` | **Generates** the file for you, auto-detecting what it can |
+| `/flow:doctor` | Your **effective merged** config — value, source file, empty masks and fallback, validated — then whether the environment it assumes exists here: CLIs and their auth, agents, hooks, MCP, base branch |
+| `/flow:init` | **Generates** the base and, when needed, the active harness overlay, auto-detecting what it can |
 
-## Getting a `FLOW.md`
+## Getting the FLOW configuration
 
 ```
 /flow:init        # auto-detects git host, test commands, tracker… and asks the minimum
 ```
 
-Or copy the template by hand and delete what does not apply.
+Or copy the template by hand and delete what does not apply. Most repos need only `FLOW.md`.
 
-**Then add `FLOW.md` to your `.gitignore`** — `/flow:init` offers to do it. This file is
-**personal config, not team config**: it mixes repo facts (tracker, quality commands) with your
-own preferences (autonomy mode, the agents and MCPs *you* have installed, review depth, your
-assignee name). The same file on a teammate's machine may point at agents that aren't there. It
-holds no secrets — those stay in your credential store. A team that wants to share only the
+### Harness overlays
+
+The supported overlay names are:
+
+| Running product | Active overlay |
+|---|---|
+| Claude Code | `FLOW.claude.md` |
+| Codex | `FLOW.codex.md` |
+| opencode | `FLOW.opencode.md` |
+| Gemini CLI | `FLOW.gemini.md` |
+
+The product executing the command chooses the overlay; a model name never does. Unknown
+`FLOW.*.md` files are ignored. The base is optional too, so an overlay-only configuration is valid.
+
+Resolution is per section and key:
+
+1. A key present in the active overlay wins, even when its value is empty.
+2. An explicitly empty overlay value masks the base and selects the documented empty fallback.
+3. A key absent from the overlay inherits `FLOW.md`.
+4. A list-valued key replaces the complete base list.
+5. `conventions` has no keys, so its overlay lines are appended after the base and both apply.
+
+```markdown
+# FLOW.md
+## quality
+- test: make test
+
+## models
+- agents: shared-provider-model
+- workers: shared-worker-model
+```
+
+```markdown
+# FLOW.codex.md
+## models
+- agents: codex-model
+- workers:
+```
+
+Here the empty `workers` masks `shared-worker-model` and takes its normal fallback, the effective
+`agents` value (`codex-model`). Empty both overlay keys to make both inherit the Codex session
+model.
+
+The overlay can technically override any documented key, but it should stay sparse. Repo facts
+and shared preferences belong in `FLOW.md`; model names, installed agent/skill names,
+orchestration tools, and harness-specific MCP tools belong in the overlay.
+
+This is backward-compatible in the upgrade direction: a new flow version reads every existing
+`FLOW.md` unchanged, and `/flow:init` never moves values automatically. Older flow versions do not
+know the overlay filenames and therefore ignore them; keep all common values in the base if the
+same checkout must also run an older installation.
+
+**Then add `/FLOW.md` and `/FLOW.*.md` to your `.gitignore`** — `/flow:init` offers to do it. These
+files are **personal config, not team config**: they mix repo facts (tracker, quality commands)
+with your own preferences (autonomy mode, the agents and MCPs *you* have installed, review depth,
+your assignee name). The same files on a teammate's machine may point at agents that are not there.
+They hold no secrets — those stay in your credential store. A team that wants to share only the
 repo-fact subset can commit it deliberately.
 
 ## Sections at a glance
@@ -500,9 +553,13 @@ extra machinery and the cost that comes with it.
 
 ## `models`
 
-Which model the **subagents** run with. The section is **optional in full**: an empty or absent
-`models` means everything runs with the model you launched the command with — which is what flow did
+Which model the **subagents** run with. The section is **optional in full**: with an empty or absent
+`models`, every subagent inherits the model you launched the command with — which is what flow did
 before the section existed.
+
+Put model values in the active harness overlay when different products use different model
+catalogues. Values left in the base remain the cross-harness default for backward compatibility;
+an explicitly empty overlay key masks one and restores inheritance for that harness.
 
 | Key | What it covers |
 |---|---|
@@ -741,10 +798,10 @@ what you know instead of guessing.
 
 ---
 
-## With no `FLOW.md` at all
+## With neither base nor active overlay
 
 Everything still runs. Each command auto-discovers what it can and asks about the rest:
 autonomy is `manual`, review is `proportional`, quality commands come from your Makefile or
 package scripts, the git host from the remote, worktrees are off, and the domain/observability
-steps are silently skipped. `FLOW.md` buys you fewer questions and the behaviors you can't
-auto-detect — trains, transitions, per-command notes, your agent panel.
+steps are silently skipped. The FLOW configuration buys you fewer questions and the behaviors you
+cannot auto-detect — trains, transitions, per-command notes, your agent panel.

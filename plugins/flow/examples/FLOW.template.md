@@ -1,16 +1,23 @@
-# FLOW.md
+# FLOW configuration
 
 Configuration for the `flow` plugin for this repository. The `/flow:*` commands read this
 file in their step 0. Delete what does not apply; **empty or absent = auto-discover or
 default behavior** (each command states what it does when a value is missing).
 
+Use this shape for the shared base `FLOW.md` and for an optional sparse harness overlay:
+`FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, or `FLOW.gemini.md`. The active overlay is
+read after the base. A key present in it replaces the base value; a present-but-empty key masks the
+base and selects the normal empty fallback; an absent key inherits the base. Lists replace whole
+lists. `conventions` is additive: overlay lines follow the base lines and both apply. Existing repos
+with only `FLOW.md` behave exactly as before. Unknown `FLOW.*.md` names are ignored.
+
 Place it at the repo root. This is **personal config, not team config** — it mixes repo facts
 (tracker, quality commands, conventions) with your own flow preferences (autonomy mode, the
 tools/agents you have installed, review depth, assignee), so what one developer wants differs from
 the next and the same file on another machine may point at agents or an MCP that isn't there. It
-holds **no secrets** (those stay in your credential store), but **add `FLOW.md` to your
-`.gitignore`** — `/flow:init` offers to do this for you. A team that wants to share the repo-fact
-subset can still commit it deliberately.
+holds **no secrets** (those stay in your credential store), but **add `/FLOW.md` and
+`/FLOW.*.md` to your `.gitignore`** — `/flow:init` offers to do this for you. A team that wants to
+share the repo-fact subset can still commit it deliberately.
 
 ## tracker
 How tickets are identified and read.
@@ -181,8 +188,12 @@ command composes itself — the panel in `review`, the delegated pieces in `buil
                            #   for agents that legitimately read for half an hour before writing
 
 ## models
-Which model each kind of step runs with. **Every key is optional and empty by default = the step runs
-with the model you launched the command with** (today's behavior — the flow changes nothing).
+Which model the subagents run with. **Every key is optional and empty by default = the subagent
+inherits the model you launched the command with** (today's behavior — the flow changes nothing).
+
+Model names are normally harness-owned: put them in the active `FLOW.<harness>.md` so a Claude
+model is never handed to Codex, or vice versa. Keeping them in `FLOW.md` remains supported and
+makes them the default for every harness; an empty overlay key masks that default when needed.
 
 Values are **free text, passed straight to your harness**. flow never validates a model name, never
 ranks them, and never picks one for you — it only **says** what a wide fan-out is about to inherit
