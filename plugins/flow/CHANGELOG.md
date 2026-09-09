@@ -5,6 +5,39 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.49.0 — Day one reached `agents:` with nothing to name  ·  2026-09-09
+
+**In short**
+- **`examples/symfony/` ships a complete, worked stack**: a filled-in `FLOW.md` and the four reviewers a Symfony + Doctrine + MySQL repo actually wants, with a README on what to change for Laravel or plain PHP.
+- **Nothing loads it.** It is an example, not a default — the plugin still ships no agents and no review skill, for the same reason as before.
+- **`/flow:init` names it in one line**, only when the detected stack is PHP, and never copies anything on its own.
+- **The preflight validates the example against the template**, so a key retired in `FLOW.template.md` cannot leave the example advertising a key nothing reads.
+
+**The most elaborate part of the plugin runs on `code-review` alone on a fresh install.** Flow ships
+no agents on purpose: they are language- and project-specific, and a plugin that shipped one stack's
+reviewers as everyone's default would be wrong three times out of four. PHILOSOPHY states the
+decision and states its price — *"you name what you have"* — and says nothing about what that price
+does on the first day, which is that `/flow:init` reaches `agents:` and the honest answer is
+*"empty, fill it in later"*. The review panel, the reinforcements, the query duel's challenger: all
+of them degrade to `general-purpose` because there is nothing on the machine to name.
+
+**One worked stack, visibly one stack.** `plugins/flow/examples/symfony/` holds a `FLOW.md` filled
+in end to end — `quality.*` against a Makefile, `data.explain_cmd` and `data.schema_cmd` through
+Docker Compose, `data.volumes` with real row counts, ten conventions that read like a repo's rather
+than a style guide's — and four agents written the way `review` briefs a reviewer, each with the
+report contract of flow-core §6 at the end: under 250 words, findings only, one line each as
+`file:line` + what is wrong + the fix. A framework reviewer for layering and Messenger, a Doctrine
+reviewer that judges a query on its plan rather than on its mapping, a security reviewer that tags
+severity because a high finding is a hard gate, and a test guide built around the one question that
+catches a test proving nothing.
+
+**The boundary is written where it will be read.** The folder's README opens by saying it is an
+example, that nothing loads it, and how to copy it — per repo or per machine — followed by
+`/flow:doctor` to confirm the names resolve. `/flow:init` mentions it in one line when it detects
+PHP and stays silent otherwise. And `check.py` now parses every `examples/*/FLOW.md` against the
+template's key set: the example cannot drift from the real keys, the same way the reference table
+cannot.
+
 ## v0.48.0 — Every session began by asking the flow where you were  ·  2026-09-09
 
 **In short**

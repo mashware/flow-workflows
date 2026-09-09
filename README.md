@@ -244,7 +244,7 @@ flow-workflows/
 │   ├── commands/      feat/ bug/ work/ + next, init, config, doctor, news, save-knowledge
 │   ├── skills/flow-core/             # shared rules, loaded once per session
 │   ├── hooks/         push guard · update notice · where-you-left-off notice
-│   └── examples/FLOW.template.md
+│   └── examples/       FLOW.template.md · symfony/ (a worked example, never loaded)
 ├── docs/              CONCEPTS · PHILOSOPHY · DESIGN · CONFIGURATION · WORKFLOWS
 ├── script/check.py                   # release preflight
 ├── script/adapter-build.py           # generates the adapter mirrors
@@ -268,7 +268,7 @@ CI runs the same five on every PR. The preflight refuses what has shipped broken
 
 ## What it does not ship (on purpose)
 
-No agents and no review skill — those are stack-specific; you name yours in `FLOW.md`. Three generic hooks ship: a guard against pushing to `master`/`main`, an update notice at session start, and a session-start line saying which work this branch belongs to and where it stands. Optional dependencies (a knowledge source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific steps; without them those steps degrade and the rest works.
+No agents and no review skill — those are stack-specific; you name yours in `FLOW.md`. One worked set ships as an *example* and is never loaded: [`examples/symfony/`](plugins/flow/examples/symfony/) is a filled-in `FLOW.md` plus four reviewers for a Symfony + Doctrine repo, to copy and edit. Three generic hooks ship: a guard against pushing to `master`/`main`, an update notice at session start, and a session-start line saying which work this branch belongs to and where it stands. Optional dependencies (a knowledge source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific steps; without them those steps degrade and the rest works.
 
 ## License
 

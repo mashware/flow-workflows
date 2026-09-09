@@ -115,6 +115,12 @@ those are language- and project-specific, and it never picks a model for you, be
 shipped one vendor's tiers as gospel would be wrong on three of the four harnesses it runs on. You
 name what you have; the flow delegates to it and degrades where it is missing.
 
+The price is paid on day one, when `agents:` has nothing to name yet, so the plugin carries one
+worked answer without making it a default: `examples/symfony/` is a complete `FLOW.md` and the four
+reviewers a Symfony + Doctrine repo actually wants, with a README on what to change for the stack
+next door. Nothing loads it. It is there to be copied and edited, which is the only honest way to
+ship stack-specific content from a stack-agnostic plugin.
+
 ## Personal config, not team config
 
 `FLOW.md` mixes repo facts (tracker, quality commands) with your own preferences (autonomy mode, the

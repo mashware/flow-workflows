@@ -13,8 +13,9 @@ honour.
 
 - **A worked example for a stack.** A complete `FLOW.md` plus the specialist agents `review` asks
   for, under `plugins/flow/examples/<stack>/`, with a README saying what to change for the
-  neighbouring stack. The plugin ships no agents on purpose ([why](docs/PHILOSOPHY.md#stack-agnostic-and-what-that-costs));
-  a worked example is the mitigation, and it is the highest-value thing you can send.
+  neighbouring stack — the shape is `examples/symfony/`, which is the only one so far. The plugin
+  ships no agents on purpose ([why](docs/PHILOSOPHY.md#stack-agnostic-and-what-that-costs)); a
+  worked example is the mitigation, and a second stack is the highest-value thing you can send.
 - **A harness actually run end to end.** The opencode, Gemini CLI and Codex CLI mirrors are
   generated and checked mechanically, and `adapters/README.md` says plainly that nobody has run a
   full chain in them. A report saying *"I ran `feat:start → ship` on Codex CLI and here is what
