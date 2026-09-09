@@ -4,7 +4,7 @@ description: Mandatory multi-agent code review before shipping
 
 # `/flow:feat:review`
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `review`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 Mandatory review phase. **`/flow:feat:ship` cannot run without passing through here and resolving blockers.**
 

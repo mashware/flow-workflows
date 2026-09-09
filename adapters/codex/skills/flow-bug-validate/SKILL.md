@@ -22,7 +22,7 @@ Validate that the fix works and that the bug does not return.
 
 ## 1. Pre-flight
 
-Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `test`.**
+Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (§3 areas with similar risk, and the minimal reproduction) — the testing agent reads it and `04-fix.md` itself. (flow-core §5)
 - Require `fix` in `phases_done`.

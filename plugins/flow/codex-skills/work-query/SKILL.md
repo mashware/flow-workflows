@@ -20,7 +20,7 @@ description: "Put a data-access query on trial — schema, indexes, execution pl
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `review`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 **A query is approved by its plan, not by prose.** Fact sheet → challenger attacks → each point settled with a **plan or a number**. **Cross-cutting** (feat or bug), **repeatable**, does **not** advance `meta.json.phase`; runs with or without a work folder.
 

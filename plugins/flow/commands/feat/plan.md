@@ -4,7 +4,7 @@ description: Split the work into small, independently mergeable MRs/PRs before i
 
 # `/flow:feat:plan`
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `study`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
 
 Delivery planning phase. **No code is written.** Splits the feature into MRs/PRs that can each live on the main branch even if the subsequent ones never land.
 

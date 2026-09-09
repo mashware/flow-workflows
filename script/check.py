@@ -193,6 +193,39 @@ def check_template_keys_are_read(files):
              f"`{section}.{key}` is documented but no command or skill names it")
 
 
+MODELS_CLAUSE_FORMS = (
+    "**Models: this command runs with the model it was launched with (no `models` key).**",
+    "**Models: the subagents it launches take `models.agents`.**",
+    "**Models: the subagents it launches take `models.agents`; its parallel rounds take "
+    "`models.workers`.**",
+)
+
+
+def check_models_clause(files):
+    """A command's `Models:` clause may only name the two keys that exist.
+
+    Fourteen commands announced *"Models key for this command: `review`"* for six
+    releases after `models.study`/`code`/`test`/`review` were retired — pointing the
+    reader at a key nothing reads. `check_template_keys_are_read` cannot see it: it
+    walks template → commands, and the stale clause named the key bare (`` `review` ``),
+    not qualified. So the clause itself is pinned to its three legal forms.
+    """
+    for f in files:
+        if not f.startswith("plugins/flow/commands/") or not f.endswith(".md"):
+            continue
+        for n, line in enumerate(read(f).splitlines(), 1):
+            if not line.startswith("Load the `flow:flow-core` skill first"):
+                continue
+            start = line.find("**Models")
+            if start == -1:
+                break
+            clause = line[start:]
+            if clause not in MODELS_CLAUSE_FORMS:
+                fail(f, f"line {n}: `Models:` clause is not one of the three legal "
+                        f"forms (only `models.agents` and `models.workers` exist)")
+            break
+
+
 def check_no_orphan_commands(files):
     """A command nothing links to is a command nobody runs.
 
@@ -485,6 +518,7 @@ def main():
     check_all_json(files)
     check_example_config()
     check_template_keys_are_read(files)
+    check_models_clause(files)
     check_no_orphan_commands(files)
     check_hooks_executable(files)
     check_hooks_have_tests(files)

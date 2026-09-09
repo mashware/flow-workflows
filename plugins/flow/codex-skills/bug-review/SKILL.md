@@ -24,7 +24,7 @@ Mandatory code review of the fix.
 
 ## 1. Pre-flight
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `review`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test). (flow-core §5)
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.

@@ -4,7 +4,7 @@ description: Design the technical solution (architecture, DB, APIs, risks) befor
 
 # `/flow:feat:design`
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models key for this command: `study`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 Technical design phase. **Still no production code is written.** Opens the option space first (M/L), then designs the approach that was chosen. Output: a plan the next step executes.
 
