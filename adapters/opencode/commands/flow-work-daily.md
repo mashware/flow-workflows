@@ -16,7 +16,7 @@ description: Your work assistant — a Scrum-style daily standup across all your
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
-Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session.
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session.
 
 External sources (tracker, forge, `knowledge`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
 

@@ -11,8 +11,9 @@
 > - `Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).
 > - `/model <value>` → the `--model` flag at launch (or `/model` if your Codex version has it).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
+> - `$ARGUMENTS` → whatever the user typed after the skill name, empty if nothing — Codex substitutes nothing, so read it off their message.
 
-Every `/flow-*` command assumes these rules. They are stated once, here, so a command file only
+Every `$flow-*` command assumes these rules. They are stated once, here, so a command file only
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
@@ -27,11 +28,11 @@ carries what is specific to its phase. Read this once per session; a command tha
   2. The key is on the short list below **and** this phase was going to stop anyway **and** the mode
      is `manual` → add **one option** to that stop: *"write `<key>: <value>` to FLOW.md"*, alongside
      whatever it was already asking. Never a question of its own, never a key off the list, and at
-     most **one key per work** — the second one waits for the next work or for `/flow-init`.
+     most **one key per work** — the second one waits for the next work or for `$flow-init`.
   3. `guided`/`auto` → take the default and **record** it: one line in the phase artifact as today,
      plus an entry in `meta.json.defaults_used[]` — `{ "key": "agents.security", "default":
      "general-purpose", "phase": "review" }`. Asking here would break the never-a-question contract
-     (§2); recording keeps the decision readable afterwards, and `/flow-doctor` aggregates it.
+     (§2); recording keeps the decision readable afterwards, and `$flow-doctor` aggregates it.
 
   **The list, and it is short on purpose**: `agents.<role>` when a panel is about to improvise that
   role on an M/L or sensitive diff · `quality.review_depth` after a review's cost line went over
@@ -52,7 +53,7 @@ carries what is specific to its phase. Read this once per session; a command tha
   artifact only; no `read_staging` → the artifacts are the staging; no `save` →
   the consolidation appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
   `knowledge.timeout_s` (empty = 2 s); a failure or timeout → continue without it, silently.
-**How a consolidation runs** (`ship`, `postmortem`, `abandon`, and the offer in `/flow-work-status`
+**How a consolidation runs** (`ship`, `postmortem`, `abandon`, and the offer in `$flow-work-status`
 when `read_staging` has entries). No role set at all → say so in one line and stop; nothing here is
 worth a command of its own, which is why there is no longer one:
 
@@ -346,7 +347,7 @@ mid-build is the worst moment to judge whether a neighbouring defect is worth a 
 question there is exactly the interruption `guided`/`auto` exist to avoid. The triage happens once,
 at `ship`'s Close, when the work is done and the user can see the whole set.
 
-**A skeptic sorts them before the user sees them.** `/flow-*-review` already refuses to hand over an
+**A skeptic sorts them before the user sees them.** `$flow-*-review` already refuses to hand over an
 unverified finding: its §6 gives each ambiguous one to a skeptic whose job is to *refute* it, burden
 of proof on the finding. Deferred work reached the user through no filter at all, judged only by the
 phase that parked it — the one party that cannot judge it, having just found it. So at Close, when
@@ -387,7 +388,7 @@ Then, and only then, the survey:
   becomes `done` with the answer in `note`. Deferred again → stays `proposed`.
 - **Later** → stays `proposed`, and surfaces in `status`, `daily` and `next` until it is decided.
 - **Do it** → `accepted`, then create the tracker issue with the tool's native command, exactly as
-  `/flow-feat-start` §2.5.4 does for a ticket-less draft — same commands, same best-effort fallback
+  `$flow-feat-start` §2.5.4 does for a ticket-less draft — same commands, same best-effort fallback
   to local-only when `tracker.tool` is `none`/empty or creation fails. Record the id in `ticket`.
 - No entries still `proposed` → **the step does not exist**. Never show an empty survey.
 
@@ -403,7 +404,7 @@ category as the MR/PR gate, never flow mechanics. Writing a `followups[]` entry 
 get a line in its description: what was consciously left out, and why. A reviewer cannot weigh a
 diff against what the author decided not to do unless someone tells them.
 
-**Where an accepted one goes next.** `/flow-feat-start` and `/flow-bug-start` on that ticket record
+**Where an accepted one goes next.** `$flow-feat-start` and `$flow-bug-start` on that ticket record
 `meta.json.origin` — `{ "work": "<originating work>", "followup": "F1" }` — and carry the `why` into
 `01-context.md` instead of re-deriving it. The originating entry moves to `in_progress` with `work`
 pointing at the new folder, and to `done` when that work does.

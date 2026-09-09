@@ -23,7 +23,7 @@ Start a bug. `$ARGUMENTS` is **optional**:
 
 ## 0. Pre-flight
 
-Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `study`.**
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `study`.**
 
 - Verify you are in the correct repo.
 - **Determine the mode** from `$ARGUMENTS`: non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).

@@ -16,7 +16,7 @@ description: Design the technical solution (architecture, DB, APIs, risks) befor
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
-Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models key for this command: `study`.**
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models key for this command: `study`.**
 
 Technical design phase. **Still no production code is written.** Opens the option space first (M/L), then designs the approach that was chosen. Output: a plan the next step executes.
 

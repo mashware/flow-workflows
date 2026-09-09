@@ -16,7 +16,7 @@ description: Monitor the observability platform after a deploy and alert on erro
 > - `/model <value>` → opencode's model picker (`/models`).
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared in `opencode.json` (see this adapter's `opencode.json` for the domain-memory example).
 
-Read `~/.claude/flow/CORE.opencode.md` first (\g<what>) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
 **Autopiloted post-deploy monitoring**: signals **scoped to the change** over a window (default 30 min), against a baseline; alert on errors or performance regressions from the deploy.
 

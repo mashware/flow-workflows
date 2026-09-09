@@ -21,6 +21,15 @@ sweep() {
   return 0
 }
 
+# Codex installs one folder per skill, so the sweep above (files) would leave the folders.
+sweep_dirs() {
+  local dest=$1 pattern=$2 removed
+  [ -d "$dest" ] || return 0
+  removed=$(find "$dest" -maxdepth 1 -type d -name "$pattern" -print -exec rm -rf {} + 2>/dev/null | wc -l | tr -d " ")
+  [ "$removed" -gt 0 ] && note "removed $removed previously installed skill(s) from $dest"
+  return 0
+}
+
 case "$TOOL" in
   opencode)
     if [ "$SCOPE" = project ]; then DEST=".opencode/commands"; else DEST="$HOME/.config/opencode/commands"; fi
@@ -39,14 +48,11 @@ case "$TOOL" in
     note "Subagents: declare the ones from FLOW.md in .gemini/agents/*.md — see gemini/PRIMITIVES.md"
     ;;
   codex)
-    if [ "$SCOPE" = project ]; then
-      note "⚠ codex has no per-project prompts directory — installing globally instead"
-    fi
-    DEST="$HOME/.codex/prompts"
-    mkdir -p "$DEST"; sweep "$DEST" "flow-*.md"; cp "$HERE"/codex/prompts/*.md "$DEST"/
-    N=$(ls "$HERE"/codex/prompts/*.md | wc -l | tr -d " ")
-    echo "✓ codex: $N prompts in $DEST  (invoke as /flow-feat-start, /flow-work-watch, …)"
-    note "⚠ The prompts path may vary by Codex version — confirm it with /help or your version's docs."
+    if [ "$SCOPE" = project ]; then DEST=".agents/skills"; else DEST="$HOME/.codex/skills"; fi
+    mkdir -p "$DEST"; sweep_dirs "$DEST" "flow-*"; cp -r "$HERE"/codex/skills/. "$DEST"/
+    N=$(find "$HERE"/codex/skills -name "SKILL.md" | wc -l | tr -d " ")
+    echo "✓ codex: $N skills in $DEST  (invoke as \$flow-feat-start, \$flow-work-watch, …)"
+    note "Codex discovers skills, not Claude commands: they are invoked with \$, and a new session picks them up."
     note "MCP/subagents: merge $HERE/codex/config.snippet.toml into ~/.codex/config.toml"
     note "Conventions: copy $HERE/codex/AGENTS.md to your repo root if you want (Codex reads it as a guide)."
     ;;
