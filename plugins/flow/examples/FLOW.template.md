@@ -50,20 +50,24 @@ How tickets are identified and read.
 ## git
 Branch and Pull/Merge Request conventions.
 
-- `host:`             # `gitlab` | `github`. Determines the terminology and default CLI.
-- `cli:`              # `glab` | `gh`. Empty = inferred from `host`.
-- `request_term:`     # `MR` | `PR`. How to name the request in text. Empty = inferred from `host`.
+- `host:`             # `gitlab` | `github` | `bitbucket` | `azure` | `gitea`. Sets both the terminology and the default CLI:
+                      #   | host        | term | default CLI |
+                      #   |-------------|------|-------------|
+                      #   | `gitlab`    | MR   | `glab`      |
+                      #   | `github`    | PR   | `gh`        |
+                      #   | `bitbucket` | PR   | (none)      |
+                      #   | `azure`     | PR   | `az`        |
+                      #   | `gitea`     | PR   | `tea`       |
+                      #   Empty = inferred from the remote. A self-hosted forge takes the name of what it is (a Forgejo
+                      #   instance is `gitea`), not of its domain.
+- `cli:`              # Empty = the default for `host` in the table above. Set it for a self-hosted forge, a wrapper, or
+                      #   a host with no CLI of its own (`bitbucket`), where the commands degrade to plain git and say so.
 - `default_base:`     # base for new branches, e.g. `origin/master` or `origin/main`.
 - `branch_pattern:`   # e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case. Empty = `{PREFIX}{TICKET}-{slug}`.
 - `assignee:`         # user to assign the MR/PR to. Empty = do not assign.
 - `squash:`           # `true` | `false` (squash-before-merge).
 - `request_sections:` # MR/PR description sections, one per line with `- `. Empty = free-form.
 - `predeploy_gate:`   # `true` if this repo runs schema SQL manually on the server BEFORE deploying and wants to block the MR/PR until done. Empty/false = no Pre-deploy section or blocking thread.
-- `train_chain:`      # multi-PR train (stacked branches) behavior at the end of `/flow:feat:ship` when there are still pending MR/PRs. `ask` | `always` | `wait`. The train NEVER waits for the previous MR/PR to merge except in `wait`.
-                      #   ask    → ask "continue with the next MR/PR?" and, on yes, create the next stacked branch and chain into `/flow:feat:build`.
-                      #   always → chain into the next MR/PR's `/flow:feat:build` automatically (records it), no prompt.
-                      #   wait   → do NOT continue: stop and recommend continuing only after the current MR/PR is merged (legacy behavior).
-                      # Empty = derive from `autonomy.mode`: `manual` → `ask`; `guided`/`auto` → `always`.
 - `worktree:`         # `off` (default) | `ask` | `always`. Whether `/flow:feat:start` & `/flow:bug:start` create the new branch as a git worktree instead of switching in place. `ask` = prompt each time; `always` = always; `off`/empty = never (in-place, current behavior).
 - `worktree_path:`    # path template for the worktree dir. `{branch}` and `{repo}` are substituted. Empty with `worktree`≠`off` = `.worktrees/{branch}` at the repo root (git-ignore it). e.g. `.worktrees/{branch}` or `../{repo}.worktrees/{branch}`.
 - `worktree_resync:`   # commands `/flow:work:try` runs after switching the main checkout to a branch (and again on `--back`), to re-sync the environment (e.g. DB schema, assets). One command per line with `- `, run in order. Empty = `/flow:work:try` only does the git switch, no env re-sync. e.g.:
@@ -89,7 +93,7 @@ How much the flow advances on its own vs. stopping to ask you.
                       # first edit in `build`/`fix`.
                       # NEVER ASKED in guided/auto (decided, recorded, left behind): flow mechanics
                       # (panels, challengers, how many reviewers), WIP commits, continuing a train when
-                      # train_chain resolves to `always`, size confirmation, and anything already decided
+                      # the train's next MR/PR in `guided`/`auto`, size confirmation, and anything already decided
                       # and recorded — only new contradicting evidence reopens a settled decision.
 
 ## quality
@@ -97,13 +101,13 @@ Repo commands for quality gates, whatever the stack — `make test`, `./gradlew 
 `xcodebuild test`, `flutter test`, `cargo test`… **Empty = the command auto-discovers** (Makefile, npm/composer
 scripts, Gradle, dotnet, Xcode, Flutter, pyproject, Cargo, go.mod) and reports what it uses.
 
-- `test:`             # e.g. `make test`
+- `test:`             # e.g. `make test`. Several suites in one repo (a backend and a frontend, an app and a service) chain into this one key:
+                      #   `make test && make test-frontend`. `/flow:init` writes it that way when it detects more than one.
 - `test_one:`         # e.g. `make test-filter filter={FILTER}` · `./gradlew test --tests {FILTER}` · `dotnet test --filter {FILTER}` (`{FILTER}` is substituted)
 - `static_analysis:`  # e.g. `make phpstan-ci` · `./gradlew lint` · `dotnet build -warnaserror` · `flutter analyze`
 - `style_fix:`        # e.g. `make cs-fixer-changed` · `./gradlew ktlintFormat` · `dotnet format` · `swift-format -i -r Sources`
 - `db_update:`        # e.g. `make database-update` (empty if not applicable)
 - `db_diff:`          # command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL)
-- `frontend_test:`    # e.g. `make test-frontend` (empty if no frontend)
 - `functional_check:` # how to drive the running app so `/flow:*:validate` can prove an acceptance criterion itself
                       #   instead of dictating it to you: a base URL, a simulator destination, a login or seed command,
                       #   whatever this repo needs. Free text, read by the agent alongside what `/flow:doctor` detects
@@ -151,8 +155,7 @@ another plugin) — this only states **which** one to invoke, it does not create
 - `queues:`         # queues, dead-letter, workers
 - `security:`       # threats, authentication, sensitive data
 - `frontend:`       # components/UI
-- `frontend_test:`  # frontend tests
-- `testing:`        # backend tests / coverage
+- `testing:`        # tests and coverage, whichever suite the diff touches
 
 Two keys below configure the **parallel fan-out** (approach panel in `brainstorm` §3.A, hypothesis
 sweep in `investigate` §3.A, finding verification in `review`) instead of naming an agent. The
@@ -173,7 +176,9 @@ command composes itself — the panel in `review`, the delegated pieces in `buil
 `validate` — not to the prompts this plugin already writes out with their own cap.
 
 - `report_max_words:`      # word cap every brief you write for a subagent carries. Empty = 250. Not a style rule: a report too long for the harness to carry is truncated in transit and reaches you as silence
-- `stall_after_minutes:`   # a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25
+- `stall_after_minutes:`   # a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 —
+                           #   a guess from one session, not a measurement. Lower it if your rounds are short and you would rather relaunch early; raise it
+                           #   for agents that legitimately read for half an hour before writing
 
 ## models
 Which model each kind of step runs with. **Every key is optional and empty by default = the step runs
@@ -185,31 +190,29 @@ when these keys are empty, so an unpriced default is at least a visible one: wha
 `gemini-2.5-pro`, a provider id) is what belongs here. A harness that cannot switch model per
 subagent ignores the value and the step says so once, in one line.
 
-- `study:`    # feat:start, feat:brainstorm, feat:design, feat:plan · bug:start, bug:diagnose,
-              # bug:investigate, bug:postmortem
-- `code:`     # feat:build · bug:fix · work:green (and the changes /flow:work:respond implements)
-- `test:`     # feat:validate · bug:validate
-- `review:`   # feat:review · bug:review · work:query · work:respond (thread triage)
+- `agents:`   # every subagent a command improvises: the review panel members with no named agent, the
+              #   blinded auditors, the delegated pieces of a `build`, the `general-purpose` challenger.
+              #   Empty = they inherit the model the command runs on.
 - `workers:`  # the parallel fan-out rounds ONLY: approach panel (brainstorm §3.A), hypothesis sweep
-              # (investigate §3.A), finding skeptics (review §6 / §5). Empty = falls back to the key
-              # of the command running the round.
+              #   (investigate §3.A), finding skeptics (review §6 / §5), the deferred-work skeptic
+              #   (ship). Empty = falls back to `agents`, then to what the command runs on.
 
-Commands not listed above (`ship`, `status`, `daily`, `resume`, `try`, `clean`, `abandon`, `watch`)
-have no key: they inherit, always.
+**Two keys, not one per kind of step.** There used to be five — `study`, `code`, `test`, `review` —
+named after phases. They promised a granularity no harness delivers: the main agent cannot switch
+its own model, so the phases those keys named ran on whatever you launched, and the value only ever
+reached the subagents. These two name what can actually be set.
 
 Two limits, stated here because they bound what these keys can promise:
 
-**An agent cannot switch its own model.** In the steps the main agent performs itself — reading the
-ticket, the design, and writing the code in `build`/`fix` (single-thread on XS/S/M) — the model in
-play is the one you launched the command with. When the configured value differs from the running
-model, the phase handoff says it in one line (`/model <value>`) and **continues**: it is flow
-mechanics, so it is never a question in `guided`/`auto` and never a hard gate. It is recorded in the
-phase artifact, so a build that ran on another model than the one configured is traceable afterwards.
+**An agent cannot switch its own model.** Reading the ticket, writing the design, and writing the
+code in `build`/`fix` (single-thread on XS/S/M) happen on the thread you launched, whatever is
+written here — which is exactly why there is no key for them. A phase that wants another model says
+so in one line at the handoff (`/model <value>`) and **continues**: flow mechanics, so never a
+question in `guided`/`auto` and never a gate.
 
 **A named agent keeps its own model.** If `agents.<role>` names a real agent, that agent's own
-definition wins — you configured it, and it is not overridden from two places. These keys apply
-where flow *improvises* the agent (`general-purpose` with the role in the prompt) and to the fan-out
-workers. `/flow:config` prints the resolved map (step → model → who decided it).
+definition wins — you configured it, and it is not overridden from two places. `/flow:config` prints
+both keys resolved, with who decided each.
 
 ## data
 How this repo lets you look at a query's **plan** instead of arguing about it. Read by
@@ -278,12 +281,6 @@ command or skill fits. Section empty or absent = every knowledge step is skipped
 - `save:`           # optional. Tool that consolidates one finding into the store (`/flow:save-knowledge`, `ship`, `postmortem`).
                     # Empty = `/flow:save-knowledge` appends the consolidated findings to `KNOWLEDGE.md` at the repo root instead.
 - `timeout_s:`      # per call. Empty = 2. A call that fails or takes longer → continue without it, silently.
-
-## domain_memory
-Legacy alias, kept so existing `FLOW.md` files keep working. Prefer the `knowledge` section above.
-
-- `enabled:`        # `true` = the four `knowledge` roles resolve to the `domain-memory` MCP tools (`search_knowledge`,
-                    # `stage_finding`, `read_staging`, `save_knowledge`) when `knowledge` is absent. Ignored when `knowledge` is set.
 
 ## observability
 Profile for `/flow:work:watch` (post-deploy monitoring). **Empty = the command auto-discovers

@@ -34,7 +34,7 @@ Launch **in parallel** — both briefs end with the report contract of flow-core
 
    **A green suite is not a performance result** — a tiny fixture database proves a query's **rows**, never its **plan**. If `/flow:feat:review §3.6` left any query verdict `unresolved`, or an acceptance criterion concerns speed or volume: run the measurement of **`/flow:work:query §4`** with the volumes in `data.volumes` (or a data set shaped like them — the distribution matters more than the total), record plan and timings, and gate on the result. No `data.*` configuration and the criterion cannot be measured → it is `unproven` with the reason, never silently `proven`.
 
-3. **Full suite**: run `quality.test` from `FLOW.md` in the background; if empty, auto-discover the project's test command and note what you use. Frontend changes and `quality.frontend_test` defined → run it as well.
+3. **Full suite**: run `quality.test` from `FLOW.md` in the background; if empty, auto-discover the project's test command and note what you use. A repo with more than one suite chains them in that one key (`make test && make test-frontend`); when it does not and the diff touches a suite the key misses, run that one too and say so in one line.
 
 ## 3. Criteria coverage (S and larger)
 
@@ -168,7 +168,6 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 
 ## Suite results
 - `<quality.test>`: ✅ / ❌ (N tests, X failures)
-- `<quality.frontend_test>`: ✅ / ❌ / N-A
 - `<quality.static_analysis>`: ✅ / ❌
 
 ## Performance

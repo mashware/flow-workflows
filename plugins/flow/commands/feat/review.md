@@ -78,7 +78,7 @@ the budget cannot cover them, the budget is misconfigured: say so in one line an
 the skeptics (§6), the coverage auditor (§3.5), the contract verifier (§5) — so with the fan-out
 key empty they inherit this thread's model, whatever that is, fifteen at a time. Per flow-core §1:
 one line before the first wide round naming the count and the fact that they inherit, and the same
-fact on the artifact's `Agent models` line. Name the key (`models.workers`, then `models.review`),
+fact on the artifact's `Agent models` line. Name the key (`models.workers`, then `models.agents`),
 never a model.
 
 ### 2.1 Launch and consolidate
@@ -109,7 +109,7 @@ Only what §2 does **not** already cover; skipped entirely under `light` (§2.0)
 
 - **Any repeated call that leaves the process** (external API, HTTP, cache, filesystem) → `agents.performance` from `FLOW.md` on the changed files; empty → skip. Have it cover what **each failed iteration** sets off downstream (publishes, enqueues, disables, logs), not just the happy path's cost. **Queries are not covered here** — §3.6 owns them.
 - Workers / message queues → `agents.queues` from `FLOW.md`: no `flush()` in a loop; workers registered per the project convention (`FLOW.md` section `conventions`); empty → skip.
-- Frontend → interface code changed: `agents.frontend` from `FLOW.md`; affected frontend tests too: `agents.frontend_test` as well; either empty → skip that one.
+- Frontend → interface code changed: `agents.frontend` from `FLOW.md` for the code and `agents.testing` for the tests that came with it; either empty → skip that one.
 
 ## 3.5. Completeness sweep (anti-abandonment, M/L only)
 
@@ -126,7 +126,7 @@ Loop, maximum **2 rounds**:
 
 1. **Worklist**: `git diff --stat <git.default_base>...HEAD` → list of changed files/areas.
 2. **Coverage map**: from the consolidated §2-§3 findings, mark which files/areas received at least one finding or were explicitly examined.
-3. **Completeness critic (1 agent, blinded and text-only)**: `Agent general-purpose` (takes this command's `models.review` key like every other subagent here), passing **only** the full diff file list (step 1) and, per §2-§3 reviewer, one line on what it covered. **Do not** pass the detailed findings, the design, or the diff. This agent compares two lists and answers in three sentences; it opens no file, runs no `git diff`, reads no code. An agent here that is still working after a few minutes is not being thorough — it was handed the wrong job, and the fix is to kill it and re-launch with the two lists alone. Prompt:
+3. **Completeness critic (1 agent, blinded and text-only)**: `Agent general-purpose` (takes `models.agents` like every other subagent here), passing **only** the full diff file list (step 1) and, per §2-§3 reviewer, one line on what it covered. **Do not** pass the detailed findings, the design, or the diff. This agent compares two lists and answers in three sentences; it opens no file, runs no `git diff`, reads no code. An agent here that is still working after a few minutes is not being thorough — it was handed the wrong job, and the fix is to kill it and re-launch with the two lists alone. Prompt:
 
    > You are a coverage auditor for a code review. I give you (1) the list of files changed in this diff and (2) a one-line summary per reviewer of what area each one covered. Your only task: name the files or areas in list 1 that **no** reviewer in list 2 examined, and any claim a reviewer accepted as correct without verifying. **Work only from these two lists — do not open files, do not read the diff, do not inspect the repository.** Do not opine on existing findings. Output: list of concrete gaps (`file/area` + why it deserves a second look) or exactly "none". Under 150 words.
 
@@ -253,7 +253,7 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 ## Summary
 - Review tier: <full | proportional | light — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified>
-- Agent models: <the value of `models.workers`/`models.review` when set; otherwise "inherited from this thread" — plus, when the panel ran, that agents named in `agents.<role>` kept the model their own definition sets. The values as they are, no judgement on them>
+- Agent models: <the value of `models.workers`/`models.agents` when set; otherwise "inherited from this thread" — plus, when the panel ran, that agents named in `agents.<role>` kept the model their own definition sets. The values as they are, no judgement on them>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>, effort <medium|high|xhigh|max>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Completeness rounds (M/L): N

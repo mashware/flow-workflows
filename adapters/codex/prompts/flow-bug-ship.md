@@ -117,7 +117,7 @@ Determine whether the fix modifies the database (migrations, mappings/schema, or
 **Never skip this step** — hard gate: the user approves what will be published before anything is created. Print in this exact format:
 
 ```
-─── Preview of {request_term} (fix) ────────────────────────────────────────────
+─── Preview of {MR or PR, per git.host} (fix) ──────────────────────────────────
 Title: <full title, including [patch]>
 Assigned to: <git.assignee from FLOW.md; empty = unassigned>
 Squash: <git.squash from FLOW.md>
@@ -132,9 +132,9 @@ Description:
 
 If there is pre-deploy SQL, ask the user to **explicitly confirm that the block is complete and correct** — it gates the deployment and will run in production.
 
-Then ask with `AskUserQuestion` (header: "Create {request_term}"):
+Then ask with `AskUserQuestion` (header: "Create {MR or PR}"):
 
-- **Create {request_term} with this content** → §3.
+- **Create {MR or PR} with this content** → §3.
 - **Edit before creating** → adjust what the user indicates, return to §2.
 - **Cancel** → stop without creating anything. Do not touch `meta.json`.
 

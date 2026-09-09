@@ -522,9 +522,10 @@ branch. A hardcoded fix branch "never reached its ticket" on trackers that link 
 *Now:* feat:plan §2/§4; feat:build §1; feat:ship §6.2.
 
 **The train never waits for the previous MR/PR to merge.** "Waiting is what makes people give up and
-open one huge PR instead." Only `train_chain: wait` holds; offering to wait otherwise "is the stop that
-most often turns a configured train back into a manual one". Continuing is not a gate — the next
-`ship` will stop.
+open one huge PR instead." Nothing holds it: offering to wait "is the stop that most often turns a
+configured train back into a manual one", and the key that used to allow it (`git.train_chain: wait`)
+was retired in v0.50.0 — a user who wants that answers *no* in `manual`. Continuing is not a gate —
+the next `ship` will stop.
 *Now:* feat:ship §6.2; CONFIGURATION "Multi-PR trains".
 
 **Estimates are a thermometer; the hot cut never rewrites history.** At +50% lines or +2 files:

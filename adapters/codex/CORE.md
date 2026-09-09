@@ -29,31 +29,30 @@ carries what is specific to its phase. Read this once per session; a command tha
   artifact only; no `read_staging` → the artifacts are the staging; no `save` →
   `/flow-save-knowledge` appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
   `knowledge.timeout_s` (empty = 2 s); a failure or timeout → continue without it, silently.
-  Legacy: `domain_memory.enabled: true` with no `knowledge` section resolves the four roles to the
-  `domain-memory` MCP tools.
 - `notes.<command>` (or `notes.all`) → mandatory extra instructions for that command.
 - Key names and defaults: the template shipped with the plugin (`examples/FLOW.template.md`).
 
 ## 1. Models — which model runs a step
 
-Each command names its `models` key (`study` · `code` · `test` · `review`; fan-out rounds use
-`models.workers`, falling back to the command's key). Empty key or no section → run with the model
-you were launched with and say nothing.
+Two keys, and they govern **subagents only**: `models.agents` for every subagent a command
+improvises, `models.workers` for the parallel fan-out rounds (falling back to `models.agents`).
+Empty, absent, or no section → everything runs on the model you were launched with, and you say
+nothing.
 
-When set:
-- Pass it to every subagent this command launches, **except** an agent named in `agents.<role>`,
+- Pass the resolved value to every subagent you launch, **except** an agent named in `agents.<role>`,
   which keeps the model its own definition sets.
-- You cannot switch your own model. If the configured value differs from the one you run on, say
-  it in one line at the handoff (`this step is configured for <value>, you are on <current>` →
-  `/model <value>`), record it in the phase artifact, and continue. Never a question, never a gate.
+- **You cannot switch your own model**, so no key names the phases the main agent performs itself.
+  A phase that wants another model says it in one line at the handoff (`this step reads better on
+  <value>, you are on <current>` → `/model <value>`), records it in the artifact, and continues.
+  Never a question, never a gate.
 - A harness that cannot set a model per subagent: note it once, continue with the inherited one.
 
 **A wide round inherits in silence — say what it inherits, never what it should be.** An empty key is
 the right default and stays it: which model is cheap, capable or appropriate changes every few
 months, differs per harness and per account, and belongs to whoever pays for the tokens. But
 inheriting is unremarkable for one subagent and a blank cheque for a round of fifteen. So before
-launching a round of **4 or more** subagents with the fan-out key (`models.workers`, then the
-command's own key) empty, say it in one line: how many agents, and that they run on this thread's
+launching a round of **4 or more** subagents with both keys (`models.workers`, then `models.agents`)
+empty, say it in one line: how many agents, and that they run on this thread's
 model because no key is set. **Name the key, never a model** — no default, no suggestion, no ranking.
 A harness that cannot report the model it runs on says the round inherits it, and that is the whole
 line. Never a question, never a gate; the artifact's cost line carries the same fact.
@@ -89,7 +88,7 @@ sensible default and record it.
 **Never a question in `guided`/`auto` — decide, record, continue:**
 - (a) **Flow mechanics** — whether to launch a panel, challengers, skeptics or a fan-out, how wide, how many reviewers, inline vs subagent. Each step's recommended default *is* the answer.
 - (b) **WIP commits** on the work branch.
-- (c) **Continuing to the next MR/PR of a train** when `git.train_chain` resolves to `always`.
+- (c) **Continuing to the next MR/PR of a train** — asked in `manual`, taken and recorded in `guided`/`auto`.
 - (d) **Size confirmation** — take the proposed size, record it, move on.
 - (e) **Anything already decided and recorded** in the work's artifacts or `meta.json.notes`. Reopen only when new evidence contradicts the premise — then lead with the evidence.
 

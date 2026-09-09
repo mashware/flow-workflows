@@ -181,11 +181,11 @@ One file at the repo root describes your conventions. Anything left empty is aut
 | Section | What it configures |
 |---|---|
 | `tracker` | Ticket prefix, CLI, view and comment-thread commands, state transitions |
-| `git` | Host and CLI, base branch, branch pattern, MR/PR sections, squash, worktrees, trains, pre-deploy gate |
+| `git` | Host (which decides the term and the CLI), base branch, branch pattern, MR/PR sections, squash, worktrees, pre-deploy gate |
 | `autonomy` | `manual` · `guided` · `auto` (hard gates always ask) |
 | `quality` | Test / lint / analysis / DB commands, `review_depth`, review panel, `respond_max_rounds`, `functional_check`, `evidence` |
 | `agents` | Role → specialist agent map, cost ceilings (`fanout_max` per round, `budget_max` per command), fan-out orchestrator (`fanout_tool`) |
-| `models` | Model per kind of step — `study` · `code` · `test` · `review` · `workers` |
+| `models` | Model for the subagents — `agents` (improvised ones) · `workers` (fan-out rounds) |
 | `data` | How to read a query's execution plan and the real size of the hot tables |
 | `conventions` | Rules the code must respect |
 | `notes` | Extra mandatory instructions per command |

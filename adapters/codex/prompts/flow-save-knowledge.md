@@ -4,7 +4,7 @@ You are in the `/flow-save-knowledge` flow.
 
 Read `~/.claude/flow/CORE.codex.md` first (\g<what>) — skip if you already read it in this session.
 
-**Step 0**: resolve the `knowledge` roles from `FLOW.md` (flow-core §0; `domain_memory.enabled: true` is the legacy alias). No role set at all → reply *"no knowledge source is configured in this repo's FLOW.md (section `knowledge`)."* and stop.
+**Step 0**: resolve the `knowledge` roles from `FLOW.md` (flow-core §0). No role set at all → reply *"no knowledge source is configured in this repo's FLOW.md (section `knowledge`)."* and stop.
 
 Consolidate the knowledge learned in this session (or in previous sessions on the same branch):
 

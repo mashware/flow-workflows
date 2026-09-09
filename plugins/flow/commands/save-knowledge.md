@@ -6,7 +6,7 @@ You are in the `/flow:save-knowledge` flow.
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
 
-**Step 0**: resolve the `knowledge` roles from `FLOW.md` (flow-core §0; `domain_memory.enabled: true` is the legacy alias). No role set at all → reply *"no knowledge source is configured in this repo's FLOW.md (section `knowledge`)."* and stop.
+**Step 0**: resolve the `knowledge` roles from `FLOW.md` (flow-core §0). No role set at all → reply *"no knowledge source is configured in this repo's FLOW.md (section `knowledge`)."* and stop.
 
 Consolidate the knowledge learned in this session (or in previous sessions on the same branch):
 

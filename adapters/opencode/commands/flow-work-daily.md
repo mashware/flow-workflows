@@ -51,7 +51,7 @@ What the team is asking of you **right now**. Resolve the CLI from `git.cli` (or
 - **Threads that need *your* reply** — **latest comment not yours**, fetched per open MR/PR (`glab api .../merge_requests/:iid/discussions` · `gh api` review threads), compared against `git.assignee` / `@me`. This — **not** the raw *unresolved* count — is the signal for `/flow-work-respond` (it **never resolves** threads, so an answered thread stays unresolved until the reviewer closes it).
 - **Threads awaiting the reviewer** — unresolved, latest comment **is yours**: **informational only**, never an action for you.
 
-Degrade: `git.cli` empty / not installed / unauthenticated / timeout → skip this layer and print one line, e.g. `(forge unavailable: gh not authenticated)`. The term MR/PR follows `git.request_term`.
+Degrade: `git.cli` empty / not installed / unauthenticated / timeout → skip this layer and print one line, e.g. `(forge unavailable: gh not authenticated)`. The term MR/PR follows `git.host` (`gitlab` → MR, otherwise PR).
 
 ## 3. Tracker layer (best-effort, via `tracker.tool`)
 

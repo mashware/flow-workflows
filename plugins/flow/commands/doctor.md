@@ -34,7 +34,7 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
 - **Tracker CLI** (`tracker.tool`): installed, and authenticated where the tool can say so cheaply.
   Missing → ticket reads become manual paste; `start`/`done`/`abandon` transitions silently do nothing.
 - **Quality commands** (`quality.test`, `test_one`, `static_analysis`, `style_fix`, `db_update`,
-  `db_diff`, `frontend_test`) and `git.worktree_resync` entries: `make <target>` → the target exists
+  `db_diff`) and `git.worktree_resync` entries: `make <target>` → the target exists
   in the `Makefile`; npm/composer script → the script exists; `./gradlew <task>`/`mvn`/`dotnet`/`xcodebuild`/`flutter` → the wrapper or binary is on `PATH` (or in the repo, for `gradlew`); otherwise the binary is on `PATH`.
   **Never run them** — presence only. Declared-but-absent → flag loudly: `validate` gates on it.
 - **Data-access commands** (`data.explain_cmd`, `schema_cmd`, `sandbox_cmd`, `seed_cmd`): the binary
@@ -52,7 +52,7 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
 ### 2.3 Knowledge sources
 
 - For each `knowledge.*` role that is set (`search` may list several): an `mcp__*` tool → it is exposed **this session**; a shell command → its binary is on `PATH`. Unreachable → the steps using that role degrade quietly (no lookup, findings stay in artifacts, `KNOWLEDGE.md`) — say so, with the role.
-- `domain_memory.enabled: true` and no `knowledge` section → legacy alias; check the four `mcp__domain-memory__*` tools and suggest writing the `knowledge` section.
+- A `domain_memory` section still present → say in one line that nothing reads it any more and show the four `knowledge` lines that replace it.
 - No role set while a knowledge MCP *is* available (`mcp__domain-memory__*`, `mcp__codegraph__*`, or any tool whose name says search/knowledge/memory) → say so once. Nothing is broken; the source is unused.
 
 ### 2.4 Hooks
