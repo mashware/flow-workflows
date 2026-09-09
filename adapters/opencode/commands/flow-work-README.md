@@ -107,6 +107,9 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
       "status": "proposed" | "accepted" | "in_progress" | "declined" | "done",
       "ticket": null, "work": null, "note": "" }
   ],
+  "defaults_used": [
+    { "key": "agents.security", "default": "general-purpose", "phase": "review" }
+  ],
   "conventions_candidates": [
     { "id": "C1",
       "text": "the rule, one line, in the user's own words",
@@ -127,6 +130,7 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **`related_repos`**: the **other repos a task touches**. Captured at `/flow-feat-start` / `/flow-bug-start` §cross-repo, refined at `design`/`plan`, reminded at `ship`, shown by `daily`/`resume`/`status`. flow only notes and reminds — never touches the other repo. `[]` for single-repo.
 - **`contract_handoff`**: whether the sibling knows **what shape to build against** (`scope` is prose; distinct from `status`). `none` — consumes no contract declared here. `pending` — consumes one, not handed over yet. `published → <location>` — published where that side reads it (normally the tracker ticket; `/flow-feat-ship` §6.3), picked up by the sibling's `/flow-feat-start` §3.6.
 - **`followups`**: work a phase deliberately did **not** do here — a neighbouring defect found while building, a piece put out of scope while planning, a risk recorded but not mitigated, an edge case left unchecked, a prevention action from a postmortem. Written by the phase that parks it (asks nothing) when it clears the bar of flow-core §7, triaged **once** at `ship`'s Close behind a skeptic and a ceiling on how many may become questions, published in the MR/PR description while still open, and surfaced by `status`/`daily`/`next` — including from `_archive/` — until `declined` or `done`. Shape and rules: flow-core §7. `[]` when the work deferred nothing.
+- **`defaults_used`**: an empty `FLOW.md` key a phase resolved with its default instead of asking — written in `guided`/`auto`, where asking would breach the never-a-question contract (flow-core §0). Not an error and not deferred work: a record, aggregated by `/flow-config` across every work including `_archive/`, so a key that keeps defaulting can be pinned once instead of decided every time. `[]` when nothing defaulted.
 - **`conventions_candidates`**: rules the user taught **this repo's flow** while correcting a phase — *«not a listener, a message handler»*, *«the test command is `make test-unit`»*. Written by the phase that heard one, asking nothing, only when it would apply to an unrelated ticket in this repo; read by `review`'s idiom audit in the same work; offered once at `ship`'s Close (**Add to FLOW.md** / **Not a rule** / **Later**, or **Replace**), in every mode, because it edits a file in the tree. Never domain knowledge — that filter is unchanged. Shape and rules: flow-core §8. `[]` when the work taught nothing.
 - **`origin`**: set when this work *is* a follow-up someone accepted — which work raised it and which entry. Lets `start` carry the recorded "why" into `01-context.md` instead of re-deriving it, and lets that entry move to `done` when this work does. Absent for a work that came straight from a ticket.
 - Ticket format follows `tracker.prefix`; empty → free-form.

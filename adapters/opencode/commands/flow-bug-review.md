@@ -129,6 +129,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used>
 - Agent models: <the value of `models.workers`/`models.agents` when set; otherwise "inherited from this thread"; agents named in `agents.<role>` keep their own definition's model>
+- Defaults used: <every empty `FLOW.md` key this round resolved with its default — one per line as `key → default` — or "none". In `guided`/`auto` each is also an entry in `meta.json.defaults_used[]` (flow-core §0); in `manual` the phase may offer one of them at its stop.>
 - Skipped for budget: <phases dropped by §2.0's give-up order, or "none">
 - Blockers: N
 - Suggestions: M

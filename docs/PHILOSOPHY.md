@@ -121,6 +121,26 @@ reviewers a Symfony + Doctrine repo actually wants, with a README on what to cha
 next door. Nothing loads it. It is there to be copied and edited, which is the only honest way to
 ship stack-specific content from a stack-agnostic plugin.
 
+## Configuration grows by use
+
+`/flow:init` used to ask about ten things, and about half of them were decisions nobody can make on
+a fresh repo: which agent reviews security (none exist yet), how deep a review should go (you have
+not seen one's cost line), how big the hot tables are (that is a lookup, in the middle of a wizard).
+The honest answer to each was *skip*, so the file was written once, in the dark, and edited by hand
+afterwards if you remembered the key name.
+
+So `init` asks five things — the tracker, the base branch when it cannot be resolved, the autonomy
+mode, the quality commands as one block, and whether to git-ignore — and every other key is offered
+by the phase that first needs it, at a stop that phase was making anyway: the review that had to
+improvise a security reviewer, the query duel that came back schema-only, the validation that found
+a runnable app and no way to drive it. That is also the first moment you have anything to base the
+answer on.
+
+In `guided` and `auto` nothing is asked — that would be the never-a-question contract breaking, one
+reasonable question at a time — and the default is **recorded** instead, in `meta.json`. `/flow:config`
+adds them up across every work, archived ones included, so *"this key defaulted in four works out of
+four"* is a fact you read rather than a pattern you have to notice.
+
 ## Personal config, not team config
 
 `FLOW.md` mixes repo facts (tracker, quality commands) with your own preferences (autonomy mode, the

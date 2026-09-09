@@ -277,7 +277,7 @@ Ticket-less → fill `## Ticket` and `## Acceptance criteria` from the §2.5 dra
 
 Move the ticket to "in progress" and assign it. **Only** if `tracker.tool` is not `none`/empty, `tracker.start_cmd` is set, and `meta.json.ticket` is a **real tracker id** (ticket-less local-only → skip silently; an issue created in §2.5.4 counts).
 
-Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket`, `{ASSIGNEE}` = `tracker.assignee` (else `git.assignee`; both empty and the command needs `{ASSIGNEE}` → run only the transition part you can, warn). **Outward-facing action**: `autonomy.mode: manual` → ask once with `AskUserQuestion`; `guided`/`auto` → run and record it in `01-context.md`. **Best-effort and idempotent**: failure or ticket already in that state → warn in one line, continue; **never block**. Empty `tracker.start_cmd` → do nothing.
+Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket`, `{ASSIGNEE}` = `tracker.assignee` (else `git.assignee`; both empty and the command needs `{ASSIGNEE}` → run only the transition part you can, warn). **Outward-facing action**: `autonomy.mode: manual` → ask once with `AskUserQuestion`; `guided`/`auto` → run and record it in `01-context.md`. **Best-effort and idempotent**: failure or ticket already in that state → warn in one line, continue; **never block**. Empty `tracker.start_cmd` → do nothing. **Empty `tracker.start_cmd` with a real tracker id and a `tracker.tool` that can transition** (`acli`, `linear`): this is the first moment the key means anything, so in `manual` offer *"write `tracker.start_cmd: <command>` to FLOW.md"* as an option on the stop this phase already makes (flow-core §0, one key per work); in `guided`/`auto` record it in `meta.json.defaults_used[]` and continue.
 
 ## 7. Close
 

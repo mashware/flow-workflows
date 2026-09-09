@@ -21,6 +21,29 @@ carries what is specific to its phase. Read this once per session; a command tha
 - Read `FLOW.md` at the repo root (tracker, git, autonomy, quality, agents, models, data,
   conventions, notes, knowledge, observability). Missing file or empty key → the default or
   the auto-discovery each step names. Never stop because a key is empty.
+- **An empty key that is a real decision for this repo is offered where it first matters**, and
+  nowhere else. Three steps, in order:
+  1. Resolve the default or auto-discover, as above. The step never waits for configuration.
+  2. The key is on the short list below **and** this phase was going to stop anyway **and** the mode
+     is `manual` → add **one option** to that stop: *"write `<key>: <value>` to FLOW.md"*, alongside
+     whatever it was already asking. Never a question of its own, never a key off the list, and at
+     most **one key per work** — the second one waits for the next work or for `/flow:init`.
+  3. `guided`/`auto` → take the default and **record** it: one line in the phase artifact as today,
+     plus an entry in `meta.json.defaults_used[]` — `{ "key": "agents.security", "default":
+     "general-purpose", "phase": "review" }`. Asking here would break the never-a-question contract
+     (§2); recording keeps the decision readable afterwards, and `/flow:config` aggregates it.
+
+  **The list, and it is short on purpose**: `agents.<role>` when a panel is about to improvise that
+  role on an M/L or sensitive diff · `quality.review_depth` after a review's cost line went over
+  `agents.budget_max` · `data.volumes` or `data.explain_cmd` when the query duel came back
+  schema-only · `quality.functional_check` when `validate` found a runnable app and no way to drive
+  it · `tracker.start_cmd`/`done_cmd`/`abandon_cmd` the first time a ticket could have been
+  transitioned. A key whose default is fine forever — `request_sections`, `worktree_path`,
+  `knowledge.timeout_s` — never appears here, in any mode.
+
+  `FLOW.md` is personal config, so writing a line is not a team decision; it is still an edit to the
+  tree, so the option is an explicit choice the user makes, never a default action (same bar as
+  flow-core §8's convention offer, and the two share their wording).
 - **Knowledge sources, by role** (`knowledge` section): `search` (one or more tools or commands
   that return context for a query — all consulted in parallel, results merged as material to weigh),
   `stage` (record one finding for this branch), `read_staging` (what this branch staged), `save`
