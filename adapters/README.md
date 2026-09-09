@@ -4,7 +4,9 @@ The `flow` plugin (in `../plugins/flow`) is for **Claude Code**. These adapters 
 `feat`/`bug`/`work` workflows to other terminal agents. They are **build output, not source**:
 [`../script/adapter-build.py`](../script/adapter-build.py) reads every plugin command and the shared
 rules in `../plugins/flow/skills/flow-core/SKILL.md`, and writes every file under
-`opencode/commands/`, `codex/skills/`, `gemini/commands/flow/` plus one `<harness>/CORE.md` each.
+`opencode/commands/`, `codex/skills/`, `gemini/commands/flow/` plus one `<harness>/CORE.md` each —
+and `../plugins/flow/codex-skills/`, the same Codex skills packaged inside the plugin so
+`codex plugin add` installs them (see `codex/README.md`).
 The **logic and prose are the plugin's, verbatim** — only the wrapper changes.
 
 | Harness | Commands | Subagents | MCP | Autopilot watch |
@@ -12,6 +14,7 @@ The **logic and prose are the plugin's, verbatim** — only the wrapper changes.
 | **opencode** | `commands/*.md` (`/flow-feat-start`) | `agents/*.md` `mode:subagent`, `@name` | `opencode.json` | cron + `opencode run -p` |
 | **Gemini CLI** | `commands/**/*.toml` (`/flow:feat:start`) | `.gemini/agents/*.md`, `@name` | `settings.json` `mcpServers` | cron + `gemini -p` |
 | **Codex CLI** | `skills/*/SKILL.md` (`$flow-feat-start`) | `[agents.*]` in `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
+| **Codex CLI, packaged** | `plugins/flow/codex-skills/` (`$flow:feat-start`) | same | same | same |
 
 ## What the generator changes per harness
 
@@ -21,10 +24,12 @@ Only the mechanics, and only these:
   carries `name:` + `description:`, Gemini a TOML `description` + `prompt` string (backslashes and
   triple quotes escaped).
 - **The prefix** — every `/flow…` invocation rewritten to the harness's own: `/flow-feat-build` for
-  opencode, `$flow-feat-build` for Codex (skills are invoked with `$`), `/flow:feat:build` for Gemini.
+  opencode, `$flow-feat-build` for Codex (skills are invoked with `$`), `$flow:feat-build` for the
+  Codex plugin package (Codex namespaces a plugin's skills), `/flow:feat:build` for Gemini.
 - **`$ARGUMENTS`** → `{{args}}` for Gemini.
 - **The CORE pointer** — the plugin's `flow:flow-core` skill and `${CLAUDE_PLUGIN_ROOT}` become
-  `~/.claude/flow/CORE.<tool>.md`, the file `install.sh` places there.
+  `~/.claude/flow/CORE.<tool>.md`, the file `install.sh` places there. In the Codex package they stay
+  a skill (`$flow:flow-core`) and a relative root (`../..`), because there both actually exist.
 - **A legend** right after the title, mapping the Claude Code primitives the prose names
   (`AskUserQuestion`, subagents and fan-out, `ScheduleWakeup`, `TaskCreate`, `Skill …`, `/model`,
   `knowledge.*` roles) to what that harness has. The legend is the `LEGEND` dict in the script;

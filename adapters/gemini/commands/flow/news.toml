@@ -23,7 +23,7 @@ last saw and the installed one. Read-only, except for a small "last seen" marker
 - **Changelog**: `~/.claude/flow/CHANGELOG.md`. Each shipped version is a section headed `## vX.Y.Z …`; an `## [Unreleased] …` block at the top is **ignored** (not shipped).
 - **Last-seen marker**: `~/.claude/flow/news-last-seen` (one line, e.g. `v0.11.0`). Missing dir/file → first run.
 
-`~/.claude/flow` unset or `CHANGELOG.md` missing (running outside the packaged plugin) → say so briefly, point to <https://github.com/mashware/flow-workflows/releases>, stop.
+`~/.claude/flow/CHANGELOG.md` missing (running outside the packaged plugin) → say so briefly, point to <https://github.com/mashware/flow-workflows/releases>, stop.
 
 ## 2. Decide the range from `{{args}}`
 

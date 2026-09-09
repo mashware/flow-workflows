@@ -5,6 +5,38 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.55.0 — Installing it on Codex no longer means cloning the repo  ·  2026-09-09
+
+**In short**
+- **`codex plugin add flow@flow-plugins` now installs the whole workflow set.** Add the marketplace once (`codex plugin marketplace add https://github.com/mashware/flow-workflows.git`), and `codex plugin marketplace upgrade` updates it — no clone, no installer.
+- **Codex namespaces a plugin's skills**, so those are `$flow:feat-start`, `$flow:bug-fix`, `$flow:work-status`, and the shared rules are the sibling skill `$flow:flow-core`.
+- **The package is generated, like every other mirror**: `plugins/flow/codex-skills/` and `plugins/flow/.codex-plugin/plugin.json`, written by `script/adapter-build.py` from the same commands. Claude Code reads neither.
+- **The loose-skill adapter stays** for a single repo's `.agents/skills/` or an unpublished build: `adapters/install.sh codex`, invoked `$flow-feat-start`.
+- **One wart, no fix**: Codex's importer still adds `$flow:source-command-next`, a duplicate of `$flow:next`. Nothing in the manifest turns it off.
+
+**A plugin Codex installs but cannot run is worse than no plugin.** v0.54.0 established that Codex
+drops 28 of the 29 commands when it converts them, and answered it with an adapter you install by
+hand from a clone. That is the right answer for one person with the repo already checked out and the
+wrong one for everybody else: the whole point of a marketplace is that a user types two commands and
+has the thing. So the package now carries what Codex actually reads. `.codex-plugin/plugin.json`
+takes precedence over `.claude-plugin/plugin.json` for Codex and nothing else looks at it; its
+`skills` field points at `codex-skills/`, a generated folder of the same 29 workflows plus the shared
+rules. Codex loads them whole — the ~4 KB ceiling belongs to its command converter, not to skills; a
+10 KB probe skill loads fine, and so does the 36 KB `feat-ship`.
+
+**Being inside a package changes three things, and the generator knows all three.** The names lose
+their `flow-` prefix, because Codex prefixes them itself: `$flow:feat-start`, not
+`$flow:flow-feat-start`. The pointer at the shared rules goes back to being what the plugin says
+verbatim — *"Load the `flow:flow-core` skill first"* — because in a Codex package that skill exists
+under exactly that name, where the loose adapter has to send you to a file under `~/.claude/flow/`.
+And `${CLAUDE_PLUGIN_ROOT}`, which `news` and `doctor` cite for the changelog and the manifest,
+becomes `../..`, the plugin root two folders above any skill file, with a legend line saying so.
+
+**Also**: `news` described the plugin root as *"unset"*, a sentence that is true only in Claude Code,
+where it is an environment variable. Every mirror now names the file it would be missing instead.
+The smoke test learned the packaged shape — a fourth mirror, its own invocation prefix, and a
+lookbehind that stops reading `../flow-core/SKILL.md` as an invocation.
+
 ## v0.54.0 — Codex installed the plugin and kept one command out of twenty-nine  ·  2026-09-09
 
 **In short**
