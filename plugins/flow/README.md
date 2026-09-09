@@ -17,11 +17,11 @@ writes `FLOW.md` asking you only for what cannot be inferred. Manual path: copy
 - **autonomy**: `manual` | `guided` | `auto` — how much the flow advances on its own. The hard gates (push/MR-PR, ambiguous branch base, DB schema changes, high-severity review findings, the business brief before code) stop in **every** mode.
 - **quality**: test/analysis/style/DB commands for the repo (empty = auto-discover), plus `review_depth` (`proportional` · `full` · `light`), `review_skill` and `reviewers` — how much of the review panel runs and who is on it.
 - **agents**: role→agent map for the steps that delegate to a specialist, plus the two cost ceilings — `fanout_max` per parallel round (empty → 4) and `budget_max` per command run (empty → 12) — and the fan-out's optional orchestrator (`fanout_tool`).
-- **models**: which model each kind of step runs with (`study`, `code`, `test`, `review`, `workers`). Free text, passed straight to your harness; empty = the step runs with the model you launched the command with.
+- **models**: which model the subagents run with — `agents` (every one a command improvises) and `workers` (the fan-out rounds). Free text, passed straight to your harness; empty = everything runs with the model you launched the command with. There is no key for what the main agent does itself: it cannot switch its own model.
 - **data**: how to get a query's execution plan and a table's real schema, plus the volumes of the hot tables — what the query duel needs to judge a query on its plan instead of on an argument. Empty = the duel runs on the schema alone and says what it could not prove.
 - **conventions**: code conventions the commands must respect (free text).
 - **notes**: per-command extra guidance, followed as mandatory additional instructions for that step.
-- **knowledge**: the knowledge sources by role — `search`, `stage`, `read_staging`, `save` — any MCP ([`domain-memory`](https://github.com/mashware/domain-memory), `codegraph`…), CLI or skill; empty roles degrade silently. `domain_memory.enabled` is the legacy alias.
+- **knowledge**: the knowledge sources by role — `search`, `stage`, `read_staging`, `save` — any MCP ([`domain-memory`](https://github.com/mashware/domain-memory), `codegraph`…), CLI or skill; empty roles degrade silently.
 - **observability**: profile for `work:watch` (services, platform, deploy detection, queues). Empty = auto-discover.
 
 `FLOW.md` is **personal config, not team config** — it mixes repo facts with your own preferences

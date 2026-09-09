@@ -5,6 +5,54 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.50.0 — Seventy-five keys, two of which nothing read and five that promised what the harness cannot do  ·  2026-09-09
+
+**In short**
+- **Eight keys retired, 75 → 67.** `domain_memory.enabled`, `quality.frontend_test`, `agents.frontend_test`, `git.train_chain`, `git.request_term`, and the five `models.*` step-kind keys collapsed into two.
+- **`models` is now `agents` and `workers`.** The old five were named after phases the main agent runs itself — and an agent cannot switch its own model, so the value only ever reached the subagents. The two that remain name exactly what can be set.
+- **`git.host` admits the forges `/flow:init` already detects** — `gitlab | github | bitbucket | azure | gitea` — each with its term and default CLI in one table. The term is never configured; it follows the host.
+- **The train follows `autonomy.mode`.** `manual` asks before the next MR/PR, `guided`/`auto` continue. The `wait` behaviour goes: a run that wants it answers *no*.
+- **The preflight refuses a key nothing reads.** `check.py` now cross-references every template key against the commands and `flow-core` — it would have caught `models.study` on the day it was written.
+
+**Breaking.** A `FLOW.md` carrying any of the retired keys keeps working — nothing errors, the keys
+are simply not read — and `/flow:config` names them in one line each. What to do:
+
+| Retired | Instead |
+|---|---|
+| `domain_memory.enabled: true` | Name the four tools under `knowledge` (`search`, `stage`, `read_staging`, `save`) |
+| `quality.frontend_test` | Chain it into `quality.test`: `make test && make test-frontend` |
+| `agents.frontend_test` | `agents.testing` covers the tests, `agents.frontend` the interface code |
+| `git.train_chain` | Nothing — the train follows `autonomy.mode`; `wait` is answering *no* in `manual` |
+| `git.request_term` | Nothing — the term follows `git.host` |
+| `models.study` / `code` / `test` / `review` | `models.agents` for every improvised subagent; `models.workers` still names the fan-out rounds |
+
+**Every key costs the same, whether or not anything reads it**: a paragraph in the template, a row in
+CONFIGURATION, a branch in `init`, a row in `config`, a check in `doctor`, and a reader deciding
+whether it applies to them. Cross-referencing all 75 against the commands that actually resolve them
+found two that nothing read — `models.study` and `models.test`, documented and printed by
+`/flow:config` for eight releases while flow-core's *"each command names its `models` key"* was never
+carried out by the eight `study` commands or the two `test` ones — and five more that said the same
+thing twice or derived from a key next to them.
+
+**The `models` collapse is the one that is a decision rather than a cleanup.** The five keys were
+named by kind of step, and the main agent cannot switch its own model: reading a ticket, writing a
+design and writing the code all happen on the thread you launched, whatever the key says. So `study`
+and `code` resolved to *"reported at the handoff, not applied"* for their headline case, which is a
+key that misleads. What can be set is the subagents, and there are two kinds: the ones a command
+improvises (`agents`) and the fan-out rounds where cost multiplies (`workers`, falling back to
+`agents`). A phase that would read better on another model still says so in one line at the handoff —
+it just no longer pretends a key controls it.
+
+**One inconsistency found on the way.** `/flow:init` detects Bitbucket, Azure DevOps and Gitea and
+writes them into `git.host`, while the template's enum admitted `gitlab | github` — so three of the
+five hosts the wizard writes were undocumented values. The enum now names all five, with the term
+and the default CLI per host in one table, which is also what let `request_term` go: a GitLab repo
+that calls them PRs is not a thing that exists.
+
+**And a guard, so this does not come back.** `check.py` reads every key out of the template and
+requires that some command or `flow-core` names it. The free-text sections (`conventions`, `notes`)
+are exempt; everything else has to be read by something.
+
 ## v0.49.0 — Day one reached `agents:` with nothing to name  ·  2026-09-09
 
 **In short**

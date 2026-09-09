@@ -122,7 +122,7 @@ Determine whether the branch modifies the database (migrations, mappings/schema,
 Print to the user in this exact format:
 
 ```
-─── Preview of <git.request_term> ─────────────────────────────────────
+─── Preview of <MR or PR, per git.host> ───────────────────────────────
 Title: <full title, including [patch|minor|major]>
 Assigned to: <git.assignee from FLOW.md; if empty: "unassigned">
 Squash on merge: <git.squash from FLOW.md>
@@ -137,7 +137,7 @@ Description:
 
 If there is pre-deploy SQL, ask the user to **explicitly confirm that the block is complete and correct** — it will be executed in production.
 
-Then ask with `AskUserQuestion` (header: "Create <git.request_term>"):
+Then ask with `AskUserQuestion` (header: "Create <MR or PR>"):
 
 - **Create with this content** → invoke §4.
 - **Edit before creating** → user says what to change (title, a section, both); adjust and return to §3 with the new preview.
@@ -249,25 +249,24 @@ Run `tracker.done_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contra
 
 ### 6.2 Train continuation (only if `meta.json.mrs` still has `pending` entries)
 
-A train builds the next MR/PR **without waiting for the current one to merge**. Do not stop here to wait for the merge. Resolve `git.train_chain` from FLOW.md (`ask` | `always` | `wait`; **empty → derive from `autonomy.mode`**: `manual` → `ask`, `guided`/`auto` → `always`).
+A train builds the next MR/PR **without waiting for the current one to merge**. Do not stop here to wait for the merge. What happens next follows `autonomy.mode` alone: `manual` → ask; `guided`/`auto` → continue and record it. There is no key for this.
 
 First identify the **next startable MR/PR**: the `pending` one with the lowest `n` whose `depends_on` are all `merged` (same rule as `/flow:feat:build §1`). Then its **base branch**:
 
 - **Depends on the current MR/PR** (`depends_on` includes the current `n`) → real train: base = the current branch (stacked).
 - **Parallel sibling** (does not depend on the current MR/PR) → **not** part of this train: base = `git.default_base`, `stacked_on` = null. Never stack an independent MR/PR on an unrelated branch.
 
-Then act on `git.train_chain`:
+Then act on `autonomy.mode`:
 
-- **`wait`**: do not continue now. Leave `phase = "build"`; tell the user to run `/flow:feat:build` once the current MR/PR is merged. Happens **only** when explicitly configured.
-- **`ask`**: `AskUserQuestion` — "Continue now with the next MR/PR (#\<n\> «\<title\>»), based on \<its base branch per the rule above\>?". **No** → stop and recommend `/flow:feat:build`. **Yes** → as `always`.
-- **`always`**: continue automatically; record the decision in the artifact, **do not prompt** — not "shall I start #\<n\>?", and never "shall I wait for #\<n-1\> to merge?" (`wait` is the only value that holds the train; see the never-ask list in flow-core §2).
+- **`manual`**: `AskUserQuestion` — "Continue now with the next MR/PR (#\<n\> «\<title\>»), based on \<its base branch per the rule above\>?". **No** → stop, leave `phase = "build"` and recommend `/flow:feat:build`. **Yes** → as below.
+- **`guided`/`auto`**: continue automatically; record the decision in the artifact, **do not prompt** — not "shall I start #\<n\>?", and never "shall I wait for #\<n-1\> to merge?" (see the never-ask list in flow-core §2). A user who would rather wait for the merge answers *no* in `manual`, or stops after this `ship`.
 
-To continue (both `ask`→yes and `always`):
+To continue (both `manual`→yes and `guided`/`auto`):
 1. Create the next branch per `/flow:feat:start §5` with the **base chosen above** (explicit base, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow:feat:start §5.5` (same base). Train (depends on the current one) → record `stacked_on` = current branch in `meta.json`; parallel sibling → `stacked_on` = null.
 2. Leave `phase = "build"` (`/flow:feat:build §1` picks the next `pending` MR/PR and marks it `in_progress`).
 3. Chain into `/flow:feat:build`.
 
-This continuation is **not** a hard gate: a stacked branch on an explicit, unambiguous parent is safe, and creating MR/PR #\<n+1\> in its own `/flow:feat:ship` will still stop and ask. Never hold the train back solely to wait for a merge unless `train_chain: wait`.
+This continuation is **not** a hard gate: a stacked branch on an explicit, unambiguous parent is safe, and creating MR/PR #\<n+1\> in its own `/flow:feat:ship` will still stop and ask. Never hold the train back solely to wait for a merge.
 
 ### 6.2.1 The parent merged first — re-target the child, or it merges nowhere
 

@@ -161,6 +161,38 @@ def check_example_config():
                 fail(rel, f"line {n}: `{section}.{m.group(1)}` is not a key in the template")
 
 
+def check_template_keys_are_read(files):
+    """A key in the template that no command and no skill names is a key nothing reads.
+
+    `models.study` and `models.test` were documented, printed by `/flow:config` and
+    resolved by nobody for eight releases: the commands that were supposed to name
+    them never did. A key costs a paragraph in the template, a row in CONFIGURATION,
+    a branch in `init`, a row in `config` and a check in `doctor` — all of it wasted
+    when the key is dead. Section-qualified (`git.host`) or bare (`host`) both count
+    as naming it; the free-text sections have no fixed keys and are skipped.
+    """
+    free_text = {"conventions", "notes"}
+    readers = "\n".join(
+        read(f) for f in files
+        if (f.startswith("plugins/flow/commands/") or f.startswith("plugins/flow/skills/"))
+        and f.endswith(".md")
+    )
+    template = read("plugins/flow/examples/FLOW.template.md")
+    section = None
+    for line in template.splitlines():
+        if line.startswith("## "):
+            section = line[3:].strip()
+            continue
+        m = re.match(r"^- `([a-z_]+):`", line)
+        if not m or section in free_text or section is None:
+            continue
+        key = m.group(1)
+        if f"{section}.{key}" in readers or f"`{key}`" in readers or f"{{{key}}}" in readers:
+            continue
+        fail("plugins/flow/examples/FLOW.template.md",
+             f"`{section}.{key}` is documented but no command or skill names it")
+
+
 def check_hooks_executable(files):
     """A hook without its executable bit is a hook that does not run.
 
@@ -424,6 +456,7 @@ def main():
     check_manifests()
     check_all_json(files)
     check_example_config()
+    check_template_keys_are_read(files)
     check_hooks_executable(files)
     check_hooks_have_tests(files)
     check_version_matches_changelog()

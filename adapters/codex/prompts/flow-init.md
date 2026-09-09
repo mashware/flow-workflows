@@ -27,11 +27,9 @@ Never overwrite without confirmation.
 Run, deduce, show what was found for confirmation or correction:
 
 - **Git host and CLI** — from `git remote -v`:
-  - `github.com` → host `github`, cli `gh`, request_term `PR`.
-  - `gitlab.*` → `gitlab`, `glab`, `MR`.
-  - `bitbucket.org` → `bitbucket`, request_term `PR`.
-  - `dev.azure.com`/`visualstudio.com` → `azure`, cli `az`, `PR`.
-  - Known Gitea/Forgejo domain → `gitea`, cli `tea`.
+  - `github.com` → `github`; `gitlab.*` → `gitlab`; `bitbucket.org` → `bitbucket`;
+    `dev.azure.com`/`visualstudio.com` → `azure`; a known Gitea/Forgejo domain → `gitea`.
+  - The term (MR/PR) and the default CLI follow from `host` — the table in the template. Never write a term key; there is none.
   - Unknown domain (self-hosted) → ask which host (GitLab/Gitea/other) and which CLI.
   - Installed CLIs: `command -v gh glab tea az`.
 - **Base branch** — `git symbolic-ref refs/remotes/origin/HEAD` (or `git remote show origin`): `origin/main` or `origin/master` → `git.default_base`.
@@ -47,7 +45,7 @@ Run, deduce, show what was found for confirmation or correction:
   - Several stacks in one repo (a backend plus a mobile client) → propose one command per key that chains them (`make test` if a Makefile already does, else `a && b`), and say so.
   - Schema migrations (Doctrine, Alembic, Rails, Prisma…) → propose `quality.db_diff` and raise `git.predeploy_gate`.
 - **Data access** (`data.*`, all optional) — only if the repo talks to a database. Find the client and the local stack (a `docker-compose.yml` service, a `DATABASE_URL`/`DB_*` env var, a `Makefile` target that opens a shell). Propose `data.explain_cmd` and `data.schema_cmd` in the engine's dialect against the **development** database — MySQL over Docker Compose: `docker compose exec -T <db-service> mysql <db> -e "EXPLAIN {QUERY}"` and `… -e "SHOW CREATE TABLE {TABLE}"`; PostgreSQL: `psql -c "EXPLAIN (ANALYZE, BUFFERS) {QUERY}"` / `\d+ {TABLE}`. Leave `sandbox_cmd`/`seed_cmd`/`volumes` empty unless the user has something ready. Nothing detected → leave the section out (the query duel degrades to schema-only and says so).
-- **Knowledge sources** (`knowledge.*`) — look at the MCP tools exposed in this session: `mcp__domain-memory__*` → propose `search: mcp__domain-memory__search_knowledge`, `stage: mcp__domain-memory__stage_finding`, `read_staging: mcp__domain-memory__read_staging`, `save: mcp__domain-memory__save_knowledge`; any other tool whose name says search / query / knowledge / memory / graph (e.g. `mcp__codegraph__*`) → propose it as an additional `search` entry, roles it cannot fill left empty. A `docs/adr` or similar folder with no MCP → propose `search: rg -n -i "{QUERY}" docs/adr`. Nothing found → leave the section out. Never write `domain_memory.enabled` — it is the legacy alias.
+- **Knowledge sources** (`knowledge.*`) — look at the MCP tools exposed in this session: `mcp__domain-memory__*` → propose `search: mcp__domain-memory__search_knowledge`, `stage: mcp__domain-memory__stage_finding`, `read_staging: mcp__domain-memory__read_staging`, `save: mcp__domain-memory__save_knowledge`; any other tool whose name says search / query / knowledge / memory / graph (e.g. `mcp__codegraph__*`) → propose it as an additional `search` entry, roles it cannot fill left empty. A `docs/adr` or similar folder with no MCP → propose `search: rg -n -i "{QUERY}" docs/adr`. Nothing found → leave the section out.
 
 ## 3. Ask only what cannot be inferred
 
@@ -64,7 +62,6 @@ empty → auto-discover / skip this". §2's detections are the defaults; the use
 - **MR/PR assignee** (`git.assignee`, or none) and **squash** (`git.squash`).
 - **MR/PR sections** (`git.request_sections`, or free-form).
 - **Pre-deploy gate** (`git.predeploy_gate`): schema SQL run manually on the server before deploying? Yes + a schema diff command detected → propose `quality.db_diff`.
-- **Train chaining** (`git.train_chain`): optional, multi-PR features on stacked branches only. Empty (default) = derived from `autonomy.mode`: `manual` asks "continue with the next MR/PR?", `guided`/`auto` chain automatically — the train never waits for the previous MR/PR to merge. Set `ask`/`always`/`wait` only to override; most repos leave it empty.
 - **Agents by role** (`agents.*`, `quality.review_skill`/`reviewers`): optional; empty = `general-purpose`, fill in later. Collect names of custom agents if any.
 - **Review depth** (`quality.review_depth`), most repos leave it empty (= proportional):
   - `proportional` (default) — panel scaled by the size of the diff under review: a small diff gets only the built-in `code-review`; the specialized panel runs on M/L diffs and on sensitive small changes.

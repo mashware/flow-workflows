@@ -39,13 +39,12 @@ this folder.
 - mode: guided
 
 ## quality
-- test: make test
+- test: make test && make test-frontend
 - test_one: make test-filter filter={FILTER}
 - static_analysis: make phpstan-ci
 - style_fix: make cs-fixer-changed
 - db_update: make database-update
 - db_diff: make database-compare
-- frontend_test: make test-frontend
 - functional_check: the app runs at https://localhost via `docker compose up -d`; `make fixtures` seeds a dev user (dev@example.com / dev); Chrome automation is available, so an HTTP or UI criterion can be driven end to end
 - bench_cmd: docker compose exec -T php bin/console app:bench {TARGET}
 - review_depth: proportional

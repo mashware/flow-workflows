@@ -39,7 +39,7 @@ Overview of works in progress; detects divergences between artifacts and actual 
   Next:        <suggested next command>
 ```
 
-- "MR"/"PR" from `git.request_term` in FLOW.md; empty → "MR/PR".
+- "MR"/"PR" from `git.host` (`gitlab` → MR, every other host → PR); no host → "MR/PR".
 - `Cross-repo:` only when `meta.json.related_repos` has entries not `done`: each as `<repo>: <scope>`, appending ` — contract not handed over` when that entry's `contract_handoff` is `pending`. It flags that a **sibling repo still has a pending part**; flow never scans or touches the other repo.
 - `Follow-ups:` only when `meta.json.followups[]` has entries not `declined`/`logged`/`done` (flow-core §7): count the `proposed` ones as *awaiting a decision* and the `accepted` ones without a `work` as *accepted, not started*, naming the ticket id when there is one. `in_progress` entries are already visible as their own work — do not double-count them.
 - `MR/PRs:` only when `meta.json.mrs` exists with >0 entries:

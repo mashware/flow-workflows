@@ -22,7 +22,7 @@ Cross-cutting (`feat` or `bug` MR/PR alike), repeatable (one invocation per revi
 
 ## 0. Step 0 — read FLOW.md
 
-Extract from `git`: `host` (`gitlab`|`github`), `cli` (`glab`|`gh`; empty → inferred from `host`), `request_term` (`MR`|`PR`), `assignee`. From `tracker`: `tool` and `prefix`. From `quality`: `review_skill` (§6, non-trivial rounds). If `knowledge.search` is set, `knowledge.search` runs in §3.
+Extract from `git`: `host`, `cli` (empty → the default for that host), `assignee`. The term MR/PR follows `host`. From `tracker`: `tool` and `prefix`. From `quality`: `review_skill` (§6, non-trivial rounds). If `knowledge.search` is set, `knowledge.search` runs in §3.
 
 Read `~/.claude/flow/CORE.gemini.md` first (\\g<what>) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 

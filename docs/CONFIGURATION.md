@@ -43,7 +43,7 @@ repo-fact subset can commit it deliberately.
 | [`autonomy`](#autonomy) | How much a phase decides on its own | `manual` — stops at every decision |
 | [`quality`](#quality) | Test/lint/analysis commands and how deep review goes | Auto-discovered; review is `proportional` |
 | [`agents`](#agents) | Role → specialist agent map, and how wide the parallel fan-out goes | `general-purpose` with the role in the prompt; fan-out capped at 4 |
-| [`models`](#models) | Which model each kind of step runs with | The step runs with the model you launched the command with |
+| [`models`](#models) | Which model the subagents run with | Everything runs with the model you launched the command with |
 | [`data`](#data) | How to read a query's plan and the real size of the hot tables | The query duel runs on the schema alone and says what it could not prove |
 | [`conventions`](#conventions) | Rules the code must respect | No specific conventions |
 | [`notes`](#notes) | Extra mandatory instructions per command | No extra guidance |
@@ -71,27 +71,24 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `tracker` | `abandon_cmd` | optional, run when a work is ABANDONED (`/flow:work:abandon`) to move the ticket to a cancelled / won't-do state. `{TICKET}` substituted. Empty = do not transition. e.g.: |
 | `tracker` | `debt_log` | optional. Versioned Markdown file where `ship` appends the follow-ups that are recorded but never asked about (flow-core §7): `tooling` gaps in the repo's own |
 | `tracker` | `followup_ask_max` | how many parked findings one finished work may turn into questions at `ship`'s Close (flow-core §7). Empty = 2. `0` = never ask, log everything. A ticket where |
-| `git` | `host` | `gitlab` \| `github`. Determines the terminology and default CLI |
-| `git` | `cli` | `glab` \| `gh`. Empty = inferred from `host` |
-| `git` | `request_term` | `MR` \| `PR`. How to name the request in text. Empty = inferred from `host` |
+| `git` | `host` | `gitlab` \| `github` \| `bitbucket` \| `azure` \| `gitea`. Sets both the terminology and the default CLI: |
+| `git` | `cli` | Empty = the default for `host` in the table above. Set it for a self-hosted forge, a wrapper, or |
 | `git` | `default_base` | base for new branches, e.g. `origin/master` or `origin/main` |
 | `git` | `branch_pattern` | e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case. Empty = `{PREFIX}{TICKET}-{slug}` |
 | `git` | `assignee` | user to assign the MR/PR to. Empty = do not assign |
 | `git` | `squash` | `true` \| `false` (squash-before-merge) |
 | `git` | `request_sections` | MR/PR description sections, one per line with `- `. Empty = free-form |
 | `git` | `predeploy_gate` | `true` if this repo runs schema SQL manually on the server BEFORE deploying and wants to block the MR/PR until done. Empty/false = no Pre-deploy section or blocking thread |
-| `git` | `train_chain` | multi-PR train (stacked branches) behavior at the end of `/flow:feat:ship` when there are still pending MR/PRs. `ask` \| `always` \| `wait`. The train NEVER waits for the previous MR/PR to merge except in `wait` |
 | `git` | `worktree` | `off` (default) \| `ask` \| `always`. Whether `/flow:feat:start` & `/flow:bug:start` create the new branch as a git worktree instead of switching in place. `ask` = prompt each time; `always` = always; `off`/empty = never (in-place, current behavior) |
 | `git` | `worktree_path` | path template for the worktree dir. `{branch}` and `{repo}` are substituted. Empty with `worktree`≠`off` = `.worktrees/{branch}` at the repo root (git-ignore it). e.g. `.worktrees/{branch}` or `../{repo}.worktrees/{branch}` |
 | `git` | `worktree_resync` | commands `/flow:work:try` runs after switching the main checkout to a branch (and again on `--back`), to re-sync the environment (e.g. DB schema, assets). One command per line with `- `, run in order. Empty = `/flow:work:try` only does the git switch, no env re-sync. e.g.: |
 | `autonomy` | `mode` | `manual` (default) \| `guided` \| `auto`. Empty = `manual` |
-| `quality` | `test` | e.g. `make test` |
+| `quality` | `test` | e.g. `make test`. Several suites in one repo (a backend and a frontend, an app and a service) chain into this one key: |
 | `quality` | `test_one` | e.g. `make test-filter filter={FILTER}` · `./gradlew test --tests {FILTER}` · `dotnet test --filter {FILTER}` (`{FILTER}` is substituted) |
 | `quality` | `static_analysis` | e.g. `make phpstan-ci` · `./gradlew lint` · `dotnet build -warnaserror` · `flutter analyze` |
 | `quality` | `style_fix` | e.g. `make cs-fixer-changed` · `./gradlew ktlintFormat` · `dotnet format` · `swift-format -i -r Sources` |
 | `quality` | `db_update` | e.g. `make database-update` (empty if not applicable) |
 | `quality` | `db_diff` | command that shows pending schema SQL, e.g. `make database-compare` (for pre-deploy SQL) |
-| `quality` | `frontend_test` | e.g. `make test-frontend` (empty if no frontend) |
 | `quality` | `functional_check` | how to drive the running app so `/flow:*:validate` can prove an acceptance criterion itself |
 | `quality` | `bench_cmd` | how this repo exercises ONE entry point and reports time and memory, so `/flow:*:validate` |
 | `quality` | `evidence` | `on` (default) \| `off`. Whether `/flow:*:validate` captures evidence (screenshots, response |
@@ -106,17 +103,13 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `agents` | `queues` | queues, dead-letter, workers |
 | `agents` | `security` | threats, authentication, sensitive data |
 | `agents` | `frontend` | components/UI |
-| `agents` | `frontend_test` | frontend tests |
-| `agents` | `testing` | backend tests / coverage |
+| `agents` | `testing` | tests and coverage, whichever suite the diff touches |
 | `agents` | `fanout_max` | max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported |
 | `agents` | `budget_max` | max subagents ONE command run may launch in total, summed over every round (flow-core §6). Empty = 12. `0` = no ceiling |
 | `agents` | `fanout_tool` | orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable |
 | `agents` | `report_max_words` | word cap every brief you write for a subagent carries. Empty = 250. Not a style rule: a report too long for the harness to carry is truncated in transit and reaches you as silence |
-| `agents` | `stall_after_minutes` | a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 |
-| `models` | `study` | feat:start, feat:brainstorm, feat:design, feat:plan · bug:start, bug:diagnose, |
-| `models` | `code` | feat:build · bug:fix · work:green (and the changes /flow:work:respond implements) |
-| `models` | `test` | feat:validate · bug:validate |
-| `models` | `review` | feat:review · bug:review · work:query · work:respond (thread triage) |
+| `agents` | `stall_after_minutes` | a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 — |
+| `models` | `agents` | every subagent a command improvises: the review panel members with no named agent, the |
 | `models` | `workers` | the parallel fan-out rounds ONLY: approach panel (brainstorm §3.A), hypothesis sweep |
 | `data` | `explain_cmd` | get a query's execution plan. `{QUERY}` is substituted. e.g.: |
 | `data` | `schema_cmd` | show a table's REAL definition — column types, lengths, charset/collation, indexes and their |
@@ -129,7 +122,6 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `knowledge` | `read_staging` | optional. Tool that returns what this branch has staged. Empty = the phase artifacts are the staging |
 | `knowledge` | `save` | optional. Tool that consolidates one finding into the store (`/flow:save-knowledge`, `ship`, `postmortem`) |
 | `knowledge` | `timeout_s` | per call. Empty = 2. A call that fails or takes longer → continue without it, silently |
-| `domain_memory` | `enabled` | `true` = the four `knowledge` roles resolve to the `domain-memory` MCP tools (`search_knowledge`, |
 | `observability` | `platform` | `datadog` \| other. Empty = auto-discover |
 | `observability` | `site` | e.g. `app.datadoghq.com` (org/site) |
 | `observability` | `deploy_detect` | how to identify YOUR deploy. Free text. e.g.: "merge→parent pipeline (glab by SHA)→bridge→child pipeline→go-live jobs" |
@@ -205,35 +197,41 @@ Branch and Pull/Merge Request conventions.
 
 | Key | What it does | Empty |
 |---|---|---|
-| `host` | `gitlab` · `github` — sets terminology and default CLI | Inferred from the remote |
-| `cli` | `glab` · `gh` | Inferred from `host` |
-| `request_term` | `MR` · `PR` — how requests are named in text | Inferred from `host` |
+| `host` | `gitlab` · `github` · `bitbucket` · `azure` · `gitea` — sets terminology and default CLI | Inferred from the remote |
+| `cli` | The forge's CLI | The default for `host` (below) |
 | `default_base` | Base for new branches, e.g. `origin/main` | Asked when ambiguous |
 | `branch_pattern` | e.g. `{PREFIX}{TICKET}-{slug}` (slug in English kebab-case) | Sensible default |
 | `assignee` | User to assign the MR/PR to | Not assigned |
 | `squash` | `true` · `false` (squash before merge) | Forge default |
 | `request_sections` | MR/PR description sections, one per line | Free-form body |
 | `predeploy_gate` | `true` if schema SQL is run manually before deploying | No pre-deploy gate |
-| `train_chain` | `ask` · `always` · `wait` — multi-PR train behavior | Derived from `autonomy.mode` |
 | `worktree` | `off` · `ask` · `always` | `off` — branches switch in place |
 | `worktree_path` | Path template; `{branch}`, `{repo}` substituted | `.worktrees/{branch}` |
 | `worktree_resync` | Commands `/flow:work:try` runs after switching | Git switch only, no env re-sync |
 
-### Multi-PR trains (`train_chain`)
+`host` decides how a request is named in every stop, artifact and MR/PR preview, and which CLI the
+commands reach for. There is no key for the term: it follows the host, because a GitLab repo that
+calls them PRs and a GitHub repo that calls them MRs are not things that exist.
+
+| `host` | Term | Default `cli` |
+|---|---|---|
+| `gitlab` | MR | `glab` |
+| `github` | PR | `gh` |
+| `bitbucket` | PR | none — the forge steps degrade to plain git and say so |
+| `azure` | PR | `az` |
+| `gitea` | PR | `tea` |
+
+### Multi-MR/PR trains
 
 On M/L work, `/flow:feat:plan` splits the feature into several small MR/PRs and `build → review
 → validate → ship` repeats per MR/PR. Each one is stacked on the previous branch, and
 **the train never waits for the previous MR/PR to merge** — waiting is what makes people give up
-and open one huge PR instead. `train_chain` decides what happens at the end of `ship` when MR/PRs
-are still pending:
+and open one huge PR instead.
 
-| Value | At the end of `ship` |
-|---|---|
-| `ask` | Asks "continue with the next MR/PR?" and, on yes, creates the next stacked branch and chains into `build` |
-| `always` | Chains into the next MR/PR's `build` automatically, no prompt (recorded) |
-| `wait` | Stops and recommends continuing only once the current MR/PR is merged |
-
-Empty derives it from autonomy: `manual` → `ask`; `guided`/`auto` → `always`.
+There is no key for this. At the end of `ship`, with MR/PRs still pending, `autonomy.mode` decides:
+`manual` asks *"continue with the next MR/PR?"* and creates the next stacked branch on yes;
+`guided` and `auto` continue and record it. A run that would rather stop answers *no*, which is the
+same answer the retired `train_chain: wait` gave, one decision later and without a key to configure.
 
 ### Worktrees and `/flow:work:try`
 
@@ -291,8 +289,8 @@ at a time. These are decided, recorded and left behind:
 - **flow mechanics** — whether to launch a panel, challengers or a skeptic filter, how many
   reviewers, inline vs subagent: a call on cost and latency, which is the agent's to make
 - **WIP commits** on the work branch
-- **continuing to the next MR/PR of a train** when `train_chain` resolves to `always` — and in
-  particular never offering to *wait for the merge*, which only `train_chain: wait` asks for
+- **continuing to the next MR/PR of a train** in `guided`/`auto` — and in particular never offering
+  to *wait for the merge*, which nothing asks for any more
 - **size confirmation** — the estimate is recorded and `brainstorm`/`plan` reclassify it later
 - **anything already decided and recorded** in the artifacts or `meta.json.notes`. Only new
   evidence contradicting the premise reopens a settled decision, and then the evidence leads
@@ -332,7 +330,10 @@ npm/composer scripts…) and reports what it used.
 | `style_fix` | `make cs-fixer-changed` |
 | `db_update` | `make database-update` |
 | `db_diff` | `make database-compare` — shows pending schema SQL |
-| `frontend_test` | `make test-frontend` |
+
+A repo with more than one suite chains them into `test`: `make test && make test-frontend`. `/flow:init`
+writes it that way when it detects a backend and a frontend, and there is no second key for the
+second suite — one key that runs everything is what `validate`, `review` and `green` all read.
 
 Four more keys configure review rather than commands:
 
@@ -406,7 +407,11 @@ Role → agent map for the steps that delegate to a specialist (`design`, `inves
 `validate`, `plan`, `build`, `fix`, `watch`, and the area reinforcements in `review`).
 
 `architecture` · `persistence` · `api` · `performance` · `queues` · `security` · `frontend` ·
-`frontend_test` · `testing`
+`testing`
+
+`testing` covers whichever suite the diff touches; `frontend` covers interface code. There is no
+separate frontend-test role — three keys for one concern was one more than the review panel could
+put to use.
 
 `performance` is not only a database role: it also covers repeated calls that leave the process
 (external API, HTTP, cache, filesystem) and what each *failed* iteration sets off downstream.
@@ -496,28 +501,29 @@ extra machinery and the cost that comes with it.
 
 ## `models`
 
-Which model each kind of step runs with. The section is **optional in full**: an empty or absent
-`models` means every step runs with the model you launched the command with — which is what flow did
+Which model the **subagents** run with. The section is **optional in full**: an empty or absent
+`models` means everything runs with the model you launched the command with — which is what flow did
 before the section existed.
 
-| Key | Steps it covers |
+| Key | What it covers |
 |---|---|
-| `study` | `feat:start` · `feat:brainstorm` · `feat:design` · `feat:plan` · `bug:start` · `bug:diagnose` · `bug:investigate` · `bug:postmortem` |
-| `code` | `feat:build` · `bug:fix` · `work:green` · the changes `work:respond` implements |
-| `test` | `feat:validate` · `bug:validate` |
-| `review` | `feat:review` · `bug:review` · `work:query` · `work:respond` thread triage |
-| `workers` | The parallel fan-out rounds only — approach panel, hypothesis sweep, finding skeptics |
+| `agents` | Every subagent a command improvises: review panel members with no named agent, the blinded auditors, the delegated pieces of a `build`, the `general-purpose` challenger |
+| `workers` | The parallel fan-out rounds only — approach panel, hypothesis sweep, finding skeptics, the deferred-work skeptic. Empty → falls back to `agents` |
 
-Everything not listed (`ship`, `status`, `daily`, `resume`, `try`, `clean`, `abandon`, `watch`)
-inherits, always.
+Nothing else has a key, and that is the point of the pair: the steps the main agent performs itself
+cannot be given a model at all (below).
 
 ```markdown
 ## models
-- study: fable
-- code: opus
-- test: sonnet
-- review: sonnet
+- agents: fable
+- workers: sonnet
 ```
+
+**Two keys, not five.** Until v0.50.0 there were `study`, `code`, `test` and `review`, named after
+kinds of step. They promised a granularity the harness does not deliver: the phases they named are
+run by the main agent, which cannot switch its own model, so the value only ever reached the
+subagents those phases launched. A key that resolves to "reported, not applied" for its headline
+case is a key that misleads. The two that remain name exactly what can be set.
 
 The values are **free text passed straight to your harness**. flow does not validate a model name,
 does not rank models, and never picks one for you — it has no opinion on which model is good at
@@ -526,8 +532,8 @@ it also runs on. A harness that cannot set the model per subagent ignores the va
 says so once.
 
 `workers` exists because a fan-out round is where cost multiplies: four skeptics or five approach
-advisors on one command. Set it below the command's own key to make breadth cheap, or leave it empty
-and the round inherits the key of the command running it.
+advisors on one command. Set it below `agents` to make breadth cheap, or leave it empty and the
+round follows `agents`.
 
 ### The two limits
 
@@ -541,9 +547,10 @@ The flow's steps split in two:
   **writing the code** (`build`/`fix` are single-thread on XS/S/M by design): the model in play is
   the one you launched the command with, and no instruction inside a command can change that.
 
-So in that second half a configured value is a **statement of intent that the flow reports, not
-enforces**: when it differs from the running model, the phase handoff says it in one line with the
-`/model` command that fixes it, records it in the phase artifact, and continues.
+There is no key for the second half, because a key that cannot be applied is a promise the section
+cannot keep. What a phase does instead is say it: when it would read better on another model, the
+handoff prints one line with the `/model` command that switches it, records the fact in the phase
+artifact, and continues.
 
 It is deliberately **not** a gate. Model choice is flow mechanics — the same category as how many
 reviewers run or whether a panel opens — and `guided`/`auto` never ask about mechanics. A stop at
@@ -558,9 +565,9 @@ definition decides its model: you configured it there deliberately, and one sett
 overridden from two places. These keys apply where flow **improvises** the agent — the
 `general-purpose` fallback with the role in the prompt — and to the fan-out workers.
 
-`/flow:config` prints the resolved map, step by step, with who decided each one (the `models` key,
-a named agent's own definition, or inheritance). Which model runs where is something you read, not
-something you infer from this page.
+`/flow:config` prints both keys resolved, with who decided each one (the `models` key, a named
+agent's own definition, or inheritance). Which model runs where is something you read, not something
+you infer from this page.
 
 ---
 
@@ -692,11 +699,13 @@ Example:
 - save: mcp__domain-memory__save_knowledge
 ```
 
-### `domain_memory` (legacy alias)
+### `domain_memory` is no longer read
 
-`domain_memory.enabled: true` with no `knowledge` section resolves the four roles to the
-[`domain-memory`](https://github.com/mashware/domain-memory) tools. Existing `FLOW.md` files keep
-working; `/flow:init` no longer writes it, and `/flow:doctor` suggests the `knowledge` section.
+The section was an alias: `enabled: true` resolved the four roles to the
+[`domain-memory`](https://github.com/mashware/domain-memory) tools. It cost a sentence in six
+command files to explain a shortcut for four lines of configuration, so it is gone. Name the roles
+you want in `knowledge` — the block above is the equivalent. A `FLOW.md` still carrying the section
+is not an error: nothing reads it, and `/flow:config` says so in one line.
 
 ---
 

@@ -41,30 +41,27 @@ For **every** documented key in `examples/FLOW.template.md`, one row:
   `git.worktree_resync` → "`/flow-work-try` only switches, no re-sync"; `quality.review_depth` →
   "proportional" — the other depths are `light` and `full`). Never leave a reader guessing what an empty key does.
 
-For `knowledge`, print the four roles resolved with who decided each: the `knowledge` key, the legacy `domain_memory.enabled` alias, or empty with its fallback (`search` → no lookups; `stage` → artifact only; `read_staging` → artifacts; `save` → `KNOWLEDGE.md`).
+For `knowledge`, print the four roles resolved with who decided each: the `knowledge` key, or empty with its fallback (`search` → no lookups; `stage` → artifact only; `read_staging` → artifacts; `save` → `KNOWLEDGE.md`). A `domain_memory` section still in the file → one line: *"`domain_memory` is no longer read; name the tools you want under `knowledge`"* — it is retired configuration, not an error.
 
 Group by section with a short header each, so it scans as a table; keep set-vs-empty visually
 distinct (e.g. `✓` vs `·`).
 
-### 2.1 Resolved model map (only if the `models` section exists and has any key set)
+### 2.1 Resolved models (only if the `models` section exists and has any key set)
 
-The `models` keys are named by *kind of step*; which step falls under which key lives inside the
-commands. Print that mapping resolved:
+Two keys, both about subagents. Print what each one actually reaches:
 
 ```
-study    fable    →  feat:start · brainstorm · design · plan · bug:start · diagnose · investigate · postmortem
-code     opus     →  feat:build · bug:fix · work:green  ⚠ main agent — reported at the handoff, not enforced
-test     sonnet   →  feat:validate · bug:validate
-review   sonnet   →  feat:review · bug:review · work:query · work:respond (triage)
-workers  (empty)  →  fan-out rounds inherit the running command's key
+agents   fable    →  improvised subagents: review panel members with no named agent, blinded
+                     auditors, delegated build pieces, the general-purpose challenger
+workers  (empty)  →  fan-out rounds — falls back to `agents`
 ```
 
-- Mark with `⚠` the keys whose steps the **main agent performs itself** (`study`, and `code` for the
-  single-thread `build`/`fix` on XS/S/M): the value is reported at the phase handoff, not enforced —
-  an agent cannot switch its own model. State that once, plainly.
-- One line each: a role set in `agents.*` keeps its own agent definition's model (the keys apply
-  where flow improvises the agent and to fan-out workers); commands with no key (`ship`, `status`,
-  `daily`, `resume`, `try`, `clean`, `abandon`, `watch`) always inherit.
+- State once, plainly: **the main agent's own steps are not covered by either key** — reading the
+  ticket, the design, and the single-thread `build`/`fix` run on the model the command was launched
+  with, because an agent cannot switch its own model. A phase that wants another one says so at the
+  handoff; nothing enforces it.
+- One line: a role set in `agents.*` keeps its own agent definition's model, so a round can mix
+  configured and self-declared models.
 
 ## 3. Validate (flag, do not fix)
 
@@ -84,10 +81,10 @@ tool, an agent or a command; do not duplicate those checks.
   error).
 - **Models**: `models.*` values are **free text for the harness** — never flag a model name as
   invalid, never suggest a "better" one, never invent a default. Report only: a key outside
-  `study` / `code` / `test` / `review` / `workers` (flag — a typo, it will be ignored), and whether
-  this harness can set a model per subagent (if not, every value degrades to inheritance).
-  `models.code` set → one line: `build`/`fix` are single-thread on XS/S/M, so there the value is
-  reported at the handoff rather than applied.
+  `agents` / `workers` (flag — a typo, it will be ignored; the retired `study` / `code` / `test` /
+  `review` keys get one line saying they are no longer read and that `agents` covers the subagents
+  they used to name), and whether this harness can set a model per subagent (if not, every value
+  degrades to inheritance).
 - **Coherence**: `git.worktree` is `ask`/`always` with `git.worktree_path` empty → note the default
   `.worktrees/{branch}` applies. `git.host` and `git.cli` disagree → flag. Whether the declared
   commands, agents and MCP exist here is `/flow-doctor`.
