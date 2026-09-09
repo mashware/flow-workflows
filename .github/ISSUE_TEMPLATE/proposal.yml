@@ -1,0 +1,37 @@
+name: Something is missing
+description: A phase, a rule or a document that should exist and does not
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The shape below is the one every issue in this repo uses: **Problem / Proposal / Files**.
+        The problem carries the evidence, the proposal is specific enough to implement from, and the
+        file list is the blast radius. → [CONTRIBUTING §How we write](../blob/main/CONTRIBUTING.md#how-we-write)
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What a user runs into, with the evidence — a count, a grep, a stop the flow made, a phase that asked the wrong thing.
+      placeholder: |
+        Today `/flow:feat:validate` … and the user has to …
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should happen instead, numbered, specific enough that someone else could implement it. Say what stays out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Files
+      description: What the change touches. Adapters are generated — list the plugin file, not its mirror.
+      placeholder: |
+        - `plugins/flow/commands/feat/validate.md`
+        - `docs/CONFIGURATION.md`
+        - adapters via `script/adapter-build.py`
+    validations:
+      required: true

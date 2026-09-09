@@ -25,6 +25,10 @@ commands refuse to continue. Advances only when a phase closes. → [work/README
 work is, size and current MR/PR, decisions that stand, contracts, what is pending, what to open in full.
 Every phase reads `meta.json` and this file first; a full artifact only when needed. → [flow-core §5][fc]
 
+**Phase boundary** — the moment a phase closes: it writes its artifact, rewrites `00-summary.md` and
+advances `meta.json`. It is where the flow does its own compaction — selective, on disk, reversible —
+which is why no command ever suggests `/compact`. → [PHILOSOPHY](PHILOSOPHY.md#nothing-here-asks-you-to-compact)
+
 **`panel.json`** — the work's live state for a reader outside the chat (a pane, a status bar). Each
 line says what it *is* (`mark`, `ref`, `link`), not how to draw it. Overwritten whole, written *before*
 long stretches with an honest `updated_at`, carrying the phase actually running. → [work/README][wrpj]

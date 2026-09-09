@@ -1,0 +1,63 @@
+name: Something is wrong
+description: A command did something other than what it says it does
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The artifacts say more than a description does. `meta.json`, `panel.json` and the phase
+        artifact under `.claude/work/<TICKET>-<slug>/` are usually enough to see what happened —
+        paste what you can share.
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: "`/flow:news` prints it, or read `version` in `plugins/flow/.claude-plugin/plugin.json`."
+      placeholder: "0.47.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Harness
+      description: The mirrors for opencode, Gemini CLI and Codex CLI are generated and have not been run end to end.
+      options:
+        - Claude Code
+        - opencode
+        - Gemini CLI
+        - Codex CLI
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      placeholder: "/flow:feat:review"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+      description: The behaviour, and the line in the command or the docs that promises something else.
+    validations:
+      required: true
+  - type: textarea
+    id: stop
+    attributes:
+      label: The stop you saw
+      description: The header the command printed before it went wrong — ticket, size, phase, MR/PR — and the body under it.
+      render: text
+  - type: textarea
+    id: artifact
+    attributes:
+      label: Artifact or meta.json
+      description: "`meta.json`, `panel.json`, or the phase artifact. Scrub anything private first."
+      render: json
+  - type: textarea
+    id: flow
+    attributes:
+      label: Relevant FLOW.md keys
+      description: Only the section involved — `quality`, `agents`, `git`… No secrets; `FLOW.md` should not hold any.
+      render: markdown

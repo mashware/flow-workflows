@@ -5,6 +5,42 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.47.1 — The first screen explained the machinery before anyone had seen a work run  ·  2026-09-09
+
+**In short**
+- **A "first minute" block right after the Quickstart**: one XS work, four commands, the stop each one prints, and the six files it leaves on disk. Nothing else in the README is read before it.
+- **The command tables move below the autonomy dial** — a reader deciding whether to try it does not read 31 rows; one who has decided does.
+- **Three claims before the tables**, one line each: the dial that does not decay · the agent budget with its cost line · deferred work that is triaged once and never evaporates.
+- **PHILOSOPHY says why flow never asks you to compact** — the phase boundary already is the compaction point, and `/compact` bills the cached prefix to paraphrase exactly what `review` reads verbatim.
+- **`CONTRIBUTING.md`, two issue forms and a PR template**: what we want, what we will not take, and the four preflight commands as a checklist.
+
+**Documentation only — no command, hook or schema changed.**
+
+**The README was complete, honest, and dense from the first line.** Before a reader had seen a
+single work run they met two chains with size pruning, thirty-one commands in two tables, three
+autonomy modes, five hard gates, a twelve-file work folder, `panel.json` with its `mark` vocabulary
+and the deferred-work mechanism. Every one of those earns its place; none of them answers the
+question a first-time reader actually has, which is *what happens when I type the first command and
+what do I have at the end*. So that answer now comes first, as a transcript rather than a
+description: four commands, the header each one stops with, and the tree of the work it created —
+the real one, six files, not the full schema. The dense sections keep every word and move one screen
+down.
+
+**The compaction decision existed only in a conversation.** We decided against ever suggesting
+`/compact` between phases, for two reasons — it replaces the cached prefix, so the next turn pays
+the whole context again at write price, and it paraphrases precisely the material the next phase
+reads most carefully, the design's contract shapes and the build log's deviations. `grep -ri compact
+docs/` found nothing. It is now a section in PHILOSOPHY, with the honest exception named (a single
+long `build`), the alternative spelled out (a new session and `/flow:work:resume`, which rebuilds
+from the record rather than from a summary of it), and an entry in CONCEPTS for the phase boundary.
+
+**A contributor had to reverse-engineer the conventions from the existing issues.** That an issue is
+*Problem / Proposal / Files*, that the adapters are generated and never edited by hand, that a hook
+change ships with its test, that version and CHANGELOG move together or the preflight refuses the
+tree. `CONTRIBUTING.md` states all of it in one screen, together with what will not be taken and why
+— agents or a review skill inside the plugin, a default model, a stack-specific hook, a `FLOW.md`
+key for something that can be derived. The two issue forms and the PR template carry the same shape.
+
 ## v0.47.0 — One ticket, seven parked findings, and nobody had tried to refute a single one  ·  2026-09-08
 
 **In short**
