@@ -5,6 +5,36 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.57.0 — Every extra MR/PR now has to name what it buys  ·  2026-09-10
+
+**In short**
+- **`/flow:feat:plan` stops treating "it could merge on its own" as a reason to split.** That was a test of viability, and with enough scaffolding almost every slice passes it.
+- **Each MR/PR must claim one of four criteria**: it repairs something broken today, it closes a ticket that stands alone, it unblocks two or more later slices, or its halves are asymmetric. None of the four → it is part of another MR/PR.
+- **A merge test runs before the plan is returned**: every pair inside a wave, and every link whose dependent is its only one. "They close different tickets" and "the first is scaffolding" are not reasons to keep them apart.
+- **The target becomes the number of waves, not the size of each MR/PR** — a second MR/PR inside an existing wave is cheap, another wave costs a full merge, pipeline and rebase round for everything downstream.
+- **Over three waves the plan is challenged**, and the artifact keeps a `Merge test` section recording the pairs considered.
+
+The only hard criterion this phase had was that each MR/PR must be able to live on the main branch
+alone even if the following ones never land. That sentence decides whether a split is *possible*.
+It says nothing about whether it is *worth it* — and a feature flag, a nullable column or a few
+lines of temporarily dead code will carry almost any slice over that bar. A filter that rarely
+refuses is not a filter, and plans came back split further than anyone had asked for, with each
+extra MR/PR pulling a whole build, review, validate and ship cycle behind it.
+
+What was missing is the other half of the question: what does this split buy that merging would
+lose? So the brief now asks for it in three places. Each proposed MR/PR names which of the four
+criteria it is claiming and how. Every adjacent pair goes through an explicit merge test, and the
+two answers that look like reasons but are not — one MR/PR can close several tickets, and
+scaffolding has no product value of its own — are named as the ones that do not survive it. And the
+thing being minimised changes: not the size of a slice but the length of the chain, because that is
+what the person waiting actually pays.
+
+The count that used to be checked was the number of MRs/PRs, which invited the answer "yes, but
+these are all small ones". Now it is the waves: over three, the links that produce them go back
+through the merge test, and whatever survives has to name the dependency that makes the chain
+unavoidable. A single-MR/PR plan is unaffected, and forcing an artificial split remains explicitly
+forbidden.
+
 ## v0.56.1 — Fourteen commands named a model key that had been retired  ·  2026-09-09
 
 **In short**
