@@ -25,7 +25,20 @@ Launch a subagent with this brief (self-contained):
 
 > Read `.claude/work/<TICKET>/03-design.md`. Propose how to split the implementation into **independently mergeable MRs/PRs**: each one must be able to live on its own on the main branch without breaking anything even if the subsequent ones never land. Think about feature flags, temporary dead code, schema backwards-compatibility, multi-step online migrations, stable event contracts. **Do not create MRs/PRs dedicated to hypothetical future problems or to defenses against scenarios the project already prevents — split only what is necessary for what the ticket asks for today (YAGNI).**
 >
+> **Independently mergeable is a test of viability, not a reason to split.** Given enough scaffolding — a flag, a nullable column, temporarily dead code — almost any slice passes it, so on its own it almost never says no. A slice earns an MR/PR of its own only when at least one of these holds:
+>
+> 1. **It repairs something broken today**, and bundling it would put that fix behind a feature's review and release.
+> 2. **It closes a ticket that stands on its own**, delivering value with no reference to this work.
+> 3. **It is enabling**: two or more later slices depend on it and can then proceed in parallel.
+> 4. **The two halves are asymmetric**: one order leaves the main branch strictly safer than today, the reverse ships a visibly half-built product.
+>
+> None of the four holds → it is *part of* another MR/PR, not one of its own. Say which of the four each MR/PR you propose is claiming.
+>
+> **Minimise waves, not MR/PR size.** A second MR/PR inside a wave that already exists is cheap. A further wave is not: it costs another full merge, pipeline and rebase round, and everything downstream waits for it. When a split adds a wave, what needs justifying is the wave, not the slice.
+>
 > Then build the **dependency graph** (which MR/PR needs another one merged or deployed before it can start) and **sort it topologically into execution waves**: wave 1 = everything with no unmet dependency (can start immediately, in parallel); wave 2 = everything unlocked once wave 1 is in; and so on. **Number the MRs/PRs following that wave order** — the lowest numbers to wave 1, then wave 2, etc. — so that **every MR/PR's dependencies have a strictly lower number than itself** (`#1` is always a legitimate starting point, never "start at #5"). Within a wave (parallel, no dependency between them) the order is free; number them consecutively. **The number is the execution order, not a grouping by feature area** — do not number by "Part A / Part B" and then reorder in prose.
+>
+> **Merge test — run it before you return the table.** For every pair of MRs/PRs in the **same wave**, and for every direct link `#a → #b` where `#b` is the *only* thing depending on `#a`, state what is lost by merging the two into one. If the only answer is "they close different tickets" — one MR/PR can close several — or "the first has no product value of its own, it is scaffolding for the second", **merge them**. Report the pairs you merged and the pairs you kept apart, each with its reason; "no pair was worth evaluating" is not an answer, name the pairs you looked at.
 >
 > Return a table with: **`n`** (final number = execution order), **`wave`**, **`depends_on`** (list of the `n` it needs merged first; empty if it can start immediately), what it includes, standalone-mergeable (yes/no + how it is guaranteed), what it unlocks for the next one, risk if it stays alone on the main branch indefinitely, **`lines_est`** (approximate lines, sum of added + modified) and **`files_est`** (approximate files it touches). Estimates are **soft** — they serve as a thermometer during build, not as a contract. If the correct answer is "1 single MR/PR", justify it and return that. Under 600 words.
 
@@ -55,6 +68,7 @@ MRs/PRs in the same wave with no dependency between them can be built in paralle
 ### #1: <short title>
 - **Wave**: N — **depends on**: #a, #b (or "nothing — can start immediately").
 - **Includes**: bullets of what changes.
+- **Why it is its own MR/PR**: which of the four criteria it claims (repairs something broken today · closes a standalone ticket · enabling for two or more · asymmetric halves) and in one line how. The only entry exempt is the one that would remain if nothing had been split.
 - **Standalone-mergeable**: yes / no — how it is guaranteed (flag, nullable column, unused code, etc.).
 - **Unlocks**: what the next one can do.
 - **Risk if it stays alone on the main branch**: …
@@ -66,6 +80,9 @@ MRs/PRs in the same wave with no dependency between them can be built in paralle
 
 ## Dependencies between MRs/PRs
 <simple graph in bullets: #3 depends on migration from #1, etc. This graph is what produced the waves and the numbering above — keep them consistent.>
+
+## Merge test
+<one line per pair evaluated — every pair inside a wave, and every `#a → #b` where #b is #a's only dependent: what merging them would lose, and whether they were merged. Pairs merged here never appear as separate entries above; this section is the record that they were considered. If the plan is a single MR/PR, write "not applicable".>
 
 ## Plan risks
 - Online migrations:
@@ -114,6 +131,7 @@ A slice landing in **another repo** is not one of *this* repo's `mrs`: record it
 
 - Really just 1 small MR/PR (≤ 50 lines, no migrations) → reclassify to `S` and notify.
 - 5+ large MRs/PRs → consider upgrading to `L`.
+- **More than 3 waves** → the chain, not the size, is what the user pays for. Re-run the merge test over the links that produce the extra waves before accepting the plan, and if they survive it, say in one line which dependency makes the chain unavoidable. A plan that answers "these are all small" to a count that looks high has answered the wrong question: the count that hurts is the waves.
 - Confirm with `AskUserQuestion` before changing `meta.json.size`.
 
 ## 6. Close
@@ -127,7 +145,7 @@ A slice landing in **another repo** is not one of *this* repo's `mrs`: record it
   Wave 1: #1 ∥ #2  (in parallel, start now) → Wave 2: #3 → Wave 3: #4 ∥ #5 ∥ #6 ∥ #7
   ```
 
-  `∥` = no dependency between them, can be built in parallel or as a train; `→` = the next wave waits for the previous one to merge. Then the table with `#`, wave, `depends_on`, title and estimate. One line for the split rationale. Nothing else — risks and discarded alternatives live in the artifact.
+  `∥` = no dependency between them, can be built in parallel or as a train; `→` = the next wave waits for the previous one to merge. Then the table with `#`, wave, `depends_on`, title and estimate. One line for the split rationale, and — when any pair was merged — one line saying how many were and what they would have cost (`merged #a into #b: would have been a wave of its own`). Nothing else — risks and discarded alternatives live in the artifact.
 - Changes requested → edit the artifact and `meta.json.mrs` before advancing.
 - Suggest `/flow:feat:build` to start the first MR/PR.
 - **Autonomy handoff.** Approving the split is a genuine decision point: in `manual` and `guided` ask before advancing. In `auto`, record the plan as accepted in `04-mr-plan.md` and **chain into `/flow:feat:build` automatically** in this same turn. In `manual`, propose it with a single `AskUserQuestion`.
