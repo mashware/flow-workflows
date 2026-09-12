@@ -1,8 +1,8 @@
 # Configuring flow: base plus harness overlay
 
 `FLOW.md` is the shared configuration at your repo root. An optional sparse
-`FLOW.<harness>.md` overrides the values that differ between Claude Code, Codex, opencode, and
-Gemini CLI. Together they tell the `/flow:*` commands how tickets are read, branches and MR/PRs are
+`FLOW.<harness>.md` overrides the values that differ between Claude Code, Codex, opencode,
+Gemini CLI, and Hermes Agent. Together they tell the `/flow:*` commands how tickets are read, branches and MR/PRs are
 made, tests run, review is staffed, models are selected, and deploys are watched. Every command
 resolves the base plus the active overlay in its step 0.
 
@@ -37,6 +37,7 @@ The supported overlay names are:
 | Codex | `FLOW.codex.md` |
 | opencode | `FLOW.opencode.md` |
 | Gemini CLI | `FLOW.gemini.md` |
+| Hermes Agent | `FLOW.hermes.md` |
 
 The product executing the command chooses the overlay; a model name never does. Unknown
 `FLOW.*.md` files are ignored. The base is optional too, so an overlay-only configuration is valid.
@@ -448,7 +449,7 @@ When the panel runs, it runs **whole**: its members own categories the rest of t
 revisit, so a skipped one leaves that category with no owner. The review artifact records **ran vs
 defined** (`N/M`, plus who did not run and why) — a partial panel is visible before the MR/PR opens.
 
-The effort ladder applies where the harness exposes it (Claude Code); the opencode/Gemini/Codex
+The effort ladder applies where the harness exposes it (Claude Code); the opencode/Gemini/Codex/Hermes
 adapters read "higher effort" as maximum thoroughness for L-sized or sensitive work.
 
 ---
@@ -533,7 +534,7 @@ artifact. The fan-out gathers; the main agent decides.
 ### Running the fan-out through a tool (`fanout_tool`)
 
 Empty means plain parallel subagents: the one primitive every harness has, so the flow behaves the
-same on Claude Code, Codex, Gemini and opencode.
+same on Claude Code, Codex, Gemini, opencode and Hermes.
 
 Some harnesses also offer heavier orchestration — deterministic phases, typed per-agent schemas,
 resumable runs. Claude Code's `Workflow` tool is one. Name it here and the three fan-out steps run

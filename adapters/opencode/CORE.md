@@ -19,7 +19,8 @@ carries what is specific to its phase. Read this once per session; a command tha
 ## 0. Effective FLOW config — base plus harness overlay
 
 - Read `FLOW.md` at the repo root as the base, then the optional overlay for the harness running
-  this command: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, or `FLOW.gemini.md`. The
+  this command: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`, or
+  `FLOW.hermes.md`. The
   harness is the product executing the command, never guessed from a model name. An overlay is
   valid without a base file; unknown `FLOW.*.md` names are ignored. Throughout every command,
   **"FLOW.md" means this effective merged configuration** unless the command explicitly names a
