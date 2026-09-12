@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the adapter mirrors (opencode · Codex · Gemini) from the plugin commands.
+"""Generate the adapter mirrors (opencode · Codex · Gemini · Hermes) from the plugin commands.
 
 The mirrors used to be condensed by hand — 1.7 MB of near-verbatim copies that drifted
 one release at a time. They are now build output: every file under
@@ -9,9 +9,9 @@ written by this script from `plugins/flow/commands/**/*.md` and
 
 What changes per harness is mechanical, and only this:
 
-  * the wrapper — opencode `description:` frontmatter, Codex a skill folder with a
-    `name:`/`description:` `SKILL.md`, Gemini a TOML `description` + `prompt` string
-    (backslashes and triple quotes escaped)
+  * the wrapper — opencode `description:` frontmatter, Codex and Hermes a skill folder
+    with a `name:`/`description:` `SKILL.md`, Gemini a TOML `description` + `prompt`
+    string (backslashes and triple quotes escaped)
   * every `/flow…` invocation rewritten to that harness's sigil and separator
   * `$ARGUMENTS` → `{{args}}` for Gemini
   * the `flow:flow-core` skill pointer → the CORE.md file `install.sh` places under
@@ -60,6 +60,10 @@ STATE_DIR = "~/.claude/flow"
 #   sigil   what an invocation starts with
 #   args    what `$ARGUMENTS` becomes
 #   core    where the shared rules land, and whether the body points at a file or a skill
+#
+# Hermes reads the same skill shape as Codex — a folder with a `SKILL.md` keyed by
+# `name:`, the agentskills.io layout — from `~/.hermes/skills/`, and invokes it with a
+# slash like opencode: `/flow-feat-start`. So it is Codex's wrapper on opencode's sigil.
 TARGETS = {
     "opencode": {
         "path": "adapters/opencode/commands/flow-{flat}.md",
@@ -81,7 +85,16 @@ TARGETS = {
         "sep": ":", "head": ":", "sigil": "/", "args": "{{args}}",
         "core": ("file", "adapters/gemini/CORE.md"),
     },
+    "hermes": {
+        "path": "adapters/hermes/skills/flow-{flat}/SKILL.md",
+        "sep": "-", "head": "-", "sigil": "/", "args": "$ARGUMENTS",
+        "core": ("file", "adapters/hermes/CORE.md"),
+    },
 }
+
+# The harnesses whose wrapper is a skill folder keyed by `name:`. Codex reads them from
+# `~/.codex/skills`, Hermes from `~/.hermes/skills`; the file is the same shape in both.
+SKILL_SHAPED = ("codex", "codex-plugin", "hermes")
 
 # The Codex manifest that makes the package installable as a Codex plugin. Generated so
 # its version can never drift from the Claude one; `skills` is what points Codex at the
@@ -123,6 +136,17 @@ LEGEND = {
         "`Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).",
         "`/model <value>` → the `--model` flag at launch.",
         "`knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `mcpServers` in `settings.json` (see `settings.snippet.json`).",
+    ],
+    "hermes": [
+        "`AskUserQuestion` → ask in plain text with numbered options and wait for the reply.",
+        "`Agent <role>` / `Agent general-purpose` / subagents → `delegate_task`, which creates the child on the spot from the `goal` and `context` you give it: the name in `agents.<role>` in `FLOW.md` is a role to state in that prompt, not an agent to declare anywhere; empty → do it in this context.",
+        "Parallel fan-out → several `delegate_task` calls in one response, capped at `agents.fanout_max` (empty → 4) and, above that, by `delegation.max_concurrent_children` in `config.yaml` (default 10); `agents.fanout_tool` is Claude Code-only, ignore it.",
+        "`ScheduleWakeup` / `Monitor` / `/loop` → Hermes schedules itself: the `cronjob` tool, or `/cron add \"every 30m\" \"<this command>\"`. Each firing is a fresh session with no history, so the state still lives in `monitor.md` and the scheduled text must stand alone; retiring the job from inside a firing needs `cron.allow_agent_scheduling: true`.",
+        "`TaskCreate` → a markdown checklist in the phase artifact.",
+        "`Skill commit-commands:commit-push-pr` → `git add` · `git commit` · `git push -u origin HEAD` · the `git.cli` CLI (`gh pr create` / `glab mr create`).",
+        "`/model <value>` → Hermes's own `/model`; a subagent's model is `delegation.model` in `config.yaml`, one value for every child of a round.",
+        "`knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `mcp_servers` in `~/.hermes/config.yaml` (see `config.snippet.yaml`).",
+        "`$ARGUMENTS` → what the user typed after the skill name: Hermes takes everything from the first non-skill token on as the instruction.",
     ],
 }
 
@@ -249,9 +273,10 @@ def wrap(name, desc, body, src, stem):
     banner = BANNER.format(src=src)
     if name == "opencode":
         return f"---\ndescription: {desc}\n---\n\n<!-- {banner} -->\n\n{body}\n"
-    if name.startswith("codex"):
+    if name in SKILL_SHAPED:
         # A plugin's skills are namespaced by Codex (`$flow:feat-start`); loose ones in
-        # `~/.codex/skills/` share one namespace with everything else, so they keep the prefix.
+        # `~/.codex/skills/` — and every Hermes skill — share one namespace with
+        # everything else installed, so they keep the prefix.
         flat = stem.replace("/", "-")
         skill = flat if name == "codex-plugin" else "flow-" + flat
         return (f"---\nname: {skill}\ndescription: \"{desc.replace(chr(34), chr(39))}\"\n---\n\n"
@@ -308,6 +333,9 @@ MIRROR_ROOTS = {
     "codex-plugin": ("plugins/flow/codex-skills",
                      lambda rel: os.path.basename(rel) == "SKILL.md"),
     "gemini": ("adapters/gemini/commands/flow", lambda rel: rel.endswith(".toml")),
+    "hermes": ("adapters/hermes/skills",
+               lambda rel: os.path.basename(rel) == "SKILL.md"
+               and os.path.basename(os.path.dirname(rel)).startswith("flow-")),
 }
 
 

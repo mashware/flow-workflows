@@ -5,6 +5,40 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.58.0 — The one harness that can reschedule itself had no adapter  ·  2026-09-12
+
+**In short**
+- **A fourth adapter: Hermes Agent.** `adapters/install.sh hermes` puts the 29 commands in `~/.hermes/skills/`, invoked `/flow-feat-start`, `/flow-bug-fix`, `/flow-work-status`.
+- **Nothing in the generator had to be invented**: Hermes reads the agentskills.io `SKILL.md` layout Codex already gets, and invokes it with a slash like opencode.
+- **`work:watch` loses its cron caveat** — Hermes schedules itself (`/cron add "every 30m" "…"`), the first adapter whose autopilot needs nothing outside the agent.
+- **Subagents with nothing to declare**: `delegate_task` builds each child from the prompt it is handed, so the `agents` map in `FLOW.md` names a role to state, not a definition to install.
+- **`FLOW.hermes.md`** is the new overlay, and `config.snippet.yaml` holds the MCP, delegation and cron keys to merge into `~/.hermes/config.yaml`.
+
+Three adapters existed because three terminal agents had users running real work through them.
+Hermes Agent is the fourth, and the cheapest to add: its skills are folders with a `SKILL.md` keyed
+by `name:` — the same shape the Codex adapter has emitted since v0.30.0 — read from
+`~/.hermes/skills/` and invoked with a slash. So the generator gained one target, not one format:
+Codex's wrapper on opencode's prefix, and the prose the mirrors carry is the plugin's, verbatim,
+like every other mirror.
+
+What it buys is one honest paragraph back. Every adapter until now had to say that
+`/flow:work:watch` cannot re-wake itself, that a cycle ends when it ends, and that repeating it is
+the user's cron job. Hermes has its own scheduler, so the loop closes inside the agent:
+`/cron add "every 30m" "/flow-work-watch PROJ-412"`. What does not port is continuity — each firing
+is a fresh session with no history — which is precisely what `monitor.md` was written for, and why
+the watch has always re-read it instead of remembering. A firing can also retire its own job, but
+only with `cron.allow_agent_scheduling: true`; off by default, you stop the watch yourself.
+
+Two things read differently here and are worth knowing before the first run. Subagents are not
+declared anywhere: `delegate_task` builds each child from the `goal` and `context` it is given, so a
+name in `agents.<role>` is a role to state in that prompt. And a round's model is
+`delegation.model`, one value for every child, with no per-task override — so `models.agents` and
+`models.workers` are honoured by setting that key, and a round cannot mix two models.
+
+Unchanged for everyone else: the plugin, the three existing adapters, and every `FLOW.md` in a repo.
+And the same warning the other three carry applies to this one — the mirrors are checked for shape,
+prefix, cited paths and install location, and nobody has yet run a full chain inside Hermes.
+
 ## v0.57.0 — Every extra MR/PR now has to name what it buys  ·  2026-09-10
 
 **In short**
