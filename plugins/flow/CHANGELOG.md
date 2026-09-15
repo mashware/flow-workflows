@@ -5,6 +5,37 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.58.0 — Your repo decides what counts as sensitive code  ·  2026-09-15
+
+**In short**
+- **`quality.sensitive_paths` is new**: path globs your repo declares sensitive. A diff touching one still raises the review a tier and forces the panel — but the list is yours now.
+- **Empty = exactly today's behaviour.** The six generic categories (auth, secrets, payments/billing, personal data, public contracts, schema changes) stay as the default. Nothing changes for a repo that adds nothing.
+- **A sensitive path is no longer automatically a sensitive diff.** The bump asks what the change *does*: control flow, or the data reaching a person, a charge or a stored record. A change that moves observability alone — log level, channel, message text, a metric, a comment — gets the review its size already earned.
+- **Both `/flow:feat:review` and `/flow:bug:review`** read the key and record which of the two a diff was.
+
+Deciding which surfaces carry risk was the last judgement `review` still made on your behalf, and it
+made it from a fixed list written into the command. That list is not wrong — it is just generic, and
+generic resolves at the wrong grain: it asks whether a file lives somewhere risky, never whether the
+change does anything risky there. A module named after money is not the same as the lines that move
+it, and only the repo knows which of its paths are which.
+
+So the question splits in two, and each half goes where it can be answered. **Which paths** is the
+repo's, and now lives in `FLOW.md` next to `test:` and `agents.architecture:` — the other judgements
+that were never the plugin's to make. **Which diffs** stays here, because it is a statement about
+diffs and not about domains: a new guard, a new `catch`, a changed condition, a changed value or a
+changed contract buys the bump; moving a log line from one channel to another does not. A mixed diff
+is not observability-only, so it bumps.
+
+What this is worth is measurable in the case that prompted it: a nine-MR feature inside a payments
+module, where every slice inherited the sensitive bump from the module's name. The slices that
+changed control flow returned real blockers. The one that only moved log levels between Monolog
+channels ran a full panel at raised effort and returned three sentences, all of them saying nothing
+was found. Same list, same rule, opposite value — because the rule was reading the path and not the
+change.
+
+A demotion is the one place a missed defect is expensive, so it is never silent: the review artifact
+records which of the two the diff was, and why.
+
 ## v0.57.0 — Every extra MR/PR now has to name what it buys  ·  2026-09-10
 
 **In short**
