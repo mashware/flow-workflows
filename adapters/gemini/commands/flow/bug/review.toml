@@ -37,7 +37,7 @@ Read `quality.review_depth` from `FLOW.md` (`light` | `proportional` | `full`; e
 
 **The budget is the command's, not the round's.** Read `agents.budget_max` from `FLOW.md` (empty → **12**; `0` = no ceiling) and hold every round below against it (flow-core §6): count before launching, launch what fits, report what the cap dropped. Give-up order when it runs out, from the top: **§5 skeptics**, then **§4.5 completeness check**, then **§2.2 idiom audit**, then **§3 reinforcements**. Never dropped: the built-in `code-review`, the panel the tier selected, and the query duel (§3.5) — if the budget cannot cover those, the budget is misconfigured: say so in one line and run them anyway.
 
-**Sensitive surface** = the globs in `quality.sensitive_paths` from `FLOW.md`; empty → auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, or a DB migration/schema change. Which surfaces carry risk is the repo's call, not this command's.
+**Sensitive surface** = auth/authorization, secrets, payments/billing, personal/sensitive data, a public API/contract shape, a DB migration/schema change — **plus** every glob in `quality.sensitive_paths` from `FLOW.md`. The key is additive: it names what is sensitive in this repo and nowhere in that list, and never narrows it.
 
 **A sensitive path is not yet a sensitive diff** (`/flow:feat:review §2.0`): the bump applies when the change touches control flow or the data that reaches a person, a charge or a stored record. A diff on the same file that moves observability alone — log level, channel, message text, a metric, a comment — gets the review its size earned. Mixed diff → it bumps. Record which of the two it was.
 

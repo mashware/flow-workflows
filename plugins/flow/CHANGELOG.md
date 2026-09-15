@@ -8,8 +8,9 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 ## v0.58.0 — Your repo decides what counts as sensitive code  ·  2026-09-15
 
 **In short**
-- **`quality.sensitive_paths` is new**: path globs your repo declares sensitive. A diff touching one still raises the review a tier and forces the panel — but the list is yours now.
-- **Empty = exactly today's behaviour.** The six generic categories (auth, secrets, payments/billing, personal data, public contracts, schema changes) stay as the default. Nothing changes for a repo that adds nothing.
+- **`quality.sensitive_paths` is new**: path globs your repo declares sensitive. A diff touching one raises the review a tier and forces the panel, whatever its size.
+- **It is additive.** The six generic categories (auth, secrets, payments/billing, personal data, public contracts, schema changes) always apply; this key widens them. Declaring your own surfaces never costs you the ones you did not think about, and a repo that adds nothing behaves exactly as before.
+- **Use it for what is sensitive in your repo and nowhere in that list**: an internal event or message contract consumers depend on, a pricing or entitlement table, a consent flow, a feature-flag resolver.
 - **A sensitive path is no longer automatically a sensitive diff.** The bump asks what the change *does*: control flow, or the data reaching a person, a charge or a stored record. A change that moves observability alone — log level, channel, message text, a metric, a comment — gets the review its size already earned.
 - **Both `/flow:feat:review` and `/flow:bug:review`** read the key and record which of the two a diff was.
 
@@ -25,6 +26,16 @@ that were never the plugin's to make. **Which diffs** stays here, because it is 
 diffs and not about domains: a new guard, a new `catch`, a changed condition, a changed value or a
 changed contract buys the bump; moving a log line from one channel to another does not. A mixed diff
 is not observability-only, so it bumps.
+
+That second half is why the key adds instead of replacing. A list that replaced the categories would
+make every repo re-derive auth, secrets and schema changes to keep them, and the first repo to forget
+one would lose it silently — paying for precision it could get for free, because the precision comes
+from reading the diff, not from a shorter list. Widening is the job nobody else can do: only your repo
+knows that its event contracts, its pricing table or its consent flow carry the same weight.
+
+Queries are the one thing that does not belong in the key. §3.6 already duels every query a diff adds
+or modifies, at every size, sensitive or not — a path glob would buy a second opinion on prose where
+the duel buys an execution plan.
 
 What this is worth is measurable in the case that prompted it: a nine-MR feature inside a payments
 module, where every slice inherited the sensitive bump from the module's name. The slices that

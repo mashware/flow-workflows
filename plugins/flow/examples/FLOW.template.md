@@ -141,16 +141,20 @@ scripts, Gradle, dotnet, Xcode, Flutter, pyproject, Cargo, go.mod) and reports w
                       #   full         → always run the built-in `code-review` (xhigh) + the full panel regardless of size (pre-0.7 behavior).
                       # Empty = `proportional`. Effort ladder low<medium<high<xhigh<max applies where the tool exposes it (Claude Code); adapters
                       # for other tools read "higher effort" as maximum thoroughness for L-sized or sensitive-surface work.
-- `sensitive_paths:`  # which paths in THIS repo are sensitive, one glob per line with `- `. Read by `/flow:*:review §2.0`: a diff
-                      #   touching one raises the built-in review a tier and forces the panel, whatever its size.
-                      #   Empty = the generic categories, unchanged — authentication/authorization, secrets/credentials,
-                      #   payments/billing, personal or otherwise sensitive data, a public API/contract shape, a DB
-                      #   migration/schema change. A list here REPLACES them. Which surfaces carry risk is a judgement about
-                      #   your repo, not about software in general, and it was the last one this command still made for you:
-                      #   a module named after money is not the same as the lines that move it.
-                      #   e.g. `- src/**/Payment/**` · `- internal/auth/**` · `- app/models/user.rb` · `- **/migrations/**`
-                      #   A path only makes a diff ELIGIBLE. A change there that moves observability alone — log level,
-                      #   channel, message text, a metric, a comment — does not buy the bump; it gets the review its size earned.
+- `sensitive_paths:`  # paths THIS repo knows are sensitive and the generic list would not guess, one glob per line with `- `.
+                      #   Read by `/flow:*:review §2.0`: a diff touching one raises the built-in review a tier and forces the
+                      #   panel, whatever its size. **Additive** — the generic categories always apply (authentication/
+                      #   authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public
+                      #   API/contract shape, a DB migration/schema change); this key widens them, never narrows them, so a repo
+                      #   that names its own surfaces does not thereby lose the ones it never thought about.
+                      #   Use it for what is sensitive HERE and nowhere in that list: an internal event or message contract
+                      #   consumers depend on, a pricing or entitlement table, a consent flow, a feature-flag resolver.
+                      #   e.g. `- src/**/Domain/Event/**` · `- src/**/*Message.php` · `- config/flags/**` · `- app/pricing/**`
+                      #   Precision comes from the diff, not from a shorter list: a path only makes a change ELIGIBLE, and a
+                      #   change that moves observability alone — log level, channel, message text, a metric, a comment — does
+                      #   not buy the bump; it gets the review its size earned.
+                      #   NOT the place for query changes: `/flow:*:review §3.6` already duels every added or modified query at
+                      #   every size, `sensitive_paths` empty or not.
 - `respond_max_rounds:` # how many rounds of `/flow:work:respond` one MR/PR gets before the command stops and hands the
                       #   negotiation back to you instead of going round again. Empty = `3`. `0` = no ceiling (not
                       #   recommended: what the ceiling prevents is a loop re-arguing a settled thread while nobody reads).

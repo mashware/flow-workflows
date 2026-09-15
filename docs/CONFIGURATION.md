@@ -145,7 +145,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `quality` | `bench_cmd` | how this repo exercises ONE entry point and reports time and memory, so `/flow:*:validate` |
 | `quality` | `evidence` | `on` (default) \| `off`. Whether `/flow:*:validate` captures evidence (screenshots, response |
 | `quality` | `review_depth` | how much of the review panel runs AND at what effort, scaled by work size + risk, in `/flow:*:review`. `proportional` (default) \| `full` \| `light` |
-| `quality` | `sensitive_paths` | which paths in THIS repo are sensitive, one glob per line with `- `. Read by `/flow:*:review §2.0`: a diff |
+| `quality` | `sensitive_paths` | paths THIS repo knows are sensitive and the generic list would not guess, one glob per line with `- ` |
 | `quality` | `respond_max_rounds` | how many rounds of `/flow:work:respond` one MR/PR gets before the command stops and hands the |
 | `quality` | `review_skill` | orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below |
 | `quality` | `reviewers` | if `review_skill` is empty: list of agents that run in parallel as a review panel (one per line with `- `). Empty with no skill = only the built-in `code-review` |
