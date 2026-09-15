@@ -67,9 +67,15 @@ never scaled away** — a 12-line change to an authorization check still gets th
 | M | **high** | full panel |
 | L | **xhigh** | full panel |
 
-- **Sensitive-surface bump** (proportional, any size): the diff touches authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, or a DB migration/schema change → **raise the built-in effort one tier** (medium→high→xhigh→**max**) and always run the panel. S/M on a sensitive surface → **xhigh**; **L on a sensitive surface → `max`**.
+- **Sensitive-surface bump** (proportional, any size): the diff touches a sensitive surface → **raise the built-in effort one tier** (medium→high→xhigh→**max**) and always run the panel. S/M on a sensitive surface → **xhigh**; **L on a sensitive surface → `max`**.
 
-Record in `06-review.md` which tier and effort ran and why (e.g. "L + DB migration → built-in at `max` + panel").
+**Sensitive surface** = the generic categories — authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, or a DB migration/schema change — **plus** every glob in `quality.sensitive_paths` from `FLOW.md`. The key is **additive**: it names what is sensitive in *this* repo and nowhere in that list (an internal event or message contract consumers depend on, a pricing or entitlement table, a consent flow, a feature-flag resolver), and a repo that declares its own surfaces never loses the ones it never thought about.
+
+**A sensitive path is not yet a sensitive diff, and this is where the precision comes from** — not from a shorter list. The bump asks what the change *does* there, not where it lives. It applies when the diff touches **control flow, or the data that reaches a person, a charge or a stored record** — a new guard, a new `catch`, a changed condition, a changed value, a changed contract. It does **not** apply when the diff moves **observability alone**: a log level, a log channel, the text of a message, a metric, a comment. That diff gets the review its size already earned. Mixed diff → not observability-only, so it bumps. Say which of the two it was in one line; a diff demoted here is the one place a missed defect is expensive, so the line is not optional.
+
+**Query changes do not belong here.** §3.6 already duels every query the diff adds or modifies, at every size, whatever this section resolved — routing them through the bump would buy a second opinion on prose where §3.6 buys a plan.
+
+Record in `06-review.md` which tier and effort ran and why (e.g. "L + DB migration → built-in at `max` + panel"; "S, `src/**/Payment/**` but log level only → no bump, built-in at `high`").
 
 ### 2.0b Resolve the agent budget (the ceiling is the command's, not the round's)
 This command is the widest fan-out in the plugin: a panel, area reinforcements, a coverage sweep that

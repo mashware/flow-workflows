@@ -5,6 +5,47 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.59.0 — Your repo decides what counts as sensitive code  ·  2026-09-15
+
+**In short**
+- **`quality.sensitive_paths` is new**: path globs your repo declares sensitive. A diff touching one raises the review a tier and forces the panel, whatever its size.
+- **It is additive.** The six generic categories (auth, secrets, payments/billing, personal data, public contracts, schema changes) always apply; this key widens them. Declaring your own surfaces never costs you the ones you did not think about, and a repo that adds nothing behaves exactly as before.
+- **Use it for what is sensitive in your repo and nowhere in that list**: an internal event or message contract consumers depend on, a pricing or entitlement table, a consent flow, a feature-flag resolver.
+- **A sensitive path is no longer automatically a sensitive diff.** The bump asks what the change *does*: control flow, or the data reaching a person, a charge or a stored record. A change that moves observability alone — log level, channel, message text, a metric, a comment — gets the review its size already earned.
+- **Both `/flow:feat:review` and `/flow:bug:review`** read the key and record which of the two a diff was.
+
+Deciding which surfaces carry risk was the last judgement `review` still made on your behalf, and it
+made it from a fixed list written into the command. That list is not wrong — it is just generic, and
+generic resolves at the wrong grain: it asks whether a file lives somewhere risky, never whether the
+change does anything risky there. A module named after money is not the same as the lines that move
+it, and only the repo knows which of its paths are which.
+
+So the question splits in two, and each half goes where it can be answered. **Which paths** is the
+repo's, and now lives in `FLOW.md` next to `test:` and `agents.architecture:` — the other judgements
+that were never the plugin's to make. **Which diffs** stays here, because it is a statement about
+diffs and not about domains: a new guard, a new `catch`, a changed condition, a changed value or a
+changed contract buys the bump; moving a log line from one channel to another does not. A mixed diff
+is not observability-only, so it bumps.
+
+That second half is why the key adds instead of replacing. A list that replaced the categories would
+make every repo re-derive auth, secrets and schema changes to keep them, and the first repo to forget
+one would lose it silently — paying for precision it could get for free, because the precision comes
+from reading the diff, not from a shorter list. Widening is the job nobody else can do: only your repo
+knows that its event contracts, its pricing table or its consent flow carry the same weight.
+
+Queries are the one thing that does not belong in the key. §3.6 already duels every query a diff adds
+or modifies, at every size, sensitive or not — a path glob would buy a second opinion on prose where
+the duel buys an execution plan.
+
+What this is worth is measurable in the case that prompted it: a nine-MR feature inside a payments
+module, where every slice inherited the sensitive bump from the module's name. The slices that
+changed control flow returned real blockers. The one that only moved log levels between Monolog
+channels ran a full panel at raised effort and returned three sentences, all of them saying nothing
+was found. Same list, same rule, opposite value — because the rule was reading the path and not the
+change.
+
+A demotion is the one place a missed defect is expensive, so it is never silent: the review artifact
+records which of the two the diff was, and why.
 ## v0.58.0 — The one harness that can reschedule itself had no adapter  ·  2026-09-12
 
 **In short**
