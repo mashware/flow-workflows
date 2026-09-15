@@ -123,7 +123,7 @@ Add the `mrs` array with the agreed plan:
 
 - `n` = execution order (topological): `depends_on` only ever references a **lower** `n`; `wave` groups MRs/PRs that can run in parallel. `/flow-feat-build §1` reads `depends_on` to pick the next **startable** MR/PR and to say which can go in parallel — keep both accurate whenever the plan is edited or renumbered.
 - **`phases_done`** starts `[]` in every seeded entry: it tracks `build`/`review`/`validate` **for that MR/PR specifically**, so the gates in `/flow-feat-review §1`, `/flow-feat-validate §1` and `/flow-feat-ship §1` judge *this* MR/PR — a sibling's review never satisfies a new MR/PR's gate.
-- Estimates are **indicative**, not contractual. `/flow-feat-build` uses them as a thermometer: real work over `lines_est` +50% or `files_est + 2` triggers the "cut or continue" question (see §C in build).
+- Estimates are **indicative**, not contractual. `/flow-feat-build` uses them as a thermometer: real work over `lines_est` +50% or `files_est + 2` triggers the "cut or continue" question (see §2.3 in build). **A thermometer is not a target** (flow-core §9): an estimate is never met by deleting comments, tests or blank lines, by compressing readable code, or by cutting where the piece is not coherent — the overrun is recorded instead, and a diff shaped to fit a number is the one case where these estimates lie to the phases downstream.
 
 Valid statuses:
 

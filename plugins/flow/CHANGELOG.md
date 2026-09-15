@@ -5,6 +5,63 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.60.0 — A small change could rest on a belief nobody had checked  ·  2026-09-15
+
+**In short**
+- **`/flow:feat:build` and `/flow:bug:fix` now spend one skeptic on the premise the change depends on** — at **any size, XS included**, once per MR/PR, read-only and refute-by-default. A category, like the query duel, not a depth tier.
+- **Four conditions, or it is a doubt**: the code depends on it · it lives outside this diff · nothing in the diff or the artifacts verifies it · being wrong costs data, money, a silent wrong result or a security hole. Short of all four it is recorded as an assumption and gets no agent.
+- **Unsettled stays unsettled.** Refuted sends the brief or the design back; a premise the skeptic cannot close is written into the artifact and named in the stop, never promoted to an assumption by prose.
+- **Size is a route, never a target** (flow-core §9): no estimate and no review threshold is ever met by deleting a comment, a test or a blank line, compressing readable code, or cutting mid-change.
+- **The review says when the diff landed just under the line.** Within 10% below the threshold that set its tier, `06-review.md` says so — one line, no tier change, so the new rule is checkable rather than merely stated.
+
+Two gaps, and the same cause behind both: the number that tells the flow how much apparatus a change
+deserves.
+
+**A premise nobody contrasted.** `/flow:feat:design §6` interrogates the beliefs a plan rests on —
+and XS never runs `design`. The skeptic round at the end of `review` does not cover it either: it
+refutes findings that were *already reported*, and its gate needs M/L plus a diff over 150 lines plus
+four ambiguous findings. So the one thing left unchallenged was the belief a small change depended
+on. The upstream always normalises the address. The webhook never retries. That column is never null
+in practice. Each is a sentence, each is load-bearing, and none of them gets safer for having a short
+diff around it — the cheapness of the change is precisely what closed every gate flow had.
+
+So `build` and `fix` get one round, and it is deliberately narrow. Four conditions must hold together
+before an agent is spent, because a phase that challenges every uncertainty is a phase that stops
+building. Fewer than four is a doubt: it goes under "Premises the change depends on" in the
+implementation log as the assumption it is, which is all it was. And the rule that makes the round
+worth running is the query duel's: **no number, no win**. A premise the skeptic cannot settle is
+recorded as open, carried into the stop in the language of what breaks if it is false, and read by
+`review` from the log — arriving there named instead of as a surprise. In a bug the premise is usually
+the root cause itself, so `fix` sends a refuted one back to `/flow:bug:investigate` rather than
+layering a second patch on the first; `validate` is about to write a regression test against exactly
+that assumption.
+
+**A number with an incentive on it.** `review` scales to the diff in front of it, on the lower of the
+recorded size and the diff's own — the single largest saving the review has, and the reason a 41-line
+MR/PR in an L-sized train is no longer reviewed as an L. But it also means a diff of 148 lines is
+reviewed at `medium` with no project panel and with the skeptic gate closed, while one of 160 gets the
+panel. An agent can land under that line by deleting a comment, dropping a test, collapsing blank
+lines, compressing three readable statements into one, or cutting where the piece is not coherent.
+Every one of those makes the *diff* smaller without making the *change* smaller, so the review that
+arrives is the one a different, smaller change had earned. Nothing in the plugin forbade it.
+
+Now one clause does, written once in flow-core and referenced from the three places that create the
+pressure: where `lines_est` is defined, where the thermometer fires, and where the diff size selects
+the tier. The honest moves were already there and are unchanged — a coherent cut, or "continue and
+record the overrun" when the cut would be artificial. What is new is that a rule nobody can check is a
+wish, so the review states in one line when the measured diff landed within 10% under the threshold
+that set its tier. It is not an accusation and it changes no tier; it is the one place a reader can see
+that the review they are holding was selected by a number. The same clause travels into delegated
+briefs, because an agent optimising for a size nobody told it was advisory returns tidier, shorter,
+worse code — and returns it looking finished.
+
+Both halves are prior art from outside this repo: the ODD proposal in
+[`Gentleman-Programming/gentle-ai#4607`](https://github.com/Gentleman-Programming/gentle-ai/issues/4607)
+argues for a single independent challenge of a high-consequence assumption with no size exemption, and
+for an advisory size that is never an acceptance gate — with the explicit list of what an agent must
+not do to meet a number. The reasoning is theirs; what flow adds is a phase to hang it on and an
+artifact that shows afterwards whether it happened.
+
 ## v0.59.0 — Your repo decides what counts as sensitive code  ·  2026-09-15
 
 **In short**

@@ -170,6 +170,20 @@ suggestion and gate are one rule.
 **A huge MR/PR "because it can't be split" is a planning failure.** Return to `plan`.
 *Now:* work/README "Principles"; feat:plan §2.
 
+**Size is a route, and a route is not a target.** The same numbers that prune phases also buy a
+lighter review — `review` §2.0 runs on the **lower** of the recorded size and the diff's own, so a
+diff of 148 lines is reviewed at `medium` with no project panel and closes the skeptic gate, while
+one of 160 gets the panel. That is the intended saving, and it puts an incentive on the diff: an
+agent can land under a threshold by deleting a comment, dropping a test, collapsing blank lines,
+compressing three readable statements into one, or cutting where the piece is not coherent. Every one
+of those makes the diff smaller without making the change smaller, so the review that arrives is the
+one a different change had earned. The estimate answers an overrun with a coherent cut or a recorded
+overrun, never with a smaller-looking diff; and because a rule nobody can check is a wish, the review
+says in one line when the diff landed within 10% under the threshold that set its tier. Prior art for
+the prohibition: the ODD refinement in `Gentleman-Programming/gentle-ai#4607`, which had the clause
+and no phase to hang it on.
+*Now:* flow-core §9, §6; feat:plan (estimates); feat:build §2.3; feat:review §2.0/§7; bug:review §2.0/§7.
+
 ---
 
 ## 4. The autonomy dial and the hard gates
@@ -402,6 +416,21 @@ since a wrongly-discarded finding stays recorded in the artifact". `agents.fanou
 caps every round; a truncated sweep reports `4/7`, because "a silently truncated fan-out reads as full
 coverage". Skipped and clean are not the same result.
 *Now:* feat:review §6; bug:review §5; bug:investigate §3.A; feat:design §1.5.3.
+
+**A premise is contested at any size, because cheapness is what closed every gate.** The design
+challenger interrogates the beliefs a plan rests on, and XS never runs `design`; the skeptic round
+above refutes findings that were already reported, gated at M/L and a diff over 150 lines. So the
+one thing nobody contrasted was the belief a small change depended on — an upstream that always
+normalises, a webhook that never retries, a column never null in practice — and a belief does not get
+safer for having a short diff around it. `build` and `fix` now spend **one** read-only skeptic on a
+premise that clears four conditions (the code depends on it · it lives outside the diff · nothing in
+the diff or the artifacts verifies it · being wrong costs data, money, a silent wrong result or a
+security hole), once per MR/PR, at any size — a category, like the query duel, not a depth tier.
+Fewer than four conditions is a doubt, and doubts are recorded, not delegated. The rule that earns
+the round is the query duel's: **unsettled stays unsettled**, in the artifact and in the stop, never
+promoted to an assumption by prose. Prior art: the ODD proposal in
+`Gentleman-Programming/gentle-ai#4607`, explicitly with no size exemption.
+*Now:* feat:build §2.1bis/§3/§5; bug:fix §2.2/§3/§5; work/README "Golden rules" 5.
 
 **A ceiling per round is not a ceiling per command, and the tier must read the diff, not the ticket.**
 v0.45.0: with every round inside `fanout_max`, one review still composed a panel, area reinforcements,
