@@ -23,6 +23,7 @@ Mandatory code review of the fix.
 Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test). (flow-core §5)
+- **A premise left open by `fix` §2.2 is an input to this review, not a note.** Every row of "Premises the fix depends on" whose verdict is `unsettled` enters §5 as an **ambiguous finding** and is named in §7 whether or not that gate opened — in a bug it is usually the claim that the root cause was the whole cause, which is exactly what the regression test cannot prove.
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.
 - `git diff` shows no changes → warn and stop.
 
@@ -33,7 +34,7 @@ Scope for every reviewer: the fix against the base (committed + uncommitted work
 ### 2.0 Resolve review depth (scale to *this diff* and the risk)
 Read `quality.review_depth` from `FLOW.md` (`light` | `proportional` | `full`; empty → `proportional`) and `meta.json.size`. Built-in `code-review` effort ladder: **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage).
 
-**The tier is resolved against the diff in front of you**, per `/flow-feat-review §2.0`: measure the real diff (`git diff --shortstat <git.default_base>...HEAD` plus the working tree), derive its size (≤150 lines → XS · 151-600 → S · 601-1500 → M · >1500 → L), and run on the **lower** of that and `meta.json.size` — a one-file fix inside a bug classified M is an XS review. Every size-gated step here (§4.5, §5) reads that effective size. The sensitive-surface bump applies on top and is never scaled away.
+**The tier is resolved against the diff in front of you**, per `/flow-feat-review §2.0`: measure the real diff (`git diff --shortstat <git.default_base>...HEAD` plus the working tree), derive its size (≤150 lines → XS · 151-600 → S · 601-1500 → M · >1500 → L), and run on the **lower** of that and `meta.json.size` — a one-file fix inside a bug classified M is an XS review. Every size-gated step here (§4.5, §5) reads that effective size. The sensitive-surface bump applies on top and is never scaled away. **When the measured diff lands within 10% under a threshold that changed the tier** (135-150, 541-600, 1351-1500), say so in one line beside the effective size in §7 — the tier does not change, and it is what makes flow-core §9 checkable after the fact.
 
 **Say what the round will run on** (flow-core §1): the skeptics and the completeness check have no agent of their own, so with the fan-out key empty they inherit this thread's model — one line before the first round of 4 or more naming the count and the inheritance, and the same fact on the artifact's `Agent models` line. Name the key (`models.workers`, then `models.agents`), never a model.
 
@@ -129,7 +130,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Review tier: <light | full | proportional — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
-- Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used>
+- Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used, and — when the diff landed within 10% under a tier threshold — that fact (§2.0)>
 - Agent models: <the value of `models.workers`/`models.agents` when set; otherwise "inherited from this thread"; agents named in `agents.<role>` keep their own definition's model>
 - Defaults used: <every empty `FLOW.md` key this round resolved with its default — one per line as `key → default` — or "none". In `guided`/`auto` each is also an entry in `meta.json.defaults_used[]` (flow-core §0); in `manual` the phase may offer one of them at its stop.>
 - Skipped for budget: <phases dropped by §2.0's give-up order, or "none">

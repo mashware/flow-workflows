@@ -105,11 +105,22 @@ discarded, with the reason. Opens only on M/L *by effective size*, a diff over 1
 findings; capped by `agents.fanout_max` and by what `agents.budget_max` leaves; never under `light`.
 → `feat/review.md` §6, [CONFIGURATION][cf]
 
+**Premise challenge** — one read-only skeptic, at **any size**, on a belief the change depends on and
+nothing verifies: it must be load-bearing, live outside the diff, be unverified by the diff and the
+artifacts, and cost data, money, a silent wrong result or a security hole if false. All four, or it is
+a doubt and gets recorded instead of an agent. Once per MR/PR, refute-by-default, counted against
+`agents.budget_max` and the first round the phase gives up. Refuted sends the brief or the design
+back; **unsettled is recorded unsettled** and named in the stop. A category, not a depth tier — like
+the query duel. → `feat/build.md` §2.1bis, `bug/fix.md` §2.2
+
 **Effective size** — the size a review actually runs on: the **lower** of `meta.json.size` and the size
 derived from the diff in front of it (≤150 changed lines → XS · 151-600 → S · 601-1500 → M · >1500 → L).
 A multi-MR/PR train has every MR/PR inheriting the feature's size, so without this a 41-line MR/PR is
-reviewed as an L. The sensitive-surface bump applies on top and is never scaled away.
-→ `feat/review.md` §2.0
+reviewed as an L. The sensitive-surface bump applies on top and is never scaled away. Because the
+number selects the review, the change is never shaped to fit it (no comment, test or blank line
+deleted, no readable code compressed, no incoherent cut), and the review states in one line when the
+diff landed within 10% under the threshold that set its tier.
+→ `feat/review.md` §2.0, flow-core §9
 
 **Agent budget** — `agents.budget_max` (empty → 12): the ceiling on subagents **one command run** may
 launch, summed over every round, next to `fanout_max`'s ceiling on a single round. Each command that

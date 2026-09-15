@@ -27,6 +27,7 @@ Mandatory review phase. **`$flow:feat-ship` cannot run without passing through h
 ## 1. Pre-flight
 
 - Read `meta.json` and `00-summary.md`; open in full only the design's "External contracts" (`03-design.md`) and `05-implementation.md`. (flow-core §5) The diff itself is read from git.
+- **A premise left open by `build` §2.1bis is an input to this review, not a note.** Every row of "Premises the change depends on" whose verdict is `unsettled` enters §6 as an **ambiguous finding** (it rests, by construction, on code outside the diff) and is named in §7 whether or not the gate opened. A premise the build could not settle and the review does not mention is one the MR/PR ships as a fact.
 - Require `build` in `phases_done`. **In a multi-MR/PR work** (`meta.json.mrs` has >1 entry) require `build` in the **current `in_progress` MR/PR's** own `phases_done` (its `mrs[]` entry) — a previous MR/PR's `build` does not count. If missing, send the user to `$flow:feat-build` and stop.
 - Check that `git diff` has real changes. None → warn and stop.
 
@@ -55,6 +56,14 @@ this command (§3.5, §5.5, §6) reads the effective size, not the recorded one.
 *higher* than the recorded size is worth one line in `06-review.md` (the work may be misclassified),
 not a heavier review. The **sensitive-surface bump below applies on top of the effective size and is
 never scaled away** — a 12-line change to an authorization check still gets the panel.
+
+**The threshold is visible in the artifact, because it is the one number with an incentive on it.**
+A diff of 148 lines is reviewed at `medium` with no panel and closes §6's gate; one of 160 gets the
+panel. When the measured diff lands **within 10% under** a threshold that changed the tier (135-150,
+541-600, 1351-1500), say so in one line of `06-review.md`, beside the effective size. It is not an
+accusation and it changes no tier — it is the only place a reader can see that the review they are
+holding was selected by a number, and it is what makes flow-core §9 (the diff reports the change; the
+change is never shaped to fit the number) checkable after the fact rather than merely stated.
 
 - **`full`** (any size): built-in `code-review` at **xhigh** + the project panel. Skip the tiering below.
 - **`light`** (any size): built-in `code-review` (or `quality.review_skill`) **only**, at **medium** effort. No project panel, no §3 reinforcements, no §6 skeptic fan-out. The sensitive-surface bump still applies: a sensitive surface upgrades `light` to the `proportional` tier for that work.
@@ -274,7 +283,7 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 
 ## Summary
 - Review tier: <full | proportional | light — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
-- Effective size: <diff size (N changed lines) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified>
+- Effective size: <diff size (N changed lines) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified. When the diff landed within 10% under a tier threshold, say so here (§2.0).>
 - Agent models: <the value of `models.workers`/`models.agents` when set; otherwise "inherited from this thread" — plus, when the panel ran, that agents named in `agents.<role>` kept the model their own definition sets. The values as they are, no judgement on them>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>, effort <medium|high|xhigh|max>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>

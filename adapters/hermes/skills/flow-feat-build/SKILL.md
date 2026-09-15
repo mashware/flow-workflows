@@ -117,6 +117,45 @@ Execution mode:
 
 Use `TaskCreate` to track the steps from the design's implementation plan. Mark each step `in_progress` when starting and `completed` when done — do not batch.
 
+### 2.1bis The premise this change rests on (any size, XS included)
+
+`/flow-feat-design §6` challenges the beliefs a plan rests on — and XS never runs `design`. On a
+small change, nobody contrasts the premise: `/flow-feat-review §6` will not, because it refutes
+findings that were already reported and its gate needs M/L plus a diff over 150 lines. The
+cheapness of the change is what closes every gate flow has, and a belief does not get safer because
+the diff around it is short. Like the data-access duel (`/flow-feat-review §3.6`), this is a
+**category, not a depth tier**.
+
+**When it runs.** A premise qualifies only when all four hold:
+
+- the implementation **depends** on it — take the belief away and the code is wrong, not merely unproven;
+- it is about **code outside this diff**, a runtime behaviour, or an external contract;
+- **nothing in the diff, `03-design.md` or `01-context.md` verifies it** — no test, no constraint, no plan;
+- being wrong costs **data, money, a silent wrong result, or a security hole** — not a retry, a log line or a loud failure.
+
+Fewer than four → it is a doubt, not a premise, and doubts do not get an agent: write it under
+"Premises the change depends on" in §3 as the assumption it is and move on. **Once per MR/PR**: the
+first qualifying premise gets the round, and a second one is recorded with what it would take to
+settle it.
+
+**How it runs.** One `Agent general-purpose`, read-only, refute-by-default, launched **before the
+code that depends on the premise is finished** — a premise contested after the fact is a rewrite:
+
+> You are a skeptic. The implementation of `<TICKET>` depends on this premise: `<premise, one sentence>`. It rests on `<file / system / contract>`, outside the diff under way. Try to REFUTE it: read the real code, schema, contract or test that would settle it, and answer FALSE (refuted), TRUE (holds — with what you read), or UNSETTLED (with what would settle it). The burden of proof is on the premise: do not argue from what is likely, and do not propose implementation. Report the premise, the evidence for and against, and what happens to the caller if it is false. Under `agents.report_max_words` words (empty → 250).
+
+**Budget, and the autonomy rule.** It counts against `agents.budget_max` like any other round
+(flow-core §6) and is **the first round this command gives up** when the budget cannot cover it —
+said in one line, never silently skipped. `manual` → offer it with `AskUserQuestion` ("Challenge the
+premise that X before building on it?"). `guided`/`auto` → run it and record it; it is flow
+machinery, not a decision.
+
+**The verdict, and the rule that makes it worth running.** **Refuted** → the brief or the design is
+wrong, not the code: stop, say what fell, and go back (§2.4 for a brief, `/flow-feat-design` for a
+contract) rather than patching around it. **Holds** → one row in §3 with what was read. **Unsettled
+stays unsettled** — the same rule as the query duel's *no number, no win*: it is recorded as an open
+premise, carried into the stop, and never promoted to an assumption by prose. `review` reads
+`05-implementation.md` in full, so an open premise arrives there named instead of as a surprise.
+
 ### 2.2 Checkpoints (local commits, gated by `autonomy.mode`)
 
 The step's changes are **always reported before anything is recorded**. Who decides the commit depends on `autonomy.mode`:
@@ -175,6 +214,12 @@ If either is exceeded, **pause** and ask the user with `AskUserQuestion` (option
 2. **Continue and record the overrun**. When the cut would be artificial. Note the deviation in `05-implementation.md` to calibrate `/flow-feat-plan` on future tickets.
 3. **Reopen plan**. Return to `/flow-feat-plan` to rethink the entire split. Only if the overrun shows the plan is wrong at a deeper level, not just that this MR/PR is slightly underestimated.
 
+**None of the three is "make the diff smaller"** (flow-core §9). The estimate is a thermometer: an
+overrun is answered by cutting at a coherent point or by recording it, never by deleting comments,
+tests or blank lines, compressing readable code, or cutting mid-change to land under the number. The
+same holds downhill — `/flow-feat-review §2.0` scales the review to the diff, so a diff trimmed to
+slip under a threshold buys itself the review a smaller change had earned.
+
 **Hot cut mechanics (option 1)**:
 
 0. **If there are uncommitted changes** in the working tree: warn the user and ask them to decide before cutting — commit what is done as a WIP for the corresponding step, or stash it (`git stash`) so it does not mix with the next MR/PR.
@@ -220,6 +265,13 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at th
 - Decision: …
   - Why: …
   - Discarded alternative: …
+
+## Premises the change depends on
+<one row per premise put through §2.1bis, plus any belief recorded as an assumption without a round. Omit the section when the change depends on nothing outside its own diff — most builds.>
+
+| Premise | Rests on | Verdict | Evidence, or what would settle it |
+|---|---|---|---|
+| the upstream normalises the address before it reaches us | `InboundMailer`, outside the diff | unsettled | no test covers the unnormalised path; needs one run against prod-shaped data |
 
 ## Access paths implemented
 <one row per query written or changed; omit the section if none. `Plan` is what `data.explain_cmd` returned, or "unverified" when the repo has no way to get one — never a guess.>
@@ -294,5 +346,5 @@ If there were no copied contracts (design said "none"), skip this step and recor
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
 - Multi-MR/PR build: leave the current MR/PR `in_progress` in `meta.json.mrs` (it becomes `merged` when `/flow-feat-ship` confirms the merge). **Also add `build` to that MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates read.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Report **following the stop header** (flow-core §3), then in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**. Next command: `/flow-feat-review` — in `guided`/`auto` say so in the `I need:` line ("nothing, chaining into review"), never as a question.
+- Report **following the stop header** (flow-core §3), then in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and **any premise left unsettled by §2.1bis** — one line, in the language of what breaks if it is false. An open premise the user never hears about is an assumption they were not asked about. Next command: `/flow-feat-review` — in `guided`/`auto` say so in the `I need:` line ("nothing, chaining into review"), never as a question.
 - **Autonomy handoff.** The summary is a report, not the end of the flow. `manual`: stop and propose `/flow-feat-review` with a single `AskUserQuestion` (recommended option by default); invoke it only on confirmation, never make the user type it. `guided`/`auto`: **chain into `/flow-feat-review` automatically** in this same turn, without asking — never end the turn with the next command as a suggestion.

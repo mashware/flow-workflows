@@ -508,7 +508,9 @@ launches, summed over every round including relaunched ones. The mechanics:
   than the model's mood on the day. In `/flow:feat:review` the order is the completeness sweep, then
   the skeptics, then the idiom audit, then the area reinforcements — and the built-in reviewer, the
   panel the tier selected, the query duel and the blinded contract check are never dropped for
-  budget.
+  budget. `/flow:feat:build` and `/flow:bug:fix` have one round to give up — the single skeptic on a
+  premise the change depends on (`build` §2.1bis, `fix` §2.2) — and a budget that cannot cover it is
+  said in one line rather than leaving the premise silently unchallenged.
 - **Both ceilings count agents, not findings.** Grouping three findings into one skeptic's brief is
   the intended shape; launching one agent per finding because each looks cheap is a breach — twelve
   `Verify Vn` agents under a cap of four is not thoroughness, it is an unbounded round.

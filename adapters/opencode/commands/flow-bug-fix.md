@@ -72,6 +72,21 @@ Save the brief at the top of `04-fix.md`. Any "also fix X while we're at it" dur
 - **`guided`** — ask **once**, at the first step; apply that answer for the rest of the fix; record it in `04-fix.md`.
 - **`auto`** — commit the WIP yourself (`git add <files> && git commit -m "WIP <TICKET>: <step>" --no-verify`) without asking. Invoking the command in `auto` is the authorization, and it covers **only** WIP commits on the work branch — push and MR/PR creation stay hard gates in every mode.
 
+## 2.2 The premise this fix rests on (any size)
+
+Same instrument as `/flow-feat-build §2.1bis`: the four conditions, one round per fix, the same
+read-only refute-by-default brief, the same budget rule, the same autonomy rule. Read that section
+and apply it here — with one difference that carries the weight in a bug.
+
+**In a bug the premise is usually the root cause.** `03-investigation.md` says the cause is X, and
+the fix is minimal precisely because it trusts that. When the fix depends on X being the **whole**
+cause and the investigation's evidence does not close that — one reproduction, a correlation, a
+`git blame` that fits the story — that is the premise, and one skeptic on it costs less than the
+second regression. **Refuted** → back to `/flow-bug-investigate`, never a second patch layered on
+the first. **Unsettled** → recorded in `04-fix.md` under "Premises the fix depends on" and carried
+into the stop, because `/flow-bug-validate` writes a regression test against the cause the fix
+assumed.
+
 ## 2.3 Something outside the brief comes up?
 
 Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this rename fits here", "this extra test covers another case"): **pause before touching it** and ask with `AskUserQuestion`:
@@ -104,6 +119,9 @@ A **product decision** the fix turns out to need is neither of these — not sco
 
 ## Changes by file
 - <file> — what changed and why (1 line)
+
+## Premises the fix depends on
+<one row per premise put through §2.2, plus any belief recorded as an assumption without a round: premise · what it rests on · verdict (holds / refuted / unsettled) · the evidence, or what would settle it. Omit the section when the fix depends on nothing outside its own diff.>
 
 ## Areas with similar risk (noted, NOT touched here)
 - `F<n>` — <the pattern to audit; also a `meta.json.followups[]` entry, `kind: "audit"`. `bug:validate` §3 checks these do not already show the same active symptom, and `bug:ship` publishes them in the MR/PR description — the one deferral in this plugin that already made the whole journey.>
@@ -147,4 +165,5 @@ Never the third way: building the mechanism here because the ticket says bug.
 - Update `meta.json`: `phase = "fix"`, add to `phases_done`.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Suggest next: `/flow-bug-validate` (S/M/L) or `/flow-bug-review` (XS).
+- Report **following the stop header** (flow-core §3) and name **any premise left unsettled by §2.2** in one line — what breaks if the cause was not the whole cause. `validate` builds its regression test on that assumption, so it is the one thing the user should hear before it is written.
 - **Autonomy handoff** (flow-core §2): `manual` → propose that command with a single `AskUserQuestion` (recommended option by default), invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn.

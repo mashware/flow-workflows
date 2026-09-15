@@ -252,6 +252,11 @@ test suite, a migration, a batch of edits — name the **path it writes** and re
 after each finished piece, not at the end**. Then verify the artifact instead of believing the
 report: half a chunk on disk is recoverable, what lives only in the agent's context is not.
 
+**A size in a brief is a thermometer, not a budget.** When the brief hands an agent a `lines_est`,
+a size or a review threshold, it says which one it is (§9). An agent that reads a number as a target
+returns shorter, worse code — fewer comments, fewer tests, denser statements — and returns it looking
+finished.
+
 **A brief over a large corpus needs a bounded first step.** *"Review this 8 700-line diff"* has no
 first move, and an agent handed one can sit for hours producing nothing. Split it: by path, by
 numbered question, or by the concrete command that answers each one.
@@ -480,3 +485,33 @@ is `declined` and never offered again, in this work or a later one.
 **These are not domain knowledge.** `knowledge.stage`/`save` is for the *why* of the business, and
 that filter does not move: a repo convention is the *what* of the code, it goes to `FLOW.md`, and it
 never reaches the knowledge store. Two buckets, two destinations, no overlap.
+
+## 9. Size is a route, never a target
+
+Two numbers decide how much apparatus a change gets. `meta.json.size` and each `lines_est` in
+`meta.json.mrs` route the phases (`/flow-feat-start §4`, `/flow-feat-plan`), and the **diff's own
+size** picks the review tier and opens or closes the skeptic round (`/flow-feat-review §2.0`, §6).
+Both are doing their job: a 40-line change does not need the apparatus an 800-line one does, and
+scaling the review to the diff in front of you instead of to the feature it belongs to is the single
+largest saving the review has.
+
+**What follows from that is a temptation, and it belongs to the diff, not to the plan.** A threshold
+that buys a lighter review pays whoever lands just under it: twelve lines below 150 is a review at
+`medium` with no project panel and no §6 round, twelve above it is the panel. So, in every phase:
+
+**The diff reports the change; the change is never shaped to fit the number.** Never delete a
+comment, a test, a blank line or a log line, never compress readable code into fewer statements,
+never add an abstraction because it shortens the diff, and never cut at a point that is not coherent
+— not to land under a `lines_est`, and not to land under a review threshold. Each of those makes the
+diff smaller without making the change smaller, which is the only way a number here can lie: the
+review that arrives is the one a different, smaller change had earned.
+
+**The honest moves are already written down.** Over the estimate, and the cut would be artificial →
+`/flow-feat-build §2.3`'s "continue and record the overrun". Genuinely two deliverables → a cut at a
+coherent point, which is a different act with its own justification (`/flow-feat-plan`'s four
+criteria). Under the estimate because the change turned out smaller → nothing to do; that is a good
+estimate meeting a good change.
+
+**It travels into every brief.** A subagent handed a size or a `lines_est` is handed a thermometer,
+never a budget, and the brief says so (§6). An agent optimising for a number nobody told it was
+advisory is the one that returns tidier, shorter, worse code — and it returns it looking finished.
