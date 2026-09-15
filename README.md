@@ -1,7 +1,7 @@
 # flow-workflows
 
 Guided `feat` / `bug` workflows for terminal coding agents: a ticket reaches an open MR/PR through explicit, reviewable phases, not one big prompt.
-For developers running Claude Code (or opencode, Gemini CLI, Codex CLI) on real repos with tickets, reviewers and a deploy.
+For developers running Claude Code (or opencode, Gemini CLI, Codex CLI, Hermes Agent) on real repos with tickets, reviewers and a deploy.
 You get named phases, an artifact on disk after each one, hard gates the agent never crosses alone, and an autonomy dial from "ask me everything" to "run it and record what you decided".
 
 ## Quickstart
@@ -23,7 +23,7 @@ codex plugin add flow@flow-plugins
 # then, in a new session: $flow:init · $flow:next
 ```
 
-opencode and Gemini CLI install from a clone — see [Other harnesses](#other-harnesses).
+opencode, Gemini CLI and Hermes Agent install from a clone — see [Other harnesses](#other-harnesses).
 
 No ticket? `/flow:feat:start` with no arguments drafts the work from the conversation you just had.
 
@@ -187,7 +187,7 @@ Artifacts are **hand-editable**: rewrite `03-design.md` and the next phase respe
 ## Configuration: base plus harness overlay
 
 `FLOW.md` at the repo root is the shared base. `FLOW.claude.md`, `FLOW.codex.md`,
-`FLOW.opencode.md`, or `FLOW.gemini.md` can sparsely override values for the product executing the
+`FLOW.opencode.md`, `FLOW.gemini.md`, or `FLOW.hermes.md` can sparsely override values for the product executing the
 command. Existing repos with only `FLOW.md` behave exactly as before; anything effectively empty
 is auto-detected or asked for.
 
@@ -240,6 +240,7 @@ The same commands, in each harness's own shape. Only the invocation syntax diffe
 | **Codex CLI**, one repo only | `adapters/install.sh codex project` → `.agents/skills/` | `$flow-feat-start` |
 | **opencode** | `adapters/install.sh opencode` | `/flow-feat-start` |
 | **Gemini CLI** | `adapters/install.sh gemini` | `/flow:feat:start` |
+| **Hermes Agent** | `adapters/install.sh hermes` | `/flow-feat-start` |
 
 The mirrors are **generated** from the plugin commands by `script/adapter-build.py` and checked mechanically on every preflight (format, prefix, cited paths, install location).
 They have **not** been executed end to end in those harnesses — validate as you use them. → [adapters/README](adapters/README.md)
@@ -255,7 +256,7 @@ They have **not** been executed end to end in those harnesses — validate as yo
 | [WORKFLOWS](docs/WORKFLOWS.md) | `green`, `respond`, `query`, `watch`, `daily`, `clean`, cross-repo tasks |
 | [work/README](plugins/flow/commands/work/README.md) | Internal guide: principles, schemas, size shortcuts, golden rules |
 | [CHANGELOG](plugins/flow/CHANGELOG.md) | What changed, version by version |
-| [adapters/README](adapters/README.md) | Installing on opencode / Gemini CLI / Codex CLI |
+| [adapters/README](adapters/README.md) | Installing on opencode / Gemini CLI / Codex CLI / Hermes Agent |
 | [RELEASING](RELEASING.md) | Release procedure and what the preflight enforces |
 | [CONTRIBUTING](CONTRIBUTING.md) | What a good contribution looks like, and what we will not take |
 
@@ -276,7 +277,7 @@ flow-workflows/
 ├── script/adapter-smoke.py           # are the mirrors usable?
 ├── script/tests/                     # hook tests
 ├── RELEASING.md · CONTRIBUTING.md
-└── adapters/          install.sh · opencode/ · gemini/ · codex/
+└── adapters/          install.sh · opencode/ · gemini/ · codex/ · hermes/
 ```
 
 ## Before tagging a release

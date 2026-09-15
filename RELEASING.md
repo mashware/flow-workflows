@@ -40,9 +40,10 @@ block falls back to its first paragraph.
 
 ## Keeping the adapters in step
 
-`plugins/flow/` is the source of truth; `adapters/opencode/`, `adapters/codex/` and
-`adapters/gemini/` are **generated from it** by `script/adapter-build.py`. Every file under
-`opencode/commands/`, `codex/skills/`, `gemini/commands/flow/` and each `<harness>/CORE.md` is
+`plugins/flow/` is the source of truth; `adapters/opencode/`, `adapters/codex/`,
+`adapters/gemini/` and `adapters/hermes/` are **generated from it** by `script/adapter-build.py`.
+Every file under `opencode/commands/`, `codex/skills/`, `gemini/commands/flow/`,
+`hermes/skills/` and each `<harness>/CORE.md` is
 written from the plugin commands and `plugins/flow/skills/flow-core/SKILL.md` — and so are
 `plugins/flow/codex-skills/` and `plugins/flow/.codex-plugin/plugin.json`, which live inside the
 plugin package but are mirrors like the rest (the Codex manifest takes its version from the Claude
@@ -82,7 +83,8 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
 - **The adapters are generated and current** — `adapter-build.py --check`: no mirror missing,
   stale, or orphaned.
 - **The mirrors are usable, not just present** — `adapter-smoke.py --static-only`: each parses in
-  its harness's wrapper (opencode frontmatter · Codex none · Gemini TOML), every `/flow…` invocation
+  its harness's wrapper (opencode a `description:` · Codex and Hermes a `SKILL.md` keyed by `name:` ·
+  Gemini TOML), every `/flow…` invocation
   uses that harness's prefix, and every command and path it cites exists.
 - **The flow-core skill is present** (`plugins/flow/skills/flow-core/SKILL.md`, `name: flow-core`)
   **and no command carries a copy of its blocks.** Those blocks used to be pasted into 18 commands
@@ -113,7 +115,7 @@ bash script/tests/session-start.sh
 The half of the smoke test the preflight skips is the slow one: it executes `adapters/install.sh`
 for each harness against a throwaway `HOME` and checks the files land where that harness reads
 them, in the expected number, with the `CORE.<tool>.md` every command opens and the changelog
-`/flow-news` needs. It needs none of the three harnesses installed, and it is the only thing that
+`/flow-news` needs. It needs none of the four harnesses installed, and it is the only thing that
 would notice `install.sh` copying into a path that no longer exists. The three hook tests exercise
 the push guard, the SessionStart update notice and the SessionStart work notice the same way,
 against a throwaway `HOME` and throwaway repos — and the preflight now refuses a hook that has

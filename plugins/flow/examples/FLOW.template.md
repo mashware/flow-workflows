@@ -5,7 +5,8 @@ file in their step 0. Delete what does not apply; **empty or absent = auto-disco
 default behavior** (each command states what it does when a value is missing).
 
 Use this shape for the shared base `FLOW.md` and for an optional sparse harness overlay:
-`FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, or `FLOW.gemini.md`. The active overlay is
+`FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`, or `FLOW.hermes.md`. The
+active overlay is
 read after the base. A key present in it replaces the base value; a present-but-empty key masks the
 base and selects the normal empty fallback; an absent key inherits the base. Lists replace whole
 lists. `conventions` is additive: overlay lines follow the base lines and both apply. Existing repos

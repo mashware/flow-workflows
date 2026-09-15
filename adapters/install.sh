@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs the `flow` workflow adapter for the specified harness.
-# Usage: ./install.sh <opencode|gemini|codex> [project]
+# Usage: ./install.sh <opencode|gemini|codex|hermes> [project]
 #   without "project" → global install (harness user folder)
 #   "project"         → install into the current repo (where applicable)
 set -euo pipefail
@@ -21,7 +21,8 @@ sweep() {
   return 0
 }
 
-# Codex installs one folder per skill, so the sweep above (files) would leave the folders.
+# Codex and Hermes install one folder per skill, so the sweep above (files) would leave
+# the folders behind.
 sweep_dirs() {
   local dest=$1 pattern=$2 removed
   [ -d "$dest" ] || return 0
@@ -56,8 +57,17 @@ case "$TOOL" in
     note "MCP/subagents: merge $HERE/codex/config.snippet.toml into ~/.codex/config.toml"
     note "Conventions: copy $HERE/codex/AGENTS.md to your repo root if you want (Codex reads it as a guide)."
     ;;
+  hermes)
+    if [ "$SCOPE" = project ]; then DEST=".hermes/skills"; else DEST="$HOME/.hermes/skills"; fi
+    mkdir -p "$DEST"; sweep_dirs "$DEST" "flow-*"; cp -r "$HERE"/hermes/skills/. "$DEST"/
+    N=$(find "$HERE"/hermes/skills -name "SKILL.md" | wc -l | tr -d " ")
+    echo "✓ hermes: $N skills in $DEST  (invoke as /flow-feat-start, /flow-work-watch, …)"
+    note "Hermes reads ~/.hermes/skills as one flat namespace; a project install (.hermes/skills) needs \`hermes skills trust\` the first time."
+    note "MCP, delegation and cron: merge $HERE/hermes/config.snippet.yaml into ~/.hermes/config.yaml"
+    note "Conventions: Hermes reads AGENTS.md as project context — $HERE/codex/AGENTS.md is one you can copy to your repo root."
+    ;;
   *)
-    echo "Usage: ./install.sh <opencode|gemini|codex> [project]" >&2
+    echo "Usage: ./install.sh <opencode|gemini|codex|hermes> [project]" >&2
     exit 1
     ;;
 esac

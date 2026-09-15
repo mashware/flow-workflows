@@ -24,8 +24,8 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 
 - `FLOW.md` at the repo root is the shared base: tracker, branch and MR/PR conventions, quality
   commands, code conventions, and observability profile.
-- The active `FLOW.<harness>.md` is an optional sparse overlay (`claude`, `codex`, `opencode`, or
-  `gemini`) for model names, agents, skills, orchestration, knowledge tools, or any other value that
+- The active `FLOW.<harness>.md` is an optional sparse overlay (`claude`, `codex`, `opencode`,
+  `gemini`, or `hermes`) for model names, agents, skills, orchestration, knowledge tools, or any other value that
   differs on that harness. Every command reads the base and then the active overlay in step 0;
   existing repos with only `FLOW.md` behave exactly as before.
 - An overlay key replaces the base even when explicitly empty; an absent key inherits it. Lists

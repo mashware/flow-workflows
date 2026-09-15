@@ -1,0 +1,63 @@
+# config.snippet.yaml — fragment to merge into ~/.hermes/config.yaml
+#
+# Instructions:
+#   1. Copy the keys you need into your existing ~/.hermes/config.yaml.
+#   2. For MCP, `hermes mcp install` is the safer route: it writes the block for you,
+#      in whatever shape your Hermes version expects. What follows is the shape to aim at.
+#   3. Adjust command/args/env to match your real domain-memory install.
+#
+# WARNING: this file is an example fragment, NOT a complete config.yaml.
+# Do not use it directly as ~/.hermes/config.yaml — merge it into yours.
+
+# ──────────────────────────────────────────────────────────────────────────────
+# MCP server: domain-memory
+# ──────────────────────────────────────────────────────────────────────────────
+# Only needed if the `knowledge` section of FLOW.md names its tools. Hermes reloads
+# `mcp_servers` when the file changes — no restart.
+mcp_servers:
+  domain-memory:
+    command: npx
+    args: ["-y", "domain-memory-mcp"]
+    env: {}
+
+    # Alternative, with the repo cloned:
+    # command: node
+    # args: ["/path/to/domain-memory/dist/index.js"]
+    # env:
+    #   DOMAIN_MEMORY_PATH: /path/to/your/store.json
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Delegation — what the flow's subagents and fan-out rounds run as
+# ──────────────────────────────────────────────────────────────────────────────
+# `delegate_task` builds each child from the prompt it is given, so there is nothing
+# here to name per role: the roles live in the `agents` map of FLOW.md and are stated
+# in the delegation prompt. What this section sets is how many run at once and on
+# which model — one model for every child, so `models.workers` in FLOW.md lands here.
+delegation:
+  max_concurrent_children: 10     # the real ceiling; `agents.fanout_max` (empty → 4) is what flow asks for
+  max_spawn_depth: 1              # 1 = children cannot delegate further. The flow never needs more
+  # model: "your-worker-model"    # empty = children inherit the session's model
+  # provider: "openrouter"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Cron — the autopilot behind /flow-work-watch
+# ──────────────────────────────────────────────────────────────────────────────
+# `/flow-work-watch` is one cycle per firing. Schedule it from the session it starts in:
+#
+#   /cron add "every 30m" "/flow-work-watch PROJ-412"
+#
+# Each firing is a fresh session with no history — that is why every cycle re-reads
+# `.claude/work/<TICKET>/monitor.md` instead of remembering. Turn the next key on if you
+# want the watch to retire its own job when the window closes; leave it off and you stop
+# it yourself with `hermes cron` (or `/cron`).
+cron:
+  allow_agent_scheduling: false   # true = a firing may create and delete cron jobs
+  # model: "your-cron-model"      # empty = the global default, snapshotted at creation
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Skills — an alternative to copying them into ~/.hermes/skills
+# ──────────────────────────────────────────────────────────────────────────────
+# Point Hermes at this checkout instead, and `git pull` is the whole upgrade.
+# skills:
+#   external_dirs:
+#     - /path/to/flow-workflows/adapters/hermes/skills

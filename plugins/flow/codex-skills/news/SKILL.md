@@ -56,4 +56,4 @@ Range **empty** (`$flow:news` or `$flow:news full` — the "catch me up" case) �
 
 ## Note — the proactive nudge
 
-A SessionStart hook (`hooks/notify-update.sh`) prints a one-line nudge the first session after the installed version changes. It uses a **separate** marker (`~/.claude/flow/news-notified`) and never touches `news-last-seen`, so `$flow:news` still shows the full delta. The hook is Claude Code-only; on the opencode/Codex/Gemini adapters `$flow:news` is pull-only.
+A SessionStart hook (`hooks/notify-update.sh`) prints a one-line nudge the first session after the installed version changes. It uses a **separate** marker (`~/.claude/flow/news-notified`) and never touches `news-last-seen`, so `$flow:news` still shows the full delta. The hook is Claude Code-only; on the opencode/Codex/Gemini/Hermes adapters `$flow:news` is pull-only.
