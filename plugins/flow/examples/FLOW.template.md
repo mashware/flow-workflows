@@ -69,6 +69,12 @@ Branch and Pull/Merge Request conventions.
 - `cli:`              # Empty = the default for `host` in the table above. Set it for a self-hosted forge, a wrapper, or
                       #   a host with no CLI of its own (`bitbucket`), where the commands degrade to plain git and say so.
 - `default_base:`     # base for new branches, e.g. `origin/master` or `origin/main`.
+- `diff_exclude:`     # paths kept out of the diff a phase reads, one per line with `- `. Generated files nobody reviews —
+                      #   dependency locks, generated migrations, compiled assets, recorded fixtures — cost context in every
+                      #   phase that opens the diff and in every reviewer launched over it. Empty = exclude nothing.
+                      #   `/flow:init` proposes what it finds. Git pathspec syntax, so a glob works. e.g.:
+                      #   - '*.lock'
+                      #   - 'assets/build/**'
 - `branch_pattern:`   # e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case. Empty = `{PREFIX}{TICKET}-{slug}`.
 - `assignee:`         # user to assign the MR/PR to. Empty = do not assign.
 - `squash:`           # `true` | `false` (squash-before-merge).

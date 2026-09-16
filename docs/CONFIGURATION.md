@@ -126,6 +126,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `git` | `host` | `gitlab` \| `github` \| `bitbucket` \| `azure` \| `gitea`. Sets both the terminology and the default CLI: |
 | `git` | `cli` | Empty = the default for `host` in the table above. Set it for a self-hosted forge, a wrapper, or |
 | `git` | `default_base` | base for new branches, e.g. `origin/master` or `origin/main` |
+| `git` | `diff_exclude` | paths kept out of the diff a phase reads, one per line with `- `. Generated files nobody reviews — |
 | `git` | `branch_pattern` | e.g. `{PREFIX}{TICKET}-{slug}`. `{slug}` in English, kebab-case. Empty = `{PREFIX}{TICKET}-{slug}` |
 | `git` | `assignee` | user to assign the MR/PR to. Empty = do not assign |
 | `git` | `squash` | `true` \| `false` (squash-before-merge) |

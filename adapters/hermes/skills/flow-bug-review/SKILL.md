@@ -28,6 +28,13 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 - **A premise left open by `fix` §2.2 is an input to this review, not a note.** Every row of "Premises the fix depends on" whose verdict is `unsettled` enters §5 as an **ambiguous finding** and is named in §7 whether or not that gate opened — in a bug it is usually the claim that the root cause was the whole cause, which is exactly what the regression test cannot prove.
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.
 - `git diff` shows no changes → warn and stop.
+- **Gather the material once, not once per reviewer.** `npx flow-workflows bundle --checks` prints
+  one context pack for this branch — worklist, the diff (minus `git.diff_exclude`), the changed files
+  in full, the raw output of `quality.static_analysis`, and the work's handoff — in a single call.
+  Read that instead of rediscovering it, and **pass it to the briefs of §2-§5**: a panel where every
+  member runs its own `git diff` and opens the same files pays for that material once per agent, and
+  a reviewer that spends its turns exploring has fewer left to review. The CLI not being installed is
+  not an error: fall back to reading the diff from git as before, and say so in one line.
 
 ## 2. Run the code reviews
 
