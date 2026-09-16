@@ -186,6 +186,15 @@ Two keys below configure the **parallel fan-out** (approach panel in `design` §
 sweep in `investigate` §3.A, finding verification in `review`) instead of naming an agent. The
 fan-out runs as plain parallel subagents — the primitive every harness has.
 
+- `exec_cmd:`         # how to invoke a harness NON-interactively, so `flow review` can run one reviewer per role in one
+                      #   turn each instead of an agentic loop each. `{ROLE}` and `{SCHEMA}` are substituted; the diff and
+                      #   the brief arrive on stdin. **Empty = the agentic panel inside `/flow:*:review` reviews, exactly
+                      #   as before** — this key is the opt-in, nothing changes without it. It takes any command: a
+                      #   subscription login, an API key, another vendor's CLI, or a script of your own. When it is set,
+                      #   that command picks the model and `models.agents`/`models.workers` no longer apply to review.
+                      #   e.g.:
+                      #   - claude -p --model sonnet --output-format json --json-schema '{SCHEMA}'
+                      #   - codex exec --model <m>
 - `fanout_max:`     # max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported
 - `budget_max:`     # max subagents ONE command run may launch in total, summed over every round (flow-core §6). Empty = 12. `0` = no ceiling
                     #   (not recommended). `fanout_max` bounds a round; this bounds the command — `/flow:*:review` composes a panel, area

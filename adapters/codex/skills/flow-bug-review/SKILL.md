@@ -35,6 +35,14 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
   member runs its own `git diff` and opens the same files pays for that material once per agent, and
   a reviewer that spends its turns exploring has fewer left to review. The CLI not being installed is
   not an error: fall back to reading the diff from git as before, and say so in one line.
+- **`agents.exec_cmd` set → the panel can run from the CLI instead.** `npx flow-workflows review`
+  spawns that command once per role over the pack above — **one turn each instead of an agentic loop
+  each** — and returns the findings already deduplicated, with the reviewers it dropped for
+  `agents.budget_max` named. Empty (the default) → the panel below runs exactly as it always has;
+  nothing here changes without that key. When the CLI runs it, the command itself picks the model,
+  so `models.agents`/`models.workers` do not reach those reviewers: record which of the two ran in
+  the review artifact. A one-shot sweep cannot pull a thread, so an ambiguous finding still goes to
+  a real agent with tools, as below.
 
 ## 2. Run the code reviews
 

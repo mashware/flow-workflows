@@ -158,6 +158,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `agents` | `security` | threats, authentication, sensitive data |
 | `agents` | `frontend` | components/UI |
 | `agents` | `testing` | tests and coverage, whichever suite the diff touches |
+| `agents` | `exec_cmd` | how to invoke a harness NON-interactively, so `flow review` can run one reviewer per role in one |
 | `agents` | `fanout_max` | max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported |
 | `agents` | `budget_max` | max subagents ONE command run may launch in total, summed over every round (flow-core §6). Empty = 12. `0` = no ceiling |
 | `agents` | `fanout_tool` | orchestration tool to run the fan-out through (e.g. `Workflow` on Claude Code). Empty = plain parallel subagents, portable across harnesses. Harness-specific: ignored if unavailable |
@@ -594,6 +595,11 @@ says so once.
 `workers` exists because a fan-out round is where cost multiplies: four skeptics or five approach
 advisors on one command. Set it below `agents` to make breadth cheap, or leave it empty and the
 round follows `agents`.
+
+**`agents.exec_cmd` overrides both, for review only.** When it is set, `flow review` spawns that
+command once per role and the command itself picks the model, so neither key reaches those
+reviewers; every other phase still resolves them as above. `/flow:doctor` reports which of the two
+is in force, because a key that silently does nothing is worse than one that is absent.
 
 ### The two limits
 
