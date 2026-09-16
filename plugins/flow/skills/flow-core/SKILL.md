@@ -458,7 +458,7 @@ not `declined`/`logged`/`done`: a work being finished is precisely when its defe
 
 Mid-phase, the user corrects you. *«We don't put that in a listener here, use a message handler.»*
 *«Never mock the repository in that layer.»* *«The test command is `make test-unit`, not
-`bin/phpunit`.»* *«Stop proposing a DTO for that, we pass the entity.»* You comply, the phase closes,
+`bin/test`.»* *«Stop proposing a DTO for that, we pass the entity.»* You comply, the phase closes,
 and the next work on the same repo proposes the same thing again. The place for these exists —
 `FLOW.md`'s `conventions` and `quality` — and nothing on the path from the correction to that file is
 automatic: the user has to notice they have said it three times and go and edit it.
