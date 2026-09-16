@@ -15,7 +15,6 @@ this folder.
 - assignee: a.dev
 - start_cmd: acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}
 - abandon_cmd: acli jira workitem transition {TICKET} "Won't Do"
-- debt_log: docs/DEBT.md
 
 ## git
 - host: gitlab

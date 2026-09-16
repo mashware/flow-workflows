@@ -312,7 +312,7 @@ phases that parked it asked nothing, deliberately.
 
 0. **Sort them before showing them — the skeptic gate (flow-core §7).** Count the `proposed`
    entries, excluding `decision` (asked as their own question) and `tooling` (already destined for
-   the debt log, never asked).
+   `logged`, never asked).
    - **3 or more** → one skeptic round before anything reaches the user: group them into at most
      `agents.fanout_max` briefs (flow-core §6 ceilings apply; `agents.budget_max` already spent by
      this run → skip the round, say so in one line and apply the bar yourself) with the prompt of
@@ -342,13 +342,9 @@ phases that parked it asked nothing, deliberately.
    entry `accepted`; the record survives either way.
    **Creating an issue is outward-facing: this asks in every `autonomy.mode`, `auto` included.**
 4b. **Logged** — `tooling`, a skeptic's `log`, or anything past the `followup_ask_max` ceiling →
-   `status: "logged"` and one line appended to the **debt log**:
-   `tracker.debt_log` from FLOW.md, empty → `docs/DEBT.md`, created with a two-line header on first
-   use. The line: `- <date> · <ticket> · <title> — <why>`. Commit it on the work branch; pushing it
-   is a push like any other (flow-core §2, gate 1) — offer it in the same breath as the survey's
-   result, one question, and a declined push leaves the commit local for the next one. No issue is
-   opened and nothing else is asked: it is a file on the branch, for whoever next works on the
-   machinery.
+   `status: "logged"` in `meta.json` and nothing else. No file is written, no issue is opened,
+   nothing is asked. The entry keeps the record it already has — the `followups[]` row and its
+   artifact section — and `status`/`daily`/`next` stop showing it (flow-core §7).
 4c. **A `decision` answered** → write the answer into the artifact that owns it (the brief, the
    ADR-light) and set the entry `done` with the answer in `note`. When the answer changes code that
    has already shipped, that is the moment a real follow-up is born: record it as `out-of-scope` with

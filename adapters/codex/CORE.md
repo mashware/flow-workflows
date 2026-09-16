@@ -352,9 +352,9 @@ reader of `05-implementation.md` still sees the ideas in context.
   does not bind, a guard, ratchet or lint floor with slack in it, a stale knowledge card, prose that
   drifted from the code. Real, worth writing down, and nobody's next task — a tracker where these
   outnumber the product's defects makes the number lie and buries «a console goes silent and says
-  nothing» under «a floor has no subject». Their destination is the **debt log**, a versioned file
-  in the repo, not the tracker — **and it is not a question**: choosing the kind already decided it
-  (survey below).
+  nothing» under «a floor has no subject». They end at `status: "logged"` — the record they already
+  have, in `meta.json` and in the artifact section beside it, and nowhere else — **and it is not a
+  question**: choosing the kind already decided it (survey below).
 - **`decision`** — a product question the current diff depends on: what the user sees when X,
   whether closing Y also does Z, how much of the surface a notice may take. **A missing decision is
   not deferred work.** Parking it does not shrink the diff, it makes the diff guess — and the guess
@@ -393,11 +393,11 @@ applies the bar itself):
 
 - **`drop`** → `declined`, the skeptic's reason in `note`. Still readable in the artifact and in
   `meta.json`, never asked, never counted, never shown again by `status`/`daily`/`next`.
-- **`log`** → straight to the debt log, no question, same destination as `tooling`.
+- **`log`** → `logged`, no question, same destination as `tooling`.
 - **`ticket`** → these are what the user is asked about, and **only the strongest
   `tracker.followup_ask_max`** of them (empty → **2**). The rest are logged, with one line saying
-  how many and where they went. **A finished work never becomes more than `followup_ask_max`
-  questions**, whatever the phases found. `0` → nothing is ever asked and everything is logged.
+  how many. **A finished work never becomes more than `followup_ask_max` questions**, whatever the
+  phases found. `0` → nothing is ever asked and everything is logged.
 
 Then, and only then, the survey:
 
@@ -405,13 +405,16 @@ Then, and only then, the survey:
   **Not worth it** · **Later**. The `title` and `why` are the entire prompt. **`decision` entries
   are asked as their product question** — they never go to the skeptic, a question's value not being
   a thing to refute — and sit outside the ceiling.
-- **`tooling` asks nothing.** One line in the debt log, `logged`, and a count on screen. Asking
-  **Log it** about a lint floor with slack in it was one question too many.
+- **`tooling` asks nothing.** `logged`, and a count on screen. Asking **Log it** about a lint floor
+  with slack in it was one question too many.
 - **Not worth it** → `declined`, with the reason if given. Never asked again.
-- **The debt log**: `tracker.debt_log` from FLOW.md (empty → `docs/DEBT.md`), a versioned Markdown
-  file created on first use — `- <date> · <ticket> · <title> — <why>` — committed on the work branch
-  so it travels with the MR/PR. Read by whoever next works on the machinery, triaged by nobody;
-  `status` and `daily` stop showing it. It is a file on the branch, not a queue.
+- **`logged` is a status, not a destination.** The entry stays exactly where it already is — in
+  `meta.json.followups[]` and in its artifact section — and no file is written anywhere. This used
+  to append a line to a versioned debt log, one per repo; **that file is gone**. No command read it,
+  `status` and `daily` excluded it on purpose, and it duplicated a record the work already keeps
+  forever, so it grew without ever being triaged. A note nobody reads is not a lighter obligation
+  than a ticket, it is the same obligation with the reader removed. If a gap in the machinery is
+  worth someone's time, it is worth a ticket; if it is not, the record in the work is where it ends.
 - **A `decision` answered** → the answer is written into the artifact that owns it and the entry
   becomes `done` with the answer in `note`. Deferred again → stays `proposed`.
 - **Later** → stays `proposed`, and surfaces in `status`, `daily` and `next` until it is decided.
@@ -421,8 +424,8 @@ Then, and only then, the survey:
 - No entries still `proposed` → **the step does not exist**. Never show an empty survey.
 
 **One line on screen, not one per entry.** However many were written, a stop mentions deferred work
-in **at most one line** (§3): the one that escalated, named in product terms, plus a count and a
-destination for the rest — «2 more went to `docs/DEBT.md`». Never a list of seven titles, and never
+in **at most one line** (§3): the one that escalated, named in product terms, plus a count for the
+rest — «2 more recorded in the work, not escalated». Never a list of seven titles, and never
 «7 findings are waiting for triage» as the last thing the user reads before closing the pane.
 
 **Creating an issue is outward-facing, so it asks in every mode**, `auto` included — the same
