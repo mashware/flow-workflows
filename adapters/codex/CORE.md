@@ -232,6 +232,10 @@ single largest token cost of a work, so every work carries a short handoff:
   have is the cue to open the artifact — never a licence to guess.
 - Missing summary (a work started before this rule) → read the artifacts as before, write the
   summary at your Close.
+- **Name the phase, never the command.** An artifact outlives the session that wrote it and may be
+  resumed from a different agent, where the same phase is invoked under another name. Write the
+  phase — `validate`, `review`, `ship #2` — not the invocation. Applies to `00-summary.md`,
+  `panel.json`'s `Next` line and every numbered artifact; the prose you *say* at a stop is exempt.
 
 ## 6. Delegating — what every brief owes the parent
 
