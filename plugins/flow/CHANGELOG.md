@@ -5,6 +5,33 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.64.0 — Announcing the next step was how the run ended  ·  2026-09-16
+
+**In short**
+- **A phase that chains no longer reports.** In `guided`/`auto` the turn opens with the call that starts the next command; the summary it used to print goes to the phase artifact.
+- **`I need: nothing, continuing with X` is gone.** That line now names the decision or action being waited on — nothing else.
+- **Progress lines belong to `panel.json`** (`Now`, `Next`): whoever is watching sees the run advance without it costing a turn or a stop.
+- **Nothing changes for `manual`, for blockers, or for `ship`** — those are real stops and still open with the full header.
+
+The stop header exists because the user comes back to a screen they walked away from. It is the
+shape of a goodbye — ticket, plan, what just finished, what is needed — and a model that has just
+written a goodbye stops. That is what `"nothing, continuing with X"` asked for: render the
+farewell, then keep working. In practice the run ended there, having just promised it would not,
+and the user found a pane sitting idle under a sentence saying it was busy.
+
+The promise was not merely unlikely, it was unkeepable on some harnesses. A turn ends when the
+model emits text with no tool call behind it: emitting the text *is* handing control back. Claude
+Code allows text and a tool call in the same message, so there the failure is a habit; on an
+OpenAI-shaped API, where a message carrying content and no `tool_calls` is terminal by
+construction, there was never a way for the sentence to come true.
+
+So the contract is now ordered rather than intended. `flow-core §3` opens by defining a stop — a
+question, a hard gate, the end of the flow — and says that everything else, however much has just
+finished, is not one. When the next command runs anyway, the continuing call goes **first** and no
+report precedes it. `feat:start`, `feat:build`, `feat:review` and `bug:fix` say the same at their
+own `## Close`, where the temptation actually lives, and `feat:review`'s `Cost:` line travels to
+the stop the run does reach instead of being announced at a juncture that is not one.
+
 ## v0.63.0 — A file collected everything nobody was going to do  ·  2026-09-16
 
 **In short**

@@ -153,5 +153,5 @@ Never the third way: building the mechanism here because the ticket says bug.
 - Update `meta.json`: `phase = "fix"`, add to `phases_done`.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Suggest next: `/flow:bug:validate` (S/M/L) or `/flow:bug:review` (XS).
-- Report **following the stop header** (flow-core §3) and name **any premise left unsettled by §2.2** in one line — what breaks if the cause was not the whole cause. `validate` builds its regression test on that assumption, so it is the one thing the user should hear before it is written.
+- Report **following the stop header** (flow-core §3) **when this is a stop** — in `guided`/`auto` the next command runs in this same turn, so the body below goes to the artifact and the turn opens with the call that chains. Name **any premise left unsettled by §2.2** in one line — what breaks if the cause was not the whole cause. `validate` builds its regression test on that assumption, so it is the one thing the user should hear before it is written.
 - **Autonomy handoff** (flow-core §2): `manual` → propose that command with a single `AskUserQuestion` (recommended option by default), invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn.

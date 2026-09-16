@@ -281,6 +281,6 @@ Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket`, `{ASSIGNEE}` = `tr
 ## 7. Close
 
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5) — first written in §6; refresh it if §6.5 changed anything.
-- Report **following the stop header** (flow-core §3), branch added, body 2-3 lines: ticket, size, branch; recommended next command per the §4 table — in `guided`/`auto` you run it in this same turn, so say so in the `I need:` line instead of asking.
+- Report **following the stop header** (flow-core §3), branch added, body 2-3 lines: ticket, size, branch; recommended next command per the §4 table — in `guided`/`auto` you run it in this same turn, so there is no report and no question here: update `panel.json` and chain (flow-core §3).
 - Apply `autonomy.mode`: `manual` → stop and let the user invoke the recommended command; `guided`/`auto` → chain into it, subject to the hard gates (the §5 branch-base ambiguity already stops on its own).
 """
