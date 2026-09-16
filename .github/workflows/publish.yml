@@ -35,11 +35,14 @@ jobs:
           python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"        # not the floor `engines` declares — that is preflight's job
           registry-url: "https://registry.npmjs.org"
 
+      # Trusted publishing landed in npm 11.5.1, and the runner ships 10.x. Pinned to the major
+      # rather than `@latest`: npm 12 requires Node 22.22+/24.15+ and broke this step the first
+      # time it ran, which is a poor way to find out on the day of a release.
       - name: npm 11.5.1+, where trusted publishing landed
-        run: npm install --global npm@latest
+        run: npm install --global "npm@^11.5.1"
 
       - name: the tag and package.json must agree
         id: version
