@@ -136,8 +136,8 @@ was wise.
 | Mode | Decisions | End of the command |
 |---|---|---|
 | `manual` | Stop at every decision point | Propose the next command with one `AskUserQuestion` (recommended step as default). Invoke it only on confirmation. Never make the user type it. |
-| `guided` | Resolve low-risk, unambiguous ones with the recommended default and **record** the choice in the phase artifact. Ask at genuine decision points. | Chain into the recommended next command automatically. |
-| `auto` | As `guided`, plus resolve the remaining decision points with sensible, recorded defaults. | Chain without pausing. |
+| `guided` | Resolve low-risk, unambiguous ones with the recommended default and **record** the choice in the phase artifact. Ask at genuine decision points. | Chain into the recommended next command automatically — the call that starts it first, no closing report before it (§3). |
+| `auto` | As `guided`, plus resolve the remaining decision points with sensible, recorded defaults. | Chain without pausing, same rule. |
 
 **Hard gates — stop and ask in every mode, no exceptions:**
 1. Any push or MR/PR creation (all of `ship`).
@@ -164,15 +164,33 @@ Asking these anyway is how an unattended run degrades into a manual one.
 
 ## 3. Reporting — how every stop reads
 
+**A stop is where you hand the screen back**: a question, a hard gate, the end of the flow.
+Nothing else is a stop, however much has just finished — a phase closing into the next one, a
+chained command, a fan-out about to launch. The header below is the *shape* of a stop, so writing
+it is how you stop: render it while meaning to continue and you will stop anyway. The shape
+decides, not the intention — and on a harness where a message carrying text and no tool call is
+terminal by construction, the turn is over before you notice.
+
+- **Continuing? Do not report — act.** No header, no closing bullets. At most one short line naming
+  what you are moving to, and the tool call that starts it **in the same message**. Never end a
+  message on a promise to keep going.
+- **The continuing call goes first.** When a step closes and the next one runs anyway
+  (`guided`/`auto` chaining, §2), the turn opens with the call that starts it, not with prose about
+  the one that ended. **A report is never the last thing in a turn you meant to continue.**
+- **Progress belongs to the panel, not to a turn.** Someone watching reads `panel.json` (§4):
+  `Now`, `Next`. Writing it costs no turn and no stop; saying it in chat costs both.
+- **Stopping? Then say so.** `I need:` names the decision or the action you are waiting on. It
+  never announces that you are continuing — if you were, you would not be writing this header.
+
 The user comes back to a screen they walked away from, often with other works in other panes.
-They have read none of your tool calls, subagent reports or artifacts. So every stop — a question,
-a hard gate, the end of the turn — **opens with this header**, before any prose:
+They have read none of your tool calls, subagent reports or artifacts. So every stop **opens with
+this header**, before any prose:
 
 ```
 <TICKET> · <size> · phase <phase> · MR #<n> of <N>
 Plan: <k> of <N> shipped — #1 <url/id> <state> · #2 <state> · #3–#N pending
 Now: <one line — what just finished>
-I need: <one line — the decision or action needed, or "nothing, continuing with X">
+I need: <one line — the decision or action you are waiting on>
 ```
 
 - Every fact from `meta.json` (`ticket`, `size`, `phase`, `mrs[]`), never from memory. Drop the `MR #` and `Plan:` lines when the work has no `mrs`.
@@ -186,7 +204,8 @@ I need: <one line — the decision or action needed, or "nothing, continuing wit
 ## 4. Live panel — `panel.json`
 
 Whenever the state a panel would show changes, overwrite `.claude/work/<work>/panel.json`
-**whole** (never patch) from `meta.json` plus what you know right now:
+**whole** (never patch) from `meta.json` plus what you know right now. **Any progress line you were
+about to type into the chat is a panel write instead** (§3):
 
 ```json
 {
