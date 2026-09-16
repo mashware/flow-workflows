@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -596,8 +596,79 @@ async function review(argv) {
   }
 
   const text = out.join('\n')
+  if (argv.includes('--record')) {
+    recordCost(built.work, {
+      phase: 'review',
+      at: new Date().toISOString(),
+      reviewers: results.length,
+      usd: costs.length ? Number(costs.reduce((a, b) => a + b, 0).toFixed(6)) : null,
+      source: costs.length ? 'harness' : 'not reported',
+    })
+  }
   const outFile = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : null
   if (outFile) { writeFileSync(outFile, `${text}\n`); console.log(`wrote ${outFile}`) } else console.log(text)
+}
+
+// --- cost ------------------------------------------------------------------------------
+// `review` reports `<n>/<budget_max> subagents launched`, which is a headcount: two runs
+// with the same count differ by an order of magnitude depending on the turns each agent
+// took. The ceilings are tuned against that headcount, so they are tuned against the wrong
+// number — and nobody can say whether lowering `review_depth` actually helped.
+//
+// What this does NOT do is guess. A harness that reports nothing gets "not reported", and
+// every figure it does show is a client-side estimate, which is what the harnesses call
+// them too.
+
+function recordCost(work, entry) {
+  if (!work) return
+  const p = join(work, 'meta.json')
+  if (!existsSync(p)) return
+  let meta
+  try { meta = JSON.parse(readFileSync(p, 'utf8')) } catch { return }
+  meta.cost = Array.isArray(meta.cost) ? meta.cost : []
+  meta.cost.push(entry)
+  // Write through a temporary file: meta.json is the flow's own state, and a half-written
+  // one loses the work, not just the figure.
+  const tmp = `${p}.tmp`
+  writeFileSync(tmp, `${JSON.stringify(meta, null, 2)}\n`)
+  renameSync(tmp, p)
+}
+
+function cost(argv) {
+  const repo = git(['rev-parse', '--show-toplevel']).trim()
+  if (!repo) { console.error('flow cost: not a git checkout'); process.exit(1) }
+  const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
+  const work = workFolder(repo, branch)
+  if (!work) {
+    console.log(`No work on \`${branch}\`, so nothing has been recorded against it.`)
+    return
+  }
+  let meta = {}
+  try { meta = JSON.parse(readFileSync(join(work, 'meta.json'), 'utf8')) } catch {}
+  const entries = Array.isArray(meta.cost) ? meta.cost : []
+
+  console.log(`# Cost — ${meta.ticket ?? branch}`)
+  console.log()
+  if (!entries.length) {
+    console.log('Nothing recorded yet. A phase records here when it can measure what it spent:')
+    console.log('`flow review --record` writes what the harness reported for its round, and a')
+    console.log('harness that reports no figure is recorded as "not reported" rather than guessed.')
+    return
+  }
+  console.log('| phase | when | agents | reported | source |')
+  console.log('|---|---|---|---|---|')
+  let total = 0
+  for (const e of entries) {
+    if (typeof e.usd === 'number') total += e.usd
+    console.log(`| ${e.phase ?? '?'} | ${String(e.at ?? '').slice(0, 16).replace('T', ' ')} `
+      + `| ${e.reviewers ?? '—'} | ${typeof e.usd === 'number' ? `$${e.usd.toFixed(4)}` : '—'} `
+      + `| ${e.source ?? '?'} |`)
+  }
+  console.log()
+  console.log(`Recorded so far: **$${total.toFixed(4)}** over ${entries.length} run(s).`)
+  console.log()
+  console.log('These are the harness\'s own client-side estimates and can differ from a bill.')
+  console.log('Phases with no row did not measure anything — absence here is not zero.')
 }
 
 function usage() {
@@ -606,7 +677,8 @@ function usage() {
   npx flow-workflows install <harness> [project]
   npx flow-workflows check
   npx flow-workflows bundle [--base <ref>] [--checks] [--harness <name>] [--max-file-bytes N]
-  npx flow-workflows review [--out <file>] [same options as bundle]
+  npx flow-workflows review [--out <file>] [--record] [same options as bundle]
+  npx flow-workflows cost
 
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
   "project" installs into the current repo instead of your user folder.
@@ -624,6 +696,10 @@ Claude Code and Codex CLI have their own marketplaces:
   each, and deduplicates what comes back. Empty exec_cmd = the agentic panel reviews,
   as it always has.
 
+"cost" prints what each phase of this branch's work actually reported spending, from
+  what --record wrote into meta.json. A harness that reports no figure is recorded as
+  "not reported": a headcount of subagents is not a cost, and neither is a guess.
+
 Updating: re-run the install command — it sweeps the previous version first.
 Docs: https://github.com/mashware/flow-workflows`)
 }
@@ -631,6 +707,7 @@ Docs: https://github.com/mashware/flow-workflows`)
 const [cmd, tool, scope] = process.argv.slice(2)
 
 if (cmd === 'bundle') bundle(process.argv.slice(3))
+else if (cmd === 'cost') cost(process.argv.slice(3))
 else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()
 else if (cmd === 'install' && tool === 'claude') claude()

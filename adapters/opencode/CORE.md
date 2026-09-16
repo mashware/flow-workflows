@@ -234,6 +234,15 @@ about to type into the chat is a panel write instead** (§3):
 - **When:** (a) in pre-flight, as soon as `meta.json` is loaded; (b) immediately **before** every stop header; (c) **before** any long stretch (fan-out, full suite, CI poll) — never after, so a step that dies halfway is not shown as finished. When the stretch will outlast the ~30 min staleness warning, set `stale_after_minutes` to what it will really take; (d) wherever `## Close` updates `meta.json`.
 - **Rules:** `phase` is the phase you are **running now** (not `meta.json.phase`, which advances only at Close). `header: true` means ticket, type, phase and age are drawn by the reader — do not repeat them in `lines`. Keep it under ~14 lines. Every fact from `meta.json` and the artifacts — an invented MR/PR state is worse than a blank panel. `updated_at` from the real clock (`date -Iseconds`), never carried over. Write in the language of the work's artifacts. No work folder (lightweight `respond`/`green`) → nothing to write.
 
+### `meta.json.cost[]` — what a phase measured, when it could
+
+A phase that can measure what it spent appends one entry: `{ "phase": "review", "at": "<ISO>",
+"reviewers": 8, "usd": 0.0124, "source": "harness" }`. `flow review --record` writes it; `flow cost`
+reads it back per phase. Two rules, and they are the reason the block is worth having: a harness
+that reports no figure is recorded with `"source": "not reported"` rather than estimated, and a
+phase with no entry measured nothing — **absence is not zero**. Every figure is the harness's own
+client-side estimate and can differ from a bill.
+
 ## 5. Work summary — `00-summary.md`
 
 Each phase reads what the previous ones wrote. Reading every artifact whole on every phase is the
