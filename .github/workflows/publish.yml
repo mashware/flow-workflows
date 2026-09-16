@@ -60,6 +60,13 @@ jobs:
             exit 1
           fi
           echo "n=${pkg#v}" >> "$GITHUB_OUTPUT"
+          # A prerelease must never move `latest`: every `npx flow-workflows` in the wild
+          # resolves that tag, so publishing 0.65.0-rc.1 as latest would serve a release
+          # candidate to everyone who never asked for one. The suffix decides the channel.
+          case "${pkg#v}" in
+            *-*) echo "channel=next"   >> "$GITHUB_OUTPUT" ;;
+            *)   echo "channel=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
 
       - name: the same preflight a maintainer runs before tagging
         run: python3 script/check.py
@@ -90,8 +97,16 @@ jobs:
         # repository has one, so a maintainer can switch back without editing this file.
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+          CHANNEL: ${{ steps.version.outputs.channel }}
+        run: npm publish --provenance --access public --tag "$CHANNEL"
 
       - name: say what npm now serves
+        env:
+          CHANNEL: ${{ steps.version.outputs.channel }}
         run: |
-          echo "npm: flow-workflows@$(npm view flow-workflows version)" >> "$GITHUB_STEP_SUMMARY"
+          echo "npm \`$CHANNEL\`: flow-workflows@$(npm view "flow-workflows@$CHANNEL" version)" \
+            >> "$GITHUB_STEP_SUMMARY"
+          if [ "$CHANNEL" != "latest" ]; then
+            echo "npm \`latest\`: flow-workflows@$(npm view flow-workflows version) (untouched)" \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi

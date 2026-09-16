@@ -299,10 +299,19 @@ def check_version_matches_changelog():
     except FileNotFoundError:
         fail(CHANGELOG, "missing")
         return
+    # A release candidate is the same tree as the release it precedes, tagged early so it
+    # can be installed and run before it is `latest` (CONTRIBUTING §Testing a change before
+    # it ships). Its changelog entry is already written under the final number, so the
+    # manifest may carry a `-rc.N` suffix the changelog does not — and only that suffix.
+    release, _, pre = version.partition("-") if version else ("", "", "")
+    if pre and not re.fullmatch(r"rc\.[1-9][0-9]*", pre):
+        fail(MANIFEST, f"version `{version}`: the only prerelease suffix this repo "
+                       f"publishes is `-rc.N`")
+
     m = re.search(r"^## v(\S+)", changelog, re.M)
     if not m:
         fail(CHANGELOG, "no `## vX.Y.Z` heading found")
-    elif m.group(1) != version:
+    elif m.group(1) != release:
         fail(CHANGELOG, f"newest entry is v{m.group(1)} "
                         f"but {MANIFEST} says {version}")
 

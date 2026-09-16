@@ -58,6 +58,45 @@ Stated as plainly as the README states what the plugin does not ship, and for th
 
 Releases are cut by the maintainer; [RELEASING](RELEASING.md) is the procedure.
 
+## Testing a change before it ships
+
+A release here is a tag on whatever is in the tree, and the preflight has no test suite behind it:
+it checks that the tree would *load*, not that the flow still *works*. So a change that alters what
+a phase does gets run on a real repo before it is tagged — and every way of doing that already
+exists, it was simply written nowhere.
+
+**Claude Code, from your own checkout.** The plugin loads straight from the branch:
+
+```bash
+claude plugin validate ./plugins/flow      # the same validation a marketplace submission runs
+claude --plugin-dir ./plugins/flow         # then /reload-plugins after each edit
+```
+
+A local `--plugin-dir` plugin takes precedence over the installed one of the same name for that
+session, so you can exercise a branch without uninstalling the release you use every day.
+
+**Claude Code, for someone who should not have to clone.** `claude --plugin-url <url-to.zip>` loads
+a plugin from an archive for one session — a CI artifact of `plugins/flow/`, for instance.
+
+**opencode, Gemini CLI, Codex CLI, Hermes — from a branch, with nothing published.** npm resolves a
+git spec, so the installer runs straight out of the branch:
+
+```bash
+npx github:mashware/flow-workflows#<branch> install codex
+```
+
+**From npm, once there is a release candidate.** `npx flow-workflows@next` — see
+[RELEASING §A release candidate](RELEASING.md#a-release-candidate). `latest` never moves for an rc.
+
+### What "tested" means for a change to the flow itself
+
+A green preflight says the tree loads. For anything that changes what a phase does — a new command,
+a CLI subcommand, a rule a phase now enforces — the bar is **one real work driven start to ship on
+a repo that is not this one**. `examples/symfony/` names the obvious candidate, and the fact that
+its stack is one the plugin must not know about is what makes it the right test rather than a
+convenient one.
+
+
 ## How we write
 
 - **An issue is *Problem / Proposal / Files*.** The problem states what a user runs into, with the
