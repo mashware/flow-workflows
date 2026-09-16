@@ -85,6 +85,10 @@ workers  (empty)  →  fan-out rounds — falls back to `agents`
   handoff; nothing enforces it.
 - One line: a role set in `agents.*` keeps its own agent definition's model, so a round can mix
   configured and self-declared models.
+- **`agents.exec_cmd` set → say so here, next to the models it makes inert.** That command picks the
+  model for the review round it runs, so neither key reaches those reviewers while every other phase
+  still resolves them normally. A key that silently does nothing is worse than one that is absent,
+  and this is the only place a reader finds out.
 
 #### 1.5.3 Defaults that keep being used
 

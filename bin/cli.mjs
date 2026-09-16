@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ADAPTERS = join(ROOT, 'adapters')
@@ -279,7 +279,7 @@ function fence(body, lang = '') {
   return `${bar}${lang}\n${body.replace(/\n*$/, '\n')}${bar}`
 }
 
-function bundle(argv) {
+function buildBundle(argv) {
   const flag = (name, fallback = null) => {
     const i = argv.indexOf(name)
     return i === -1 ? fallback : argv[i + 1]
@@ -421,7 +421,183 @@ function bundle(argv) {
     }
   }
 
-  console.log(out.join('\n'))
+  return { text: out.join('\n'), repo, cfg, branch, work }
+}
+
+function bundle(argv) {
+  console.log(buildBundle(argv).text)
+}
+
+// --- review ----------------------------------------------------------------------------
+// The panel is the most expensive thing the flow does, and most of what it spends is not
+// review: each subagent is an agentic loop that rediscovers the diff before reading it.
+// Once `bundle` hands it the material, a reviewer needs one turn, not eighteen.
+//
+// This spawns a command. It does not know, and must not know, what is behind it: a
+// subscription login, an API key, another vendor's CLI, or a script of your own. That is
+// what `agents.exec_cmd` is — and why no provider SDK belongs in this package.
+
+const REVIEW_SCHEMA = JSON.stringify({
+  type: 'object',
+  properties: {
+    findings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          file: { type: 'string' },
+          line: { type: 'integer' },
+          severity: { type: 'string', enum: ['blocker', 'major', 'minor', 'nit'] },
+          what: { type: 'string' },
+          fix: { type: 'string' },
+        },
+        required: ['file', 'what', 'fix'],
+      },
+    },
+  },
+  required: ['findings'],
+})
+
+// Neutral dimensions, used only when `quality.reviewers` is empty. Naming a stack here
+// would be the leak the preflight exists to catch; these are categories, not tools.
+const DEFAULT_ROLES = [
+  'correctness: logic that does not do what the change claims, broken edge cases, error paths',
+  'security: untrusted input reaching a sink, authorisation gaps, secrets, unsafe defaults',
+  'data access: queries in loops, missing bounds, writes without a transaction, schema risk',
+  'tests: what the change broke and the tests do not cover, and assertions that prove nothing',
+]
+
+function firstJson(text) {
+  // Tolerant on purpose: only one harness has a structured-output flag, and requiring it
+  // would lock every other one out. Find the first balanced JSON object and parse that.
+  for (let i = text.indexOf('{'); i !== -1; i = text.indexOf('{', i + 1)) {
+    let depth = 0, inStr = false, esc = false
+    for (let j = i; j < text.length; j++) {
+      const c = text[j]
+      if (esc) { esc = false; continue }
+      if (c === '\\') { esc = true; continue }
+      if (c === '"') { inStr = !inStr; continue }
+      if (inStr) continue
+      if (c === '{') depth++
+      else if (c === '}' && --depth === 0) {
+        try { return JSON.parse(text.slice(i, j + 1)) } catch { break }
+      }
+    }
+  }
+  return null
+}
+
+function runRole(cmd, role, pack, repo) {
+  const shellSafe = (s) => String(s).replace(/(["\\$`])/g, '\\$1')
+  const line = cmd.replaceAll('{ROLE}', shellSafe(role)).replaceAll('{SCHEMA}', shellSafe(REVIEW_SCHEMA))
+  const brief = [
+    `You are reviewing a diff. Your dimension, and nothing else: ${role}`,
+    '',
+    'Report findings only. One per entry, each with the file, the line if you can place it,',
+    'what is wrong and the fix. No preamble, no summary, no praise. Nothing to report is a',
+    'valid answer: return an empty list.',
+    '',
+    `Answer with JSON matching this schema and nothing else: ${REVIEW_SCHEMA}`,
+    '',
+    '--- the change under review ---',
+    '',
+    pack,
+  ].join('\n')
+
+  return new Promise((resolve) => {
+    const child = spawn('sh', ['-c', line], { cwd: repo, stdio: ['pipe', 'pipe', 'pipe'] })
+    let out = '', err = ''
+    child.stdout.on('data', (d) => { out += d })
+    child.stderr.on('data', (d) => { err += d })
+    child.on('error', (e) => resolve({ role, error: e.message, findings: [] }))
+    child.on('close', (code) => {
+      const parsed = firstJson(out)
+      if (!parsed || !Array.isArray(parsed.findings)) {
+        resolve({ role, code, error: `no JSON findings in the output${err ? ` (stderr: ${err.trim().slice(0, 200)})` : ''}`, findings: [] })
+        return
+      }
+      resolve({ role, code, findings: parsed.findings, cost: parsed.total_cost_usd ?? null })
+    })
+    child.stdin.end(brief)
+  })
+}
+
+async function review(argv) {
+  const built = buildBundle(argv)
+  const { cfg, repo } = built
+  const cmd = cfg.agents?.exec_cmd
+  if (!cmd) {
+    console.error('flow review: `agents.exec_cmd` is empty in FLOW.md.')
+    console.error('That key is the opt-in for running the panel from here; without it the')
+    console.error('agentic panel inside /flow:*:review is what reviews, exactly as before.')
+    console.error('It takes any non-interactive harness invocation — {ROLE} and {SCHEMA} are')
+    console.error('substituted, and the diff arrives on stdin.')
+    process.exit(1)
+  }
+
+  const configured = Array.isArray(cfg.quality?.reviewers) ? cfg.quality.reviewers : []
+  const roles = configured.length ? configured : DEFAULT_ROLES
+  const fanout = Number(cfg.agents?.fanout_max) || 4
+  const budget = cfg.agents?.budget_max === '0' ? Infinity : (Number(cfg.agents?.budget_max) || 12)
+  const cap = Math.min(roles.length, budget)
+  const dropped = roles.slice(cap)
+
+  const results = []
+  for (let i = 0; i < cap; i += fanout) {
+    // `fanout_max` bounds the round, `budget_max` bounds the command: a round that reaches
+    // past the ceiling is how a panel ends up an order of magnitude over what was asked for,
+    // so the slice is capped by both.
+    const round = roles.slice(i, Math.min(i + fanout, cap))
+    results.push(...await Promise.all(round.map((r) => runRole(cmd, r, built.text, repo))))
+  }
+
+  // Deduplicate in code. Two reviewers finding the same thing is the panel working; the
+  // main thread paying model prices to notice that is not.
+  const seen = new Map()
+  for (const r of results) {
+    for (const f of r.findings) {
+      const key = `${f.file}:${f.line ?? ''}:${String(f.what).toLowerCase().replace(/\W+/g, ' ').trim().slice(0, 80)}`
+      if (seen.has(key)) { seen.get(key).roles.push(r.role); continue }
+      seen.set(key, { ...f, roles: [r.role] })
+    }
+  }
+  const order = { blocker: 0, major: 1, minor: 2, nit: 3 }
+  const findings = [...seen.values()].sort((a, b) => (order[a.severity] ?? 9) - (order[b.severity] ?? 9))
+
+  const out = [`# Review — ${built.branch}`, '']
+  out.push(`${findings.length} finding(s) from ${results.length} reviewer(s), deduplicated.`)
+  out.push('')
+  for (const f of findings) {
+    out.push(`- **${f.severity ?? 'unrated'}** \`${f.file}${f.line ? `:${f.line}` : ''}\` — ${f.what}`)
+    out.push(`  fix: ${f.fix}`)
+    if (f.roles.length > 1) out.push(`  raised by ${f.roles.length} reviewers`)
+  }
+  if (!findings.length) out.push('_none_')
+  out.push('')
+  out.push('## Cost')
+  out.push('')
+  out.push(`${results.length}/${budget === Infinity ? '∞' : budget} reviewers, ${fanout} per round.`)
+  const costs = results.map((r) => r.cost).filter((c) => typeof c === 'number')
+  out.push(costs.length
+    ? `Reported by the harness: $${costs.reduce((a, b) => a + b, 0).toFixed(4)} over ${costs.length} run(s).`
+    : 'The harness reported no cost figure, so this run has none to show.')
+  const failed = results.filter((r) => r.error)
+  if (failed.length) {
+    out.push('')
+    out.push('## Reviewers that returned nothing usable')
+    out.push('')
+    failed.forEach((r) => out.push(`- ${r.role.split(':')[0]} — ${r.error}`))
+  }
+  if (dropped.length) {
+    out.push('')
+    out.push(`## Skipped for budget`)
+    out.push('')
+    dropped.forEach((r) => out.push(`- ${r.split(':')[0]}`))
+  }
+
+  const text = out.join('\n')
+  const outFile = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : null
+  if (outFile) { writeFileSync(outFile, `${text}\n`); console.log(`wrote ${outFile}`) } else console.log(text)
 }
 
 function usage() {
@@ -430,6 +606,7 @@ function usage() {
   npx flow-workflows install <harness> [project]
   npx flow-workflows check
   npx flow-workflows bundle [--base <ref>] [--checks] [--harness <name>] [--max-file-bytes N]
+  npx flow-workflows review [--out <file>] [same options as bundle]
 
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
   "project" installs into the current repo instead of your user folder.
@@ -442,6 +619,11 @@ Claude Code and Codex CLI have their own marketplaces:
   rediscovering it in ten. --checks also runs quality.static_analysis and copies its
   output out verbatim. Paths in git.diff_exclude are left out of the diff.
 
+"review" runs one reviewer per role through agents.exec_cmd — any non-interactive
+  harness invocation — over that same pack, one turn each instead of an agentic loop
+  each, and deduplicates what comes back. Empty exec_cmd = the agentic panel reviews,
+  as it always has.
+
 Updating: re-run the install command — it sweeps the previous version first.
 Docs: https://github.com/mashware/flow-workflows`)
 }
@@ -449,6 +631,7 @@ Docs: https://github.com/mashware/flow-workflows`)
 const [cmd, tool, scope] = process.argv.slice(2)
 
 if (cmd === 'bundle') bundle(process.argv.slice(3))
+else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()
 else if (cmd === 'install' && tool === 'claude') claude()
 else if (cmd === 'install' && HARNESSES[tool]) install(tool, scope === 'project' ? 'project' : 'global')
