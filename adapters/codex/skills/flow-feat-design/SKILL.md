@@ -207,7 +207,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 | AC1 | Given <state>, when <action>, then <observable result with literal value> | test \| manual |
 | AC2 | … | … |
 
-`Proof` is a hint at how the criterion will be demonstrated in `$flow-feat-validate`: `test` (an automated test can prove it) or `manual` (UI / end-to-end flow verified together with the user). It is a hint, not a commitment — `$flow-feat-validate` builds the real criterion→test mapping and gates against it.
+`Proof` is a hint at how the criterion will be demonstrated in the validate phase: `test` (an automated test can prove it) or `manual` (UI / end-to-end flow verified together with the user). It is a hint, not a commitment — validate builds the real criterion→test mapping and gates against it.
 
 ## Modules/layers affected
 - <module/layer> — <what changes>

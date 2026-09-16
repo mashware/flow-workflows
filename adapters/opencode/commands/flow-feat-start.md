@@ -107,7 +107,7 @@ Before classifying size, list open questions affecting the design that neither t
 - What counts as "success" (metric, event, log).
 - Unspecified edge cases (empty input, duplicate, network failure).
 
-Any → **ask them all at once** with `AskUserQuestion` (max 4, the most blocking). Do not invent or assume. Record answers in `01-context.md` under "Decisions clarified in /flow-feat-start".
+Any → **ask them all at once** with `AskUserQuestion` (max 4, the most blocking). Do not invent or assume. Record answers in `01-context.md` under "Decisions clarified at start".
 
 ## 3.5 Cross-repo scope
 
@@ -249,7 +249,7 @@ Structure:
 ## Ticket
 <ticket summary in 3-5 bullets>
 
-## Acceptance criteria (provisional — promoted to first-class criteria in /flow-feat-design)
+## Acceptance criteria (provisional — promoted to first-class criteria in the design phase)
 <list from tracker or "not specified". These are the WHAT pinned from the ticket so it is never lost; `/flow-feat-design` refines them into an enumerated, verifiable list (`AC1`, `AC2`, …) that `/flow-feat-validate` gates against.>
 
 ## Decided in the ticket thread
@@ -265,14 +265,14 @@ Structure:
 - Branch: <name>
 - Last commit: <short hash + message>
 
-## Decisions clarified in /flow-feat-start
+## Decisions clarified at start
 <list question → user answer, or "no open questions">
 
 ## Estimated size: <XS|S|M|L>
 <2 lines justifying>
 ```
 
-Ticket-less → fill `## Ticket` and `## Acceptance criteria` from the §2.5 draft, the conversation's closed decisions under `## Decisions clarified in /flow-feat-start`, plus one line: synthesized from conversation; tracker issue created (id) or local-only.
+Ticket-less → fill `## Ticket` and `## Acceptance criteria` from the §2.5 draft, the conversation's closed decisions under `## Decisions clarified at start`, plus one line: synthesized from conversation; tracker issue created (id) or local-only.
 
 ## 6.5 Tracker: move to in progress
 

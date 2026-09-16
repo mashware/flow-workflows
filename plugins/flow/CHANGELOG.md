@@ -5,6 +5,31 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.61.0 — An artifact named a command the next agent did not have  ·  2026-09-16
+
+**In short**
+- **Artifacts now name the phase, never the command** — `validate`, `review`, `ship #2`, not the invocation that runs them. A work folder outlives the session that wrote it, and the agent that resumes it may not be the one that started it.
+- **The bug was silent and cross-harness**: a work started in Claude Code wrote `/flow:feat:review` into `06-review.md` and `panel.json`; resumed from opencode, Codex, Gemini or Hermes, the handoff dictated a command that does not exist there — each has its own prefix.
+- **Five templates fixed** — the `## Next step` block of `06-review.md`, two `01-context.md` headings, the `Next` line of the `panel.json` example in `work:resume`, and the `Proof` note inside `03-design.md`.
+- **The real cause was the absence of a rule, not a bad template**: flow-core §5 already described the handoff in neutral terms and never asked for a command — the agent filled that neutral slot with one on its own. §5 now says so explicitly, for every artifact.
+- **The prose you *say* at a stop is untouched** — the generator already rewrites it to each harness's prefix. Only what gets written to disk changed.
+
+The handoff between phases is the one piece of a work that is read by whoever comes next, and until
+now it quietly assumed that whoever comes next is Claude Code. It is not: the same work folder is
+read by five harnesses, and `/flow:feat:review` is `/flow-feat-review` on opencode and Hermes,
+`$flow-feat-review` on Codex, `$flow:feat-review` in the Codex package. An artifact that spells out
+the invocation hands the next agent an instruction it cannot follow — and because the text looks
+authoritative, the agent repeats it to the user rather than translating it.
+
+The fix has two halves. The five templates that prescribed a literal command no longer do. And
+flow-core §5 carries the rule the templates were missing: **name the phase, never the command**,
+across `00-summary.md`, `panel.json`'s `Next` line and every numbered artifact. The second half is
+the one that matters — the summary contract was already neutral, which is why the templates alone
+never explained the volume of command names found in real work folders.
+
+Nothing about how a stop *reads* changes. The generator rewrites spoken prose per harness and
+always did; this is only about what survives on disk.
+
 ## v0.60.0 — A small change could rest on a belief nobody had checked  ·  2026-09-15
 
 **In short**

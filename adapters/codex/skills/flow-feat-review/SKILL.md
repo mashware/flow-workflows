@@ -334,8 +334,8 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 - modified tests: ✅ / ❌
 
 ## Next step
-<if there are blockers: "resolve and return to $flow-feat-review">
-<if none: "$flow-feat-validate">
+<if there are blockers: "resolve, then another review round">
+<if none: "validate">
 ```
 
 ## 9. Close

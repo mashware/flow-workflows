@@ -94,7 +94,7 @@ After a break `.claude/work/<work>/panel.json` is most likely stale. Overwrite i
     {"ref": "#3–#6", "text": "channel map · use case · detail · route", "mark": "pending"},
     "",
     {"ref": "Now", "text": "nothing running — just resumed", "mark": "info"},
-    {"ref": "Next", "text": "/flow:feat:build", "mark": "info"},
+    {"ref": "Next", "text": "build", "mark": "info"},
     {"ref": "Decision", "text": "run the next step, or leave it for another work", "mark": "wait"},
     "",
     {"text": "sibling-repo still needs the endpoint contract", "mark": "block"}
