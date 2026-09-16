@@ -5,6 +5,30 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.63.0 — A file collected everything nobody was going to do  ·  2026-09-16
+
+**In short**
+- **`docs/DEBT.md` is gone.** `ship` no longer writes a debt log, and `tracker.debt_log` is no longer a FLOW.md key.
+- **Nothing is lost**: what used to be copied there already lived — and still lives — in the work's own `meta.json` and in the artifact section that explains it in context.
+- **`tooling` gaps behave exactly as before**: recorded when a phase notices them, never a question, never a tracker issue. Only the file at the end disappeared.
+- **Existing `DEBT.md` files are yours to keep or delete.** Nothing reads them, and nothing will delete them for you.
+
+The debt log was meant for the findings that are real and nobody's next task — a test that does not
+bind, a lint floor with slack in it, prose that drifted from the code. Sending those to the tracker
+buries the product's actual defects, so they went to a versioned Markdown file instead, one per
+repo, appended to at every ship.
+
+No command ever read it. `status`, `daily` and `next` excluded `logged` entries deliberately, which
+is the whole file. And every line in it duplicated a record the work already keeps for ever: the
+`followups[]` row in `meta.json` and the artifact section beside it, both of which survive
+archiving. So the file only ever grew, was never triaged, and told a reader arriving at it nothing
+the work folder did not already say.
+
+A note nobody reads is not a lighter obligation than a ticket. It is the same obligation with the
+reader removed — and a repo that accumulates those is worse off than one that admitted the finding
+was not worth anyone's time. `logged` is now what it always was in practice: a status meaning *this
+was seen, judged, and is not going any further*.
+
 ## v0.62.0 — Three harnesses could be installed but never updated  ·  2026-09-16
 
 **In short**

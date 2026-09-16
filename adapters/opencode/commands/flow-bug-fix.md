@@ -95,7 +95,7 @@ Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this ren
 
 A correction the user makes here is a **convention** when it would apply to an unrelated ticket in this repo: one row in `meta.json.conventions_candidates[]` and under `## Conventions learned` in `04-fix.md`, nothing asked (flow-core §8).
 
-A **product decision** the fix turns out to need is neither of these — not scope to add, not work to park. It is asked the moment it surfaces, in every mode, and its answer is written into the brief (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. And a gap in the repo's own machinery the fix exposes (a guard that did not bind, a floor with slack) is `kind: "tooling"`, headed for the debt log rather than the tracker.
+A **product decision** the fix turns out to need is neither of these — not scope to add, not work to park. It is asked the moment it surfaces, in every mode, and its answer is written into the brief (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. And a gap in the repo's own machinery the fix exposes (a guard that did not bind, a floor with slack) is `kind: "tooling"`: recorded, never asked about, and never sent to the tracker.
 
 ## 3. Log
 

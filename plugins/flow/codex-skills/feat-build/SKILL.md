@@ -245,7 +245,7 @@ Anything unforeseen **always** goes through the user before entering code.
 
 A correction the user makes here — *«not a listener, a message handler»*, *«never mock the repository in that layer»* — is a **convention** when it would apply to an unrelated ticket in this repo: one row in `meta.json.conventions_candidates[]` and under `## Conventions learned` in `05-implementation.md`, nothing asked (flow-core §8). `ship` offers it to `FLOW.md` once, at the end.
 
-A **product decision** the build turns out to need is neither option — not scope to add, not work to park: ask it the moment it surfaces, in every mode, and write the answer under "Decisions made during implementation" (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. A gap in the repo's own machinery (a guard that did not bind, a floor with slack) is `kind: "tooling"`, headed for the debt log rather than the tracker.
+A **product decision** the build turns out to need is neither option — not scope to add, not work to park: ask it the moment it surfaces, in every mode, and write the answer under "Decisions made during implementation" (flow-core §7, `decision`). Only a decision the user explicitly defers becomes a `followups[]` entry. A gap in the repo's own machinery (a guard that did not bind, a floor with slack) is `kind: "tooling"`: recorded, never asked about, and never sent to the tracker.
 
 ## 3. Log
 
