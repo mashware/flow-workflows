@@ -299,6 +299,7 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified. When the diff landed within 10% under a tier threshold, say so here (§2.0).>
 - Agent models: <the value of `models.workers`/`models.agents` when set; otherwise "inherited from this thread" — plus, when the panel ran, that agents named in `agents.<role>` kept the model their own definition sets. The values as they are, no judgement on them>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>, effort <medium|high|xhigh|max>
+- Measured cost: <what the harness reported for this round, when it reported anything — `flow review --record` writes it to `meta.json.cost[]` and `$flow-work-status` and `flow cost` read it back. A harness that reports no figure is recorded as "not reported": the subagent count above is a headcount, not a cost, and a guess is worse than a gap.>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Completeness rounds (M/L): N
 - Critical findings (block ship): N
