@@ -35,6 +35,13 @@ Stated as plainly as the README states what the plugin does not ship, and for th
   vendor's would be wrong on three of them.
 - **A stack-specific hook.** The two that ship (push guard, update notice) work in any repo. A hook
   that assumes a test runner, a language or a directory layout belongs in your own config.
+- **A tool name outside a detection list.** The plugin may teach the agent to *recognise* eleven
+  ecosystems — `/flow:init` does exactly that, between its `stack-detection` markers — and a command
+  may say "auto-discover from Makefile / npm / composer / Gradle / dotnet". What none of them may do
+  is assume one: a line naming a single ecosystem's tools anywhere else under `plugins/`, or any
+  ecosystem at all under `bin/`, is a dependency on that stack, and the preflight refuses it. The
+  tool name belongs in a `FLOW.md` key, where each repo writes its own. `examples/` is exempt: being
+  one stack's answer is the whole point of a worked example.
 - **A new `FLOW.md` key** to configure something the flow can detect, derive from another key, or
   decide well by default. Every key costs a paragraph in the template, a row in CONFIGURATION, a
   branch in `init`, a row in `config`, a check in `doctor`, and a reader deciding whether it applies
