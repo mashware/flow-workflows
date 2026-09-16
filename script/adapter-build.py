@@ -101,6 +101,7 @@ SKILL_SHAPED = ("codex", "codex-plugin", "hermes")
 # `codex-plugin` mirror instead of the plugin's own `skills/` folder.
 CODEX_MANIFEST = "plugins/flow/.codex-plugin/plugin.json"
 CLAUDE_MANIFEST = "plugins/flow/.claude-plugin/plugin.json"
+NPM_MANIFEST = "package.json"
 
 # The primitives the plugin prose names, and what each harness has instead. The prose
 # is not rewritten — a regex that edits sentences produces sentences nobody wrote — so
@@ -304,6 +305,7 @@ def expected():
     for name, spec in TARGETS.items():
         out[spec["core"][1]] = render_core(name, flat_to_stem)
     out[CODEX_MANIFEST] = codex_manifest()
+    out[NPM_MANIFEST] = npm_manifest()
     return out
 
 
@@ -318,6 +320,37 @@ def codex_manifest():
         "author": claude.get("author"),
         "homepage": claude.get("homepage"),
         "skills": "./codex-skills/",
+    }
+    return json.dumps({k: v for k, v in manifest.items() if v},
+                      indent=2, ensure_ascii=False) + "\n"
+
+
+def npm_manifest():
+    """`package.json` — `npx flow-workflows install <harness>` for the harnesses with no
+    marketplace of their own. `files` carries the adapters plus the three plugin files
+    `bin/cli.mjs` reads at install time; the version is the plugin's, never its own."""
+    claude = json.loads(read(CLAUDE_MANIFEST))
+    manifest = {
+        "name": "flow-workflows",
+        "version": claude["version"],
+        "description": claude["description"],
+        "type": "module",
+        "bin": {"flow-workflows": "bin/cli.mjs"},
+        "files": [
+            "bin/",
+            "adapters/",
+            "plugins/flow/CHANGELOG.md",
+            "plugins/flow/.claude-plugin/plugin.json",
+            "plugins/flow/examples/FLOW.template.md",
+        ],
+        "engines": {"node": ">=18"},
+        "keywords": ["workflow", "code-review", "opencode", "gemini-cli", "codex",
+                     "hermes", "coding-agent", "feature-flow", "bug-flow"],
+        "author": claude.get("author"),
+        "license": "MIT",
+        "homepage": claude.get("homepage"),
+        "repository": {"type": "git", "url": "git+https://github.com/mashware/flow-workflows.git"},
+        "bugs": {"url": "https://github.com/mashware/flow-workflows/issues"},
     }
     return json.dumps({k: v for k, v in manifest.items() if v},
                       indent=2, ensure_ascii=False) + "\n"

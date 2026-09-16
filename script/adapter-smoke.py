@@ -20,6 +20,7 @@ Two halves, both runnable without any of the harnesses installed:
     script/adapter-smoke.py --quiet         # one `where: what` line per problem, nothing else
 """
 
+import hashlib
 import os
 import re
 import shutil
@@ -238,12 +239,59 @@ def install(files):
             shutil.rmtree(home, ignore_errors=True)
 
 
+def tree(root):
+    """Every file under root as relative path → content hash."""
+    out = {}
+    for dirpath, _dirs, names in os.walk(root):
+        for n in names:
+            full = os.path.join(dirpath, n)
+            with open(full, "rb") as fh:
+                out[os.path.relpath(full, root)] = hashlib.sha256(fh.read()).hexdigest()
+    return out
+
+
+def parity():
+    """`adapters/install.sh` and `bin/cli.mjs` install the same thing two ways — bash for a
+    clone, Node for `npx`. Nothing but this makes them stay the same: two implementations
+    drift the moment one of them learns about a file the other does not."""
+    if not shutil.which("node"):
+        print("  (skipped installer parity: no node on PATH)")
+        return
+    for tool in LANDING:
+        homes = {}
+        try:
+            for label, cmd, cwd in (
+                ("install.sh", ["bash", os.path.join(ROOT, "adapters/install.sh"), tool],
+                 os.path.join(ROOT, "adapters")),
+                ("cli.mjs", ["node", os.path.join(ROOT, "bin/cli.mjs"), "install", tool], ROOT),
+            ):
+                homes[label] = tempfile.mkdtemp(prefix=f"flow-parity-{tool}-")
+                run = subprocess.run(cmd, cwd=cwd, env=dict(os.environ, HOME=homes[label]),
+                                     capture_output=True, text=True)
+                if run.returncode != 0:
+                    fail(f"{label} {tool}", f"exited {run.returncode}")
+            if len(homes) < 2:
+                continue
+            a, b = tree(homes["install.sh"]), tree(homes["cli.mjs"])
+            if a != b:
+                only_sh = sorted(set(a) - set(b))[:3]
+                only_js = sorted(set(b) - set(a))[:3]
+                differing = sorted(p for p in set(a) & set(b) if a[p] != b[p])[:3]
+                fail(f"installer parity {tool}",
+                     f"install.sh and bin/cli.mjs disagree — only in install.sh: {only_sh or '—'}; "
+                     f"only in cli.mjs: {only_js or '—'}; different content: {differing or '—'}")
+        finally:
+            for home in homes.values():
+                shutil.rmtree(home, ignore_errors=True)
+
+
 def main():
     quiet = "--quiet" in sys.argv
     files = tracked()
     static(files)
     if "--static-only" not in sys.argv:
         install(files)
+        parity()
     if problems:
         if quiet:
             print("\n".join(problems))

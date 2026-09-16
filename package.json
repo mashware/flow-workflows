@@ -1,0 +1,43 @@
+{
+  "name": "flow-workflows",
+  "version": "0.62.0",
+  "description": "Guided feat/bug workflows (start→ship), post-deploy monitoring and multi-agent code review, stack-agnostic. Each repo uses a shared FLOW.md plus optional harness overlay.",
+  "type": "module",
+  "bin": {
+    "flow-workflows": "bin/cli.mjs"
+  },
+  "files": [
+    "bin/",
+    "adapters/",
+    "plugins/flow/CHANGELOG.md",
+    "plugins/flow/.claude-plugin/plugin.json",
+    "plugins/flow/examples/FLOW.template.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "workflow",
+    "code-review",
+    "opencode",
+    "gemini-cli",
+    "codex",
+    "hermes",
+    "coding-agent",
+    "feature-flow",
+    "bug-flow"
+  ],
+  "author": {
+    "name": "Alberto Vioque",
+    "email": "mashware@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/mashware/flow-workflows",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mashware/flow-workflows.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mashware/flow-workflows/issues"
+  }
+}

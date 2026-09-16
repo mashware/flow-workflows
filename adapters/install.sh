@@ -37,7 +37,8 @@ case "$TOOL" in
     mkdir -p "$DEST"; sweep "$DEST" "flow-*.md"; cp "$HERE"/opencode/commands/*.md "$DEST"/
     N=$(ls "$HERE"/opencode/commands/*.md | wc -l | tr -d " ")
     echo "✓ opencode: $N commands in $DEST  (invoke as /flow-feat-start, /flow-work-watch, …)"
-    note "MCP: merge the \"mcp\" block from $HERE/opencode/opencode.json into your opencode.json"
+    SNIPPET="opencode/opencode.json"; SNIPPET_AS="opencode.json"
+    note "MCP: merge the \"mcp\" block from ~/.claude/flow/opencode.json into your opencode.json"
     note "Subagents: declare the ones named in FLOW.md (agents/review map) in agents/*.md — see opencode/PRIMITIVES.md"
     ;;
   gemini)
@@ -45,7 +46,8 @@ case "$TOOL" in
     mkdir -p "$DEST"; rm -rf "$DEST/flow"; cp -r "$HERE"/gemini/commands/. "$DEST"/
     N=$(find "$HERE"/gemini/commands -name "*.toml" | wc -l | tr -d " ")
     echo "✓ gemini: $N commands in $DEST  (invoke as /flow:feat:start, /flow:work:watch, …)"
-    note "MCP: merge \"mcpServers\" from $HERE/gemini/settings.snippet.json into your settings.json"
+    SNIPPET="gemini/settings.snippet.json"; SNIPPET_AS="settings.snippet.json"
+    note "MCP: merge \"mcpServers\" from ~/.claude/flow/settings.snippet.json into your settings.json"
     note "Subagents: declare the ones from FLOW.md in .gemini/agents/*.md — see gemini/PRIMITIVES.md"
     ;;
   codex)
@@ -53,18 +55,20 @@ case "$TOOL" in
     mkdir -p "$DEST"; sweep_dirs "$DEST" "flow-*"; cp -r "$HERE"/codex/skills/. "$DEST"/
     N=$(find "$HERE"/codex/skills -name "SKILL.md" | wc -l | tr -d " ")
     echo "✓ codex: $N skills in $DEST  (invoke as \$flow-feat-start, \$flow-work-watch, …)"
+    SNIPPET="codex/config.snippet.toml"; SNIPPET_AS="config.snippet.toml"
     note "Codex discovers skills, not Claude commands: they are invoked with \$, and a new session picks them up."
-    note "MCP/subagents: merge $HERE/codex/config.snippet.toml into ~/.codex/config.toml"
-    note "Conventions: copy $HERE/codex/AGENTS.md to your repo root if you want (Codex reads it as a guide)."
+    note "MCP/subagents: merge ~/.claude/flow/config.snippet.toml into ~/.codex/config.toml"
+    note "Conventions: adapters/codex/AGENTS.md in the repo is one you can copy to your repo root (Codex reads it as a guide)."
     ;;
   hermes)
     if [ "$SCOPE" = project ]; then DEST=".hermes/skills"; else DEST="$HOME/.hermes/skills"; fi
     mkdir -p "$DEST"; sweep_dirs "$DEST" "flow-*"; cp -r "$HERE"/hermes/skills/. "$DEST"/
     N=$(find "$HERE"/hermes/skills -name "SKILL.md" | wc -l | tr -d " ")
     echo "✓ hermes: $N skills in $DEST  (invoke as /flow-feat-start, /flow-work-watch, …)"
+    SNIPPET="hermes/config.snippet.yaml"; SNIPPET_AS="config.snippet.yaml"
     note "Hermes reads ~/.hermes/skills as one flat namespace; a project install (.hermes/skills) needs \`hermes skills trust\` the first time."
-    note "MCP, delegation and cron: merge $HERE/hermes/config.snippet.yaml into ~/.hermes/config.yaml"
-    note "Conventions: Hermes reads AGENTS.md as project context — $HERE/codex/AGENTS.md is one you can copy to your repo root."
+    note "MCP, delegation and cron: merge ~/.claude/flow/config.snippet.yaml into ~/.hermes/config.yaml"
+    note "Conventions: Hermes reads AGENTS.md as project context — adapters/codex/AGENTS.md is one you can copy to your repo root."
     ;;
   *)
     echo "Usage: ./install.sh <opencode|gemini|codex|hermes> [project]" >&2
@@ -83,9 +87,13 @@ if cp "$HERE/../plugins/flow/CHANGELOG.md" "$HOME/.claude/flow/CHANGELOG.md" 2>/
   note "news: changelog copied to ~/.claude/flow/CHANGELOG.md (feeds /flow-news · /flow:news)"
 fi
 cp "$HERE/../plugins/flow/.claude-plugin/plugin.json" "$HOME/.claude/flow/plugin.json" 2>/dev/null || true
+# Installed through npx, the package directory is deleted right after the run, so anything
+# the user still has to open is copied where it outlives it. Both installers place the same set.
+cp "$HERE/$SNIPPET" "$HOME/.claude/flow/$SNIPPET_AS" 2>/dev/null || true
+cp "$HERE/../plugins/flow/examples/FLOW.template.md" "$HOME/.claude/flow/FLOW.template.md" 2>/dev/null || true
 
 echo
 echo "→ One key step remaining: place a shared FLOW.md at the root of your repo."
 echo "  Optional for this harness: FLOW.$TOOL.md (sparse overrides only)."
-echo "  Template: $HERE/../plugins/flow/examples/FLOW.template.md"
+echo "  Template: ~/.claude/flow/FLOW.template.md"
 echo "  (without either file everything still works, just with more prompting)"

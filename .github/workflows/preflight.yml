@@ -20,6 +20,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"    # tomllib is needed to validate the Gemini mirrors
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"        # bin/cli.mjs, so the installer parity check actually runs
       - name: jq for the push guard
         run: sudo apt-get update -q && sudo apt-get install -y -q jq
       - name: release preflight

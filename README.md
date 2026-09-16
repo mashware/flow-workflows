@@ -23,7 +23,14 @@ codex plugin add flow@flow-plugins
 # then, in a new session: $flow:init · $flow:next
 ```
 
-opencode, Gemini CLI and Hermes Agent install from a clone — see [Other harnesses](#other-harnesses).
+**opencode, Gemini CLI, Hermes Agent** — one command, nothing to clone
+
+```bash
+npx flow-workflows install opencode      # or: gemini | hermes | codex
+npx flow-workflows check                 # is a newer version out?
+```
+
+Re-run the same line to update: it sweeps the previous version before copying. → [Other harnesses](#other-harnesses)
 
 No ticket? `/flow:feat:start` with no arguments drafts the work from the conversation you just had.
 
@@ -237,10 +244,15 @@ The same commands, in each harness's own shape. Only the invocation syntax diffe
 | Harness | Install | Invoked as |
 |---|---|---|
 | **Codex CLI** | `codex plugin add flow@flow-plugins` (see [Quickstart](#quickstart)) | `$flow:feat-start` |
-| **Codex CLI**, one repo only | `adapters/install.sh codex project` → `.agents/skills/` | `$flow-feat-start` |
-| **opencode** | `adapters/install.sh opencode` | `/flow-feat-start` |
-| **Gemini CLI** | `adapters/install.sh gemini` | `/flow:feat:start` |
-| **Hermes Agent** | `adapters/install.sh hermes` | `/flow-feat-start` |
+| **Codex CLI**, one repo only | `npx flow-workflows install codex project` → `.agents/skills/` | `$flow-feat-start` |
+| **opencode** | `npx flow-workflows install opencode` | `/flow-feat-start` |
+| **Gemini CLI** | `npx flow-workflows install gemini` | `/flow:feat:start` |
+| **Hermes Agent** | `npx flow-workflows install hermes` | `/flow-feat-start` |
+
+Updating is the same command again — it removes the previous version's files first, so a command
+dropped upstream does not linger. `npx flow-workflows check` compares what your harnesses run
+against the newest release. From a clone, `adapters/install.sh <harness> [project]` does the same
+thing without Node; the preflight installs both ways and fails if the results differ by one byte.
 
 The mirrors are **generated** from the plugin commands by `script/adapter-build.py` and checked mechanically on every preflight (format, prefix, cited paths, install location).
 They have **not** been executed end to end in those harnesses — validate as you use them. → [adapters/README](adapters/README.md)
