@@ -51,6 +51,33 @@ python3 script/check.py                # must be green before the version bump m
 
 `.claude-plugin/marketplace.json` carries no version, so there is nothing to bump there.
 
+### A release candidate
+
+A change that alters what a phase does should be installable before it is `latest`
+([CONTRIBUTING §Testing a change before it ships](CONTRIBUTING.md#testing-a-change-before-it-ships)).
+An rc is the ordinary release with two differences: the version carries a suffix, and npm serves it
+under a channel nobody reaches by accident.
+
+1. **Write the changelog entry under the final number** — `## vX.Y.Z` — and leave it there. An rc
+   does not get its own entry: it is the same change, tagged early.
+2. **Bump `version` to `X.Y.Z-rc.N`** in the plugin manifest, then `python3 script/adapter-build.py`
+   so `package.json` follows. The preflight accepts the suffix over a `vX.Y.Z` changelog heading,
+   and only this suffix — `-beta.1` is refused, because `next` is the one prerelease channel this
+   package publishes. A version that disagrees with the changelog on anything but the suffix is
+   still the drift the check exists to catch.
+3. **Tag it as a prerelease**: `gh release create vX.Y.Z-rc.1 --prerelease --title "…" --notes "…"`.
+   `publish.yml` runs the same preflight and publishes under the **`next`** dist-tag: the suffix
+   decides the channel, so `latest` — what every `npx flow-workflows` in the wild resolves —
+   does not move.
+4. **Install it where it will actually be used**: `npx flow-workflows@next install <harness>`, or
+   `claude --plugin-dir` against the branch for Claude Code. Drive a real work with it.
+5. **The release itself is then the normal procedure above**, with `version` bumped from
+   `X.Y.Z-rc.N` to `X.Y.Z`. The changelog entry is already written; nothing else changes.
+
+An rc that is abandoned needs no cleanup: it is a version on `next` that the next rc replaces, and
+`latest` never saw it.
+
+
 ### Changelog convention
 
 Every entry is headed `## vX.Y.Z — <title>  ·  <date>` and **opens with a `**In short**`
