@@ -192,8 +192,11 @@ fan-out runs as plain parallel subagents — the primitive every harness has.
                       #   as before** — this key is the opt-in, nothing changes without it. It takes any command: a
                       #   subscription login, an API key, another vendor's CLI, or a script of your own. When it is set,
                       #   that command picks the model and `models.agents`/`models.workers` no longer apply to review.
-                      #   e.g.:
-                      #   - claude -p --model sonnet --output-format json --json-schema '{SCHEMA}'
+                      #   Quote `{SCHEMA}` with DOUBLE quotes: the substitution escapes for that context and single
+                      #   quotes would hand the command invalid JSON. A harness that answers in an envelope of its own
+                      #   is unwrapped here — no `jq` needed. Measured: one reviewer over a small diff ≈ $0.17, so a
+                      #   four-role round ≈ $0.70, which is what `budget_max` below is bounding. e.g.:
+                      #   - claude -p --model sonnet --output-format json --json-schema "{SCHEMA}"
                       #   - codex exec --model <m>
 - `fanout_max:`     # max subagents per parallel round. Empty = 4. Lower it to keep the flow cheap; what a cap drops is always reported
 - `budget_max:`     # max subagents ONE command run may launch in total, summed over every round (flow-core §6). Empty = 12. `0` = no ceiling

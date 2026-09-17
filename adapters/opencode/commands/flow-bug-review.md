@@ -31,16 +31,21 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
   in full, the raw output of `quality.static_analysis`, and the work's handoff — in a single call.
   Read that instead of rediscovering it, and **pass it to the briefs of §2-§5**: a panel where every
   member runs its own `git diff` and opens the same files pays for that material once per agent, and
-  a reviewer that spends its turns exploring has fewer left to review. The CLI not being installed is
-  not an error: fall back to reading the diff from git as before, and say so in one line.
-- **`agents.exec_cmd` set → the panel can run from the CLI instead.** `npx flow-workflows review`
-  spawns that command once per role over the pack above — **one turn each instead of an agentic loop
-  each** — and returns the findings already deduplicated, with the reviewers it dropped for
-  `agents.budget_max` named. Empty (the default) → the panel below runs exactly as it always has;
-  nothing here changes without that key. When the CLI runs it, the command itself picks the model,
-  so `models.agents`/`models.workers` do not reach those reviewers: record which of the two ran in
-  the review artifact. A one-shot sweep cannot pull a thread, so an ambiguous finding still goes to
-  a real agent with tools, as below.
+  a reviewer that spends its turns exploring has fewer left to review. **Any non-zero exit is a
+  fallback, not a failure** — no CLI on the machine, a base that does not resolve, a network that
+  cannot reach it: read the diff from git as before and carry on, once, without retrying variants.
+  What is not optional is the `Review path` line of §7: a round that skipped the pack and one that
+  used it are indistinguishable from the artifact otherwise, which is how a phase quietly stops
+  paying for itself.
+- **`agents.exec_cmd` set → the panel runs from the CLI.** Not a choice to weigh: run
+  `npx flow-workflows review`, which spawns that command once per role over the pack above — **one
+  turn each instead of an agentic loop each** — and returns the findings already deduplicated, with
+  the reviewers it dropped for `agents.budget_max` named. Exactly three things send the round to the
+  agentic panel below: the key is empty (the default — nothing changes without it), the CLI is
+  unavailable by the rule above, or **every** role came back empty, which is a broken `exec_cmd` and
+  not a clean diff. Whichever happened is named in §7. When the CLI runs the panel, that command
+  picks the model, so `models.agents`/`models.workers` do not reach those reviewers. A one-shot sweep
+  cannot pull a thread, so an ambiguous finding still goes to a real agent with tools, as below.
 
 ## 2. Run the code reviews
 
@@ -147,6 +152,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
 - Measured cost: <what the harness reported for this round, when it reported anything — `flow review --record` writes it to `meta.json.cost[]` and `/flow-work-status` and `flow cost` read it back. A harness that reports no figure is recorded as "not reported": the subagent count above is a headcount, not a cost, and a guess is worse than a gap.>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used, and — when the diff landed within 10% under a tier threshold — that fact (§2.0)>
+- Review path: <the two paths this round actually took: `flow bundle` or git for the material, `flow review` or the agentic panel for the reviewers — each with the reason when it was the fallback (no CLI, non-zero exit, `agents.exec_cmd` empty, every role empty). Without this line a round that skipped the CLI reads exactly like one that used it.>
 - Agent models: <the value of `models.workers`/`models.agents` when set; otherwise "inherited from this thread"; agents named in `agents.<role>` keep their own definition's model>
 - Defaults used: <every empty `FLOW.md` key this round resolved with its default — one per line as `key → default` — or "none". In `guided`/`auto` each is also an entry in `meta.json.defaults_used[]` (flow-core §0); in `manual` the phase may offer one of them at its stop.>
 - Skipped for budget: <phases dropped by §2.0's give-up order, or "none">

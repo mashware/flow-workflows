@@ -36,12 +36,14 @@ Overview of works in progress; detects divergences between artifacts and actual 
   MR/PRs:      2/4 merged · MR/PR #3 in_progress · MR/PR #4 pending
   Cross-repo:  <meta.related_repos entries not "done", as "repo: scope">   (line only if any)
   Follow-ups:  2 awaiting a decision · 1 accepted, not started            (line only if any)
+  Cost:        $0.71 measured over 2 phases · 1 phase not reported        (line only if any)
   Next:        <suggested next command>
 ```
 
 - "MR"/"PR" from `git.host` (`gitlab` → MR, every other host → PR); no host → "MR/PR".
 - `Cross-repo:` only when `meta.json.related_repos` has entries not `done`: each as `<repo>: <scope>`, appending ` — contract not handed over` when that entry's `contract_handoff` is `pending`. It flags that a **sibling repo still has a pending part**; flow never scans or touches the other repo.
 - `Follow-ups:` only when `meta.json.followups[]` has entries not `declined`/`logged`/`done` (flow-core §7): count the `proposed` ones as *awaiting a decision* and the `accepted` ones without a `work` as *accepted, not started*, naming the ticket id when there is one. `in_progress` entries are already visible as their own work — do not double-count them.
+- `Cost:` only when `meta.json.cost[]` has entries (flow-core §4): sum the `usd` figures that are there, count the phases behind them, and count separately the entries whose `source` is `not reported`. A work with no entries shows **no line at all** — absence is not zero, and a `$0.00` under a work nobody measured is the one output that would make the block worth ignoring. The figures are the harness's own client-side estimates, not a bill; `flow cost` prints the same data phase by phase.
 - `MR/PRs:` only when `meta.json.mrs` exists with >0 entries:
   - Summary: `<merged>/<total> merged`.
   - `closed` or `superseded` MR/PRs present → add to the count: `2/4 merged · 1 closed · 1 pending`.
