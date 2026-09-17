@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -189,11 +189,247 @@ function check() {
   }
 }
 
+// --- bundle ------------------------------------------------------------------------------
+// A phase costs `turns × context`: every tool call resends the whole conversation, so ten
+// calls spent discovering what changed cost ten times the context they discover. This
+// gathers the same material in one call — and gathers it ONCE for a whole review panel,
+// instead of each reviewer running its own diff and opening the same files.
+//
+// It knows nothing about any ecosystem. `FLOW.md` says which paths to leave out and which
+// command reports problems; this runs what it is told and copies the output out verbatim.
+// Parsing that output is what would couple it to one toolchain, so it never does.
+
+const MAX_FILE_BYTES = 64 * 1024
+const MAX_TOTAL_BYTES = 512 * 1024
+
+function git(args, cwd = process.cwd()) {
+  try {
+    return execFileSync('git', args, {
+      cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
+    })
+  } catch {
+    return ''
+  }
+}
+
+// `FLOW.md` is `## section` then `- key: value`, with an indented `- item` list where a key
+// has no inline value. `conventions` carries bare prose lines and is skipped by the same
+// rule that skips anything else without a `key:`.
+function parseFlow(text) {
+  const out = {}
+  let section = null
+  let listKey = null
+  for (const line of text.split('\n')) {
+    const heading = /^##\s+(\S+)/.exec(line)
+    if (heading) {
+      section = heading[1]
+      out[section] ??= {}
+      listKey = null
+      continue
+    }
+    if (!section) continue
+    const item = /^\s+-\s+(.*)$/.exec(line)
+    if (item && listKey) {
+      out[section][listKey].push(item[1].trim())
+      continue
+    }
+    const kv = /^-\s+`?([a-z_]+)`?:\s*(.*)$/.exec(line)
+    if (!kv) { listKey = null; continue }
+    const [, key, value] = kv
+    if (value.trim()) { out[section][key] = value.trim(); listKey = null }
+    else { out[section][key] = []; listKey = key }
+  }
+  return out
+}
+
+// Base file plus the overlay of the harness running this, exactly as flow-core §0 resolves
+// it: a key present in the overlay replaces the base value.
+function flowConfig(repo, harness) {
+  const read = (name) => {
+    const p = join(repo, name)
+    return existsSync(p) ? parseFlow(readFileSync(p, 'utf8')) : {}
+  }
+  const base = read('FLOW.md')
+  const overlay = harness ? read(`FLOW.${harness}.md`) : {}
+  for (const [section, keys] of Object.entries(overlay)) {
+    base[section] = { ...(base[section] ?? {}), ...keys }
+  }
+  return base
+}
+
+function workFolder(repo, branch) {
+  const root = join(repo, '.claude', 'work')
+  if (!existsSync(root)) return null
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name === '_archive') continue
+    const meta = join(root, entry.name, 'meta.json')
+    if (!existsSync(meta)) continue
+    let data
+    try { data = JSON.parse(readFileSync(meta, 'utf8')) } catch { continue }
+    const branches = [data.branch, ...(Array.isArray(data.mrs) ? data.mrs.map((m) => m?.branch) : [])]
+    if (branches.includes(branch)) return join(root, entry.name)
+  }
+  return null
+}
+
+function fence(body, lang = '') {
+  // A diff can legitimately contain a fence; open a longer one than anything inside it.
+  const longest = Math.max(2, ...[...String(body).matchAll(/^`{3,}/gm)].map((m) => m[0].length))
+  const bar = '`'.repeat(longest + 1)
+  return `${bar}${lang}\n${body.replace(/\n*$/, '\n')}${bar}`
+}
+
+function bundle(argv) {
+  const flag = (name, fallback = null) => {
+    const i = argv.indexOf(name)
+    return i === -1 ? fallback : argv[i + 1]
+  }
+  const repo = git(['rev-parse', '--show-toplevel']).trim()
+  if (!repo) {
+    console.error('flow bundle: not a git checkout')
+    process.exit(1)
+  }
+  const cfg = flowConfig(repo, flag('--harness'))
+  const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
+  const maxFile = Number(flag('--max-file-bytes', MAX_FILE_BYTES)) || MAX_FILE_BYTES
+
+  const resolves = (ref) => Boolean(git(['rev-parse', '--verify', '--quiet', ref], repo).trim())
+  let base = flag('--base') || cfg.git?.default_base || ''
+  if (!base) {
+    // What the remote says it defaults to, then the usual names — remote first, but a repo
+    // with no remote at all still has a base branch, and a clone is not a requirement here.
+    const head = git(['symbolic-ref', 'refs/remotes/origin/HEAD'], repo).trim()
+    const candidates = [head && head.replace('refs/remotes/', ''),
+                        'origin/main', 'origin/master', 'main', 'master'].filter(Boolean)
+    base = candidates.find(resolves) || candidates[0]
+  }
+  // One point of comparison for everything below: the merge base, so the diff carries
+  // committed and uncommitted work together — which is the diff a review is looking at.
+  if (!resolves(base)) {
+    console.error(`flow bundle: base \`${base}\` does not resolve in this checkout.`)
+    console.error('Set `git.default_base` in FLOW.md, or pass --base. A silently empty bundle')
+    console.error('reads exactly like a branch with no changes, which is worse than this error.')
+    process.exit(1)
+  }
+  const from = git(['merge-base', base, 'HEAD'], repo).trim() || base
+
+  const exclude = Array.isArray(cfg.git?.diff_exclude) ? cfg.git.diff_exclude
+    : cfg.git?.diff_exclude ? [cfg.git.diff_exclude] : []
+  const excluded = (list) => ['--', '.', ...list.map((p) => `:(exclude)${p}`)]
+  const paths = exclude.length ? excluded(exclude) : []
+
+  // One size rule for the whole pack. Applying it only to the file contents would let a
+  // generated file of any size through in the diff instead — which is the same cost, one
+  // section lower down, and exactly what a reviewer does not need to read.
+  const changed = git(['diff', '--name-only', from, ...paths], repo).split('\n').filter(Boolean)
+  const oversize = changed.filter((rel) => {
+    const abs = join(repo, rel)
+    return existsSync(abs) && statSync(abs).size > maxFile
+  })
+  const diffPaths = excluded([...exclude, ...oversize])
+
+  const out = []
+  out.push(`# flow bundle — ${branch}`)
+  out.push('')
+  out.push(`Base \`${base}\` · merge base \`${from.slice(0, 12)}\` · generated by \`flow bundle\`.`)
+  out.push('Committed and uncommitted changes together. Nothing here is parsed or summarised.')
+  out.push('')
+
+  out.push('## Worklist')
+  out.push('')
+  const stat = git(['diff', '--stat', from, ...diffPaths], repo).trim()
+  out.push(stat ? fence(stat) : '_no changes against the base_')
+  out.push('')
+  if (exclude.length) {
+    out.push(`Left out by \`git.diff_exclude\`: ${exclude.map((p) => `\`${p}\``).join(' · ')}`)
+    out.push('')
+  }
+  const untracked = git(['ls-files', '--others', '--exclude-standard'], repo).trim()
+  if (untracked) {
+    out.push('Untracked, so absent from the diff below:')
+    out.push('')
+    out.push(fence(untracked))
+    out.push('')
+  }
+
+  out.push('## Diff')
+  out.push('')
+  const diff = git(['diff', from, ...diffPaths], repo)
+  out.push(diff.trim() ? fence(diff, 'diff') : '_empty_')
+  out.push('')
+
+  out.push('## Changed files, in full')
+  out.push('')
+  const skipped = oversize.map((rel) => {
+    const size = statSync(join(repo, rel)).size
+    return `${rel} — ${size} bytes, over --max-file-bytes (${maxFile}); left out of the diff too`
+  })
+  let spent = 0
+  for (const rel of changed) {
+    const abs = join(repo, rel)
+    if (!existsSync(abs)) continue                     // deleted: the diff already carries it
+    if (oversize.includes(rel)) continue
+    const size = statSync(abs).size
+    if (spent + size > MAX_TOTAL_BYTES) { skipped.push(`${rel} — bundle full`); continue }
+    spent += size
+    out.push(`### ${rel}`)
+    out.push('')
+    out.push(fence(readFileSync(abs, 'utf8')))
+    out.push('')
+  }
+  if (skipped.length) {
+    out.push('### Not included')
+    out.push('')
+    out.push(skipped.map((s) => `- ${s}`).join('\n'))
+    out.push('')
+  }
+
+  if (argv.includes('--checks')) {
+    const cmd = cfg.quality?.static_analysis
+    out.push('## Checks')
+    out.push('')
+    if (!cmd) {
+      out.push('_`quality.static_analysis` is empty — nothing to run_')
+    } else {
+      out.push(`\`quality.static_analysis\`: \`${cmd}\``)
+      out.push('')
+      let body, code = 0
+      try {
+        body = execFileSync('sh', ['-c', cmd], {
+          cwd: repo, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'],
+        })
+      } catch (e) {
+        body = `${e.stdout ?? ''}${e.stderr ?? ''}`
+        code = e.status ?? 1
+      }
+      out.push(fence(`${body.trim() || '(no output)'}\n\nexit ${code}`))
+    }
+    out.push('')
+  }
+
+  const work = workFolder(repo, branch)
+  if (work) {
+    out.push('## Work')
+    out.push('')
+    for (const name of ['meta.json', '00-summary.md']) {
+      const p = join(work, name)
+      if (!existsSync(p)) continue
+      out.push(`### ${name}`)
+      out.push('')
+      out.push(fence(readFileSync(p, 'utf8'), name.endsWith('.json') ? 'json' : ''))
+      out.push('')
+    }
+  }
+
+  console.log(out.join('\n'))
+}
+
 function usage() {
   console.log(`flow-workflows v${version()} — guided feat/bug workflows for coding agents
 
   npx flow-workflows install <harness> [project]
   npx flow-workflows check
+  npx flow-workflows bundle [--base <ref>] [--checks] [--harness <name>] [--max-file-bytes N]
 
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
   "project" installs into the current repo instead of your user folder.
@@ -201,13 +437,19 @@ Harnesses: ${Object.keys(HARNESSES).join(' · ')}
 Claude Code and Codex CLI have their own marketplaces:
   npx flow-workflows install claude    shows how
 
+"bundle" prints one context pack for the current branch — worklist, diff, the changed
+  files in full, and the work's handoff — so a phase reads it in one call instead of
+  rediscovering it in ten. --checks also runs quality.static_analysis and copies its
+  output out verbatim. Paths in git.diff_exclude are left out of the diff.
+
 Updating: re-run the install command — it sweeps the previous version first.
 Docs: https://github.com/mashware/flow-workflows`)
 }
 
 const [cmd, tool, scope] = process.argv.slice(2)
 
-if (cmd === 'check') check()
+if (cmd === 'bundle') bundle(process.argv.slice(3))
+else if (cmd === 'check') check()
 else if (cmd === 'install' && tool === 'claude') claude()
 else if (cmd === 'install' && HARNESSES[tool]) install(tool, scope === 'project' ? 'project' : 'global')
 else if (cmd === 'install') {

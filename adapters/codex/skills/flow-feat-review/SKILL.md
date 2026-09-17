@@ -28,6 +28,13 @@ Mandatory review phase. **`$flow-feat-ship` cannot run without passing through h
 - **A premise left open by `build` §2.1bis is an input to this review, not a note.** Every row of "Premises the change depends on" whose verdict is `unsettled` enters §6 as an **ambiguous finding** (it rests, by construction, on code outside the diff) and is named in §7 whether or not the gate opened. A premise the build could not settle and the review does not mention is one the MR/PR ships as a fact.
 - Require `build` in `phases_done`. **In a multi-MR/PR work** (`meta.json.mrs` has >1 entry) require `build` in the **current `in_progress` MR/PR's** own `phases_done` (its `mrs[]` entry) — a previous MR/PR's `build` does not count. If missing, send the user to `$flow-feat-build` and stop.
 - Check that `git diff` has real changes. None → warn and stop.
+- **Gather the material once, not once per reviewer.** `npx flow-workflows bundle --checks` prints
+  one context pack for this branch — worklist, the diff (minus `git.diff_exclude`), the changed files
+  in full, the raw output of `quality.static_analysis`, and the work's handoff — in a single call.
+  Read that instead of rediscovering it, and **pass it to the briefs of §2-§6**: a panel where every
+  member runs its own `git diff` and opens the same files pays for that material once per agent, and
+  a reviewer that spends its turns exploring has fewer left to review. The CLI not being installed is
+  not an error: fall back to reading the diff from git as before, and say so in one line.
 
 ## 2. Invoke the code reviews
 

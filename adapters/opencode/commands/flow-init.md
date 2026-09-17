@@ -51,6 +51,10 @@ Run, deduce, show what was found for confirmation or correction:
   - Unknown domain (self-hosted) → ask which host (GitLab/Gitea/other) and which CLI.
   - Installed CLIs: `command -v gh glab tea az`.
 - **Base branch** — `git symbolic-ref refs/remotes/origin/HEAD` (or `git remote show origin`): `origin/main` or `origin/master` → `git.default_base`.
+- **Generated files** — the lock, build and generated-migration paths this repo tracks, from what the
+  ecosystem markers above imply plus what `git ls-files` shows at the root → propose `git.diff_exclude`.
+  These cost context in every phase that opens the diff and buy nothing: nobody reviews a lockfile.
+  Nothing tracked that matches → leave the key out.
 - **Quality commands** — propose what the repo has (empty if nothing found):
   - `Makefile` → targets `test`, `lint`, `phpstan`/`stan`, `cs-fixer`/`fmt`, `database`/`migrate`.
   - `package.json` → `scripts` (test, lint, build, typecheck).
