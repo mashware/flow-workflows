@@ -229,13 +229,47 @@ usable on real work.
 
 ## Token budget
 
-- The shared rules live in the `flow-core` skill, loaded once per session; a command file carries only its phase.
-- Every phase reads `meta.json` and `00-summary.md` first and opens a full artifact only on demand.
-- `quality.review_depth: light` runs only the base code-review — no panel, reinforcements or skeptics.
-- The review tier scales to the **diff under review**, not the size of the feature: a 40-line MR/PR in an L-sized work is reviewed as the 40 lines it is.
-- Two ceilings, both counting agents rather than findings: `agents.fanout_max` per parallel round (default 4) and `agents.budget_max` for everything one command run launches (default 12). Each command declares which phase it gives up first, and what a ceiling drops is reported.
-- The review output prints its cost as `spent/budget`: subagents launched, tier, effort, and every phase the ceiling skipped.
-- Which is why nothing here ever asks you to `/compact`: the phase boundary already is the compaction point, and it is selective, on disk and reversible. → [PHILOSOPHY](docs/PHILOSOPHY.md#nothing-here-asks-you-to-compact)
+**A phase costs `turns × context`, plus what it writes.** The API keeps no state, so every tool call
+resends the whole conversation: a 40-turn `build` carrying 70k of context pays for those 70k forty
+times, even though the window never grows past 70k. Prompt caching makes the resent part roughly ten
+times cheaper, which is why the number that matters is *turns*, not the size of a command file. Every
+design decision below follows from that one line.
+
+- **Fewer turns per phase.** The shared rules live in the `flow-core` skill, loaded once per session;
+  a command file carries only its phase. Every phase reads `meta.json` and `00-summary.md` first and
+  opens a full artifact only on demand — a handoff read in one turn instead of rediscovered in ten.
+- **Fewer agents, declared in advance.** Two ceilings, both counting agents rather than findings:
+  `agents.fanout_max` per parallel round (default 4) and `agents.budget_max` for everything one
+  command run launches (default 12). Each command declares which phase it gives up first, and what a
+  ceiling drops is reported.
+- **A tier that matches the diff, not the ticket.** The review scales to the **diff under review**: a
+  40-line MR/PR inside an L-sized work is reviewed as the 40 lines it is.
+- **Bounded output.** Output tokens are the most expensive kind and are never cached.
+  `agents.report_max_words` (default 250) is a cost ceiling as much as a format rule.
+- **The cost is printed.** `review` reports `spent/budget` — subagents launched, tier, effort, and
+  every phase the ceiling skipped.
+
+### When it costs too much
+
+Ordered by effect. Each is one line in `FLOW.md`:
+
+| Change | What it drops | What you lose |
+|---|---|---|
+| `models.agents` / `models.workers` to a cheaper tier | Subagents stop running on the thread's model | Little: a subagent reads a diff and reports ≤250 words |
+| `quality.review_depth: light` | The panel, the reinforcements, the skeptic fan-out | Depth on everything but the built-in reviewer; a sensitive surface still bumps back up |
+| `agents.budget_max`, `agents.fanout_max` | Rounds past the ceiling, in the order each command declares | Coverage — but named coverage: what a ceiling skipped is reported, never silently dropped |
+| `agents.report_max_words` | Output length per subagent | Detail in reports, not findings |
+
+**Two things that cost real money and look free.** The first: a cache entry expires, so a phase run
+in one sitting is cheaper than the same phase spread across an afternoon — coming back after a long
+pause, the next turn repays the whole prefix at write price. The second: `/compact` is not a saving.
+It rewrites the history the provider has already priced and stored, so the turn after it pays for
+everything again. Nothing here ever asks you to compact, because the phase boundary already is the
+compaction point — selective, on disk and reversible.
+→ [PHILOSOPHY](docs/PHILOSOPHY.md#nothing-here-asks-you-to-compact)
+
+Cost figures in these docs are estimates, not measurements: the flow reports how many agents a
+command launched, not how many tokens they spent.
 
 ## Other harnesses
 

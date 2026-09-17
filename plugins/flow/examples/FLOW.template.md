@@ -213,6 +213,8 @@ command composes itself — the panel in `review`, the delegated pieces in `buil
 `validate` — not to the prompts this plugin already writes out with their own cap.
 
 - `report_max_words:`      # word cap every brief you write for a subagent carries. Empty = 250. Not a style rule: a report too long for the harness to carry is truncated in transit and reaches you as silence
+                           #   Output tokens are the most expensive kind and are never served from cache,
+                           #   so this is a cost ceiling as much as a format rule
 - `stall_after_minutes:`   # a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 —
                            #   a guess from one session, not a measurement. Lower it if your rounds are short and you would rather relaunch early; raise it
                            #   for agents that legitimately read for half an hour before writing

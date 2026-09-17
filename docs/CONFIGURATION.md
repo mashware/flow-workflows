@@ -441,7 +441,8 @@ Risk buys depth, not just size.
 `light` runs **only** the built-in reviewer (or `review_skill`) at medium effort on every size: no
 panel, no reinforcements, no skeptic fan-out. A sensitive surface still upgrades the work to the
 `proportional` tier. It is the cheapest honest review, for repos where token cost matters more
-than coverage — and the review artifact says so.
+than coverage — and the review artifact says so. It is the second cost lever after `models`, and the
+only one that changes what gets looked at. → [README §When it costs too much](../README.md#when-it-costs-too-much)
 
 Whatever the tier, `06-review.md` and the stop header carry one **cost line**: how many subagents
 ran (reviewers · reinforcements · skeptics), at which tier and effort. What a review costs is
@@ -595,6 +596,10 @@ says so once.
 `workers` exists because a fan-out round is where cost multiplies: four skeptics or five approach
 advisors on one command. Set it below `agents` to make breadth cheap, or leave it empty and the
 round follows `agents`.
+
+**This pair is the largest cost lever the configuration has.** A subagent reads a diff and reports
+at most `agents.report_max_words`; inheriting the thread's model means paying the most expensive
+tier in play for that. → [README §When it costs too much](../README.md#when-it-costs-too-much)
 
 **`agents.exec_cmd` overrides both, for review only.** When it is set, `flow review` spawns that
 command once per role and the command itself picks the model, so neither key reaches those

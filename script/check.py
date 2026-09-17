@@ -516,6 +516,97 @@ def check_adapter_smoke():
         problems.append(line.strip())
 
 
+# --- stack-agnosticism ---------------------------------------------------------------
+# "Stack-agnostic" is the README's first claim and nothing in the tree enforced it.
+#
+# The invariant is not "never name a tool": `/flow:init` has to recognise eleven
+# ecosystems to propose anything, and `doctor`, `green`, `fix` and `review` all say
+# "auto-discover from Makefile / npm / composer / Gradle / dotnet / …". Naming many is
+# how the plugin stays neutral. The invariant is "never depend on ONE" — so a line that
+# names tools from a single ecosystem, with no second ecosystem beside it, is the shape
+# a dependency arrives in, and that is what this check rejects.
+#
+# Three places may name one stack on purpose: `examples/`, which exists to be one
+# stack's answer; the delimited detection table in `init.md`; and any line pointing a
+# reader at `examples/<stack>/`.
+STACK_FAMILIES = {
+    "php": r"phpstan|php-cs-fixer|phpunit|composer|symfony|laravel|doctrine",
+    "node": r"\bnpm\b|\bnpx\b|package-lock|pnpm|\byarn\b|eslint|vitest|\bjest\b",
+    "python": r"pytest|pyproject|\bruff\b|\bmypy\b|tox\.ini|alembic",
+    "ruby": r"bundle exec|Gemfile|rubocop|\brails\b",
+    "rust": r"Cargo\.toml|cargo test|cargo clippy|clippy",
+    "jvm": r"gradlew|gradle|\bmvn\b|pom\.xml|detekt|ktlint",
+    "dotnet": r"dotnet|csproj|\.sln\b|nuget",
+    "apple": r"xcode|Package\.swift|swiftlint|swift test",
+    "dart": r"pubspec|flutter|dart format",
+    "go": r"go\.mod|go test|golangci",
+}
+
+# npm is this project's own stack: `bin/cli.mjs` is an npm package and the plugin README
+# documents `npx flow-workflows`. So node counts towards a line's plurality but never
+# trips the check on its own — the alternative is either a false positive on every line
+# describing our own install, or losing "npm / composer" as a valid detection pair.
+OWN_STACK = "node"
+
+STACK_SCOPES = ("plugins/", "bin/")
+STACK_EXEMPT_DIRS = ("plugins/flow/examples/",)
+STACK_EXEMPT_FILES = ("plugins/flow/CHANGELOG.md",)
+DETECTION_START = "stack-detection:start"
+DETECTION_END = "stack-detection:end"
+
+
+def _stack_families(line, families):
+    return {name for name, pattern in families.items()
+            if re.search(pattern, line, re.IGNORECASE)}
+
+
+def check_no_stack_leak(files):
+    """A plugin that assumes one ecosystem stops being the thing it advertises.
+
+    Held by discipline alone until now, and the CLI work ahead — a context bundle, a
+    review runner — is exactly where a hardcoded `composer.lock` or a linter-specific
+    `--error-format` slips in without anyone noticing.
+    """
+    for f in files:
+        if not f.startswith(STACK_SCOPES):
+            continue
+        if f.startswith(STACK_EXEMPT_DIRS) or f in STACK_EXEMPT_FILES:
+            continue
+        if not f.endswith((".md", ".mjs", ".js", ".json", ".sh", ".toml")):
+            continue
+
+        # In `bin/` there is no prose to make plural: a default hardcoded there is the
+        # leak itself, so one family is one too many — the list belongs in `FLOW.md`.
+        code = f.startswith("bin/")
+        families = ({k: v for k, v in STACK_FAMILIES.items() if k != OWN_STACK}
+                    if code else STACK_FAMILIES)
+
+        inside_detection = False
+        for n, line in enumerate(read(f).splitlines(), 1):
+            if DETECTION_START in line:
+                inside_detection = True
+                continue
+            if DETECTION_END in line:
+                inside_detection = False
+                continue
+            if inside_detection or "examples/" in line:
+                continue
+            found = _stack_families(line, families)
+            if not found:
+                continue
+            if not code and found == {OWN_STACK}:
+                continue
+            named = ', '.join(sorted(found))
+            if code:
+                fail(f"{f}:{n}",
+                     f"the CLI names an ecosystem ({named}) — it reads `FLOW.md` keys "
+                     f"and runs what they say; it never knows which stack it is in")
+            elif len(found) == 1:
+                fail(f"{f}:{n}",
+                     f"names one ecosystem ({named}) on its own — a tool name belongs "
+                     f"in a `FLOW.md` key, or beside the other stacks of a detection list")
+
+
 def main():
     files = tracked_files()
     if not files:
@@ -540,6 +631,7 @@ def main():
     check_core_skill(files)
     check_config_keys()
     check_panel_vocabulary_prose(files)
+    check_no_stack_leak(files)
 
     if problems:
         print("preflight failed:\n")
