@@ -5,6 +5,57 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-17
+
+**In short**
+- **A round gathers its material once.** `npx flow-workflows bundle` prints one context pack — worklist, diff, changed files, the repo's own analysis output, the work's handoff — instead of every reviewer paying to rediscover it.
+- **The panel can run outside the agentic loop.** With `agents.exec_cmd` set, `npx flow-workflows review` runs one reviewer per role in **one turn each**, deduplicated — and that is what runs when the key is there, not one option among two.
+- **What a phase spent is written down.** `meta.json.cost[]` records the figure the harness reported, `"not reported"` when it reported none and never an estimate; `flow cost`, `/flow:work:status` and the review artifact read it back.
+- **A change can be run before it is tagged.** Release candidates publish under the `next` channel, so `latest` never moves for a candidate, and four ways to run a branch on a real repo are written down.
+- **Two claims stopped being promises.** The preflight now refuses a line that *depends* on one ecosystem, and a test pins the four answer shapes the review CLI has to unwrap.
+
+A phase costs turns times context. The API keeps no state, so ten calls spent finding out what
+changed cost ten times the context they find — and `review` made that worse by construction: every
+member of a panel ran its own `git diff`, opened the same files, and read the same code, paying for
+that material once per agent. `bundle` gathers it for the whole round in a single call, and
+`quality.static_analysis` — a key that until now only ran at the end — is copied into the pack
+verbatim, so a reviewer no longer spends its turns hunting for what a linter already knew.
+
+It knows nothing about any ecosystem, which is the constraint that decided its shape. Which paths to
+leave out of the diff comes from the new `git.diff_exclude`; which command reports problems comes
+from the existing `quality.static_analysis`; that command's output is copied out rather than parsed,
+because parsing it is exactly what would tie the plugin to one toolchain. One size rule governs the
+whole pack: a file over the limit is out of both the contents and the diff, and is named with its
+size.
+
+`agents.exec_cmd` is the other half. A reviewer that only has to read a pack and answer does not
+need an agentic loop, and where the key is set the round now runs one non-interactive invocation per
+role — any harness, any vendor, a script of your own — with the findings deduplicated in code rather
+than by a model reading eight reports. It arrived as an alternative the panel *could* take, and a
+real run showed what that costs: the familiar path wins every time, in silence. So it is the path
+when the key is set, with three named ways back to the agentic panel, and the review artifact now
+records which one ran — a round that skipped the CLI and one that used it read the same otherwise.
+
+Cost stopped being a design argument and became a number. Every phase that can measure what it spent
+appends one entry to `meta.json.cost[]`, and the two rules are what make the block worth having: a
+harness that reports nothing is recorded as `"not reported"` rather than estimated, and a phase with
+no entry measured nothing — absence is not zero. The `Cost:` line of a review, meanwhile, stopped
+counting subagents: a headcount is not a bill, and saying so was cheaper than pretending otherwise.
+
+None of this requires anything of an existing repo. An empty `agents.exec_cmd` is the default and
+the agentic panel runs exactly as before; a `FLOW.md` written before any of these keys existed still
+produces a pack; a work with no cost block simply has none. What a machine without node loses is the
+saving, not the review — the CLI failing for any reason is a documented fallback to reading the diff
+from git, and `/flow:doctor` now checks for that CLI so it is a line in a diagnosis rather than a
+surprise mid-phase.
+
+Finally, two things this repo asserted about itself and never checked. `check_no_stack_leak` reads
+every line of the plugin and fails the ones that *depend* on a single ecosystem — naming several is
+a detection table and passes, naming one is a leak — with three narrow exemptions and no exemption
+at all under `bin/`. And a change to the flow can now be installed before it is tagged: an rc
+publishes under `next`, `claude --plugin-dir` loads a branch over the release you use daily, and npm
+serves a branch straight from git for the other harnesses.
+
 ## v0.64.0 — Announcing the next step was how the run ended  ·  2026-09-16
 
 **In short**
