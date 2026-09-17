@@ -221,6 +221,13 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
   a non-negative integer (`0` = no ceiling; else the default `12` applies). Report both effective
   numbers with the count of panel members `quality.review_skill`/`quality.reviewers` defines, so
   the widest command's cost is visible before it is paid, not after.
+- **The `flow-workflows` CLI, which `review` reaches for before it composes a panel**:
+  `npx flow-workflows --version` answers, and the number matches this plugin's. Unreachable — no
+  node, no network, a machine that installs nothing — is **not** a failure: say so in one line, and
+  that the review falls back to reading the diff from git, paying for that material once per
+  reviewer. A version *behind* the plugin's is the one that misleads, because the commands then
+  describe flags the installed CLI does not have: report both numbers and let the reader decide.
+  This is the only check here about something no install step of ours puts on the machine.
 - The `flow-core` skill file exists under the plugin root: `~/.claude/flow/CORE.gemini.md`.
   Missing → every phase command runs without its shared rules; fix: reinstall or update the plugin.
 

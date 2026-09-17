@@ -300,9 +300,10 @@ python3 script/adapter-smoke.py      # also runs install.sh against a throwaway 
 bash script/tests/push-guard.sh      # the push guard's cases
 bash script/tests/notify-update.sh   # the update-notice hook's cases
 bash script/tests/session-start.sh   # the where-you-left-off hook's cases
+bash script/tests/review-unwrap.sh   # the answer shapes `flow review` has to unwrap
 ```
 
-CI runs the same five on every PR. The preflight refuses what has shipped broken before: an empty tracked file, unparsable JSON or TOML, a manifest version out of step with `CHANGELOG.md`, a hook without its executable bit, a stale or unusable mirror. → [RELEASING](RELEASING.md)
+CI runs the same six on every PR. The preflight refuses what has shipped broken before: an empty tracked file, unparsable JSON or TOML, a manifest version out of step with `CHANGELOG.md`, a hook without its executable bit, a stale or unusable mirror. → [RELEASING](RELEASING.md)
 
 ## What it does not ship (on purpose)
 

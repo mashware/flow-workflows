@@ -46,14 +46,15 @@ Stated as plainly as the README states what the plugin does not ship, and for th
    `adapters/opencode/`, `adapters/codex/`, `adapters/gemini/` and `adapters/hermes/` are generated. Run
    `python3 script/adapter-build.py` and commit both — a mirror edited by hand is undone by the next
    build. → [RELEASING §Keeping the adapters in step](RELEASING.md#keeping-the-adapters-in-step)
-2. **A hook change ships with its test.** Under `script/tests/`, in the shape of the three that
-   are there, and wired into `.github/workflows/preflight.yml`. The preflight refuses a hook that
-   no test file names.
+2. **A hook or CLI change ships with its test.** Under `script/tests/`, in the shape of the four
+   that are there, and wired into `.github/workflows/preflight.yml`. The preflight refuses a hook
+   that no test file names; `bin/cli.mjs` is under the same rule by convention, because what it
+   parses — a harness's answer, a `FLOW.md` key — is exactly what no reader checks by eye.
 3. **Version and CHANGELOG move together.** `plugins/flow/.claude-plugin/plugin.json`'s `version`
    must equal the newest heading in `plugins/flow/CHANGELOG.md`; the preflight refuses the drift,
    because `/flow:news` reads the changelog while the loader reads the manifest.
-4. **Run the preflight before you open the PR** — the five commands in
-   [README §Before tagging](README.md#before-tagging-a-release). CI runs the same four, so a red CI
+4. **Run the preflight before you open the PR** — the six commands in
+   [README §Before tagging](README.md#before-tagging-a-release). CI runs the same six, so a red CI
    is a tree the release steps would have rejected anyway.
 
 Releases are cut by the maintainer; [RELEASING](RELEASING.md) is the procedure.

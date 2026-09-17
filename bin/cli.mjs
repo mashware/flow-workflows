@@ -239,6 +239,12 @@ function parseFlow(text) {
     if (value.trim()) { out[section][key] = value.trim(); listKey = null }
     else { out[section][key] = []; listKey = key }
   }
+  // A key with no inline value opens a list. One that never got an item is simply unset —
+  // and an empty array reads as *set* at every call site, which turns the template's own
+  // `- exec_cmd:` into a command to run. Unset is unset, whichever way it was written.
+  for (const keys of Object.values(out)) {
+    for (const [key, value] of Object.entries(keys)) if (Array.isArray(value) && !value.length) keys[key] = ''
+  }
   return out
 }
 
@@ -487,6 +493,22 @@ function firstJson(text) {
   return null
 }
 
+// A harness with a structured-output flag answers in an envelope of its own: the findings
+// arrive under `structured_output`, or as a JSON string in `result`, alongside the run's
+// cost. Reading only the root is what made every role report nothing while the command
+// exited 0 — the failure that looks like a clean diff. Unwrap one level, and keep the
+// envelope's cost, which the inner object never carries.
+function unwrapFindings(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null
+  const cost = parsed.total_cost_usd ?? null
+  if (Array.isArray(parsed.findings)) return { findings: parsed.findings, cost }
+  const inner = Array.isArray(parsed.structured_output?.findings) ? parsed.structured_output
+    : typeof parsed.result === 'string' ? firstJson(parsed.result)
+      : null
+  if (inner && Array.isArray(inner.findings)) return { findings: inner.findings, cost: cost ?? inner.total_cost_usd ?? null }
+  return null
+}
+
 function runRole(cmd, role, pack, repo) {
   const shellSafe = (s) => String(s).replace(/(["\\$`])/g, '\\$1')
   const line = cmd.replaceAll('{ROLE}', shellSafe(role)).replaceAll('{SCHEMA}', shellSafe(REVIEW_SCHEMA))
@@ -510,13 +532,16 @@ function runRole(cmd, role, pack, repo) {
     child.stdout.on('data', (d) => { out += d })
     child.stderr.on('data', (d) => { err += d })
     child.on('error', (e) => resolve({ role, error: e.message, findings: [] }))
+    // A command that answers without reading the brief closes the pipe under us. That is a
+    // review to judge on its output, not a crash of the round the other reviewers are in.
+    child.stdin.on('error', () => {})
     child.on('close', (code) => {
-      const parsed = firstJson(out)
-      if (!parsed || !Array.isArray(parsed.findings)) {
+      const got = unwrapFindings(firstJson(out))
+      if (!got) {
         resolve({ role, code, error: `no JSON findings in the output${err ? ` (stderr: ${err.trim().slice(0, 200)})` : ''}`, findings: [] })
         return
       }
-      resolve({ role, code, findings: parsed.findings, cost: parsed.total_cost_usd ?? null })
+      resolve({ role, code, findings: got.findings, cost: got.cost })
     })
     child.stdin.end(brief)
   })
@@ -532,6 +557,17 @@ async function review(argv) {
     console.error('agentic panel inside /flow:*:review is what reviews, exactly as before.')
     console.error('It takes any non-interactive harness invocation — {ROLE} and {SCHEMA} are')
     console.error('substituted, and the diff arrives on stdin.')
+    process.exit(1)
+  }
+
+  // Substitution escapes for a double-quoted context. Inside single quotes those
+  // backslashes reach the harness literally, the schema is no longer valid JSON, and every
+  // role answers nothing — paid for, once per reviewer, with a clean-looking panel to show
+  // for it. It cannot work, so it stops here rather than in the artifact.
+  if (/'[^']*\{(SCHEMA|ROLE)\}[^']*'/.test(cmd)) {
+    console.error('flow review: `{SCHEMA}`/`{ROLE}` sit inside single quotes in `agents.exec_cmd`.')
+    console.error('The substitution escapes for double quotes, so single ones hand the command')
+    console.error('invalid JSON and every role reports nothing. Use "{SCHEMA}" there.')
     process.exit(1)
   }
 
@@ -716,7 +752,8 @@ else if (cmd === 'install') {
   console.error(`Unknown harness: ${tool ?? '(none given)'}`)
   console.error(`Expected one of: ${Object.keys(HARNESSES).join(', ')}, claude`)
   process.exit(1)
-} else if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') usage()
+} else if (cmd === '--version' || cmd === '-v') console.log(version())
+else if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') usage()
 else {
   console.error(`Unknown command: ${cmd}`)
   usage()
