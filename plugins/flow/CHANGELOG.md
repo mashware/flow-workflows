@@ -117,9 +117,11 @@ with says which overlay went unread.
 answers arrived as notifications after the parent had moved on, and from where the parent stood
 that is indistinguishable from four agents with nothing to say — so the round was relaunched, a
 third of `agents.budget_max` spent on work already done. Fan-out briefs now name a file each agent
-writes **before** it replies, and the round is read off that folder rather than off the replies:
-one `ls` separates a round that was lost from a round that was never done, and only the second is
-worth an agent.
+writes **before** it replies. The reply is still what the parent reads — it is in context already,
+and re-opening its file would pay for the same words twice; the folder is where the round
+*survives*, consulted for one thing only: an `ls` before a silent agent is written off. That one
+call separates a round that was lost from a round that was never done, and only the second is worth
+another agent.
 
 None of the six could be seen from the repo, and none of them failed. That is the argument for
 driving a candidate through a real work rather than reading it: the run that found them is also the

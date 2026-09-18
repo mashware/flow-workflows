@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.65.0-rc.5`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.65.0-rc.6`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -320,9 +320,14 @@ as a notification while you were mid-turn, or an agent that went idle without re
 here every one of those looks the same as an agent with nothing to say, and the usual repair —
 relaunch the round — pays for the same work twice out of one `agents.budget_max`. So each brief in
 a fan-out ends with **"write it to `<path>` before you reply; the file is the deliverable and the
-reply is a copy of it"**, the paths sit in one folder under `.claude/work/<TICKET>/`, and **the
-round is read off that folder, not off the replies**. One `ls` is the difference between a round
-that was lost and a round that was never done — and only the second one is worth an agent.
+reply is a copy of it"**, and the paths sit in one folder under `.claude/work/<TICKET>/`.
+
+**You still read the replies.** A reply that arrived is in your context already, and re-opening its
+file pays for the same words a second time — the folder is not where the round is read, it is where
+the round survives. So it is consulted for exactly one thing: **before a silent agent is written
+off, `ls` it.** A file there is an answer that got lost in transit, recovered for the cost of
+reading it once; nothing there is an agent that did no work. That one call is the difference between
+a round that was lost and a round that was never done — and only the second is worth another agent.
 
 **A size in a brief is a thermometer, not a budget.** When the brief hands an agent a `lines_est`,
 a size or a review threshold, it says which one it is (§9). An agent that reads a number as a target

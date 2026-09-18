@@ -110,8 +110,9 @@ Each advisor gets this brief, with its lens substituted:
 > project; do not invent flaws to fill space. **Write your critique to
 > `.claude/work/<TICKET>/approaches/critique-<lens>.md` before you reply.**
 
-**Round 3 — you synthesise.** Read `.claude/work/<TICKET>/approaches/` rather than the replies:
-it is the whole round, including whatever never arrived. Rank the approaches best to worst *for this case* (project fit and
+**Round 3 — you synthesise.** A reply that arrived is already in your context and its file adds
+nothing — **open only the files of the lenses that did not answer**, and only then. Rank the
+approaches best to worst *for this case* (project fit and
 simplicity, not generic merit), weighing the fatal flaws the critique surfaced. State explicitly
 where the advisors **agreed** and where they **disagreed** — the disagreement is the useful part.
 
