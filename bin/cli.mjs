@@ -263,13 +263,15 @@ function parseFlow(text) {
 // resolve every key to its fallback and say nothing. Prefer the root we are in (a repo that
 // commits its config gets it in every worktree, and a worktree may legitimately differ), and
 // fall back to the main checkout, which `--git-common-dir` points into from anywhere.
-function configRoot(repo) {
-  if (existsSync(join(repo, 'FLOW.md'))) return repo
+function rootHolding(repo, probe) {
+  if (existsSync(join(repo, probe))) return repo
   const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], repo).trim()
   if (!common) return repo
   const main = dirname(common)
-  return main !== repo && existsSync(join(main, 'FLOW.md')) ? main : repo
+  return main !== repo && existsSync(join(main, probe)) ? main : repo
 }
+
+const configRoot = (repo) => rootHolding(repo, 'FLOW.md')
 
 // The overlay names flow-core §0 recognises. A `--harness` outside this set reads no
 // overlay and looks exactly like a repo that has none, so it stops the run instead: a typo
@@ -322,8 +324,12 @@ function flowConfig(repo, harness) {
   return base
 }
 
+// `.claude/work` is git-ignored like the FLOW files, so a worktree does not carry it either — and
+// the two things that read it fail silently when it is missing: the pack drops its `## Work`
+// section, which it advertises and no reviewer knows to miss, and `--record` writes the figure
+// nowhere and exits 0. Same resolution as the config: here first, the main checkout otherwise.
 function workFolder(repo, branch) {
-  const root = join(repo, '.claude', 'work')
+  const root = join(rootHolding(repo, join('.claude', 'work')), '.claude', 'work')
   if (!existsSync(root)) return null
   for (const entry of readdirSync(root, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name === '_archive') continue

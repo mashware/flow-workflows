@@ -123,7 +123,21 @@ and re-opening its file would pay for the same words twice; the folder is where 
 call separates a round that was lost from a round that was never done, and only the second is worth
 another agent.
 
-None of the six could be seen from the repo, and none of them failed. That is the argument for
+The first real run of the CLI panel — the half of this release nothing had exercised — found the
+last one, and it is the worktree bug again in the place nobody looked. **`.claude/work` is
+git-ignored exactly like the FLOW files**, so a phase running in a worktree does not have it
+either: `bundle` silently dropped the `## Work` section it advertises, sending every reviewer a
+pack with no handoff and no `meta.json`, and `review --record` wrote the figure nowhere and exited
+0 — which is indistinguishable from a harness that reported no cost. The work folder now resolves
+the way the config does: here first, the main checkout otherwise.
+
+That same run is the argument for the whole release. Four one-shot reviewers, four and a half
+minutes, **$4.24 measured** over a 1 360-line diff, and they found a major regression the agentic
+panel had missed on the same branch: `Option<&RawValue>` collapses a JSON `null` into "key absent",
+so a reply that carried an explicit null lost the distinction the code around it documents. Not
+found by reading the plugin — found by running it.
+
+None of the seven could be seen from the repo, and none of them failed. That is the argument for
 driving a candidate through a real work rather than reading it: the run that found them is also the
 one whose review then read the diff from git and caught five blocking defects anyway, because the
 fallback is a real path and not an apology.

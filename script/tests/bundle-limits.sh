@@ -65,6 +65,19 @@ rm -f "$BASE/wt/FLOW.md"                      # a git-ignored config never reach
 check "FLOW.md is found from a worktree"       "$BASE/pack-wt.txt" hit  "Left out by .git.diff_exclude"
 check "so the base resolves there too"         "$BASE/pack-wt.txt" miss 'does not resolve'
 
+# The work's handoff is git-ignored too, so a worktree does not carry it: the pack used to drop
+# the section it advertises, and `--record` wrote the figure nowhere and exited 0.
+mkdir -p .claude/work/T-1
+printf '{"branch":"feature","ticket":"T-1"}\n' > .claude/work/T-1/meta.json
+printf '# handoff\n' > .claude/work/T-1/00-summary.md
+# A worktree checked out ON the branch, since the folder is matched by branch name.
+g checkout -q main
+g worktree add -q "$BASE/wt2" feature 2>/dev/null
+rm -rf "$BASE/wt2/.claude"
+(cd "$BASE/wt2" && node "$CLI" bundle > "$BASE/pack-work.txt" 2>&1)
+check "the handoff is found from a worktree"   "$BASE/pack-work.txt" hit  '^## Work$'
+check "and carries the work's own meta.json"   "$BASE/pack-work.txt" hit  '^### meta.json'
+
 # The pack says which config files it read: the overlay failure is silent otherwise.
 node "$CLI" bundle --harness claude > "$BASE/pack-noovl.txt" 2>&1
 check "names the config it read"               "$BASE/pack-noovl.txt" hit  'Config read: FLOW.md\.'
