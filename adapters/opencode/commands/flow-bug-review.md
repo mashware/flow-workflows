@@ -26,7 +26,7 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 - **A premise left open by `fix` §2.2 is an input to this review, not a note.** Every row of "Premises the fix depends on" whose verdict is `unsettled` enters §5 as an **ambiguous finding** and is named in §7 whether or not that gate opened — in a bug it is usually the claim that the root cause was the whole cause, which is exactly what the regression test cannot prove.
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.
 - `git diff` shows no changes → warn and stop.
-- **Gather the material once, not once per reviewer.** `npx flow-workflows@<version> bundle --checks`
+- **Gather the material once, not once per reviewer.** `npx flow-workflows@<version> bundle --checks --harness opencode`
   prints one context pack for this branch — worklist, the diff (minus `git.diff_exclude`), the changed files
   in full, the raw output of `quality.static_analysis`, and the work's handoff — in a single call.
   Read that instead of rediscovering it, and **pass it to the briefs of §2-§5**: a panel where every
@@ -43,9 +43,15 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
   is under test is the **previous** release: the page then describes subcommands and flags the CLI
   that actually runs does not carry, every call exits non-zero, and the round takes the documented
   fallback for a reason nobody can see. The version the plugin asks for and the version that answers
-  are the same number by construction, or the `Review path` line of §8 says which one failed.
+  are the same number by construction, or the `Review path` line of §7 says which one failed.
+- **`--harness opencode` is not decoration.** Without it the CLI reads `FLOW.md` alone and never
+  opens the overlay — so a key set only there (`agents.exec_cmd`, this harness's models, a
+  `diff_exclude` that differs here) reaches the pack as unset, which is precisely how the base
+  reads in a repo that has no overlay at all. The pack's header says which files it read, and a
+  run that skipped one names it: **copy that line into `Review path` as it came**, rather than
+  restating what you believe the configuration to be.
 - **`agents.exec_cmd` set → the panel runs from the CLI.** Not a choice to weigh: run
-  `npx flow-workflows@<version> review`, which spawns that command once per role over the pack above — **one
+  `npx flow-workflows@<version> review --harness opencode`, which spawns that command once per role over the pack above — **one
   turn each instead of an agentic loop each** — and returns the findings already deduplicated, with
   the reviewers it dropped for `agents.budget_max` named. Exactly three things send the round to the
   agentic panel below: the key is empty (the default — nothing changes without it), the CLI is
@@ -159,7 +165,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
 - Measured cost: <what the harness reported for this round, when it reported anything — `flow review --record` writes it to `meta.json.cost[]` and `/flow-work-status` and `flow cost` read it back. A harness that reports no figure is recorded as "not reported": the subagent count above is a headcount, not a cost, and a guess is worse than a gap.>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used, and — when the diff landed within 10% under a tier threshold — that fact (§2.0)>
-- Review path: <the two paths this round actually took: `flow bundle` or git for the material, `flow review` or the agentic panel for the reviewers — each with the reason when it was the fallback (no CLI, non-zero exit, `agents.exec_cmd` empty, every role empty). Without this line a round that skipped the CLI reads exactly like one that used it.>
+- Review path: <the two paths this round actually took: `flow bundle` or git for the material, `flow review` or the agentic panel for the reviewers — each with the reason when it was the fallback (no CLI, non-zero exit, `agents.exec_cmd` empty, every role empty). Without this line a round that skipped the CLI reads exactly like one that used it. When the pack ran, quote its `Config read:` line verbatim: it is the only place that says whether the overlay reached the material, and “no `--harness` was given” there means every key set only in the overlay was missing from this round.>
 - Agent models: <the value of `models.workers`/`models.agents` **with the file each came from** (flow-core §0) when set; otherwise "inherited from this thread", naming the config files you listed; agents named in `agents.<role>` keep their own definition's model>
 - Defaults used: <every empty `FLOW.md` key this round resolved with its default — one per line as `key → default` — or "none". In `guided`/`auto` each is also an entry in `meta.json.defaults_used[]` (flow-core §0); in `manual` the phase may offer one of them at its stop.>
 - Skipped for budget: <phases dropped by §2.0's give-up order, or "none">

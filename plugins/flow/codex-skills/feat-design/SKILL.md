@@ -96,27 +96,36 @@ Each advisor gets this brief, with its lens substituted:
 > active harness overlay) for project conventions. Do not
 > write code. Be specific about real modules and layers of this project. Report: name, what it is
 > (one sentence), modules/layers affected, main risk, and why it could be a bad idea. Under 250 words.
+> **Write that same answer to `.claude/work/<TICKET>/approaches/<lens>.md` before you reply** — the
+> file is the deliverable and the reply is a copy of it.
 
 **Round 2 — cross-critique (L only, parallel).** Each advisor receives the full set and attacks the
 *others* from its own lens:
 
-> You are the "`<lens>`" advisor. These are the approaches proposed for `<TICKET>`: `<the round-1
-> set>`. Read `.claude/work/<TICKET>/01-context.md`. From your lens (`<lens brief>`), critique the
+> You are the "`<lens>`" advisor. The approaches proposed for `<TICKET>` are in
+> `.claude/work/<TICKET>/approaches/` — read them all, plus `.claude/work/<TICKET>/01-context.md`.
+> From your lens (`<lens brief>`), critique the
 > OTHER approaches — not your own. For each one name its single biggest flaw for THIS project, or
 > "none". Then say which is strongest and which weakest, and why. Be concrete and grounded in the
-> project; do not invent flaws to fill space.
+> project; do not invent flaws to fill space. **Write your critique to
+> `.claude/work/<TICKET>/approaches/critique-<lens>.md` before you reply.**
 
-**Round 3 — you synthesise.** Rank the approaches best to worst *for this case* (project fit and
+**Round 3 — you synthesise.** Read `.claude/work/<TICKET>/approaches/` rather than the replies:
+it is the whole round, including whatever never arrived. Rank the approaches best to worst *for this case* (project fit and
 simplicity, not generic merit), weighing the fatal flaws the critique surfaced. State explicitly
 where the advisors **agreed** and where they **disagreed** — the disagreement is the useful part.
 
 `agents.fanout_tool` set → run the rounds through that tool instead of plain parallel subagents; the
 rounds, the briefs and the ceiling do not change.
 
-**A subagent that comes back empty is asked once for its answer and then dropped, never relaunched**
-(flow-core §6 — an empty result is as often a truncated report as an advisor with nothing to say):
-synthesise from those that answered and record `N/M`. An empty critique round → rank from the
-approaches alone.
+**A round that answers nothing is read off disk before it is written off** (flow-core §6). The
+advisors write their files first and reply second, so `ls .claude/work/<TICKET>/approaches/` settles
+what actually happened: a file there is an answer that got lost in transit, and you synthesise from
+it without spending a single agent. Only a lens with no file is empty — **it is asked once for its
+answer and then dropped, never relaunched**, because an empty result is as often a truncated report
+as an advisor with nothing to say, and a relaunched round is paid for twice out of one
+`agents.budget_max`. Synthesise from those that answered and record `N/M`. An empty critique round
+→ rank from the approaches alone.
 
 ### 1.5.4 Single agent (the S case, or a declined panel)
 

@@ -100,7 +100,28 @@ finished. Step 0 now begins by listing `FLOW*.md` — one call, not optional —
 carries the file it came from, and `bundle` states in its header which files the run read, so an
 overlay that was never opened is a line in the pack instead of nothing at all.
 
-None of the four could be seen from the repo, and none of them failed. That is the argument for
+The fourth candidate confirmed all of that — the overlay was read, the models went where the
+overlay sent them, the pack carried the whole change and the review quoted it by line — and then
+found that **the header announcing which config files were read was itself blind to the overlay**.
+`bundle` merges one only when told which harness is running, nothing on any command page told it,
+and so every pack ever printed said `Config read: FLOW.md`: the exact sentence a repo with no
+overlay prints. Worse one level down, `flow review` resolves `agents.exec_cmd` from the same
+config — a key that belongs in an overlay, and that the template documents there — so the CLI
+panel would have refused to start with *"`agents.exec_cmd` is empty in FLOW.md"* about a file it
+had never opened. Every `flow-workflows` call a command writes now names its harness, the
+generator substitutes each mirror's own, the preflight fails a call that omits it, a misspelled
+name stops the run instead of silently reading nothing, and a pack that had no harness to work
+with says which overlay went unread.
+
+**A round of advisors also went quiet and was paid for twice.** Four subagents finished, their
+answers arrived as notifications after the parent had moved on, and from where the parent stood
+that is indistinguishable from four agents with nothing to say — so the round was relaunched, a
+third of `agents.budget_max` spent on work already done. Fan-out briefs now name a file each agent
+writes **before** it replies, and the round is read off that folder rather than off the replies:
+one `ls` separates a round that was lost from a round that was never done, and only the second is
+worth an agent.
+
+None of the six could be seen from the repo, and none of them failed. That is the argument for
 driving a candidate through a real work rather than reading it: the run that found them is also the
 one whose review then read the diff from git and caught five blocking defects anyway, because the
 fallback is a real path and not an apology.

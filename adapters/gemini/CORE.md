@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.65.0-rc.4`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.65.0-rc.5`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -313,6 +313,16 @@ diff hits that every time, and a stronger model hits it sooner, because it write
 test suite, a migration, a batch of edits — name the **path it writes** and require it to **save
 after each finished piece, not at the end**. Then verify the artifact instead of believing the
 report: half a chunk on disk is recoverable, what lives only in the agent's context is not.
+
+**A parallel round names a path too, however short the answer.** Not for volume — for arrival. A
+round of four is four chances for a result to reach you as nothing: truncated in transit, delivered
+as a notification while you were mid-turn, or an agent that went idle without replying at all. From
+here every one of those looks the same as an agent with nothing to say, and the usual repair —
+relaunch the round — pays for the same work twice out of one `agents.budget_max`. So each brief in
+a fan-out ends with **"write it to `<path>` before you reply; the file is the deliverable and the
+reply is a copy of it"**, the paths sit in one folder under `.claude/work/<TICKET>/`, and **the
+round is read off that folder, not off the replies**. One `ls` is the difference between a round
+that was lost and a round that was never done — and only the second one is worth an agent.
 
 **A size in a brief is a thermometer, not a budget.** When the brief hands an agent a `lines_est`,
 a size or a review threshold, it says which one it is (§9). An agent that reads a number as a target
