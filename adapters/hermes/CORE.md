@@ -17,7 +17,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.65.0-rc.3`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.65.0-rc.4`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -27,6 +27,16 @@ a command relies on is simply absent in that session, and nothing else will repo
 
 ## 0. Effective FLOW config — base plus harness overlay
 
+- **Look before you read.** The first thing a phase does about configuration is list what is there:
+  `ls <root>/FLOW*.md` (the root being the one the next bullet resolves). One call, and it is not
+  optional — **an overlay you did not list is an overlay you did not read**, and nothing downstream
+  will notice. This is not a hypothetical: every command below, and every artifact they write,
+  refers to the effective configuration as "`FLOW.md`", which is a file that exists, so reading it
+  and stopping feels finished. Two real sessions in a row read the base in full and never went
+  looking for the overlay sitting beside it — the models it set were silently the defaults, and
+  both runs reported the keys as unset with no way to tell that apart from a repo that never set
+  them. **Name the files this listing found the first time a phase reports any configured value**,
+  so a missed overlay is visible in the artifact rather than invisible everywhere.
 - Read `FLOW.md` at the repo root as the base, then the optional overlay for the harness running
   this command: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`, or
   `FLOW.hermes.md`. The
@@ -50,7 +60,8 @@ a command relies on is simply absent in that session, and nothing else will repo
   to the normal empty-key fallback — this is how Codex can inherit its session model while a legacy
   `FLOW.md` still names a Claude model. A list-valued key is replaced as a whole, never appended.
   `conventions` is the one unkeyed section: its overlay lines are added after the base lines, so
-  both sets apply. Keep the source file of every effective value; `doctor` reports it and later
+  both sets apply. **Every value carries the file it came from**, and a phase that prints a value
+  prints that file with it — "`agents: opus` (`FLOW.claude.md`)", never the value alone. `doctor` reports it and later
   edits preserve it.
 - The sections in either file are tracker, git, autonomy, quality, agents, models, data,
   conventions, notes, knowledge, and observability. Both files missing, or an effective empty key

@@ -88,7 +88,19 @@ to the main checkout, which `--git-common-dir` locates from anywhere. And **a qu
 quotes**, so the `- '*.lock'` the template itself documents became a pathspec matching a filename
 with quotes in it — `git.diff_exclude` excluded nothing for anyone who copied the example.
 
-None of the three could be seen from the repo, and none of them failed. That is the argument for
+The third candidate then found the one that had been hiding behind them. A harness overlay —
+`FLOW.claude.md` and its siblings, where a model id belongs so it never reaches another harness —
+**was never read**. Not once, in two full runs, on two different models: both read the base file in
+full and neither went looking for the overlay beside it, so the models it set were silently the
+defaults and both artifacts reported the keys as *unset* — which is exactly what a repo that never
+set them reports. The instruction to merge an overlay has always been there; what was missing was
+anything that made a phase **look**. Every command, and every artifact they write, calls the
+effective configuration "`FLOW.md`", and that is a real file, so reading it and stopping feels
+finished. Step 0 now begins by listing `FLOW*.md` — one call, not optional — every printed value
+carries the file it came from, and `bundle` states in its header which files the run read, so an
+overlay that was never opened is a line in the pack instead of nothing at all.
+
+None of the four could be seen from the repo, and none of them failed. That is the argument for
 driving a candidate through a real work rather than reading it: the run that found them is also the
 one whose review then read the diff from git and caught five blocking defects anyway, because the
 fallback is a real path and not an apology.

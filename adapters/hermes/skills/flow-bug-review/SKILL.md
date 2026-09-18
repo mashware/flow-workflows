@@ -162,7 +162,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Measured cost: <what the harness reported for this round, when it reported anything — `flow review --record` writes it to `meta.json.cost[]` and `/flow-work-status` and `flow cost` read it back. A harness that reports no figure is recorded as "not reported": the subagent count above is a headcount, not a cost, and a guess is worse than a gap.>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used, and — when the diff landed within 10% under a tier threshold — that fact (§2.0)>
 - Review path: <the two paths this round actually took: `flow bundle` or git for the material, `flow review` or the agentic panel for the reviewers — each with the reason when it was the fallback (no CLI, non-zero exit, `agents.exec_cmd` empty, every role empty). Without this line a round that skipped the CLI reads exactly like one that used it.>
-- Agent models: <the value of `models.workers`/`models.agents` when set; otherwise "inherited from this thread"; agents named in `agents.<role>` keep their own definition's model>
+- Agent models: <the value of `models.workers`/`models.agents` **with the file each came from** (flow-core §0) when set; otherwise "inherited from this thread", naming the config files you listed; agents named in `agents.<role>` keep their own definition's model>
 - Defaults used: <every empty `FLOW.md` key this round resolved with its default — one per line as `key → default` — or "none". In `guided`/`auto` each is also an entry in `meta.json.defaults_used[]` (flow-core §0); in `manual` the phase may offer one of them at its stop.>
 - Skipped for budget: <phases dropped by §2.0's give-up order, or "none">
 - Blockers: N
