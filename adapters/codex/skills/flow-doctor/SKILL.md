@@ -33,6 +33,9 @@ changing machines, after `$flow-init`, or when a command failed the way an envir
   `FLOW.md`, then its `FLOW.<harness>.md` overlay. Never read another harness's overlay. Both absent
   is **not** an error: say so in one line, check what needs no config (git, hooks, harness, base
   branch, plugin files), and note that `$flow-init` would let this command check the rest.
+  **Say which checkout the configuration came from** whenever it is not the directory you are in
+  (flow-core §0: a worktree does not carry a git-ignored `FLOW.md`). A diagnosis run from a
+  worktree that quietly read nothing is the one that certifies a repo as unconfigured.
 - Parse both files by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`,
   `conventions`, `notes`, `knowledge`, `observability`; merge keys and empty masks per flow-core §0.
   Keep the source of every effective value. Both absent → §1.5 runs with **every** key empty (all

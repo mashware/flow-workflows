@@ -8,7 +8,7 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 ## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-17
 
 **In short**
-- **A round gathers its material once.** `npx flow-workflows bundle` prints one context pack — worklist, diff, changed files, the repo's own analysis output, the work's handoff — instead of every reviewer paying to rediscover it.
+- **A round gathers its material once.** `npx flow-workflows bundle` prints one context pack — worklist, diff, changed files, the repo's own analysis output, the work's handoff — instead of every reviewer paying to rediscover it. Two limits govern it, because how big a file is and how big its change is are different questions: a large file with a small edit keeps its diff.
 - **The panel can run outside the agentic loop.** With `agents.exec_cmd` set, `npx flow-workflows review` runs one reviewer per role in **one turn each**, deduplicated — and that is what runs when the key is there, not one option among two.
 - **What a phase spent is written down.** `meta.json.cost[]` records the figure the harness reported, `"not reported"` when it reported none and never an estimate; `flow cost`, `/flow:work:status` and the review artifact read it back.
 - **A change can be run before it is tagged — and the candidate's own code is what runs.** Candidates publish under the `next` channel so `latest` never moves; the commands pin the CLI to the plugin's own version, so a candidate's commands can never be served by the previous release's CLI; and a session that has ended up with two copies of the plugin says so instead of running a mixture.
@@ -73,6 +73,25 @@ checks it outright, and `RELEASING.md` says to disable the installed copy rather
 What made all of this visible was the `Review path` line added above — a round that fell back and a
 round that did not are one line apart in the artifact, and without that line this release would have
 shipped believing its own notes.
+
+The second candidate ran the whole flow again and the CLI worked, which is how the next three were
+found — all of them in `bundle`, and all of them the kind that exit 0. **One size rule governed both
+the contents and the diff**, so a 1 MB source file with a 40-line edit lost its diff entirely: the
+pack carried 458 of 974 changed lines and its worklist, counted after the rule, agreed. There are
+two limits now — `--max-file-bytes` decides what is too big to print in full, `--max-diff-lines`
+what is too big to read as a diff — the worklist always counts the whole change, and anything held
+back is named there rather than at the end, before the diff it is missing from. **`FLOW.md` was read
+from wherever the command ran**, and with `git.worktree` set that is a worktree, where a git-ignored
+config does not exist: every key resolved to its fallback and nothing said so, which is
+indistinguishable from a repo that has no configuration. Both the CLI and flow-core §0 now fall back
+to the main checkout, which `--git-common-dir` locates from anywhere. And **a quoted value kept its
+quotes**, so the `- '*.lock'` the template itself documents became a pathspec matching a filename
+with quotes in it — `git.diff_exclude` excluded nothing for anyone who copied the example.
+
+None of the three could be seen from the repo, and none of them failed. That is the argument for
+driving a candidate through a real work rather than reading it: the run that found them is also the
+one whose review then read the diff from git and caught five blocking defects anyway, because the
+fallback is a real path and not an apology.
 
 ## v0.64.0 — Announcing the next step was how the run ended  ·  2026-09-16
 
