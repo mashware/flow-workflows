@@ -14,6 +14,9 @@ What changes per harness is mechanical, and only this:
     string (backslashes and triple quotes escaped)
   * every `/flow…` invocation rewritten to that harness's sigil and separator
   * `$ARGUMENTS` → `{{args}}` for Gemini
+  * `--harness claude` on a `flow-workflows` call → that harness's own overlay name,
+    because the flag names the `FLOW.<harness>.md` the CLI merges and a mirror that
+    kept `claude` would read another harness's overrides, or none
   * the `flow:flow-core` skill pointer → the CORE.md file `install.sh` places under
     `~/.claude/flow/`, and `${CLAUDE_PLUGIN_ROOT}` → that same directory
   * a short legend after the title mapping the Claude Code primitives the prose names
@@ -67,27 +70,27 @@ STATE_DIR = "~/.claude/flow"
 TARGETS = {
     "opencode": {
         "path": "adapters/opencode/commands/flow-{flat}.md",
-        "sep": "-", "head": "-", "sigil": "/", "args": "$ARGUMENTS",
+        "sep": "-", "head": "-", "sigil": "/", "args": "$ARGUMENTS", "overlay": "opencode",
         "core": ("file", "adapters/opencode/CORE.md"),
     },
     "codex": {
         "path": "adapters/codex/skills/flow-{flat}/SKILL.md",
-        "sep": "-", "head": "-", "sigil": "$", "args": "$ARGUMENTS",
+        "sep": "-", "head": "-", "sigil": "$", "args": "$ARGUMENTS", "overlay": "codex",
         "core": ("file", "adapters/codex/CORE.md"),
     },
     "codex-plugin": {
         "path": "plugins/flow/codex-skills/{flat}/SKILL.md",
-        "sep": "-", "head": ":", "sigil": "$", "args": "$ARGUMENTS",
+        "sep": "-", "head": ":", "sigil": "$", "args": "$ARGUMENTS", "overlay": "codex",
         "core": ("skill", "plugins/flow/codex-skills/flow-core/SKILL.md"),
     },
     "gemini": {
         "path": "adapters/gemini/commands/flow/{stem}.toml",
-        "sep": ":", "head": ":", "sigil": "/", "args": "{{args}}",
+        "sep": ":", "head": ":", "sigil": "/", "args": "{{args}}", "overlay": "gemini",
         "core": ("file", "adapters/gemini/CORE.md"),
     },
     "hermes": {
         "path": "adapters/hermes/skills/flow-{flat}/SKILL.md",
-        "sep": "-", "head": "-", "sigil": "/", "args": "$ARGUMENTS",
+        "sep": "-", "head": "-", "sigil": "/", "args": "$ARGUMENTS", "overlay": "hermes",
         "core": ("file", "adapters/hermes/CORE.md"),
     },
 }
@@ -233,6 +236,11 @@ def translate(body, name, spec, flat_to_stem):
         body = body.replace("${CLAUDE_PLUGIN_ROOT}", STATE_DIR)
     if spec["args"] != "$ARGUMENTS":
         body = body.replace("$ARGUMENTS", spec["args"])
+    # `--harness` names which `FLOW.<name>.md` the CLI merges on top of the base. The plugin
+    # page is Claude Code's, so it carries `claude`; a mirror that shipped that value would
+    # hand every other harness either someone else's overrides or, where no such file exists,
+    # the base alone while the pack's header reports an overlay was read.
+    body = body.replace("--harness claude", "--harness " + spec["overlay"])
     return retarget(body, spec["sep"], flat_to_stem, spec["sigil"], spec["head"])
 
 

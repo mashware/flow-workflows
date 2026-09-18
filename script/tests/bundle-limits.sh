@@ -71,7 +71,24 @@ check "names the config it read"               "$BASE/pack-noovl.txt" hit  'Conf
 printf '## models\n- agents: from-the-overlay\n' > FLOW.claude.md
 node "$CLI" bundle --harness claude > "$BASE/pack-ovl.txt" 2>&1
 check "and names the overlay when there is one" "$BASE/pack-ovl.txt" hit 'FLOW.md + FLOW.claude.md'
+
+# ...and the overlay only arrives when a harness is named. A run without `--harness` reads
+# the base alone and used to print the same header as a repo that has no overlay, which is
+# the silence the line exists to break: `agents.exec_cmd` set only there reads as unset, and
+# the review round takes a path nobody chose.
+node "$CLI" bundle > "$BASE/pack-noharness.txt" 2>&1
+check "an unread overlay is named, not hidden"  "$BASE/pack-noharness.txt" hit 'no .--harness. was given, so FLOW.claude.md went unread'
+check "and its keys do not reach the config"    "$BASE/pack-noharness.txt" miss 'from-the-overlay'
+
+printf '## agents\n- exec_cmd: echo\n' >> FLOW.claude.md
+node "$CLI" review > "$BASE/review-noharness.txt" 2>&1
+check "review names the files it really read"   "$BASE/review-noharness.txt" hit 'is empty in FLOW.md — no .--harness. was given'
 rm -f FLOW.claude.md
+
+# A misspelled harness reads no overlay at all, which is indistinguishable from a repo that
+# has none. It stops instead.
+node "$CLI" bundle --harness cluade > "$BASE/pack-typo.txt" 2>&1
+check "a misspelled harness stops the run"      "$BASE/pack-typo.txt" hit 'unknown harness .cluade.'
 
 cd /
 rm -rf "$BASE"

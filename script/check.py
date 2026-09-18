@@ -357,6 +357,32 @@ def check_version_is_one_number():
         fail(CORE_SKILL, f"states version `{m.group(1)}` but {MANIFEST} says `{version}`")
 
 
+# The subcommands whose answer depends on the effective FLOW config, so a call that leaves
+# `--harness` off silently reads the base alone.
+CONFIG_AWARE_CLI = ("bundle", "review")
+
+
+def check_cli_calls_name_the_harness(files):
+    """Every `flow-workflows bundle|review` a command page writes must pass `--harness`.
+
+    Without it the CLI merges no overlay, and the base alone is exactly what a repo with no
+    overlay resolves to: `agents.exec_cmd` set only in `FLOW.claude.md` reads as empty and
+    the round quietly takes the agentic panel it was configured out of. Nothing about that
+    is visible from the artifact, so the flag is checked here rather than found again in a
+    session. The adapters carry their own harness name; the generator substitutes it, and
+    a mirror that disagrees is a stale build, which `check_adapters_generated` already
+    catches.
+    """
+    pattern = re.compile(r"`npx flow-workflows@<version> (" + "|".join(CONFIG_AWARE_CLI) + r")\b([^`]*)`")
+    for f in files:
+        if not (f.startswith("plugins/flow/commands/") and f.endswith(".md")):
+            continue
+        for m in pattern.finditer(read(f)):
+            if "--harness" not in m.group(2):
+                fail(f, f"`flow-workflows {m.group(1)}` is called without `--harness` — it "
+                        f"would read FLOW.md alone and report every overlay key as unset")
+
+
 def check_command_frontmatter(files):
     for f in files:
         if not (f.startswith("plugins/flow/commands/") and f.endswith(".md")):
@@ -665,6 +691,7 @@ def main():
     check_hooks_have_tests(files)
     check_version_matches_changelog()
     check_version_is_one_number()
+    check_cli_calls_name_the_harness(files)
     check_command_frontmatter(files)
     check_toml(files)
     check_embedded_json(files)
