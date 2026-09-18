@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.65.0-rc.2`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.65.0-rc.3`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -33,6 +33,17 @@ a command relies on is simply absent in that session, and nothing else will repo
   valid without a base file; unknown `FLOW.*.md` names are ignored. Throughout every command,
   **"FLOW.md" means this effective merged configuration** unless the command explicitly names a
   file it will edit.
+- **"The repo root" is the main checkout's, not the worktree's.** With `git.worktree` set, every
+  phase after `start` runs inside a linked worktree — and a `FLOW.md` the repo git-ignores (the
+  normal case for a personal config, and always the case for a harness overlay) exists **only in
+  the main checkout**. Looking for it where the phase happens finds nothing, and a configuration
+  that resolves to every fallback looks exactly like a repo that never had one: the models, the
+  ceilings and the sensitive paths are silently the defaults, and the phase reports nothing
+  because from where it stands there is nothing to report. So: prefer a `FLOW.md` in the directory
+  you are in — a repo that commits its config has one in every worktree, and it may legitimately
+  differ — and otherwise read both files from the main checkout, which
+  `git rev-parse --path-format=absolute --git-common-dir` locates from anywhere (its parent
+  directory). Name the file you actually read when a stop reports configuration.
 - Merge by section and key. A key present in the active overlay replaces the base value; a key
   absent there inherits the base. **A present-but-empty overlay key masks the base** and resolves
   to the normal empty-key fallback — this is how Codex can inherit its session model while a legacy

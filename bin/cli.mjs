@@ -201,6 +201,7 @@ function check() {
 
 const MAX_FILE_BYTES = 64 * 1024
 const MAX_TOTAL_BYTES = 512 * 1024
+const MAX_DIFF_LINES = 2000
 
 function git(args, cwd = process.cwd()) {
   try {
@@ -215,6 +216,15 @@ function git(args, cwd = process.cwd()) {
 // `FLOW.md` is `## section` then `- key: value`, with an indented `- item` list where a key
 // has no inline value. `conventions` carries bare prose lines and is skipped by the same
 // rule that skips anything else without a `key:`.
+// A value wrapped in matching quotes means what is inside them. The template writes globs
+// that way (`- '*.lock'`), and keeping the quotes turned every one of them into a pathspec
+// that matches a filename with quotes in it — so the key silently excluded nothing. Only a
+// whole-value wrap is stripped: a command that quotes one of its own arguments is untouched.
+function unquote(v) {
+  const m = /^(['"])([\s\S]*)\1$/.exec(v)
+  return m ? m[2] : v
+}
+
 function parseFlow(text) {
   const out = {}
   let section = null
@@ -230,13 +240,13 @@ function parseFlow(text) {
     if (!section) continue
     const item = /^\s+-\s+(.*)$/.exec(line)
     if (item && listKey) {
-      out[section][listKey].push(item[1].trim())
+      out[section][listKey].push(unquote(item[1].trim()))
       continue
     }
     const kv = /^-\s+`?([a-z_]+)`?:\s*(.*)$/.exec(line)
     if (!kv) { listKey = null; continue }
     const [, key, value] = kv
-    if (value.trim()) { out[section][key] = value.trim(); listKey = null }
+    if (value.trim()) { out[section][key] = unquote(value.trim()); listKey = null }
     else { out[section][key] = []; listKey = key }
   }
   // A key with no inline value opens a list. One that never got an item is simply unset —
@@ -248,11 +258,25 @@ function parseFlow(text) {
   return out
 }
 
+// Where the FLOW files actually are. A phase run inside a linked worktree has its own root,
+// and a `FLOW.md` the repo git-ignores exists only in the main checkout — so a worktree would
+// resolve every key to its fallback and say nothing. Prefer the root we are in (a repo that
+// commits its config gets it in every worktree, and a worktree may legitimately differ), and
+// fall back to the main checkout, which `--git-common-dir` points into from anywhere.
+function configRoot(repo) {
+  if (existsSync(join(repo, 'FLOW.md'))) return repo
+  const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], repo).trim()
+  if (!common) return repo
+  const main = dirname(common)
+  return main !== repo && existsSync(join(main, 'FLOW.md')) ? main : repo
+}
+
 // Base file plus the overlay of the harness running this, exactly as flow-core §0 resolves
 // it: a key present in the overlay replaces the base value.
 function flowConfig(repo, harness) {
+  const root = configRoot(repo)
   const read = (name) => {
-    const p = join(repo, name)
+    const p = join(root, name)
     return existsSync(p) ? parseFlow(readFileSync(p, 'utf8')) : {}
   }
   const base = read('FLOW.md')
@@ -298,6 +322,7 @@ function buildBundle(argv) {
   const cfg = flowConfig(repo, flag('--harness'))
   const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
   const maxFile = Number(flag('--max-file-bytes', MAX_FILE_BYTES)) || MAX_FILE_BYTES
+  const maxDiffLines = Number(flag('--max-diff-lines', MAX_DIFF_LINES)) || MAX_DIFF_LINES
 
   const resolves = (ref) => Boolean(git(['rev-parse', '--verify', '--quiet', ref], repo).trim())
   let base = flag('--base') || cfg.git?.default_base || ''
@@ -324,15 +349,39 @@ function buildBundle(argv) {
   const excluded = (list) => ['--', '.', ...list.map((p) => `:(exclude)${p}`)]
   const paths = exclude.length ? excluded(exclude) : []
 
-  // One size rule for the whole pack. Applying it only to the file contents would let a
-  // generated file of any size through in the diff instead — which is the same cost, one
-  // section lower down, and exactly what a reviewer does not need to read.
+  // Two limits, because how big a file is and how big its change is are different questions,
+  // and one rule for both answers neither. A 1 MB source file with a 40-line edit belongs in
+  // the diff and not in the contents — measuring it by its size drops the change this pack
+  // exists to carry, and says so in a section nobody reads before the diff they were handed.
+  // A file whose *diff* is enormous is the one a reviewer cannot use, and a generated file
+  // nobody reviews at all belongs in `git.diff_exclude`, which is the key for exactly that.
   const changed = git(['diff', '--name-only', from, ...paths], repo).split('\n').filter(Boolean)
+
+  // `--numstat -z`: `<add>\t<del>\t<path>\0`, and for a rename an empty path field followed by
+  // the old and new paths as their own records. A path we fail to match simply keeps its diff,
+  // which is the safe direction for a rule whose failure mode was dropping too much.
+  const churn = new Map()
+  const fields = git(['diff', '--numstat', '-z', from, ...paths], repo).split('\0')
+  for (let i = 0; i < fields.length; i += 1) {
+    const m = /^(\d+|-)\t(\d+|-)\t(.*)$/.exec(fields[i])
+    if (!m) continue
+    let rel = m[3]
+    if (!rel) { rel = fields[i + 2] ?? ''; i += 2 }       // rename: old, new
+    if (!rel) continue
+    churn.set(rel, m[1] === '-' || m[2] === '-' ? null : Number(m[1]) + Number(m[2]))
+  }
+  const unreadableDiff = changed.filter((rel) => {
+    const n = churn.get(rel)
+    return n === null || (n !== undefined && n > maxDiffLines)
+  })
+  const diffPaths = excluded([...exclude, ...unreadableDiff])
+
+  // The contents section keeps the file-size rule: it is the one place a file's own size is
+  // what it costs.
   const oversize = changed.filter((rel) => {
     const abs = join(repo, rel)
     return existsSync(abs) && statSync(abs).size > maxFile
   })
-  const diffPaths = excluded([...exclude, ...oversize])
 
   const out = []
   out.push(`# flow bundle — ${branch}`)
@@ -343,11 +392,22 @@ function buildBundle(argv) {
 
   out.push('## Worklist')
   out.push('')
-  const stat = git(['diff', '--stat', from, ...diffPaths], repo).trim()
+  // The whole change, not the part that survived the limits below: a worklist that agrees
+  // with a reduced diff is how a reviewer reads half a change and never finds out.
+  const stat = git(['diff', '--stat', from, ...paths], repo).trim()
   out.push(stat ? fence(stat) : '_no changes against the base_')
   out.push('')
   if (exclude.length) {
     out.push(`Left out by \`git.diff_exclude\`: ${exclude.map((p) => `\`${p}\``).join(' · ')}`)
+    out.push('')
+  }
+  if (unreadableDiff.length) {
+    out.push('**Not in the diff below**, over `--max-diff-lines` (' + maxDiffLines + ') or binary — read these from git before reviewing them:')
+    out.push('')
+    out.push(unreadableDiff.map((rel) => {
+      const n = churn.get(rel)
+      return `- \`${rel}\` — ${n === null ? 'binary' : `${n} changed lines`}`
+    }).join('\n'))
     out.push('')
   }
   const untracked = git(['ls-files', '--others', '--exclude-standard'], repo).trim()
@@ -368,7 +428,7 @@ function buildBundle(argv) {
   out.push('')
   const skipped = oversize.map((rel) => {
     const size = statSync(join(repo, rel)).size
-    return `${rel} — ${size} bytes, over --max-file-bytes (${maxFile}); left out of the diff too`
+    return `${rel} — ${size} bytes, over --max-file-bytes (${maxFile}); its diff is above`
   })
   let spent = 0
   for (const rel of changed) {
@@ -712,7 +772,8 @@ function usage() {
 
   npx flow-workflows install <harness> [project]
   npx flow-workflows check
-  npx flow-workflows bundle [--base <ref>] [--checks] [--harness <name>] [--max-file-bytes N]
+  npx flow-workflows bundle [--base <ref>] [--checks] [--harness <name>]
+                            [--max-file-bytes N] [--max-diff-lines N]
   npx flow-workflows review [--out <file>] [--record] [same options as bundle]
   npx flow-workflows cost
 
@@ -726,6 +787,11 @@ Claude Code and Codex CLI have their own marketplaces:
   files in full, and the work's handoff — so a phase reads it in one call instead of
   rediscovering it in ten. --checks also runs quality.static_analysis and copies its
   output out verbatim. Paths in git.diff_exclude are left out of the diff.
+  Two limits, two questions: --max-file-bytes decides what is too big to print in full,
+  --max-diff-lines what is too big to read as a diff. A large file with a small change
+  keeps its diff; the worklist always shows the whole change, and anything held back is
+  named there rather than at the end. FLOW.md is read from the main checkout when this
+  runs inside a worktree that does not carry one.
 
 "review" runs one reviewer per role through agents.exec_cmd — any non-interactive
   harness invocation — over that same pack, one turn each instead of an agentic loop
