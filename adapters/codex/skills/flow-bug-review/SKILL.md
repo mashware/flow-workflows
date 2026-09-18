@@ -28,8 +28,8 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 - **A premise left open by `fix` §2.2 is an input to this review, not a note.** Every row of "Premises the fix depends on" whose verdict is `unsettled` enters §5 as an **ambiguous finding** and is named in §7 whether or not that gate opened — in a bug it is usually the claim that the root cause was the whole cause, which is exactly what the regression test cannot prove.
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.
 - `git diff` shows no changes → warn and stop.
-- **Gather the material once, not once per reviewer.** `npx flow-workflows bundle --checks` prints
-  one context pack for this branch — worklist, the diff (minus `git.diff_exclude`), the changed files
+- **Gather the material once, not once per reviewer.** `npx flow-workflows@<version> bundle --checks`
+  prints one context pack for this branch — worklist, the diff (minus `git.diff_exclude`), the changed files
   in full, the raw output of `quality.static_analysis`, and the work's handoff — in a single call.
   Read that instead of rediscovering it, and **pass it to the briefs of §2-§5**: a panel where every
   member runs its own `git diff` and opens the same files pays for that material once per agent, and
@@ -39,8 +39,15 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
   What is not optional is the `Review path` line of §7: a round that skipped the pack and one that
   used it are indistinguishable from the artifact otherwise, which is how a phase quietly stops
   paying for itself.
+- **`<version>` is this plugin's own, in every `flow-workflows` call on this page.** Read it once
+  from `version` in `~/.claude/flow/.claude-plugin/plugin.json` and substitute it. Left
+  unpinned, the fetcher resolves whatever the registry calls newest, which while a release candidate
+  is under test is the **previous** release: the page then describes subcommands and flags the CLI
+  that actually runs does not carry, every call exits non-zero, and the round takes the documented
+  fallback for a reason nobody can see. The version the plugin asks for and the version that answers
+  are the same number by construction, or the `Review path` line of §8 says which one failed.
 - **`agents.exec_cmd` set → the panel runs from the CLI.** Not a choice to weigh: run
-  `npx flow-workflows review`, which spawns that command once per role over the pack above — **one
+  `npx flow-workflows@<version> review`, which spawns that command once per role over the pack above — **one
   turn each instead of an agentic loop each** — and returns the findings already deduplicated, with
   the reviewers it dropped for `agents.budget_max` named. Exactly three things send the round to the
   agentic panel below: the key is empty (the default — nothing changes without it), the CLI is

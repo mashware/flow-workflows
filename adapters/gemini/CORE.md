@@ -16,6 +16,14 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
+**This file belongs to flow `0.65.0-rc.2`.** Compare it once, at the start of the session, against
+`version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
+is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
+— which is exactly what happens when a branch or a release candidate is loaded over an installed
+copy that stays enabled: the harness resolves a command from the one and a skill from the other,
+silently. Name both numbers at the first stop and say which half is which; a rule this file adds and
+a command relies on is simply absent in that session, and nothing else will report it.
+
 ## 0. Effective FLOW config — base plus harness overlay
 
 - Read `FLOW.md` at the repo root as the base, then the optional overlay for the harness running

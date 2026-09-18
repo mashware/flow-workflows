@@ -67,10 +67,22 @@ under a channel nobody reaches by accident.
    still the drift the check exists to catch.
 3. **Tag it as a prerelease**: `gh release create vX.Y.Z-rc.1 --prerelease --title "…" --notes "…"`.
    `publish.yml` runs the same preflight and publishes under the **`next`** dist-tag: the suffix
-   decides the channel, so `latest` — what every `npx flow-workflows` in the wild resolves —
-   does not move.
-4. **Install it where it will actually be used**: `npx flow-workflows@next install <harness>`, or
-   `claude --plugin-dir` against the branch for Claude Code. Drive a real work with it.
+   decides the channel, so `latest` — what an unpinned `npx flow-workflows` in the wild resolves —
+   does not move. **Do not tag a candidate whose version is not on the registry yet and then drive a
+   work with it**: the commands pin the CLI to their own version, so until the publish lands, every
+   `flow-workflows` call in that session fails to the fallback.
+4. **Install it where it will actually be used**, and check you installed *one* copy of it:
+   - `npx flow-workflows@next install <harness>` for opencode, Gemini and Hermes — it overwrites the
+     adapter in place, so there is only ever one.
+   - `claude --plugin-dir <branch>/plugins/flow` for Claude Code, **after disabling the installed
+     `flow` plugin for that session**. Left enabled, the session loads two plugins of the same name
+     and resolves commands from the branch while shared skills keep coming from the installed
+     release — a mixture that runs perfectly and reports the wrong thing. `/flow:doctor` names both
+     numbers when it happens, and so does `flow-core` at the first stop, but the cheaper move is not
+     to create it.
+
+   Then drive a real work with it, and read the `Review path` line of the review artifact: it is what
+   says whether the candidate's own code ran or the round quietly took a fallback.
 5. **The release itself is then the normal procedure above**, with `version` bumped from
    `X.Y.Z-rc.N` to `X.Y.Z`. The changelog entry is already written; nothing else changes.
 

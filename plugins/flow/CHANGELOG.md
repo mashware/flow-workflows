@@ -11,7 +11,7 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 - **A round gathers its material once.** `npx flow-workflows bundle` prints one context pack — worklist, diff, changed files, the repo's own analysis output, the work's handoff — instead of every reviewer paying to rediscover it.
 - **The panel can run outside the agentic loop.** With `agents.exec_cmd` set, `npx flow-workflows review` runs one reviewer per role in **one turn each**, deduplicated — and that is what runs when the key is there, not one option among two.
 - **What a phase spent is written down.** `meta.json.cost[]` records the figure the harness reported, `"not reported"` when it reported none and never an estimate; `flow cost`, `/flow:work:status` and the review artifact read it back.
-- **A change can be run before it is tagged.** Release candidates publish under the `next` channel, so `latest` never moves for a candidate, and four ways to run a branch on a real repo are written down.
+- **A change can be run before it is tagged — and the candidate's own code is what runs.** Candidates publish under the `next` channel so `latest` never moves; the commands pin the CLI to the plugin's own version, so a candidate's commands can never be served by the previous release's CLI; and a session that has ended up with two copies of the plugin says so instead of running a mixture.
 - **Two claims stopped being promises.** The preflight now refuses a line that *depends* on one ecosystem, and a test pins the four answer shapes the review CLI has to unwrap.
 
 A phase costs turns times context. The API keeps no state, so ten calls spent finding out what
@@ -55,6 +55,24 @@ a detection table and passes, naming one is a leak — with three narrow exempti
 at all under `bin/`. And a change to the flow can now be installed before it is tagged: an rc
 publishes under `next`, `claude --plugin-dir` loads a branch over the release you use daily, and npm
 serves a branch straight from git for the other harnesses.
+
+The first candidate then proved that last sentence half-true, in the only way that counts — a real
+work, driven end to end, on a real repo. Two things a page of prose could not have found. The
+commands call the CLI unpinned, so an unpinned fetch resolves the channel a candidate deliberately
+does not move: the candidate's own commands were served the **previous** release's CLI, `bundle` came
+back *"Unknown command"*, and the round took the documented fallback — correctly, silently, for a
+reason that had nothing to do with the machine. Every `flow-workflows` call now carries the plugin's
+own version, and the preflight refuses a tree where the manifest, the npm package and `flow-core`
+do not state the same number, because a pin is only worth having if the number it asks for was
+published. And loading a branch over an installed copy leaves **two** plugins of the same name: the
+session took its commands from the branch and its shared rules from the release, ran perfectly, and
+recorded the wrong thing. `flow-core` now states which version it belongs to, so any session can
+compare it against the plugin it is running and name both numbers at its first stop; `/flow:doctor`
+checks it outright, and `RELEASING.md` says to disable the installed copy rather than rely on either.
+
+What made all of this visible was the `Review path` line added above — a round that fell back and a
+round that did not are one line apart in the artifact, and without that line this release would have
+shipped believing its own notes.
 
 ## v0.64.0 — Announcing the next step was how the run ended  ·  2026-09-16
 
