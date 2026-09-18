@@ -65,6 +65,14 @@ rm -f "$BASE/wt/FLOW.md"                      # a git-ignored config never reach
 check "FLOW.md is found from a worktree"       "$BASE/pack-wt.txt" hit  "Left out by .git.diff_exclude"
 check "so the base resolves there too"         "$BASE/pack-wt.txt" miss 'does not resolve'
 
+# The pack says which config files it read: the overlay failure is silent otherwise.
+node "$CLI" bundle --harness claude > "$BASE/pack-noovl.txt" 2>&1
+check "names the config it read"               "$BASE/pack-noovl.txt" hit  'Config read: FLOW.md\.'
+printf '## models\n- agents: from-the-overlay\n' > FLOW.claude.md
+node "$CLI" bundle --harness claude > "$BASE/pack-ovl.txt" 2>&1
+check "and names the overlay when there is one" "$BASE/pack-ovl.txt" hit 'FLOW.md + FLOW.claude.md'
+rm -f FLOW.claude.md
+
 cd /
 rm -rf "$BASE"
 if [ "$fails" = 0 ]; then echo "bundle-limits: all cases pass"; else echo "bundle-limits: $fails failure(s)"; exit 1; fi
