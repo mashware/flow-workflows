@@ -41,6 +41,8 @@ ROOT = repo_root()
 MANIFEST = "plugins/flow/.claude-plugin/plugin.json"
 MARKETPLACE = ".claude-plugin/marketplace.json"
 CHANGELOG = "plugins/flow/CHANGELOG.md"
+PACKAGE = "package.json"
+CORE_SKILL = "plugins/flow/skills/flow-core/SKILL.md"
 
 problems = []
 
@@ -314,6 +316,45 @@ def check_version_matches_changelog():
     elif m.group(1) != release:
         fail(CHANGELOG, f"newest entry is v{m.group(1)} "
                         f"but {MANIFEST} says {version}")
+
+
+def check_version_is_one_number():
+    """The manifest version, the npm package version and flow-core's own must agree.
+
+    Three places state the version and each one is load-bearing. The commands pin the
+    CLI to the manifest's number (`npx flow-workflows@<version>`), so a `package.json`
+    that lags publishes a version those commands will ask for and not find — every
+    `flow-workflows` call fails for the whole session. And `flow-core` states its own so
+    a session can notice it is running commands from one copy of the plugin and shared
+    rules from another; a stale number there makes that check fire on every clean run,
+    which is how a warning stops being read.
+    """
+    try:
+        version = json.loads(read(MANIFEST)).get("version")
+    except (FileNotFoundError, json.JSONDecodeError):
+        return                                     # already reported above
+    if not version:
+        return
+
+    try:
+        pkg = json.loads(read(PACKAGE)).get("version")
+    except (FileNotFoundError, json.JSONDecodeError):
+        fail(PACKAGE, "missing or unreadable")
+    else:
+        if pkg != version:
+            fail(PACKAGE, f"version `{pkg}` but {MANIFEST} says `{version}` — the commands "
+                          f"pin the CLI to the manifest's number, so npm must publish it")
+
+    try:
+        core = read(CORE_SKILL)
+    except FileNotFoundError:
+        return                                     # already reported above
+    m = re.search(r"^\*\*This file belongs to flow `(\S+)`\.\*\*", core, re.M)
+    if not m:
+        fail(CORE_SKILL, "no `**This file belongs to flow `X.Y.Z`.**` line — a session "
+                         "cannot tell a mixed install from a clean one without it")
+    elif m.group(1) != version:
+        fail(CORE_SKILL, f"states version `{m.group(1)}` but {MANIFEST} says `{version}`")
 
 
 def check_command_frontmatter(files):
@@ -623,6 +664,7 @@ def main():
     check_hooks_executable(files)
     check_hooks_have_tests(files)
     check_version_matches_changelog()
+    check_version_is_one_number()
     check_command_frontmatter(files)
     check_toml(files)
     check_embedded_json(files)

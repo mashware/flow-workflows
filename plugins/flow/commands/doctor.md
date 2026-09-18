@@ -213,12 +213,22 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
   numbers with the count of panel members `quality.review_skill`/`quality.reviewers` defines, so
   the widest command's cost is visible before it is paid, not after.
 - **The `flow-workflows` CLI, which `review` reaches for before it composes a panel**:
-  `npx flow-workflows --version` answers, and the number matches this plugin's. Unreachable — no
-  node, no network, a machine that installs nothing — is **not** a failure: say so in one line, and
-  that the review falls back to reading the diff from git, paying for that material once per
-  reviewer. A version *behind* the plugin's is the one that misleads, because the commands then
-  describe flags the installed CLI does not have: report both numbers and let the reader decide.
-  This is the only check here about something no install step of ours puts on the machine.
+  `npx flow-workflows@<version> --version` answers, with `<version>` read from `version` in
+  `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` — the same pin `review` uses, so the number that
+  answers cannot be behind the plugin's. Unreachable — no node, no network, a machine that installs
+  nothing — is **not** a failure: say so in one line, and that the review falls back to reading the
+  diff from git, paying for that material once per reviewer. What this check catches is a pin that
+  **cannot be fetched at all**: a candidate withdrawn from the registry, or a plugin loaded from a
+  branch whose version was never published, where every `flow-workflows` call will fail for the whole
+  session. Report the version asked for and what came back. This is the only check here about
+  something no install step of ours puts on the machine.
+- **The plugin is one copy, not two.** The version in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`
+  and the one the loaded `flow-core` states (its opening lines) are the same number. They differ →
+  this session resolves its commands from one copy of the plugin and its shared rules from another,
+  which is what loading a branch or a candidate over an installed copy does when the installed one is
+  left enabled. Name both numbers and the fix: disable the installed plugin for the session, or stop
+  loading the second copy. A mixture is worth a `warn` rather than a `fail` — everything still runs,
+  which is precisely why it goes unnoticed.
 - The `flow-core` skill file exists under the plugin root: `${CLAUDE_PLUGIN_ROOT}/skills/flow-core/SKILL.md`.
   Missing → every phase command runs without its shared rules; fix: reinstall or update the plugin.
 
