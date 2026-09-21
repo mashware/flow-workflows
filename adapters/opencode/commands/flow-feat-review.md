@@ -90,58 +90,24 @@ Two questions, answered here and nowhere later: **which tree** this round reads,
 Scope for every reviewer: **the candidate revision of §1.5, against the review base of §1.5** — which is the whole feature work against `git.default_base` on a first review, and the delta since the last passing one otherwise. Committed and uncommitted work travel together inside the candidate; untracked files do not, and §1.5 named them.
 
 ### 2.0 Resolve review depth (scale to *this diff* and the risk)
-Read `quality.review_depth` from `FLOW.md` (`proportional` | `full` | `light`; empty → `proportional`) and `meta.json.size`. This decides **what §2.1 launches and at which effort**. Built-in `code-review` effort ladder: **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage, may surface uncertain ones).
 
-**The tier is resolved against the diff in front of you, not against the size of the feature.**
-`meta.json.size` describes the whole work; in a multi-MR/PR train every MR/PR inherits it, so a
-41-line third MR/PR gets reviewed as the L its feature is — the single largest source of wasted
-review in this plugin. **The same waste arrives on the time axis**, and the mitigation written for
-one did not reach the other: a re-review measured against the branch resolves the tier the whole
-branch earns, for a delta of thirty lines. Measure the diff this round is actually reading —
-`git diff --shortstat <review base>...<candidate_sha>` from §1.5, which is the branch on a first
-review and the delta afterwards — and derive its own size:
+**The CLI resolves it; you obey the output and record any deviation.** `npx flow-workflows@<version> tier --harness opencode --rev <candidate_sha> --base <review base>` prints, from the config it already parses: changed lines over the §1.5 range, diff size, `meta.json.size`, **effective size** (the lower of the two), the built-in `code-review` effort with and without the sensitive-surface bump, whether the panel runs, the resolved `agents.budget_max`/`fanout_max`, whether the measurement landed **within 10% under** a threshold that changed the tier, and which `quality.sensitive_paths` globs the diff matched, with the path that matched each.
 
-| Changed lines in this diff | Diff size |
-|---|---|
-| ≤ 150 | XS |
-| 151-600 | S |
-| 601-1500 | M |
-| > 1500 | L |
+Every step of that is arithmetic, and the cost of leaving it here was never mainly the tokens: `06-review.md` recorded the tier *this agent said it derived*, so a round that eyeballed the diff and a round that measured it wrote a byte-identical artifact — on the one number in this command that carries an incentive on it. Same treatment `Review path` and `Cost:` already got, for the same reason.
 
-**Effective size = the lower of `meta.json.size` and the diff size**, and every size-gated step in
-this command (§3.5, §5.5, §6) reads the effective size, not the recorded one. The diff pointing
-*higher* than the recorded size is worth one line in `06-review.md` (the work may be misclassified),
-not a heavier review. The **sensitive-surface bump below applies on top of the effective size and is
-never scaled away** — a 12-line change to an authorization check still gets the panel.
+**Copy the output verbatim** into the `Review tier` and `Effective size` lines of §8, the way `bundle --checks` copies static analysis out. A computed line, not a narrated one.
 
-**The threshold is visible in the artifact, because it is the one number with an incentive on it.**
-A diff of 148 lines is reviewed at `medium` with no panel and closes §6's gate; one of 160 gets the
-panel. When the measured diff lands **within 10% under** a threshold that changed the tier (135-150,
-541-600, 1351-1500), say so in one line of `06-review.md`, beside the effective size. It is not an
-accusation and it changes no tier — it is the only place a reader can see that the review they are
-holding was selected by a number, and it is what makes flow-core §9 (the diff reports the change; the
-change is never shaped to fit the number) checkable after the fact rather than merely stated.
+**What the CLI deliberately does not decide, because a command cannot see it:**
 
-- **`full`** (any size): built-in `code-review` at **xhigh** + the project panel. Skip the tiering below.
-- **`light`** (any size): built-in `code-review` (or `quality.review_skill`) **only**, at **medium** effort. No project panel, no §3 reinforcements, no §6 skeptic fan-out. The sensitive-surface bump still applies: a sensitive surface upgrades `light` to the `proportional` tier for that work.
-- **`proportional`** (default), base effort by size:
+- **Whether a generic category applies.** The sensitive surface is the generic list — authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, a DB migration/schema change — **plus** every glob in `quality.sensitive_paths`. The CLI reads the key; it carries no idea of its own about what is sensitive (that list is the repo's). You judge the categories against the diff.
+- **Whether a matched path is a sensitive *diff*.** The bump asks what the change *does* there, not where it lives: it applies to **control flow, or the data that reaches a person, a charge or a stored record** — a new guard, a new `catch`, a changed condition, a changed value, a changed contract. It does **not** apply when the diff moves **observability alone**: a log level, a channel, a message's text, a metric, a comment. Mixed diff → not observability-only, so it bumps. **Say which of the two it was in one line**; a diff demoted here is the one place a missed defect is expensive.
+- **Query changes.** §3.6 duels every query the diff adds or modifies, at every size, whatever this section resolved — routing them through the bump buys a second opinion on prose where §3.6 buys a plan.
 
-| Size | Built-in `code-review` | Project panel (`review_skill`/`reviewers`) |
-|---|---|---|
-| XS | **medium** | do **not** launch |
-| S | **high** | only if the diff touches a sensitive surface; otherwise the built-in alone is the review |
-| M | **high** | full panel |
-| L | **xhigh** | full panel |
+**No CLI, or a non-zero exit → the prose fallback**, and `Review path` names it with the reason (the same contract the panel follows). Measure `git diff --shortstat <review base>...<candidate_sha>`; **≤150 → XS · 151-600 → S · 601-1500 → M · >1500 → L**; effective size = the lower of that and `meta.json.size`; `proportional` runs the built-in at **medium/high/high/xhigh** by size and the panel at M and above (at S only on a sensitive surface); the bump raises the effort one tier (medium→high→xhigh→**max**) and always runs the panel; `full` is **xhigh** plus the panel at any size, `light` is the built-in alone at **medium** with no panel, no §3 and no §6 — and a sensitive surface lifts `light` to the proportional tier for that work. The thresholds and the ladder are documented in `docs/CONFIGURATION.md`, where they can be read without being re-taught to a model on every invocation.
 
-- **Sensitive-surface bump** (proportional, any size): the diff touches a sensitive surface → **raise the built-in effort one tier** (medium→high→xhigh→**max**) and always run the panel. S/M on a sensitive surface → **xhigh**; **L on a sensitive surface → `max`**.
+**The diff pointing *higher* than `meta.json.size`** is worth one line in `06-review.md` (the work may be misclassified), never a heavier review. **The sensitive-surface bump is never scaled away** — a 12-line change to an authorization check still gets the panel, on a delta exactly as on a first review.
 
-**Sensitive surface** = the generic categories — authentication/authorization, secrets/credentials, payments/billing, personal or otherwise sensitive data, a public API/contract shape, or a DB migration/schema change — **plus** every glob in `quality.sensitive_paths` from `FLOW.md`. The key is **additive**: it names what is sensitive in *this* repo and nowhere in that list (an internal event or message contract consumers depend on, a pricing or entitlement table, a consent flow, a feature-flag resolver), and a repo that declares its own surfaces never loses the ones it never thought about.
-
-**A sensitive path is not yet a sensitive diff, and this is where the precision comes from** — not from a shorter list. The bump asks what the change *does* there, not where it lives. It applies when the diff touches **control flow, or the data that reaches a person, a charge or a stored record** — a new guard, a new `catch`, a changed condition, a changed value, a changed contract. It does **not** apply when the diff moves **observability alone**: a log level, a log channel, the text of a message, a metric, a comment. That diff gets the review its size already earned. Mixed diff → not observability-only, so it bumps. Say which of the two it was in one line; a diff demoted here is the one place a missed defect is expensive, so the line is not optional.
-
-**Query changes do not belong here.** §3.6 already duels every query the diff adds or modifies, at every size, whatever this section resolved — routing them through the bump would buy a second opinion on prose where §3.6 buys a plan.
-
-Record in `06-review.md` which tier and effort ran and why (e.g. "L + DB migration → built-in at `max` + panel"; "S, `src/**/Payment/**` but log level only → no bump, built-in at `high`").
+Record in `06-review.md` which tier and effort ran and why (e.g. "L + DB migration → built-in at `max` + panel"; "S, `src/**/Payment/**` but log level only → no bump, built-in at `high`"), and **any deviation from what the CLI resolved, with its reason**.
 
 ### 2.0b Resolve the agent budget (the ceiling is the command's, not the round's)
 This command is the widest fan-out in the plugin: a panel, area reinforcements, a coverage sweep that
@@ -185,6 +151,8 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 **Nothing edits the tree while a round is in flight** (flow-core §6). The candidate of §1.5 means every reviewer is handed the same bytes however long it takes to get to them; it does not mean the checkout underneath can be edited freely, because an agent with tools reads that one. The fixes this phase applies are the parent's own edits — applied mid-round they land underneath agents still reading, and a reviewer that reports a line which has moved, or runs `git status` around its own reading to work out what it touched, is the reading this phase exists to trust. Findings are fixed **after** the round is consolidated. The fixes are then a delta the candidate does not contain, which is exactly what §9's `fixed_sha` records and `ship` asks about.
 
 When both run, deduplicate overlapping correctness/simplification findings (count each once). The `review_skill` specialists (offensive/defensive security, silent failures, architecture) are not repeated in later phases.
+
+**Dedup keeps every source, not the first one.** A finding carries its **origin** from here to §8 — `built-in`, a panel role, or the pass that raised it (`§3.5`, `§3.6`, `§5`, `§5.5`) — and a finding more than one source raised lists all of them. Counted once, credited to each. Beyond the built-in and the panel this command runs four specialised passes, roughly 1 800 of its words, every one added after a real defect got through and not one able to show it still earns that cost: a finding only the idiom audit saw and a finding three sources raised say opposite things about that pass, and until now both were written identically. The `Cost:` line stopped being a headcount when `meta.json.cost[]` arrived; this is the same move for the thing those costs are spent on.
 
 ### 2.2 Design truth vs design rationale (do not inherit rationalizations)
 `03-design.md` goes to reviewers as context, with unequal authority:
@@ -387,10 +355,10 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 <if §6 did not run, one line saying which condition did not hold — size, diff size, or count>
 
 ## Blockers (must-fix)
-1. [file:line] description + concrete proposal
+1. [file:line] · <origin> · description + concrete proposal
 
 ## Suggestions (nice-to-have)
-1. [file:line] description
+1. [file:line] · <origin> · description
 
 ## Quality gates
 - style_fix: ✅ / ❌
@@ -410,6 +378,8 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
   - `reviewed_sha` = **the candidate of §1.5**, the revision the reviewers actually read. Not `git rev-parse HEAD`, which is what it used to be and which by then holds this round's own fixes — code no reviewer saw, recorded as reviewed, and `ship` finding it equal to `HEAD` every time.
   - `fixed_sha` = `git rev-parse HEAD` after this round's fixes, or **empty** when the round applied none. Two fields because they are two facts, and collapsing them is what hid the delta.
   - `phases_done` says a review *happened*; these say which tree, and `/flow-feat-ship §1` reads both before pushing. Written whenever the phase advances, never when it does not: a review that ended in blockers reviewed nothing that stands.
+- **Record which pass found what**, in the same write: `meta.json.review_findings[]`, one entry per finding **per source** — `{ round, origin, severity, file, discarded_by_skeptic }`, and no finding text, which stays in the artifact. `flow review --record` writes these itself when the CLI ran the panel; when the agentic panel ran, write them here from the origins §2.1 carried. `flow cost` reads them back per origin: how many findings each pass contributed, how many only it raised, and how many of those survived §6. That last number is the only evidence a pass is still earning its words.
+  **The retirement rule, written down before the data arrives** so it cannot be argued backwards later: a pass that contributes **no exclusive surviving finding across twenty reviews** is removed from this command. Zero is zero, and the decision is made against the number rather than against whoever is most attached to the pass.
 - **Stage what the review taught** (`knowledge.stage` set; silence by default). Review is where a project teaches the most and, until now, the one phase that never staged — a work with three review rounds and seventeen blockers produced zero knowledge cards because nothing asked for them while they were in context. Candidates are findings about the **domain or the codebase's real behaviour**, not about this diff: a library that does other than its name says, a test disguise that kept the suite green over a live defect, a module rule the reviewers had to cite from its own prose, a measurement. A blocker fixed here is not knowledge; *why it was written wrong* may be. Same evidence rule as `/flow-feat-design` §8 — one line of evidence per finding or it is not staged. One call per finding, one line to the user («Staged N finding(s) for `ship`»). Never `knowledge.save` here.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Configuration this phase earned the right to ask about** (flow-core §0, `manual` only, at most one key per work, as an extra option on this same stop — never a question of its own): a role the panel had to improvise on an M/L or sensitive diff → `agents.<role>`; a `Cost:` line that went over `agents.budget_max` → `quality.review_depth`. In `guided`/`auto` neither is asked: the default is taken and recorded in `meta.json.defaults_used[]`.

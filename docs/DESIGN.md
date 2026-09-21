@@ -485,6 +485,34 @@ cleared before: it touches a file a previous finding sat on, or it changes an ex
 sensitive-surface bump never scales away with the base.
 *Now:* feat:review §1.5, §2.0; bug:review §1.5, §2.0; feat:ship §1; work:respond §5.
 
+**The tier is computed, not narrated.** v0.66.0: §2.0 was 822 words — the longest section of a
+5 683-word file — instructing a model to measure the diff, read a four-row table, take the lower of
+that and `meta.json.size`, apply the bump and flag a measurement landing just under a threshold.
+Every step of it arithmetic, and the cost was never mainly the tokens: `06-review.md` recorded the
+tier *the agent said it derived*, so "a round that eyeballed the diff instead of measuring it, or
+skipped the measurement entirely, writes a byte-identical artifact" — on the one number the section
+itself says carries an incentive. `flow tier` prints it from the same config the round already
+parses and the output is copied out verbatim, the way `bundle --checks` copies static analysis.
+What stays with the model is what a command cannot see: whether a generic category applies, and
+whether a matched path is a control-flow change or observability only. The sensitive list stays the
+repo's — the CLI reads `quality.sensitive_paths` and carries no idea of its own. No CLI or a
+non-zero exit falls back to the prose, abbreviated, with `Review path` naming the fallback.
+*Now:* `flow tier`; feat:review §2.0; bug:review §2.0; script/tests/tier.sh.
+
+**A finding carries every source that raised it, so a pass can be retired on evidence.** v0.66.0:
+four specialised passes — the completeness sweep, the data-access duel, the double-blind contract
+verification, the idiom audit — are roughly 1 800 words of the command, each added after a real
+defect got through, and none able to show it still earns that cost: a finding that reached
+`## Blockers` had lost where it came from, so "one the built-in already had and one only the idiom
+audit saw are written identically". Findings now carry an `origin`, dedup keeps **every** source
+rather than the first, and `meta.json.review_findings[]` records `{round, origin, severity, file,
+discarded_by_skeptic}` — no finding text, which stays in the artifact. `flow cost` reports per
+origin how many findings each contributed, how many **only** it raised, and how many of those
+survived §6; that last column is the only one that decides anything. The retirement rule was
+written down before the data arrived, so it cannot be argued backwards: no exclusive surviving
+finding across twenty reviews and the pass comes out. No pass was removed or weakened here.
+*Now:* feat:review §2.1, §8, §9; bug:review §2.1, §8; `flow cost`; work/README `meta.json`.
+
 **The net that worked is not thickened.** In v0.24.0 the panel caught what reached it; the lesson was
 cheaper detection upstream, and the review was left alone.
 

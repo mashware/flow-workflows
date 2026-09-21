@@ -588,6 +588,150 @@ function buildBundle(argv) {
   return { text: out.join('\n'), repo, cfg, branch, work, configs: configFiles(repo, harness) }
 }
 
+// --- tier -------------------------------------------------------------------------------
+// §2.0 of feat/review.md was 822 words of arithmetic addressed to a model: measure the diff,
+// read a four-row table, take the lower of that and meta.json.size, apply the bump, flag a
+// measurement landing just under a threshold. None of it is judgement, and the cost was never
+// mainly the tokens — it is that the result cannot be checked. `06-review.md` recorded the tier
+// the agent *said* it derived, and a round that eyeballed the diff wrote a byte-identical
+// artifact. The section is explicitly aware the number carries an incentive, and then left the
+// measuring to the party the incentive acts on.
+//
+// What stays with the model is what a command cannot see: whether a diff on a sensitive path
+// changes control flow or only observability. This prints the paths and the two tiers; it does
+// not pretend to decide that.
+
+const SIZES = [['XS', 150], ['S', 600], ['M', 1500], ['L', Infinity]]
+const LADDER = ['low', 'medium', 'high', 'xhigh', 'max']
+const BASE_EFFORT = { XS: 'medium', S: 'high', M: 'high', L: 'xhigh' }
+const PANEL = { XS: 'no', S: 'only on a sensitive surface', M: 'yes', L: 'yes' }
+
+function sizeOfDiff(lines) {
+  return SIZES.find(([, max]) => lines <= max)[0]
+}
+
+// The globs `quality.sensitive_paths` carries are the shell kind a person writes by hand:
+// `src/**/Payment/**`, `*.sql`, `config/security*`. Translated here rather than shelled out to
+// so the answer does not depend on the shell's globstar setting.
+function globToRe(glob) {
+  let re = ''
+  for (let i = 0; i < glob.length; i += 1) {
+    const c = glob[i]
+    if (c === '*') {
+      if (glob[i + 1] === '*') {
+        re += glob[i + 2] === '/' ? '(?:.*/)?' : '.*'
+        i += glob[i + 2] === '/' ? 2 : 1
+      } else re += '[^/]*'
+    } else if (c === '?') re += '[^/]'
+    else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+  }
+  return new RegExp(`^${re}$`)
+}
+
+function tier(argv) {
+  const flag = (name, fallback = null) => {
+    const i = argv.indexOf(name)
+    return i === -1 ? fallback : argv[i + 1]
+  }
+  const repo = git(['rev-parse', '--show-toplevel']).trim()
+  if (!repo) { console.error('flow tier: not a git checkout'); process.exit(1) }
+  const harness = flag('--harness')
+  if (harness && !OVERLAY_HARNESSES.includes(harness)) {
+    console.error(`flow tier: unknown harness \`${harness}\`. One of: ${OVERLAY_HARNESSES.join(', ')}.`)
+    process.exit(1)
+  }
+  const cfg = flowConfig(repo, harness)
+  const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
+  const resolves = (ref) => Boolean(git(['rev-parse', '--verify', '--quiet', ref], repo).trim())
+
+  const base = flag('--base') || cfg.git?.default_base || 'origin/main'
+  if (!resolves(base)) {
+    console.error(`flow tier: base \`${base}\` does not resolve. Set git.default_base or pass --base.`)
+    process.exit(1)
+  }
+  const rev = flag('--rev')
+  if (rev && !resolves(rev)) {
+    console.error(`flow tier: --rev \`${rev}\` does not resolve in this checkout.`)
+    process.exit(1)
+  }
+  const to = rev ? git(['rev-parse', rev], repo).trim() : null
+  const from = git(['merge-base', base, to ?? 'HEAD'], repo).trim() || base
+  const ends = to ? [to] : []
+
+  const exclude = Array.isArray(cfg.git?.diff_exclude) ? cfg.git.diff_exclude
+    : cfg.git?.diff_exclude ? [cfg.git.diff_exclude] : []
+  const paths = exclude.length ? ['--', '.', ...exclude.map((p) => `:(exclude)${p}`)] : []
+
+  // Changed lines, not the file count: the table this resolves is written in lines.
+  let changedLines = 0
+  for (const line of git(['diff', '--numstat', from, ...ends, ...paths], repo).split('\n')) {
+    const m = /^(\d+)\t(\d+)\t/.exec(line)
+    if (m) changedLines += Number(m[1]) + Number(m[2])
+  }
+  const files = git(['diff', '--name-only', from, ...ends, ...paths], repo).split('\n').filter(Boolean)
+
+  const diffSize = sizeOfDiff(changedLines)
+  const work = workFolder(repo, branch)
+  let meta = {}
+  if (work) { try { meta = JSON.parse(readFileSync(join(work, 'meta.json'), 'utf8')) } catch {} }
+  const recorded = typeof meta.size === 'string' && BASE_EFFORT[meta.size] ? meta.size : null
+  const order = (s) => SIZES.findIndex(([n]) => n === s)
+  const effective = recorded ? (order(diffSize) < order(recorded) ? diffSize : recorded) : diffSize
+
+  const globs = Array.isArray(cfg.quality?.sensitive_paths) ? cfg.quality.sensitive_paths
+    : cfg.quality?.sensitive_paths ? [cfg.quality.sensitive_paths] : []
+  const res = globs.map((g) => [g, globToRe(g)])
+  const sensitiveHits = []
+  for (const f of files) for (const [g, re] of res) if (re.test(f)) sensitiveHits.push(`${f} (${g})`)
+
+  const depth = cfg.quality?.review_depth || 'proportional'
+  const budget = cfg.agents?.budget_max === '0' ? 'no ceiling' : (Number(cfg.agents?.budget_max) || 12)
+  const fanout = Number(cfg.agents?.fanout_max) || 4
+
+  // Within 10% under a threshold that changes the tier: the one number in this command with an
+  // incentive on it, so the measurement says when it landed just under one.
+  const thresholds = [150, 600, 1500]
+  const near = thresholds.find((t) => changedLines <= t && changedLines >= Math.ceil(t * 0.9))
+
+  const bumped = LADDER[Math.min(LADDER.indexOf(BASE_EFFORT[effective]) + 1, LADDER.length - 1)]
+  const out = []
+  out.push(`Changed lines: ${changedLines} over ${files.length} file(s), \`${from.slice(0, 12)}\`..`
+    + `${to ? `\`${to.slice(0, 12)}\`` : 'working tree'} (base \`${base}\`)`)
+  out.push(`Config read: ${configFiles(repo, harness)}`)
+  out.push(`review_depth: ${depth}`)
+  out.push(`Diff size: ${diffSize}   ·   meta.json.size: ${recorded ?? 'not recorded'}`
+    + `   ·   Effective size: ${effective}`)
+  if (recorded && order(diffSize) > order(recorded)) {
+    out.push(`Note: the diff points higher than the recorded size — the work may be misclassified.`
+      + ` One line in 06-review.md, not a heavier review.`)
+  }
+  if (depth === 'full') {
+    out.push('Tier: full → built-in `code-review` at `xhigh` + the project panel, whatever the size.')
+  } else if (depth === 'light') {
+    out.push('Tier: light → built-in (or quality.review_skill) at `medium`, no panel, no §3, no §6 —'
+      + ' unless a sensitive surface applies, which raises it to proportional for this work.')
+  } else {
+    out.push(`Tier: proportional → built-in at \`${BASE_EFFORT[effective]}\`, panel: ${PANEL[effective]}`)
+    out.push(`With the sensitive-surface bump: built-in at \`${bumped}\`, panel always`)
+  }
+  out.push(`Budget: budget_max ${budget} · fanout_max ${fanout}`)
+  out.push(near
+    ? `Within 10% under ${near}: yes (${changedLines} lines) — say so in 06-review.md beside the`
+      + ' effective size. It changes no tier; it is what makes flow-core §9 checkable afterwards.'
+    : 'Within 10% under a threshold: no')
+  out.push(sensitiveHits.length
+    ? `quality.sensitive_paths matched:\n${sensitiveHits.map((h) => `  - ${h}`).join('\n')}`
+    : `quality.sensitive_paths matched: none${globs.length ? '' : ' (the key is empty)'}`)
+  out.push('')
+  out.push('Left to you, because a command cannot see it: whether the generic categories apply')
+  out.push('(auth, secrets, payments, personal data, a public contract, a schema change), and')
+  out.push('whether a matched path is a control-flow change or observability only — a log level,')
+  out.push('a metric, a message text gets the review its size already earned. Decide, then record')
+  out.push('which of the two it was. Any deviation from the tier above goes in 06-review.md with')
+  out.push('its reason.')
+  console.log(out.join('\n'))
+}
+
 function bundle(argv) {
   console.log(buildBundle(argv).text)
 }
@@ -767,7 +911,9 @@ async function review(argv) {
   for (const f of findings) {
     out.push(`- **${f.severity ?? 'unrated'}** \`${f.file}${f.line ? `:${f.line}` : ''}\` — ${f.what}`)
     out.push(`  fix: ${f.fix}`)
-    if (f.roles.length > 1) out.push(`  raised by ${f.roles.length} reviewers`)
+    // Every source, not a count of them. A finding one pass caught and a finding three
+    // passes caught say opposite things about that pass, and a headcount collapses both.
+    out.push(`  raised by: ${f.roles.map((r) => r.split(':')[0]).join(', ')}`)
   }
   if (!findings.length) out.push('_none_')
   out.push('')
@@ -801,6 +947,16 @@ async function review(argv) {
       usd: costs.length ? Number(costs.reduce((a, b) => a + b, 0).toFixed(6)) : null,
       source: costs.length ? 'harness' : 'not reported',
     })
+    // One row per finding per source. Beyond the built-in and the panel, a review runs four
+    // specialised passes, every one of them written after a real defect got through, and not
+    // one of them can show it is still earning its cost: a finding that reaches `## Blockers`
+    // has lost where it came from. No finding text here — that stays in the artifact.
+    recordFindings(built.work, findings.flatMap((f) => f.roles.map((role) => ({
+      origin: role.split(':')[0],
+      severity: f.severity ?? 'unrated',
+      file: f.file,
+      discarded_by_skeptic: false,
+    }))))
   }
   const outFile = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : null
   if (outFile) { writeFileSync(outFile, `${text}\n`); console.log(`wrote ${outFile}`) } else console.log(text)
@@ -816,6 +972,31 @@ async function review(argv) {
 // every figure it does show is a client-side estimate, which is what the harnesses call
 // them too.
 
+// Read-modify-write against meta.json, the flow's own state, so both writers go through a
+// temporary file: a half-written meta.json loses the work, not just the figure.
+function editMeta(work, fn) {
+  if (!work) return
+  const p = join(work, 'meta.json')
+  if (!existsSync(p)) return
+  let meta
+  try { meta = JSON.parse(readFileSync(p, 'utf8')) } catch { return }
+  fn(meta)
+  const tmp = `${p}.tmp`
+  writeFileSync(tmp, `${JSON.stringify(meta, null, 2)}\n`)
+  renameSync(tmp, p)
+}
+
+function recordFindings(work, rows) {
+  if (!rows.length) return
+  editMeta(work, (meta) => {
+    const prev = Array.isArray(meta.review_findings) ? meta.review_findings : []
+    // The round is this work's nth recorded review, so a pass's contribution can be read
+    // per round and the twenty-review retirement rule has something to count.
+    const round = prev.reduce((n, r) => Math.max(n, Number(r.round) || 0), 0) + 1
+    meta.review_findings = [...prev, ...rows.map((r) => ({ round, ...r }))]
+  })
+}
+
 function recordCost(work, entry) {
   if (!work) return
   const p = join(work, 'meta.json')
@@ -824,8 +1005,6 @@ function recordCost(work, entry) {
   try { meta = JSON.parse(readFileSync(p, 'utf8')) } catch { return }
   meta.cost = Array.isArray(meta.cost) ? meta.cost : []
   meta.cost.push(entry)
-  // Write through a temporary file: meta.json is the flow's own state, and a half-written
-  // one loses the work, not just the figure.
   const tmp = `${p}.tmp`
   writeFileSync(tmp, `${JSON.stringify(meta, null, 2)}\n`)
   renameSync(tmp, p)
@@ -866,6 +1045,52 @@ function cost(argv) {
   console.log()
   console.log('These are the harness\'s own client-side estimates and can differ from a bill.')
   console.log('Phases with no row did not measure anything — absence here is not zero.')
+
+  findingsByOrigin(meta)
+}
+
+// What the money was spent ON. A review runs the built-in, a panel, and four specialised
+// passes — roughly 1 800 words of a 5 683-word command — every one of them added after a real
+// defect got through, and not one able to show it still earns its cost. The only argument
+// available was an opinion, and opinions about this converge on whoever spoke last.
+function findingsByOrigin(meta) {
+  const rows = Array.isArray(meta.review_findings) ? meta.review_findings : []
+  console.log()
+  if (!rows.length) {
+    console.log('No findings recorded by origin yet. `flow review --record` writes one row per')
+    console.log('finding per source, and the agentic panel records the same at §9 of review.')
+    return
+  }
+  const rounds = new Set(rows.map((r) => r.round)).size
+  // A finding is identified by where it is, not by its text — the text lives in the artifact.
+  const key = (r) => `${r.round}::${r.severity}::${r.file}`
+  const sources = new Map()
+  for (const r of rows) {
+    if (!sources.has(key(r))) sources.set(key(r), new Set())
+    sources.get(key(r)).add(r.origin)
+  }
+  const per = new Map()
+  for (const r of rows) {
+    const e = per.get(r.origin) ?? { total: 0, exclusive: 0, survived: 0 }
+    e.total += 1
+    if (sources.get(key(r)).size === 1) {
+      e.exclusive += 1
+      if (!r.discarded_by_skeptic) e.survived += 1
+    }
+    per.set(r.origin, e)
+  }
+  console.log(`## Findings by origin — ${rows.length} row(s) over ${rounds} round(s)`)
+  console.log()
+  console.log('| origin | findings | only this one | and survived §6 |')
+  console.log('|---|---|---|---|')
+  for (const [origin, e] of [...per.entries()].sort((a, b) => b[1].survived - a[1].survived)) {
+    console.log(`| ${origin} | ${e.total} | ${e.exclusive} | ${e.survived} |`)
+  }
+  console.log()
+  console.log('"only this one" is the column that decides anything: a finding three sources')
+  console.log('raised says nothing about any of them. A pass contributing no exclusive surviving')
+  console.log('finding across twenty reviews is removed from the command — the rule is written')
+  console.log('down before the data arrives so it cannot be argued backwards later.')
 }
 
 function usage() {
@@ -875,6 +1100,7 @@ function usage() {
   npx flow-workflows check
   npx flow-workflows bundle [--base <ref>] [--rev <ref>] [--checks] [--harness <name>]
                             [--max-file-bytes N] [--max-diff-lines N]
+  npx flow-workflows tier   [--base <ref>] [--rev <ref>] [--harness <name>]
   npx flow-workflows review [--out <file>] [--record] [same options as bundle]
   npx flow-workflows cost
 
@@ -902,6 +1128,15 @@ Claude Code and Codex CLI have their own marketplaces:
   Without it no overlay is read at all, which the pack's header says out loud: a key set
   only there — agents.exec_cmd, a harness's models — would otherwise read as unset.
 
+"tier" resolves the review depth from the same config: changed lines against the base,
+  diff size, meta.json.size, effective size, the built-in effort with and without the
+  sensitive-surface bump, the resolved budget_max/fanout_max, whether the measurement
+  landed within 10% under a threshold that changes the tier, and which
+  quality.sensitive_paths globs the diff matched. Arithmetic, printed once, so the tier in
+  06-review.md is a computed line rather than a narrated one. What it deliberately does not
+  decide: whether a generic category applies, and whether a matched path is a control-flow
+  change or observability only.
+
 "review" runs one reviewer per role through agents.exec_cmd — any non-interactive
   harness invocation — over that same pack, one turn each instead of an agentic loop
   each, and deduplicates what comes back. Empty exec_cmd = the agentic panel reviews,
@@ -910,6 +1145,9 @@ Claude Code and Codex CLI have their own marketplaces:
 "cost" prints what each phase of this branch's work actually reported spending, from
   what --record wrote into meta.json. A harness that reports no figure is recorded as
   "not reported": a headcount of subagents is not a cost, and neither is a guess.
+  It also breaks the round's findings down by origin — which reviewer or pass raised
+  each one, how many only it raised, and how many of those survived verification. That
+  last column is the only evidence a pass is still earning the words it costs.
 
 Updating: re-run the install command — it sweeps the previous version first.
 Docs: https://github.com/mashware/flow-workflows`)
@@ -918,6 +1156,7 @@ Docs: https://github.com/mashware/flow-workflows`)
 const [cmd, tool, scope] = process.argv.slice(2)
 
 if (cmd === 'bundle') bundle(process.argv.slice(3))
+else if (cmd === 'tier') tier(process.argv.slice(3))
 else if (cmd === 'cost') cost(process.argv.slice(3))
 else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()

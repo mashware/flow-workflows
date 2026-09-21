@@ -65,7 +65,7 @@ Scope for every reviewer: **the candidate revision of §1.5, against the review 
 ### 2.0 Resolve review depth (scale to *this diff* and the risk)
 Read `quality.review_depth` from `FLOW.md` (`light` | `proportional` | `full`; empty → `proportional`) and `meta.json.size`. Built-in `code-review` effort ladder: **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage).
 
-**The tier is resolved against the diff in front of you**, per `/flow:feat:review §2.0`: measure the diff this round is reading (`git diff --shortstat <review base>...<candidate_sha>`, §1.5 — the branch on a first review, the delta afterwards), derive its size (≤150 lines → XS · 151-600 → S · 601-1500 → M · >1500 → L), and run on the **lower** of that and `meta.json.size` — a one-file fix inside a bug classified M is an XS review. Every size-gated step here (§4.5, §5) reads that effective size. The sensitive-surface bump applies on top and is never scaled away. **When the measured diff lands within 10% under a threshold that changed the tier** (135-150, 541-600, 1351-1500), say so in one line beside the effective size in §7 — the tier does not change, and it is what makes flow-core §9 checkable after the fact.
+**The tier is resolved by the CLI, against the diff in front of you** — `/flow:feat:review §2.0`, in full and unchanged: `npx flow-workflows@<version> tier --harness claude --rev <candidate_sha> --base <review base>` prints changed lines, diff size, `meta.json.size`, effective size (the lower of the two — a one-file fix inside a bug classified M is an XS review), the effort with and without the bump, the resolved ceilings, the within-10% flag and which `quality.sensitive_paths` globs matched. **Copy it verbatim** into §7 and record any deviation with its reason; no CLI or a non-zero exit falls back to the prose there (≤150 → XS · 151-600 → S · 601-1500 → M · >1500 → L) and `Review path` names the fallback. What stays yours is what a command cannot see: whether a generic category applies, and whether a matched path is a control-flow change or observability only. Every size-gated step here (§4.5, §5) reads the effective size; the bump is never scaled away.
 
 **Say what the round will run on** (flow-core §1): the skeptics and the completeness check have no agent of their own, so with the fan-out key empty they inherit this thread's model — one line before the first round of 4 or more naming the count and the inheritance, and the same fact on the artifact's `Agent models` line. Name the key (`models.workers`, then `models.agents`), never a model.
 
@@ -206,10 +206,10 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 <only if §5 was run; refuted findings with their reason, or "not applicable">
 
 ## Blockers
-1. [file:line] …
+1. [file:line] · <origin> · …
 
 ## Suggestions
-1. …
+1. [file:line] · <origin> · …
 ```
 
 ## 8. Close
@@ -217,6 +217,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - With blockers: `phase` stays where it was (`validate` for size ≥ S, `fix` on XS, where validate never ran). Iterate.
 - Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/flow:bug:postmortem` (M/L) or `/flow:bug:ship` (XS/S).
 - **Record *what* you reviewed, and separately what you changed after reading it** — `/flow:feat:review` §9, unchanged: `reviewed_sha` = the **candidate** of §1.5 (the revision the reviewers read, never `git rev-parse HEAD`, which by now holds this round's own fixes), and `fixed_sha` = `git rev-parse HEAD` after those fixes, empty when the round applied none. `phases_done` says a review happened; these two say on which tree and what moved afterwards, and `/flow:bug:ship §0` reads both against what is being pushed. Only when the phase advances: a review that ended in blockers reviewed nothing that stands.
+- **Record which pass found what** — `/flow:feat:review §9`, unchanged: one `meta.json.review_findings[]` entry per finding **per source** (`{ round, origin, severity, file, discarded_by_skeptic }`, no finding text), written by `flow review --record` when the CLI ran the panel and by this Close when the agentic panel did. `flow cost` reads them back per origin, and the retirement rule is the same: a pass with no exclusive surviving finding across twenty reviews comes out of the command.
 - **Stage what the review taught** (`knowledge.stage` set; silence by default). Review is where a project teaches the most and, until now, the one phase that never staged — a work with three review rounds and seventeen blockers produced zero knowledge cards because nothing asked for them while they were in context. Candidates are findings about the **domain or the codebase's real behaviour**, not about this diff: a library that does other than its name says, a test disguise that kept the suite green over a live defect, a module rule the reviewers had to cite from its own prose, a measurement. A blocker fixed here is not knowledge; *why it was written wrong* may be. Same evidence rule as `/flow:feat:design` §8 — one line of evidence per finding or it is not staged. One call per finding, one line to the user («Staged N finding(s) for `postmortem`/`ship`»). Never `knowledge.save` here.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Stop body (after the flow-core §3 header): the findings that survived and what you did with each, plus the same Cost line as the Summary: "- Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>".

@@ -76,6 +76,45 @@ check "{SCHEMA} in single quotes stops the run"  1 'single quotes'
 flow_md ""
 check "empty exec_cmd sends the round back"      1 'is empty in FLOW.md'
 
+# Where a finding came from. Two reviewers raising the same one and one reviewer raising it
+# alone say opposite things about that reviewer, and both used to be written identically:
+# `raised by 2 reviewers`, with no way to ask which two.
+cat > FLOW.md <<EOF
+## git
+- default_base: main
+
+## quality
+- reviewers:
+  - security: auth and secrets
+  - performance: queries and loops
+
+## agents
+- exec_cmd: cat >/dev/null; cat $BASE/answer.json
+EOF
+mkdir -p .claude/work/T-9
+printf '{"ticket":"T-9","branch":"feature"}\n' > .claude/work/T-9/meta.json
+answer "{\"findings\":[$FINDING]}"                    # both roles return the same finding
+node "$CLI" review --record > "$BASE/out.txt" 2>&1
+check "every source is named, not counted"       0 'raised by: security, performance'
+findings=$(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json').review_findings))")
+if printf '%s' "$findings" | grep -q '"origin":"security"' && printf '%s' "$findings" | grep -q '"origin":"performance"'; then
+  printf '  ok   --record writes one row per source\n'
+else
+  printf '  FAIL --record writes one row per source — got %s\n' "$findings"; fails=$((fails+1))
+fi
+
+# And `flow cost` has to be able to answer the question the rows exist for: what did each
+# pass contribute that nothing else did. A finding both roles raised is exclusive to neither.
+in_cost() {  # <label> <grep-pattern>
+  if grep -q -- "$2" "$BASE/cost.txt"; then printf '  ok   %s\n' "$1"
+  else printf '  FAIL %s — no match for %q in flow cost\n' "$1" "$2"; fails=$((fails+1)); fi
+}
+node "$CLI" cost > "$BASE/cost.txt" 2>&1
+in_cost "cost breaks findings down by origin"     'Findings by origin'
+in_cost "and a shared finding is exclusive to none" '| security | 1 | 0 | 0 |'
+in_cost "with the retirement rule written down"   'across twenty reviews'
+rm -rf .claude
+
 cd /
 rm -rf "$BASE"
 if [ "$fails" = 0 ]; then echo "review-unwrap: all cases pass"; else echo "review-unwrap: $fails failure(s)"; exit 1; fi
