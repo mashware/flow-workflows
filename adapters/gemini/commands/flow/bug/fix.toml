@@ -70,6 +70,8 @@ Save the brief at the top of `04-fix.md`. Any "also fix X while we're at it" dur
 - **`guided`** — ask **once**, at the first step; apply that answer for the rest of the fix; record it in `04-fix.md`.
 - **`auto`** — commit the WIP yourself (`git add <files> && git commit -m "WIP <TICKET>: <step>" --no-verify`) without asking. Invoking the command in `auto` is the authorization, and it covers **only** WIP commits on the work branch — push and MR/PR creation stay hard gates in every mode.
 
+**Then write the step into the log, committed or not** — `/flow:feat:build §2.2`, unchanged, into a `## Steps` section of `04-fix.md`: `- <short sha> · <step name> · <n files, +a −b>`, with `—` in place of the sha for a step that was not committed. No question, in every mode. A fix is usually one step and one commit, which is exactly when the missing line costs least to add and the `06-review.md` delta is most likely to be that one sha.
+
 ## 2.2 The premise this fix rests on (any size)
 
 Same instrument as `/flow:feat:build §2.1bis`: the four conditions, one round per fix, the same
@@ -117,6 +119,9 @@ A **product decision** the fix turns out to need is neither of these — not sco
 
 ## Changes by file
 - <file> — what changed and why (1 line)
+
+## Steps
+<one line per step of §2.1, in order: `- <short sha> · <step name> · <n files, +a −b>`, and `—` in place of the sha where the step was not committed. This is what joins the log to the git history; a section with no holes is the point, so an uncommitted step still gets its line.>
 
 ## Premises the fix depends on
 <one row per premise put through §2.2, plus any belief recorded as an assumption without a round: premise · what it rests on · verdict (holds / refuted / unsettled) · the evidence, or what would settle it. Omit the section when the fix depends on nothing outside its own diff.>
