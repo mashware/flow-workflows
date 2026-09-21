@@ -240,7 +240,22 @@ function parseFlow(text) {
   const out = {}
   let section = null
   let listKey = null
+  let fence = null
   for (const line of text.split('\n')) {
+    // A fenced block is an illustration, not configuration. This reader knows headings and
+    // `- key:` lines and nothing else, so an example written the way `docs/CONFIGURATION.md`
+    // and every FLOW.md in the wild write one — keys inside triple backticks, under a sentence
+    // saying "paste this to try it" — was live config the whole time. A real repo had
+    // `agents.exec_cmd` set from the block of a file whose prose argued, at length, that it was
+    // deliberately unset, and every review round took the one-shot path it warned against.
+    // Closing fence: same character, at least as long as the opening one (CommonMark).
+    const f = /^\s{0,3}(`{3,}|~{3,})/.exec(line)
+    if (f) {
+      if (!fence) fence = f[1]
+      else if (f[1][0] === fence[0] && f[1].length >= fence.length) fence = null
+      continue
+    }
+    if (fence) continue
     const heading = /^##\s+(\S+)/.exec(line)
     if (heading) {
       section = heading[1]

@@ -43,3 +43,7 @@ jobs:
         run: bash script/tests/bundle-limits.sh
       - name: the bench's reader of two eval runs
         run: bash script/tests/bench-compare.sh
+      - name: how a FLOW file is read
+        run: bash script/tests/flow-config.sh
+      - name: the review tier the CLI resolves
+        run: bash script/tests/tier.sh

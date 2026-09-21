@@ -5,6 +5,33 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.68.0 — The block written to be pasted was the configuration  ·  2026-09-21
+
+**In short**
+- **A fenced block in a FLOW file is an example again.** `- key:` lines inside triple backticks (or tildes) are skipped by `bin/cli.mjs` and by flow-core §0, so the two resolve the same configuration. Until now they were read as the config they illustrate.
+- **This was found in a live repo, not imagined.** `agents.exec_cmd` was set from the fenced example of a file whose prose argued, at length, that it was deliberately unset — so every review round took the one-shot path that prose warned against, and nothing anywhere said so.
+- **`/flow:doctor` reports keys found inside a fence**, names the file and says what to do: move the line out to make it real, leave it to keep it an illustration.
+- **`script/tests/flow-config.sh`** pins it — fenced values never leak, `~~~` and four-backtick blocks are fences, a closed fence does not swallow the keys after it. Every case fails against the old reader.
+- **Two tests now actually run in CI**: the new one and `tier.sh`, which existed and was wired into nothing.
+
+A `FLOW.md` is prose with keys in it, and that is the point of it: the keys are the contract, the
+prose is why the value is what it is. What decides which is which is shape alone — a `- key:` line
+under a `## section` — and shape is exactly what a documented example shares with the thing it
+documents. `docs/CONFIGURATION.md` teaches keys in fenced blocks. The template's own comments do.
+So does every real `FLOW.md` that explains an option before enabling it.
+
+The repo where this surfaced had a Claude overlay with three paragraphs on why `agents.exec_cmd`
+stays unset — cost against the panel that had been finding the defects — followed by a block
+introduced with *"to try it once, add both blocks below and take them out again afterwards"*. The
+block was live from the moment it was written: `exec_cmd` set, `quality.reviewers` masked with four
+role descriptions instead of the four agents the base names. The file and its configuration said
+opposite things, and both looked right.
+
+Nothing warns about that class of mistake, because the file is valid and the round it produces is
+green. So the reader changes: fenced regions are skipped, by the CLI and by the command pages that
+read the file themselves, and `doctor` reports what it found in one — a reader who pasted a block
+to enable it needs to be told why it does nothing, which is the mirror of the same problem.
+
 ## v0.67.0 — Every layer of the review was argued from judgement, and none was ever checked  ·  2026-09-21
 
 **In short**
