@@ -24,7 +24,7 @@ Every `$flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.65.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.66.0-rc.1`.** Compare it once, at the start of the session, against
 `version` in `../../.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -62,6 +62,12 @@ a command relies on is simply absent in that session, and nothing else will repo
   differ — and otherwise read both files from the main checkout, which
   `git rev-parse --path-format=absolute --git-common-dir` locates from anywhere (its parent
   directory). Name the file you actually read when a stop reports configuration.
+  **This is a rule about reading a git-ignored config, and it inverts for anything a phase
+  writes into the repo.** A tracked file belongs to the branch, and the branch is the worktree:
+  written to the main checkout it lands on whatever that checkout is standing on — usually the
+  base branch — and goes out in no MR/PR at all. So a phase writing a tracked file writes it
+  **here**, in the directory it is running in, and `$flow:feat-ship §5.5` is what catches the
+  tools that could not be told.
 - Merge by section and key. A key present in the active overlay replaces the base value; a key
   absent there inherits the base. **A present-but-empty overlay key masks the base** and resolves
   to the normal empty-key fallback — this is how Codex can inherit its session model while a legacy
@@ -122,7 +128,8 @@ worth a command of its own, which is why there is no longer one:
 3. **Per finding**: `knowledge.search` set → query it with the topic and the finding's paths, then
    decide *create* · *update* · *enrich with a new angle* · *conflict*. A conflict is asked
    immediately (`AskUserQuestion`) and nothing is saved until it is resolved. Then `knowledge.save`,
-   one call per finding; the role empty → append to **`KNOWLEDGE.md` at the repo root** under a
+   one call per finding; the role empty → append to **`KNOWLEDGE.md` at the root of the checkout
+   you are in** (a tracked file belongs to the branch — the inversion above) under a
    `## <topic>` heading — the finding, its evidence line, the date and the branch. Creating that file
    the first time edits the tree, so it is asked once, in every mode; appending to an existing one is
    recorded, not asked.
@@ -321,6 +328,21 @@ diff hits that every time, and a stronger model hits it sooner, because it write
 test suite, a migration, a batch of edits — name the **path it writes** and require it to **save
 after each finished piece, not at the end**. Then verify the artifact instead of believing the
 report: half a chunk on disk is recoverable, what lives only in the agent's context is not.
+
+**One writer of the working tree at a time.** An agent whose deliverable is files on disk is not
+another reader with a longer report: it is break, run, restore, and it composes with nothing else
+looking at the same tree. Two of them at once — or one of them beside a reader — and every reading
+taken in that window is of a tree somebody else was halfway through changing. That is how a suite
+comes back red for an edit belonging to another agent, how a reviewer ends up running `git status`
+around each of its own findings to work out which changes are its doing, and how a commit that
+looks clean is clean by luck. **The parent thread is a writer too**: applying a round's fixes while
+its agents are still reading is the same collision, from the side nobody counts.
+
+So a round that contains a writer is not one round. Readers fan out freely, as they always did;
+writers go one at a time, each either alone or in a worktree of its own, and the readers sit
+entirely before them or entirely after them. The parent's own edits wait until the round is
+consolidated. Ordering costs wall clock and the phase says so in one line — a reading nobody can
+trust costs the phase twice, which is the trade this rule is making.
 
 **A parallel round names a path too, however short the answer.** Not for volume — for arrival. A
 round of four is four chances for a result to reach you as nothing: truncated in transit, delivered

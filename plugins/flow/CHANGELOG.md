@@ -5,6 +5,55 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.66.0 — Two agents shared one working tree, and a tool wrote into one nobody would push  ·  2026-09-21
+
+**In short**
+- **A round that contains a writer is not one round.** An agent whose deliverable is files on disk now holds the working tree alone: readers still fan out freely, writers go one at a time, and the parent's own edits wait until the round is consolidated. `validate` runs its testing agent before the suite and the performance pass rather than beside them; a review round reads a tree that has stopped moving.
+- **`ship` checks the checkout it did not push.** With `meta.json.worktree` set, the Close reads the main checkout's `git status` and names, in one line, anything sitting there — then offers once to carry it onto the branch. A configured tool that wrote to the wrong tree stops being invisible.
+
+Both of these came out of one real run, on the same day, and neither could be seen by reading the
+plugin.
+
+**The tree had no owner.** `validate §2` launched its three pieces in parallel, and one of them
+writes: the testing agent's deliverable is test files, saved as each is finished. The other two
+read — the full suite, and the performance pass — and the main thread was editing alongside all of
+them. One suite run came back red for a mutation belonging to another agent. A reviewer found a
+source file changed without it being its doing, and had to run `git status` around each of its own
+findings to know which were real. The commit taken at the end was clean by luck.
+
+The fix is a rule in `flow-core §6` rather than a fix in `validate`, because the shape repeats
+wherever a phase fans out: a writing agent is break, run, restore, and it composes with nothing
+else looking at the same tree. Readers are unaffected and stay as parallel as they ever were —
+which is most rounds. Writers are serialised or given a worktree of their own, and the readers sit
+entirely before them or entirely after. `validate` now runs the testing agent first and alone, and
+that ordering pays for itself twice: the suite that follows is the first thing that has ever
+executed the tests the phase just added. `review` states the other half of the same rule — this
+phase's own fixes land after the round is consolidated, never underneath reviewers still reading.
+Ordering costs wall clock, the phase says so, and a reading nobody can trust costs the phase twice.
+
+**The second tree was the one nobody looked at.** A work living in a worktree ran `ship §5` and
+consolidated five knowledge cards through the configured `knowledge.save` tool. They were written
+into the *main* checkout, which was standing on the base branch — not into the branch about to be
+pushed. The MR went out without them, and the session noticed on its own and carried the files
+across by hand.
+
+The tool did nothing wrong: it is started once per session, resolves its store from the directory
+it was started in, and its call takes no root, so nothing in the invocation could have corrected
+it. flow is the only party that knows `meta.json.worktree` is set. So `ship` now has a §5.5 that
+reads the main checkout's `git status --porcelain` before the Close, names any paths it finds as
+what they are — in the main checkout, not in the branch that was pushed, and not necessarily put
+there by this run — and offers once, in every autonomy mode, to copy them over, commit and push,
+which updates the MR/PR that already exists. Leaving them is a legitimate answer and the Close
+reports either way: a `ship` that silently repaired two checkouts is worse than one that named the
+problem. `bug:ship` runs the same check, where it catches what `postmortem` consolidated one phase
+earlier.
+
+`knowledge.save` was merely the first tool to fall in; no key is special, and the check names none.
+The one write flow does control was corrected at the source: the `KNOWLEDGE.md` fallback said "the
+repo root", which `flow-core §0` defines as the main checkout's — correct for reading a git-ignored
+config and exactly backwards for a tracked file, which belongs to the branch. It is written to the
+checkout the phase is running in.
+
 ## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-21
 
 **In short**

@@ -230,6 +230,22 @@ Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip wi
 3. **Combine staging + new findings** into a short list. Empty or only code-derivable → do not insist.
 4. 1+ relevant findings → ask the user whether to consolidate. Yes → run the consolidation of flow-core §0 (`read_staging`, then one decision and one `knowledge.save` per finding). No → do not insist.
 
+## 5.5 A worktree does not own the tree its tools wrote into
+
+`meta.json.worktree` null → skip silently; there is nothing here that can go wrong.
+
+Everything above this line ran in a worktree, and several of the tools it called had no way of knowing that. A configured tool — `knowledge.save` is the first one this caught, and no key is special — is started once per session, resolves the repo from the directory it was started in, and takes no root in its call. A worktree is the same repo with another tree, so its output can land in the **main checkout**, which is standing on another branch, while the branch §4 just pushed goes out without it. Nothing in the invocation could have corrected that: flow is the only party that knows `meta.json.worktree` is set, and this is the only place that knows the push already happened.
+
+So, before the Close:
+
+```
+git -C "$(git rev-parse --path-format=absolute --git-common-dir)/.." status --porcelain
+```
+
+Empty → say nothing at all. Non-empty → **one line naming the paths**, and what it means in plain words: they are sitting in the main checkout, not in the branch that was pushed. Say it as a reading, never as an accusation — that checkout may have been dirty before this work started, and only the user can tell their own leftovers from what this run put there.
+
+Then offer once, with `AskUserQuestion` **in every autonomy mode** (it edits two trees): **carry them over** — copy the paths the user confirms into this worktree, commit onto the branch, push, and the MR/PR from §4 updates itself — or **leave them**, which is the right answer whenever what is sitting there belongs to the other branch. Either way the Close reports what was decided: a `ship` that quietly repaired two checkouts is worse than one that named the problem and left it standing.
+
 ## 6. Close
 
 ### 6.1 Update `meta.json` per scenario
