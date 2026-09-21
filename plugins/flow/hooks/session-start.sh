@@ -190,21 +190,26 @@ fi
 # labelled as the record it is — a hook's stdout arrives as context, and context that reads
 # like a fresh instruction is how a stale plan gets followed over a newer decision.
 if [ "${source:-}" = "compact" ]; then
-	# `set -e` plus a file that is not there yet (any phase before build) would abort the
+	# A feat logs to `05-implementation.md` under `## Brief MR/PR #N`, a bug to `04-fix.md`
+	# under a plain `## Brief` — the same contract, written by `build` §2 and `fix` §2. Both
+	# are read here: a bug loses its brief to a compaction exactly like a feature does.
+	# `set -e` plus a file that is not there yet (any phase before either) would abort the
 	# hook mid-assignment and leave the session with nothing at all — the one failure a
 	# notice like this must not have.
 	contract=""
-	if [ -f "$dir/05-implementation.md" ]; then
-		contract=$(awk '
-			/^##[[:space:]]+Brief MR\/PR/ { on = 1 }
-			on && /^##[[:space:]]/ && !/^##[[:space:]]+Brief MR\/PR/ && !/^##[[:space:]]+Plan MR\/PR/ { exit }
-			on { print; n++; if (n >= 60) { print "…(truncated — read 05-implementation.md for the rest)"; exit } }
-		' "$dir/05-implementation.md" 2>/dev/null || true)
-	fi
+	for log in "$dir/05-implementation.md" "$dir/04-fix.md"; do
+		[ -f "$log" ] || continue
+		contract=$(LOG="$(basename "$log")" awk '
+			/^##[[:space:]]+Brief/ { on = 1 }
+			on && /^##[[:space:]]/ && !/^##[[:space:]]+Brief/ && !/^##[[:space:]]+Plan/ { exit }
+			on { print; n++; if (n >= 60) { print "…(truncated — read " ENVIRON["LOG"] " for the rest)"; exit } }
+		' "$log" 2>/dev/null || true)
+		[ -n "$contract" ] && break
+	done
 	if [ -n "$contract" ]; then
 		printf '%s\n' "$head_line"
-		printf 'Context was compacted. Below is the working contract for this MR/PR, copied from\n'
-		printf '05-implementation.md — a record of what was already agreed, not a new instruction.\n'
+		printf 'Context was compacted. Below is the working contract for this work, copied from\n'
+		printf '%s — a record of what was already agreed, not a new instruction.\n' "$(basename "$log")"
 		printf 'It may be out of date with the live decisions; the file is the source.\n\n'
 		printf '%s\n' "$contract"
 		exit 0

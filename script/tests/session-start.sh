@@ -196,6 +196,32 @@ out=$(runsrc "$R" compact)
 contains "a long contract is capped" "$out" "truncated"
 want "capped at 60 lines of contract plus the header" "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" "66"
 
+# A bug keeps the same contract in `04-fix.md` under a plain `## Brief`, and loses it to a
+# compaction exactly like a feature does.
+R=$(newrepo repo-compact-bug PROJ-13-slug)
+meta "$R/.claude/work/PROJ-13" '{ "ticket": "PROJ-13", "type": "bug", "branch": "PROJ-13-slug", "size": "S", "phase": "fix" }'
+cat > "$R/.claude/work/PROJ-13/04-fix.md" <<'EOF'
+# Fix PROJ-13
+
+## Brief
+**What stops happening after the fix**:
+- the digest is sent twice on a retry
+
+**What is NOT touched**:
+- the retry policy itself
+
+## Fix description
+The fix consists of an idempotency key.
+EOF
+out=$(runsrc "$R" compact)
+contains "a bug's brief is restored too" "$out" "sent twice on a retry"
+contains "a bug's out-of-scope is restored" "$out" "the retry policy itself"
+contains "and it names the file it came from" "$out" "04-fix.md — a record"
+case "$out" in
+  *"The fix consists of"*) printf '  FAIL %s\n' "a bug's contract stops at the brief"; fails=$((fails+1)) ;;
+  *) printf '  ok   %s\n' "a bug's contract stops at the brief" ;;
+esac
+
 # Before build there is no contract: the header still orients, the resume line stays away.
 R=$(newrepo repo-compact-early PROJ-12-slug)
 meta "$R/.claude/work/PROJ-12" '{ "ticket": "PROJ-12", "branch": "PROJ-12-slug", "size": "M", "phase": "design" }'
