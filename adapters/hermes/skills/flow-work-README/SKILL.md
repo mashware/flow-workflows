@@ -87,7 +87,9 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
   "phase": "context" | "design" | "plan" | "build" | "review" | "validate" | "ship" | "investigate" | "fix" | "postmortem" | "done" | "abandoned",
   // retired in v0.53.0 and still read from older works: "brainstorm" → treat as "context", "diagnose" → as "investigate"
   "phases_done": ["context", ...],
+  "candidate_sha": "40-char sha the current review froze before reading, or ''",
   "reviewed_sha": "40-char sha the last passing review read, or ''",
+  "fixed_sha": "40-char sha after that review's own fixes, or '' when it applied none",
   "validated_sha": "40-char sha the suite last went green on, or ''",
   "respond_rounds": 0,
   "mrs": [
@@ -97,7 +99,9 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
       "size": "S",
       "status": "pending" | "in_progress" | "merged" | "closed" | "superseded",
       "phases_done": ["build", "review", "validate"],
+      "candidate_sha": "",
       "reviewed_sha": "",
+      "fixed_sha": "",
       "validated_sha": "",
       "respond_rounds": 0,
       "wave": 1,
@@ -138,7 +142,8 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 }
 ```
 
-- **`reviewed_sha` / `validated_sha`**: which code the review / green run happened to. Written by `review` and `validate` at `## Close`, **only when the phase actually advances**, work-level and in the current `mrs[]` entry. Read by `ship` at pre-flight against `HEAD`: a delta of test files and this work's own folder passes with a note in `06-review.md`; anything else stops and asks in every autonomy mode. Empty is not a mismatch.
+- **`candidate_sha` / `reviewed_sha` / `fixed_sha` / `validated_sha`**: which code each verdict is about. `candidate_sha` is written by `review` in its **pre-flight** (§1.5) — the revision it froze before reading anything, `git rev-parse HEAD` over a clean tree and `git stash create` over a dirty one, anchored at `refs/flow/candidate/<TICKET>` so nothing collects it. The other three are written at `## Close`, **only when the phase actually advances**, work-level and in the current `mrs[]` entry: `reviewed_sha` is the candidate that was actually read, `fixed_sha` is `HEAD` after that round's own fixes (empty when it applied none), `validated_sha` is where the suite went green.
+  Two fields for the review because they are two facts. `reviewed_sha` used to be `git rev-parse HEAD` at the end of the phase, which by then held the round's own fixes — so `ship` compared a sha against itself and reported a match over code no reviewer had read. Read by `ship` at pre-flight against `HEAD`: a delta of test files and this work's own folder passes with a note in `06-review.md`; anything else stops and asks in every autonomy mode. Empty is not a mismatch; `fixed_sha` set with `reviewed_sha == HEAD` is one. `review` also reads `reviewed_sha` back as **its own base** on a re-review, so the second round reads the delta instead of the whole branch.
 - **`respond_rounds`**: rounds of `/flow-work-respond` on an MR/PR. `/flow-work-respond §1` reads it against `quality.respond_max_rounds` (empty = 3) and refuses the round that would exceed it, handing the open threads back to the user.
 - **`related_repos`**: the **other repos a task touches**. Captured at `/flow-feat-start` / `/flow-bug-start` §cross-repo, refined at `design`/`plan`, reminded at `ship`, shown by `daily`/`resume`/`status`. flow only notes and reminds — never touches the other repo. `[]` for single-repo.
 - **`contract_handoff`**: whether the sibling knows **what shape to build against** (`scope` is prose; distinct from `status`). `none` — consumes no contract declared here. `pending` — consumes one, not handed over yet. `published → <location>` — published where that side reads it (normally the tracker ticket; `/flow-feat-ship` §6.3), picked up by the sibling's `/flow-feat-start` §3.6.

@@ -18,8 +18,18 @@ Hand-editable: rewrite one and the next phase respects it. Process narration goe
 the chat. → [README §On disk](../README.md#what-a-work-looks-like-on-disk)
 
 **`meta.json`** — the work's source of truth: ticket, type, size, branch, `phase`, `phases_done`, the
-MR/PR train (`mrs[]`), related repos, `reviewed_sha` / `validated_sha`, `respond_rounds`. Without it,
+MR/PR train (`mrs[]`), related repos, `candidate_sha` / `reviewed_sha` / `fixed_sha` /
+`validated_sha`, `respond_rounds`. Without it,
 commands refuse to continue. Advances only when a phase closes. → [work/README][wrm]
+
+**Frozen candidate** — the one revision a review reads. Resolved *before* the round launches
+(`git rev-parse HEAD` over a clean tree, `git stash create` over a dirty one, anchored at
+`refs/flow/candidate/<TICKET>`), it is what makes every reviewer, however late it arrives, read the
+same bytes. It is also what `reviewed_sha` records at the close — the tree that was **read**, not
+the tree the phase happened to end on after fixing its own findings, which is code no reviewer saw.
+A round that changed anything records the second tree separately as `fixed_sha`, and `ship` asks
+about the delta between them. On a re-review the previous `reviewed_sha` becomes the review's own
+base, so the second round reads the delta and is sized by it. → [feat/review §1.5][frv]
 
 **`00-summary.md`** — a handoff of at most 15 lines, overwritten whole at every phase close: what the
 work is, size and current MR/PR, decisions that stand, contracts, what is pending, what to open in full.
@@ -161,6 +171,7 @@ subagent and MCP declaration. Checked by `script/adapter-smoke.py`; not executed
 harnesses. → [adapters/README](../adapters/README.md)
 
 [fc]: ../plugins/flow/skills/flow-core/SKILL.md
+[frv]: ../plugins/flow/commands/feat/review.md
 [wr]: ../plugins/flow/commands/work/README.md
 [wrp]: ../plugins/flow/commands/work/README.md#principles
 [wrf]: ../plugins/flow/commands/work/README.md#full-flowfeat-flow

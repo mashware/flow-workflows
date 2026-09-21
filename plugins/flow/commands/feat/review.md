@@ -17,6 +17,9 @@ Mandatory review phase. **`/flow:feat:ship` cannot run without passing through h
 - **Gather the material once, not once per reviewer.** `npx flow-workflows@<version> bundle --checks --harness claude`
   prints one context pack for this branch — worklist, the diff (minus `git.diff_exclude`), the changed files
   in full, the raw output of `quality.static_analysis`, and the work's handoff — in a single call.
+  **§1.5 runs first and adds `--rev` and `--base` to that call**: the pack is then one frozen
+  revision against one resolved base, which is what makes it the same material for every reader
+  rather than the same *call* made at different moments.
   Read that instead of rediscovering it, and **pass it to the briefs of §2-§6**: a panel where every
   member runs its own `git diff` and opens the same files pays for that material once per agent, and
   a reviewer that spends its turns exploring has fewer left to review. **Any non-zero exit is a
@@ -48,9 +51,31 @@ Mandatory review phase. **`/flow:feat:ship` cannot run without passing through h
   picks the model, so `models.agents`/`models.workers` do not reach those reviewers. A one-shot sweep
   cannot pull a thread, so an ambiguous finding still goes to a real agent with tools, as below.
 
+### 1.5 Freeze what you are about to read, and resolve what to compare it against
+
+Two questions, answered here and nowhere later: **which tree** this round reads, and **against which base**. Both used to be answered implicitly — by the checkout as it happened to stand at each moment, and by `git.default_base` always — and both answers were wrong in a way no artifact could show.
+
+**The candidate.** A round applies its own fixes; the README's own first-minute example is *"3 reviewers, one finding — fixed"*. So "the working tree" is a different tree for the reviewer that read it first, for the skeptic that read it last, and for the `git rev-parse HEAD` taken at §9 — which by construction contains code no reviewer ever saw, and which `/flow:feat:ship §1` then compares against `HEAD` and finds equal. Resolve one revision before §2 launches anything:
+
+- Tree clean → `git rev-parse HEAD`.
+- Tree dirty → `git stash create`. It writes a real, addressable commit object holding the index and the tracked working tree; it does **not** touch the checkout and there is nothing to pop. Empty output (nothing to stash after all) → `git rev-parse HEAD`.
+- **Untracked files are in no revision**, so they are outside the candidate. `git status --porcelain` lists them; name them in `06-review.md` in one line and read them from disk. A new file nobody mentions is the review's blind spot, not a technicality.
+- Anchor it so it cannot be collected: `git update-ref refs/flow/candidate/<TICKET> <sha>`. A `stash create` object is unreferenced, and a candidate the `ship` gate cannot resolve is a gate that reports nothing. The ref is local, never pushed, and `/flow:feat:ship §6.5` deletes it.
+- Write `candidate_sha` to `meta.json` — work-level and in the current `mrs[]` entry — **in this pre-flight**. A candidate recorded after the reading is not a freeze.
+
+**The review base.** `reviewed_sha` already records the tree the last passing review read, and `ship` trusts it enough to stop a push — yet the review itself never read it, so a second review re-reads every line the first one cleared, and §2.0 resolves the tier on the accumulated total: a 30-line delta on a 900-line branch reviewed as the 900. Resolve:
+
+- The current MR/PR's `reviewed_sha` (work-level when there is no train) when it is **non-empty** and **an ancestor of the candidate** (`git merge-base --is-ancestor <sha> <candidate>`) → that is the base.
+- Otherwise `git.default_base`. A `reviewed_sha` that is not an ancestor means history was rewritten or the branch recut; say so in one line rather than producing a nonsensical delta.
+- **A first review has no `reviewed_sha` and reads the whole branch**, exactly as before. The delta path only exists after a review that passed.
+- `/flow:feat:review --full` ignores `reviewed_sha` and reads the branch on demand.
+- **Fall back to `git.default_base` and say why** when either holds, because a delta cannot see how it interacts with what was cleared before: the delta touches a file the previous review left a finding on, or it changes an external contract copied under `/flow:feat:build §2.0bis`.
+
+**Then everything reads those two.** `npx flow-workflows@<version> bundle --checks --harness claude --rev <candidate_sha> --base <review base>` — the pack is that one revision for every reader, and its header says so. The briefs of §2–§6 name the candidate, and the agent that pulls a thread on an ambiguous finding is told to read `git diff <review base>...<candidate_sha>`, never the live tree. `quality.static_analysis` still runs against the checkout, which the pack states: a linter reads the working tree and freezing does not change that.
+
 ## 2. Invoke the code reviews
 
-Scope for every reviewer: the full feature work against the base branch (committed + working tree — commits are opt-in).
+Scope for every reviewer: **the candidate revision of §1.5, against the review base of §1.5** — which is the whole feature work against `git.default_base` on a first review, and the delta since the last passing one otherwise. Committed and uncommitted work travel together inside the candidate; untracked files do not, and §1.5 named them.
 
 ### 2.0 Resolve review depth (scale to *this diff* and the risk)
 Read `quality.review_depth` from `FLOW.md` (`proportional` | `full` | `light`; empty → `proportional`) and `meta.json.size`. This decides **what §2.1 launches and at which effort**. Built-in `code-review` effort ladder: **low < medium < high < xhigh < max** (lower = fewer, higher-confidence findings; higher = broader coverage, may surface uncertain ones).
@@ -58,8 +83,11 @@ Read `quality.review_depth` from `FLOW.md` (`proportional` | `full` | `light`; e
 **The tier is resolved against the diff in front of you, not against the size of the feature.**
 `meta.json.size` describes the whole work; in a multi-MR/PR train every MR/PR inherits it, so a
 41-line third MR/PR gets reviewed as the L its feature is — the single largest source of wasted
-review in this plugin. Measure the real diff (`git diff --shortstat <git.default_base>...HEAD`, plus
-the working tree) and derive its own size:
+review in this plugin. **The same waste arrives on the time axis**, and the mitigation written for
+one did not reach the other: a re-review measured against the branch resolves the tier the whole
+branch earns, for a delta of thirty lines. Measure the diff this round is actually reading —
+`git diff --shortstat <review base>...<candidate_sha>` from §1.5, which is the branch on a first
+review and the delta afterwards — and derive its own size:
 
 | Changed lines in this diff | Diff size |
 |---|---|
@@ -134,7 +162,7 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 
 1. **Built-in `code-review`** (the Claude Code one, no prefix), at the §2.0 effort. Single pass over the local diff: correctness failures + reuse/simplification/efficiency.
 2. **Project panel** (only when §2.0 selected it): read `quality.review_skill` from `FLOW.md`.
-   - `review_skill` set → invoke that skill with `03-design.md` as additional context. Scope: `git diff <git.default_base>...HEAD`, plus uncommitted working-tree changes.
+   - `review_skill` set → invoke that skill with `03-design.md` as additional context. Scope: `git diff <review base>...<candidate_sha>` (§1.5) — the candidate carries the uncommitted work, so there is no second, later reading to take.
    - `review_skill` empty, `quality.reviewers` has entries → launch each agent in parallel as a panel, same context and scope.
    - Both empty → step 1 already covers this pass; launch nothing more.
 
@@ -142,7 +170,7 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 
    **Every brief you write here ends with the report contract of flow-core §6** — `agents.report_max_words` (empty → 250), findings only, one line each as `file:line` + what is wrong + the fix. This file's own prompts (§3.5, §4, §5.5) already carry theirs; the panel briefs are yours to write, and an uncapped one is truncated in transit and reaches you looking exactly like a reviewer that found nothing. The built-in `code-review` takes no brief — bound it with the §2.0 effort tier and hold it to the same fan-out deadline (flow-core §6): over a large diff it is the likeliest member of this round to stall before its first sentence.
 
-**Nothing edits the tree while a round is in flight** (flow-core §6). Every reviewer here reads the same working tree, uncommitted part included, and the fixes this phase applies are the parent's own edits — applied mid-round they land underneath agents that are still reading, and the reviewer that then reports a line which has moved, or checks `git status` around its own reading to work out what it touched, is the one reading this phase exists to trust. Findings are fixed **after** the round is consolidated, so §3 onward launch against a tree that stopped moving.
+**Nothing edits the tree while a round is in flight** (flow-core §6). The candidate of §1.5 means every reviewer is handed the same bytes however long it takes to get to them; it does not mean the checkout underneath can be edited freely, because an agent with tools reads that one. The fixes this phase applies are the parent's own edits — applied mid-round they land underneath agents still reading, and a reviewer that reports a line which has moved, or runs `git status` around its own reading to work out what it touched, is the reading this phase exists to trust. Findings are fixed **after** the round is consolidated. The fixes are then a delta the candidate does not contain, which is exactly what §9's `fixed_sha` records and `ship` asks about.
 
 When both run, deduplicate overlapping correctness/simplification findings (count each once). The `review_skill` specialists (offensive/defensive security, silent failures, architecture) are not repeated in later phases.
 
@@ -174,7 +202,7 @@ wall-clock, that is the tell: wait.
 
 Loop, maximum **2 rounds**:
 
-1. **Worklist**: `git diff --stat <git.default_base>...HEAD` → list of changed files/areas.
+1. **Worklist**: `git diff --stat <review base>...<candidate_sha>` (§1.5) → list of changed files/areas.
 2. **Coverage map**: from the consolidated §2-§3 findings, mark which files/areas received at least one finding or were explicitly examined.
 3. **Completeness critic (1 agent, blinded and text-only)**: `Agent general-purpose` (takes `models.agents` like every other subagent here), passing **only** the full diff file list (step 1) and, per §2-§3 reviewer, one line on what it covered. **Do not** pass the detailed findings, the design, or the diff. This agent compares two lists and answers in three sentences; it opens no file, runs no `git diff`, reads no code. An agent here that is still working after a few minutes is not being thorough — it was handed the wrong job, and the fix is to kill it and re-launch with the two lists alone. Prompt:
 
@@ -301,8 +329,9 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 # Code review <TICKET>
 
 ## Summary
+- Reviewed: <`<review base>...<candidate_sha>` (§1.5), each as a short sha, plus which base was chosen and why — the previous `reviewed_sha`, or `git.default_base` because this is a first review / the sha was not an ancestor / a fallback rule fired / `--full` was asked for. Any untracked file the candidate could not hold is named here. Without this line a round that read a delta and a round that read the branch are indistinguishable, and so are a frozen round and one that read a moving tree.>
 - Review tier: <full | proportional | light — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
-- Effective size: <diff size (N changed lines) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified. When the diff landed within 10% under a tier threshold, say so here (§2.0).>
+- Effective size: <diff size (N changed lines, measured over the §1.5 range — the branch on a first review, the delta afterwards) vs `meta.json.size`, which of the two the tier used, and — when the diff pointed higher — that the work may be misclassified. When the diff landed within 10% under a tier threshold, say so here (§2.0).>
 - Review path: <the two paths this round actually took: `flow bundle` or git for the material, `flow review` or the agentic panel for the reviewers — each with the reason when it was the fallback (no CLI, non-zero exit, `agents.exec_cmd` empty, every role empty). Without this line a round that skipped the CLI reads exactly like one that used it. When the pack ran, quote its `Config read:` line verbatim: it is the only place that says whether the overlay reached the material, and “no `--harness` was given” there means every key set only in the overlay was missing from this round.>
 - Agent models: <the value of `models.workers`/`models.agents` **with the file each came from** (flow-core §0) when set; otherwise "inherited from this thread", naming the config files you listed — "unset" without them reads the same whether the overlay was empty or never opened — plus, when the panel ran, that agents named in `agents.<role>` kept the model their own definition sets. The values as they are, no judgement on them>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>, effort <medium|high|xhigh|max>
@@ -365,7 +394,10 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 
 - Blockers → **do not advance `phase`**. Leave `phase = "build"`; the user resolves them.
 - No blockers → `phase = "review"`, add to `phases_done`. **In a multi-MR/PR work**, also add `review` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — `/flow:feat:ship §1` gates on it per MR/PR.
-- **Record *what* you reviewed**, in the same write: `reviewed_sha` = `git rev-parse HEAD`, work-level and — in a multi-MR/PR work — in this MR/PR's `mrs[]` entry too. `phases_done` says a review *happened*; the sha says which tree, and `/flow:feat:ship §1` compares it before pushing. Write it whenever the phase advances, never when it does not: a review that ended in blockers reviewed nothing that stands.
+- **Record *what* you reviewed, and separately what you changed after reading it**, in the same write, work-level and — in a multi-MR/PR work — in this MR/PR's `mrs[]` entry too:
+  - `reviewed_sha` = **the candidate of §1.5**, the revision the reviewers actually read. Not `git rev-parse HEAD`, which is what it used to be and which by then holds this round's own fixes — code no reviewer saw, recorded as reviewed, and `ship` finding it equal to `HEAD` every time.
+  - `fixed_sha` = `git rev-parse HEAD` after this round's fixes, or **empty** when the round applied none. Two fields because they are two facts, and collapsing them is what hid the delta.
+  - `phases_done` says a review *happened*; these say which tree, and `/flow:feat:ship §1` reads both before pushing. Written whenever the phase advances, never when it does not: a review that ended in blockers reviewed nothing that stands.
 - **Stage what the review taught** (`knowledge.stage` set; silence by default). Review is where a project teaches the most and, until now, the one phase that never staged — a work with three review rounds and seventeen blockers produced zero knowledge cards because nothing asked for them while they were in context. Candidates are findings about the **domain or the codebase's real behaviour**, not about this diff: a library that does other than its name says, a test disguise that kept the suite green over a live defect, a module rule the reviewers had to cite from its own prose, a measurement. A blocker fixed here is not knowledge; *why it was written wrong* may be. Same evidence rule as `/flow:feat:design` §8 — one line of evidence per finding or it is not staged. One call per finding, one line to the user («Staged N finding(s) for `ship`»). Never `knowledge.save` here.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Configuration this phase earned the right to ask about** (flow-core §0, `manual` only, at most one key per work, as an extra option on this same stop — never a question of its own): a role the panel had to improvise on an M/L or sensitive diff → `agents.<role>`; a `Cost:` line that went over `agents.budget_max` → `quality.review_depth`. In `guided`/`auto` neither is asked: the default is taken and recorded in `meta.json.defaults_used[]`.

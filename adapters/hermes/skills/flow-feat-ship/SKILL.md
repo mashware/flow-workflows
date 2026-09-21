@@ -27,12 +27,14 @@ Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per
 - Read `meta.json` and `00-summary.md`; open in full only the `Brief MR/PR #N` of `05-implementation.md`, the `## Summary`/blockers of `06-review.md` and `07-validation.md`. (flow-core §5)
 - Require `review` in `phases_done`; for `size` other than `XS`, also require `validate`. **In a multi-MR/PR work** (`meta.json.mrs` has >1 entry) check the **current `in_progress` MR/PR's** own `phases_done` (its `mrs[]` entry), NOT the work-level list — a previous MR/PR's `review`/`validate` does **not** satisfy this gate.
 - Not met → refuse and send the user to the missing step (multi-MR/PR: `/flow-feat-review` or `/flow-feat-validate` **for this MR/PR**).
-- **The review has to be about the tree you are about to push.** Compare `meta.json.reviewed_sha` and `validated_sha` (this MR/PR's `mrs[]` entry in a multi-MR/PR work) against `git rev-parse HEAD`:
-  - **Equal** → continue, nothing to report.
+- **The review has to be about the tree you are about to push.** `reviewed_sha` is the revision the reviewers **read** (`/flow-feat-review §1.5` froze it), not the one that phase ended on, so the round's own fixes are a real delta here rather than a match. Compare `meta.json.reviewed_sha` and `validated_sha` (this MR/PR's `mrs[]` entry in a multi-MR/PR work) against `git rev-parse HEAD`:
+  - **Equal** → continue, nothing to report — **unless `fixed_sha` is set**, which says the review changed the tree after reading it and cannot then be equal to `HEAD`. That combination is a mismatch, not a match: the shas were recorded by two different mechanisms and one of them is wrong. Say so and treat it as Different below.
+  - **The tree is dirty at this end** (`git status --porcelain` non-empty, ignoring untracked) → both shas describe committed history and the bytes about to be pushed are not in either. Name the paths and ask, exactly as Different does; a comparison of two identical shas over two different trees is the case the old gate passed over in silence.
+  - **`reviewed_sha` does not resolve** (`git cat-file -e <sha>^{commit}`) — a candidate from a dirty tree whose anchor ref was deleted, or history rewritten since — → say so in one line and treat it as Absent. A gate that cannot read its own input must not report nothing wrong here.
   - **Absent** (work started before the shas were recorded) → say so in one line and continue. Absence is not a mismatch.
-  - **Different** → read the delta (`git log --oneline <sha>..HEAD`, `git diff --stat <sha>..HEAD`) and judge it by **what it touches**, never by size.
+  - **Different** → read the delta (`git log --oneline <sha>..HEAD`, `git diff --stat <sha>..HEAD`) and judge it by **what it touches**, never by size. When `fixed_sha` is set, say in the same line that part of this delta is the review's own fixes: the user is judging what the reviewers never read, and where it came from is the first thing they need.
     - Only test files (`tests/`, `test/`, `spec/`, `__tests__/`, `*_test.*`, `*Test.*`, `*.test.*`, `*.spec.*`) and this work's own folder under `.claude/work/` → append both shas and the file list to `06-review.md`, continue **without asking** (a test written by `validate` after the review is the normal order).
-    - **Anything else** → stop and ask, in **every** `autonomy.mode`, with a single `AskUserQuestion`: *re-review the delta* (`/flow-feat-review`, recommended default — it reads `<sha>..HEAD`, not the whole branch) · *ship it as it stands*, which first appends to `06-review.md` the two shas, the files, and that the user accepted them unreviewed. Never resolve this one silently.
+    - **Anything else** → stop and ask, in **every** `autonomy.mode`, with a single `AskUserQuestion`: *re-review the delta* (`/flow-feat-review`, recommended default — §1.5 resolves `reviewed_sha` as its base, so it reads the delta and nothing else, and resolves the tier on the delta too) · *ship it as it stands*, which first appends to `06-review.md` the two shas, the files, and that the user accepted them unreviewed. Never resolve this one silently.
 - Check for blocking TODO/FIXME added on this branch (`git diff --unified=0 <git.default_base>...HEAD | grep -E '^\+.*(TODO|FIXME)'`). If any, list them and ask whether to continue.
 
 ## 2. Draft title and description (without sending anything yet)
@@ -423,6 +425,7 @@ paste. Never a list here, and never a question: in `guided`/`auto` not asking is
 ### 6.5 Archive and cleanup
 
 Only if `phase = "done"`:
+- Delete the candidate anchor `/flow-feat-review §1.5` left behind: `git update-ref -d refs/flow/candidate/<TICKET>`. It existed to stop the object being collected while the gate still needed it; the gate has run. No question — it is local, it was never pushed, and nothing reads it after this. Absent already → nothing to do.
 - Ask whether to keep `.claude/work/<TICKET>/` or archive it (move to `.claude/work/_archive/`).
 - If `meta.json.worktree` is not null, offer to remove the worktree (from the main checkout) with `git worktree remove <worktree>` (`--force` only if it still has changes the user confirms discarding). Never without confirmation, never if the MR/PR is not yet merged.
 
