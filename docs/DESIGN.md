@@ -593,6 +593,17 @@ was retired in v0.50.0 — a user who wants that answers *no* in `manual`. Conti
 the next `ship` will stop.
 *Now:* feat:ship §6.2; CONFIGURATION "Multi-PR trains".
 
+**Each step's line carries its commit.** v0.66.0: `build` committed one WIP per step and wrote
+nothing down about which commit belonged to which step — `05-implementation.md` was the running log
+of the build and held not one sha. Three places then worked by guessing from commit messages: the
+hot cut read its cut point off `git log --oneline`, the transfer after it picked commits the same
+way, and a delta-scoped review could say which lines were new but not which step they came from.
+One line per step, `<short sha> · <step> · <n files, +a −b>`, written in every mode with no
+question; a step that was not committed gets `—` where the sha would be, because the absence of a
+commit is itself what the reader needs. The cut proposal names the sha, so the user confirms an
+identifier rather than a description.
+*Now:* feat:build §2.2, §2.3; bug:fix §2.1, §3.
+
 **Estimates are a thermometer; the hot cut never rewrites history.** At +50% lines or +2 files:
 cut, continue and record, or reopen the plan; a cut inserts a fresh entry with `phases_done: []` and
 moves work by `cherry-pick`. A second overrun means the plan is wrong, not the estimate.

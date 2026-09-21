@@ -178,6 +178,17 @@ The step's changes are **always reported before anything is recorded**. Who deci
    - **"Something needs to change"** → adjust; the step's commit stays pending until OK.
    - **"Continue without committing, we'll group later"** → next step without committing; changes accumulate in the working tree (fewer clean points if §2.3 cuts).
 
+4. **Write the step into the log, committed or not.** Append one line to a `## Steps` section of `05-implementation.md` (create it at the first step):
+
+   ```
+   - <short sha> · <step name> · <n files, +a −b>
+   - — · <step name> · <n files, +a −b>          ← not committed
+   ```
+
+   No question, in every autonomy mode — this is flow machinery on the never-ask list of flow-core §2. A step that was **not** committed gets its line too, with `—` where the sha would be: that is the case in `manual`, and the *"continue without committing, we'll group later"* branch above. The log then has no holes, and the absence of a commit is itself what the reader needs to see.
+
+   The step summary was already written for every step; the sha is the one identifier that makes the log line and the git history the same record. Without it `05-implementation.md` explains *why* each change was made and names not one commit that did it, so §2.3 reads the cut point off `git log --oneline` and matches it by the prose in `WIP <TICKET>: <step>`, and a delta-scoped review (`/flow-feat-review §1.5`) can say which lines are new but not which steps they came from.
+
 Rules when a commit does happen:
 - One commit per step. Do not batch steps unless the user explicitly requests it.
 - `--no-verify` **only for WIP commits** (slow hooks run in `/flow-feat-review` and in the final commit of `/flow-feat-ship`).
@@ -221,13 +232,13 @@ slip under a threshold buys itself the review a smaller change had earned.
 **Hot cut mechanics (option 1)**:
 
 0. **If there are uncommitted changes** in the working tree: warn the user and ask them to decide before cutting — commit what is done as a WIP for the corresponding step, or stash it (`git stash`) so it does not mix with the next MR/PR.
-1. Identify a cut point: the last WIP commit where the piece is coherent and mergeable (a closed sub-goal: "endpoint and DTO done", "migration applied", "flow X tests green"). Do not cut in the middle of a change.
+1. Identify a cut point from the `## Steps` lines of `05-implementation.md` (§2.2): the last committed step where the piece is coherent and mergeable (a closed sub-goal: "endpoint and DTO done", "migration applied", "flow X tests green"). Those lines pair each step with its sha, so the cut is chosen on what the step *was* rather than re-derived from `git log --oneline` and matched by the prose in a commit message. **Name the sha in the proposal** — the user confirms an identifier, not a description. A step with `—` instead of a sha is not a cut point; it never got one. Do not cut in the middle of a change.
 2. Edit `meta.json.mrs`:
    - The current MR/PR keeps `n`, `title`, `wave` and `depends_on`, adjusts `lines_est` and `files_est` to actuals, and stays `in_progress`.
    - Insert a new one with the next `n` (renumbering subsequent ones if any), `title` describing what remains, `status: "pending"`, `phases_done: []` (a fresh MR/PR earns its own review/validate), `depends_on: [n_current]`, `wave` = one after the current one, and new indicative `lines_est` and `files_est`. If you renumber subsequent entries, **update their `depends_on` references accordingly** so no `depends_on` points to a higher `n` than its own.
 3. Edit `04-mr-plan.md`: split the original entry in two, keeping the standalone-mergeable justification for both halves.
 4. Note in `05-implementation.md` under "Hot cut": date, reason, what stays and what moves to the next one.
-5. **Do not rewrite history with `git rebase`**: WIP commits belonging to the next MR/PR stay in the current branch. When building the next one, start from a new branch over the base and transfer them with `git cherry-pick` or equivalent — executed in `/flow-feat-ship` or when starting the next `/flow-feat-build`.
+5. **Do not rewrite history with `git rebase`**: WIP commits belonging to the next MR/PR stay in the current branch. When building the next one, start from a new branch over the base and transfer them with `git cherry-pick` or equivalent — executed in `/flow-feat-ship` or when starting the next `/flow-feat-build`. The shas to transfer are the `## Steps` lines below the cut point, which is what that section is for on this side of the cut too.
 
 **If there was already a cut and overrun happens again**: ask the user before cutting again — a second cut on the same MR/PR signals the plan is wrong. The right option is probably **3 (reopen plan)**.
 
@@ -258,6 +269,9 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at th
 
 ## Changes per file
 - <file> — what changed and why (1 line each)
+
+## Steps
+<one line per step of §2.2, in order: `- <short sha> · <step name> · <n files, +a −b>`, and `—` in place of the sha where the step was not committed. Written as each step closes, in every autonomy mode. This is what joins the log to the git history: §2.3 reads its cut point here, the transfer after a cut picks its shas here, and a delta-scoped review can say which steps a range came from. A section with no holes is the point — an uncommitted step still gets its line.>
 
 ## Decisions made during implementation
 - Decision: …

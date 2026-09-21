@@ -10,6 +10,9 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 **In short**
 - **A round that contains a writer is not one round.** An agent whose deliverable is files on disk now holds the working tree alone: readers still fan out freely, writers go one at a time, and the parent's own edits wait until the round is consolidated. `validate` runs its testing agent before the suite and the performance pass rather than beside them; a review round reads a tree that has stopped moving.
 - **`ship` checks the checkout it did not push.** With `meta.json.worktree` set, the Close reads the main checkout's `git status` and names, in one line, anything sitting there — then offers once to carry it onto the branch. A configured tool that wrote to the wrong tree stops being invisible.
+- **A review freezes what it is about to read.** `review` resolves one revision before it launches anything — `HEAD` over a clean tree, `git stash create` over a dirty one — and `flow bundle --rev` makes the pack that revision for every reader. The sha recorded at the end is the tree that was **read**, with the round's own fixes recorded separately as `fixed_sha`, so `ship` asks about them instead of reporting a match.
+- **A re-review reads the delta, and is sized by it.** The previous `reviewed_sha` becomes the review's own base when it is an ancestor of the candidate. A 30-line delta on a 900-line branch stops being reviewed as the 900, and the two commands that already promised a scoped re-review now get one.
+- **The implementation log names the commit of every step.** `05-implementation.md` gains a `## Steps` section — one line per step with its short sha, `—` when the step was not committed. The hot cut reads its cut point there and proposes a sha instead of a description.
 
 Four failures with one shape: a phase read a tree, and nothing in the flow could say which tree
 that was. Two of them came out of the same real run and could not be seen by reading the plugin;
@@ -87,6 +90,18 @@ reads the branch exactly as before; `--full` forces that on demand. Two cases fa
 because a delta cannot see how it interacts with what was cleared before: it touches a file a
 previous finding sat on, or it changes an external contract. The sensitive-surface bump never scales
 away — twelve lines of an authorization check still get the panel.
+
+**And the log of what was built named not one commit that built it.** `build` commits one WIP per
+step in `guided`/`auto`, and nothing wrote down which commit belonged to which step:
+`05-implementation.md` is the running log of the build and held no sha at all. So the hot cut asked
+to *"identify a cut point: the last WIP commit where the piece is coherent"* — read off
+`git log --oneline` and matched by the prose in `WIP <TICKET>: <step>` — the transfer that follows
+it picked its commits the same way, and a delta-scoped review could say which lines were new but
+not which step they came from. The step summary was already being written for every step; the sha
+is the one identifier that makes the log line and the git history the same record. It is now a
+`## Steps` section, one line each, written in every autonomy mode with no question, and a step that
+was **not** committed gets its line too with `—` where the sha would be — the absence of a commit
+is exactly what a reader of that log needs to see. The cut proposal names the sha it is cutting at.
 
 ## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-21
 
