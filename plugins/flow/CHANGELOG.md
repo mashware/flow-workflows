@@ -5,7 +5,7 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
-## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-17
+## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-21
 
 **In short**
 - **A round gathers its material once.** `npx flow-workflows bundle` prints one context pack — worklist, diff, changed files, the repo's own analysis output, the work's handoff — instead of every reviewer paying to rediscover it. Two limits govern it, because how big a file is and how big its change is are different questions: a large file with a small edit keeps its diff.
