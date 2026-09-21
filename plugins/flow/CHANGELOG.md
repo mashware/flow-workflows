@@ -5,14 +5,15 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
-## v0.66.0 — Two agents shared one working tree, and a tool wrote into one nobody would push  ·  2026-09-21
+## v0.66.0 — Every phase read a tree, and none of them could say which one  ·  2026-09-21
 
 **In short**
 - **A round that contains a writer is not one round.** An agent whose deliverable is files on disk now holds the working tree alone: readers still fan out freely, writers go one at a time, and the parent's own edits wait until the round is consolidated. `validate` runs its testing agent before the suite and the performance pass rather than beside them; a review round reads a tree that has stopped moving.
 - **`ship` checks the checkout it did not push.** With `meta.json.worktree` set, the Close reads the main checkout's `git status` and names, in one line, anything sitting there — then offers once to carry it onto the branch. A configured tool that wrote to the wrong tree stops being invisible.
 
-Both of these came out of one real run, on the same day, and neither could be seen by reading the
-plugin.
+Four failures with one shape: a phase read a tree, and nothing in the flow could say which tree
+that was. Two of them came out of the same real run and could not be seen by reading the plugin;
+the other two were visible on the page all along, in a sha written at the wrong moment.
 
 **The tree had no owner.** `validate §2` launched its three pieces in parallel, and one of them
 writes: the testing agent's deliverable is test files, saved as each is finished. The other two
@@ -53,6 +54,39 @@ The one write flow does control was corrected at the source: the `KNOWLEDGE.md` 
 repo root", which `flow-core §0` defines as the main checkout's — correct for reading a git-ignored
 config and exactly backwards for a tracked file, which belongs to the branch. It is written to the
 checkout the phase is running in.
+
+**The review recorded the tree it ended on, not the one it read.** `review`'s scope was the working
+tree, and the only sha it wrote was `git rev-parse HEAD` at its Close — taken after the round had
+applied its own fixes, which the README's own first-minute example advertises. So the tree the gate
+remembers contains, by construction, code no reviewer read; `ship` compares that sha against `HEAD`,
+finds the equality it was built to detect a delta in, and continues without a line. A round that
+fixed findings without committing was worse still: two identical shas over two different trees.
+
+`review §1.5` resolves the candidate before §2 launches anything — `git rev-parse HEAD` when the
+tree is clean, `git stash create` when it is dirty (a real commit object holding the index and the
+tracked tree, the checkout untouched, nothing to pop) — and anchors it at
+`refs/flow/candidate/<TICKET>`, because an unreferenced object the `ship` gate can no longer resolve
+is a gate that reports nothing. `flow bundle --rev` reads that revision for the diff *and* for the
+file contents; getting only one of the two from the revision would hand a reviewer a diff of one
+tree and the files of another, which looks right in both halves. Untracked files are in no revision
+at all, so they are named rather than quietly missed, and `quality.static_analysis` still runs
+against the checkout and says so. The Close then writes two fields, because they are two facts:
+`reviewed_sha` is what was read, `fixed_sha` is `HEAD` after the round's own fixes or empty when it
+made none. `ship` gained three cases it could not express before — `fixed_sha` set alongside an
+equal sha is a mismatch, a dirty tree at either end is named instead of passed over, and a
+`reviewed_sha` that no longer resolves is reported rather than read as "nothing wrong here".
+
+**And the same sha, once it was trustworthy, had a second job.** `ship` offered *"re-review the
+delta"* and `respond` promised a review *"scoped to this round's diff"* — and the command they both
+call declared the opposite, reading the full branch and resolving its tier against the accumulated
+total. That is the wasted-review failure §2.0 already names, arriving on the time axis instead of
+the train axis: thirty new lines reviewed with the depth nine hundred lines earn. `review §1.5` now
+takes the previous `reviewed_sha` as its base when it is non-empty and an ancestor of the candidate,
+and `git.default_base` otherwise, saying which in one line. A first review has no `reviewed_sha` and
+reads the branch exactly as before; `--full` forces that on demand. Two cases fall back and say why,
+because a delta cannot see how it interacts with what was cleared before: it touches a file a
+previous finding sat on, or it changes an external contract. The sensitive-surface bump never scales
+away — twelve lines of an authorization check still get the panel.
 
 ## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-21
 

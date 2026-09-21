@@ -460,6 +460,31 @@ gathers evidence for *and against*, because "an agent asked only to confirm will
 something".
 *Now:* feat:design §1.5.3; bug:investigate §3.A.
 
+**The candidate is frozen before anything reads it, and the sha recorded is the one that was read.**
+v0.66.0: `review` anchored nothing, and the only sha it wrote was `git rev-parse HEAD` at its Close —
+after the round had applied its own fixes. So `reviewed_sha` described a tree containing code no
+reviewer saw, `ship` compared it against `HEAD` and found the equality it was built to detect a
+delta in, and a round that fixed findings without committing left both shas identical over two
+different trees. `review §1.5` now resolves one revision first — `HEAD` when clean, `git stash
+create` when dirty, anchored at `refs/flow/candidate/<TICKET>` because an unreferenced object is a
+gate that cannot read its own input — and `bundle --rev` makes the pack that revision for every
+reader. The Close writes two fields because they are two facts: `reviewed_sha` (read) and
+`fixed_sha` (what the round changed afterwards, empty when it changed nothing). Untracked files are
+in no revision and are named rather than quietly missed.
+*Now:* feat:review §1.5, §9; bug:review §1.5, §8; feat:ship §1, §6.5; work/README `meta.json`; `bundle --rev`.
+
+**A re-review reads the delta, and is sized by it.** v0.66.0: two commands already promised a
+scoped re-review and the command they called declared *"the full feature work against the base
+branch"*, resolving its tier on the accumulated total — "a 30-line delta on a 900-line branch
+reviewed with the tier those 900 lines earn", which is the wasted-review failure §2.0 already names,
+arriving on the time axis instead of the train axis. `review §1.5` takes the previous `reviewed_sha`
+as its base when it is non-empty and an ancestor of the candidate, `git.default_base` otherwise and
+says which. A first review has no `reviewed_sha` and reads the branch, as before; `--full` forces it
+on demand. Two cases fall back and say why, because a delta cannot see its interaction with what was
+cleared before: it touches a file a previous finding sat on, or it changes an external contract. The
+sensitive-surface bump never scales away with the base.
+*Now:* feat:review §1.5, §2.0; bug:review §1.5, §2.0; feat:ship §1; work:respond §5.
+
 **The net that worked is not thickened.** In v0.24.0 the panel caught what reached it; the lesson was
 cheaper detection upstream, and the review was left alone.
 
