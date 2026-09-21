@@ -11,7 +11,7 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow:feat:ship`, wi
 
 ## 0. Pre-flight
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `04-fix.md` (the Brief), `06-review.md` (the verdict), `05-validation.md`, the §"Root cause identified" of `03-investigation.md`, and `99-postmortem.md` if it exists. (flow-core §5)
 - Require `review` in `phases_done`; also `validate` if `size` ≥ S, and `postmortem` if `size` is M or L (the same sizes `/flow:bug:review §8` routes to postmortem — one rule). Missing → refuse and redirect to the missing step.
@@ -145,6 +145,8 @@ Only here — with the content approved in §2 — invoke `Skill commit-commands
 Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.squash`.
 
 **Record the URL the moment it exists**: write it into `meta.json` (the `mrs` entry if there is one) and refresh `panel.json` (flow-core §4) right here, before §3.2 and before anything else can fail.
+
+**The pipeline the push starts is not watched from this thread — `/flow:feat:ship` §4.1, in full and unchanged**: close with CI reported as *running*, or delegate the wait to a supervisor subagent on `models.supervisors` (flow-core §6.5) with a deadline, taking back status and failing-job evidence only. A red pipeline is `/flow:work:green`'s to triage, never this command's.
 
 ### 3.2 Pre-deploy thread (deployment gate)
 **Only if `git.predeploy_gate` is active and the fix has pre-deploy SQL** (§1). After creating the MR/PR, open **a single resolvable/blocking thread** with all the consolidated SQL, using the host from `git.host`/`git.cli` (GitLab: `glab api ".../merge_requests/<iid>/discussions"`; GitHub: review conversation with required resolution). Body: the SQL block under "Pre-deploy: run this SQL on the server BEFORE deploying" + "Resolve only after running it in production".

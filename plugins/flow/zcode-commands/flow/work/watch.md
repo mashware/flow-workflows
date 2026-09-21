@@ -11,7 +11,7 @@ argument-hint: "[TICKET]"
 > - Every primitive named below exists here under the same name — `AskUserQuestion`, `Agent <role>` and its subagents, `ScheduleWakeup`, `TaskCreate`, `Skill flow:<name>`, `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` (`${ZCODE_PLUGIN_ROOT}` is an alias). Nothing in this page is a translation of anything.
 > - The overlay read here is `FLOW.zcode.md`, and every `flow-workflows` call below already names it. The same plugin also exposes its unprefixed Claude pages — `/feat:start`, `/bug:fix`, … — which name Claude's overlay instead, so type the `/flow:` names.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
 **Autopiloted post-deploy monitoring**: signals **scoped to the change** over a window (default 30 min), against a baseline; alert on errors or performance regressions from the deploy.
 
@@ -40,7 +40,7 @@ If `knowledge.search` is set, call `knowledge.search` with the ticket name befor
 - **Confirm WHAT is being deployed — never assume it from `meta.json`** (several MR/PRs per ticket; stale artifacts). Cross-reference the **actual deploy event** (e.g. `get_change_stories`) and recent merges; any ambiguity → `AskUserQuestion` which MR/PR or commit is deploying. The surface (§2) is scoped to **that** change.
 - **When to start.** When the code **is live in production**, not at merge. Launched right after the merge → **wait for the deploy yourself**:
   - Check whether the new version is live (`observability.deploy_detect`; empty → `get_change_stories` or other deploy indicators).
-  - **Not yet deployed** → poll every ~2-3 min until it appears. Do not start the window.
+  - **Not yet deployed** → **delegate the wait** (flow-core §6.5): one supervisor subagent on `models.supervisors` watching for the go-live of that exact SHA, ~2-3 min interval, a deadline, and back with status plus evidence (pipeline/job names, exit codes, the deploy event) — never with a judgement on whether the deploy is healthy. No supervisor available → poll every ~2-3 min here and say that this thread is doing the waiting. Either way the monitoring window does not start until the code is live.
   - **Pipeline fails** → **abort monitoring** and alert: the code did not reach production.
   - Already deployed → proceed.
 - **How to identify YOUR deploy.** The chain in `observability.deploy_detect`. Empty → merge to base branch → CI/CD pipeline → go-live jobs. Determine the exact merge commit; confirm the go-live jobs of the affected services reach `success`. Any fail → **abort**.

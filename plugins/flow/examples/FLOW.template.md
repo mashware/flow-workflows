@@ -239,11 +239,19 @@ subagent ignores the value and the step says so once, in one line.
 - `workers:`  # the parallel fan-out rounds ONLY: approach panel (design §1.5.3), hypothesis sweep
               #   (investigate §3.A), finding skeptics (review §6 / §5), the deferred-work skeptic
               #   (ship). Empty = falls back to `agents`, then to what the command runs on.
+- `supervisors:` # the ONE subagent a command hands a long wait to instead of polling it from the main thread
+              #   (flow-core §6.5): a running pipeline (green §2.3, §6), a deploy that has not landed yet
+              #   (watch §1), a suite measured in tens of minutes (validate §2). It watches, times out and
+              #   brings back status plus evidence — job names, exit codes, log tail, run URL — and never
+              #   rules on it: triage and the merge verdict stay on the main thread whatever this says.
+              #   Empty = falls back to `agents`, then to what the command runs on, and the dispatch says so
+              #   in one line — an unattended wait is the one place an unpriced default runs longest.
 
-**Two keys, not one per kind of step.** There used to be five — `study`, `code`, `test`, `review` —
-named after phases. They promised a granularity no harness delivers: the main agent cannot switch
-its own model, so the phases those keys named ran on whatever you launched, and the value only ever
-reached the subagents. These two name what can actually be set.
+**Three keys, one per kind of subagent — not one per kind of step.** There used to be five —
+`study`, `code`, `test`, `review` — named after phases. They promised a granularity no harness
+delivers: the main agent cannot switch its own model, so the phases those keys named ran on whatever
+you launched, and the value only ever reached the subagents. These three name what can actually be
+set: the improvised agent, the fan-out round, and the wait.
 
 Two limits, stated here because they bound what these keys can promise:
 
@@ -255,7 +263,7 @@ question in `guided`/`auto` and never a gate.
 
 **A named agent keeps its own model.** If `agents.<role>` names a real agent, that agent's own
 definition wins — you configured it, and it is not overridden from two places. `/flow:doctor` prints
-both keys resolved, with who decided each.
+the three keys resolved, with who decided each.
 
 ## data
 How this repo lets you look at a query's **plan** instead of arguing about it. Read by

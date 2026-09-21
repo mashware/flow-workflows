@@ -78,15 +78,17 @@ is invalid.
 
 #### 1.5.2 Resolved models (only if either file has a `models` key)
 
-Two keys, both about subagents. Print what each one actually reaches:
+Three keys, all about subagents. Print what each one actually reaches:
 
 ```
-agents   fable    →  improvised subagents: review panel members with no named agent, blinded
-                     auditors, delegated build pieces, the general-purpose challenger
-workers  (empty)  →  fan-out rounds — falls back to `agents`
+agents       fable    →  improvised subagents: review panel members with no named agent, blinded
+                         auditors, delegated build pieces, the general-purpose challenger
+workers      (empty)  →  fan-out rounds — falls back to `agents`
+supervisors  (empty)  →  the delegated waits (running pipeline, pending deploy, long suite) —
+                         falls back to `agents`
 ```
 
-- State once, plainly: **the main agent's own steps are not covered by either key** — reading the
+- State once, plainly: **the main agent's own steps are not covered by any key** — reading the
   ticket, the design, and the single-thread `build`/`fix` run on the model the command was launched
   with, because an agent cannot switch its own model. A phase that wants another one says so at the
   handoff; nothing enforces it.

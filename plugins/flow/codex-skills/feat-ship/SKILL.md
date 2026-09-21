@@ -20,7 +20,7 @@ description: "Commit, push, MR/PR, and offer to save domain knowledge"
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
@@ -182,6 +182,8 @@ Only here — with the content approved in §3 — invoke `Skill commit-commands
 - `commit-push-pr` skill unavailable → commit and push manually and create the MR/PR with the `git.cli` CLI from `FLOW.md` — always with the content confirmed in §3.
 
 **Record the URL the moment it exists**: write it into this MR/PR's `meta.json.mrs` entry and refresh `panel.json` right here, before §4.2 and before anything else can fail.
+
+**The push just started a pipeline, and this thread does not sit on it.** Its result belongs to `$flow:work-green`, not here, so either close the ship with CI reported as *running* — the honest state — or, when the user wants to hear how it ended, delegate the wait as any other (flow-core §6.5): one supervisor subagent on `models.supervisors`, a deadline, and back with status plus failing-job evidence. Whatever it returns, a red pipeline is triaged by `$flow:work-green`; this command never fixes CI and never closes reporting a green it did not see.
 
 ### 4.2 Pre-deploy thread (deployment gate)
 **Only if `git.predeploy_gate` is active and the branch has pre-deploy SQL** (§2). After creating the MR/PR, open **a single resolvable/blocking thread** with **all** the consolidated SQL, using the `git.host`/`git.cli` host:

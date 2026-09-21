@@ -178,6 +178,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `agents` | `stall_after_minutes` | a fan-out agent past this with nothing written to its named path is stopped, its brief split in two, and relaunched. Empty = 25 — |
 | `models` | `agents` | every subagent a command improvises: the review panel members with no named agent, the |
 | `models` | `workers` | the parallel fan-out rounds ONLY: approach panel (design §1.5.3), hypothesis sweep |
+| `models` | `supervisors` | the ONE subagent a command hands a long wait to instead of polling it from the main thread |
 | `data` | `explain_cmd` | get a query's execution plan. `{QUERY}` is substituted. e.g.: |
 | `data` | `schema_cmd` | show a table's REAL definition — column types, lengths, charset/collation, indexes and their |
 | `data` | `sandbox_cmd` | create a THROWAWAY database to measure in, isolated from anything the project uses. Empty = no |
@@ -583,21 +584,33 @@ an explicitly empty overlay key masks one and restores inheritance for that harn
 |---|---|
 | `agents` | Every subagent a command improvises: review panel members with no named agent, the blinded auditors, the delegated pieces of a `build`, the `general-purpose` challenger |
 | `workers` | The parallel fan-out rounds only — approach panel, hypothesis sweep, finding skeptics, the deferred-work skeptic. Empty → falls back to `agents` |
+| `supervisors` | The single subagent a command hands a long wait to instead of polling it from the main thread (flow-core §6.5): a running pipeline, a deploy that has not landed, a suite measured in tens of minutes. Empty → falls back to `agents` |
 
-Nothing else has a key, and that is the point of the pair: the steps the main agent performs itself
+Nothing else has a key, and that is the point of the three: the steps the main agent performs itself
 cannot be given a model at all (below).
 
 ```markdown
 ## models
 - agents: fable
 - workers: sonnet
+- supervisors: haiku
 ```
 
-**Two keys, not five.** Until v0.50.0 there were `study`, `code`, `test` and `review`, named after
+**What `supervisors` buys, and what it must never buy.** A wait is the one step where an expensive
+model earns nothing: every polling cycle resends the whole conversation to read `pending` again, and
+a pipeline of forty minutes can cost more to watch than the diff cost to write. So the wait is
+delegated — one subagent, an interval, a deadline, and a report of status plus evidence (job names,
+exit codes, log tail, run URL) — while this thread ends its turn. What comes back is **evidence, not
+a verdict**: whether a red job is flaky, whether a threshold is close enough, whether the branch can
+merge is decided here, on whatever model you are running, every time. A cheap model that gets to
+rule on a pipeline is green-washing with an extra step in it.
+
+**Three keys, not five.** Until v0.50.0 there were `study`, `code`, `test` and `review`, named after
 kinds of step. They promised a granularity the harness does not deliver: the phases they named are
 run by the main agent, which cannot switch its own model, so the value only ever reached the
 subagents those phases launched. A key that resolves to "reported, not applied" for its headline
-case is a key that misleads. The two that remain name exactly what can be set.
+case is a key that misleads. The three that remain name exactly what can be set: the improvised
+agent, the fan-out round, and the wait.
 
 The values are **free text passed straight to your harness**. flow does not validate a model name,
 does not rank models, and never picks one for you — it has no opinion on which model is good at
@@ -648,7 +661,7 @@ definition decides its model: you configured it there deliberately, and one sett
 overridden from two places. These keys apply where flow **improvises** the agent — the
 `general-purpose` fallback with the role in the prompt — and to the fan-out workers.
 
-`/flow:doctor` prints both keys resolved, with who decided each one (the `models` key, a named
+`/flow:doctor` prints the three keys resolved, with who decided each one (the `models` key, a named
 agent's own definition, or inheritance). Which model runs where is something you read, not something
 you infer from this page.
 

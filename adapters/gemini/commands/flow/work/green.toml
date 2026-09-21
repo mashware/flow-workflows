@@ -28,7 +28,7 @@ Usage: `/flow:work:green [mr-iid-or-url]` — optional; default is the MR/PR of 
 
 Extract from `git`: `host`, `cli` (empty → the default for that host), `default_base`. The term MR/PR follows `host`. From `tracker`: `tool`, `prefix`. From `quality`: `test`, `test_one`, `static_analysis`, `style_fix` (local reproduce/verify commands, §5; empty → auto-discover from Makefile / npm / composer scripts), `review_skill` (§5, non-trivial fixes). `agents`: expert sub-agents to delegate fixes to. `knowledge.search` set → `knowledge.search` in §3.
 
-Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`.**
+Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; the wait it delegates takes `models.supervisors`.**
 
 **Autonomy.** Modes as in flow-core §2; `guided`/`auto` record their choices in `09-ci.md` (e.g. a pure formatter auto-fix). **Hard gates — ALWAYS stop and ask, in every mode, no exceptions:**
 1. **Any push** (§6).
@@ -78,7 +78,7 @@ Decide the exit on the **combination** of both halves, never on the pipeline alo
 
 - **Pipeline green *and* verdict mergeable** → report both facts, stop.
 - **Pipeline green but blockers remain** → do **not** report "green, you're good": report the pipeline green, list the blockers, continue to §3 with them.
-- **Pipeline running / pending** → offer to **wait** (poll with `Monitor`, or `ScheduleWakeup` every ~2–3 min; with neither tool, say so and let them re-run when CI finishes) or stop and re-run later. Meanwhile work on any **non-pipeline** blockers.
+- **Pipeline running / pending** → **delegate the wait** (flow-core §6.5): one supervisor subagent on `models.supervisors`, told which run to watch, at what interval, with a deadline and every terminal state, bringing back status **plus evidence** (failing job names, exit codes, log tail, run URL) and **no verdict** — the triage of §3 is this thread's, whatever it reports. Then work any **non-pipeline** blockers meanwhile, or end the turn on the harness's own wake-up (a background task that re-invokes you, `Monitor`, `ScheduleWakeup` ~2–3 min). Neither a supervisor nor a wake-up available → say so plainly and let the user re-run when CI finishes; never imply the pipeline is being watched when nothing is watching it.
 - **Pipeline never ran** (no CI, or not triggered) → say so; verdict clean too → stop.
 
 ## 3. Triage every blocker
@@ -140,7 +140,7 @@ Run **before** the other buckets, only after the hard gate:
 
 - **Push (hard gate).** Show what will be pushed (files, commit message), confirm with `AskUserQuestion`. Never push to the base branch: HEAD must not be `git.default_base` and its upstream must point to the branch itself (same anti-deploy lock as `/flow:feat:ship §4.0` and `/flow:work:respond §6.2`). `git push` to the existing branch — the push re-triggers the pipeline. **Force-push only after a rebase the user explicitly chose** (§5.C.2), and only `git push --force-with-lease` — never bare `--force`, never as a way out of a rejected push (the remote moved: fetch and understand first).
 - **Rerun without a push** (rerun-only, K). Only after the user confirms (hard gate): `glab ci retry` / `gh run rerun <run-id> --failed`. Attach the recorded flake evidence. Fails again the same way → **not** flaky: reclassify to T/Y and fix; do not rerun a second time.
-- **Watch it back to green.** Offer to monitor (`Monitor`, or `ScheduleWakeup` every ~2–3 min; with neither, say so instead of implying it is watched) and report when green — or let a later `/flow:work:green` re-check. Do not claim the pipeline is fixed until it reports green: report what you pushed and that CI is re-running.
+- **Watch it back to green — delegated, not polled from here** (flow-core §6.5). The push starts a run that takes as long as the one you just triaged: hand it to the same kind of supervisor as §2.3 and end the turn, or let a later `/flow:work:green` re-check. With neither a supervisor nor a wake-up, say so instead of implying it is watched. Do not claim the pipeline is fixed until it reports green: report what you pushed and that CI is re-running.
 - **Re-read the merge verdict too.** Once the pipeline settles, re-run §2.1 and report the *merge* verdict, not only the pipeline — the only evidence the MR/PR is actually mergeable.
 
 ## 7. Log, loop, and domain knowledge

@@ -20,7 +20,7 @@ Validate that the fix works and that the bug does not return.
 
 ## 1. Pre-flight
 
-Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`.**
+Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; the wait it delegates takes `models.supervisors`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (§3 areas with similar risk, and the minimal reproduction) — the testing agent reads it and `04-fix.md` itself. (flow-core §5)
 - Require `fix` in `phases_done`.
@@ -35,7 +35,7 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 
 Then:
 1. Run only that test with `quality.test_one` from FLOW.md; it must pass.
-2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if slow).
+2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if slow; measured in tens of minutes → delegate it as a wait to a supervisor subagent on `models.supervisors`, flow-core §6.5 — it returns the exit code and the failing output, and the reading of them stays here).
 3. DB touched → verify the schema has no unexpected differences (`quality.db_update` or the FLOW.md equivalent, if defined).
 4. Security or authentication touched → launch the `agents.security` agent from FLOW.md in parallel over the fix files (empty → `Agent general-purpose` with a security role).
 

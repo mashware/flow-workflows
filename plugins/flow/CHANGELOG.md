@@ -5,6 +5,37 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.69.0 — Waiting on the pipeline was paid for at the main thread's price  ·  2026-09-21
+
+**In short**
+- **A wait is delegated now, not sat through.** A running pipeline, a deploy that has not landed and a suite measured in tens of minutes go to one supervisor subagent with an interval, a deadline and every terminal state; this thread ends its turn instead of polling.
+- **What comes back is evidence, never a verdict** — failing job names, exit codes, the log tail, the run URL, the SHA it watched. Whether a red job is flaky, whether a threshold is close enough, whether the branch can merge is still decided on the main thread.
+- **`models.supervisors`** names the model for it, falling back to `models.agents` and then to inheritance. An empty section behaves exactly as before, and the dispatch says in one line that the wait inherits this thread's model — an unattended wait is where an unpriced default runs longest.
+- **Applied where the flow actually waits**: `/flow:work:green` §2.3 and its re-trigger, `/flow:work:watch` §1, both `validate` commands for a long suite, and both `ship` commands for the pipeline the push starts.
+- **Delegating a wait is mechanics**, so it is on the never-ask list: `manual` still asks whatever the evidence turns out to call for, once it is back.
+
+Every command that waited, waited on the thread holding the whole conversation. `green` offered to
+poll a running pipeline every two or three minutes; `watch` polled for a deploy that had not landed
+yet; `validate` ran the full suite in the background and stayed with it. None of that reads a diff
+or weighs a finding — it reads `pending` — and each cycle resends the entire context to do it. A
+forty-minute pipeline could cost more to watch than the diff cost to write, and the cost was
+invisible because waiting looks like nothing happening.
+
+The delegation is bounded on purpose. The brief names the exact run rather than "the CI", every
+terminal state rather than the first red job, and a deadline after which the supervisor returns what
+it has instead of waiting forever. It writes its evidence to a path before it replies, like every
+other brief, so a report lost in transit is recoverable for the cost of one `ls`. And it counts
+against `agents.budget_max` like any other subagent, relaunches included.
+
+What it must never do is rule. Handing the judgement to whoever is cheapest to ask is how a pipeline
+ends up declared green by a model that was hired to watch a clock — the machine version of the
+green-washing `/flow:work:green` refuses in every autonomy mode. The supervisor reports; the triage,
+the merge verdict and the decision to push stay exactly where they were.
+
+Not every wait is worth a brief either: a suite that finishes in ninety seconds costs more to
+delegate than to run, and anything the phase must react to mid-wait was never a wait — it is the
+work.
+
 ## v0.68.0 — The block written to be pasted was the configuration  ·  2026-09-21
 
 **In short**

@@ -9,7 +9,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.68.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.69.0`.** Compare it once, at the start of the session, against
 `version` in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -144,10 +144,10 @@ explicit rather than degrading in silence.
 
 ## 1. Models — which model runs a step
 
-Two keys, and they govern **subagents only**: `models.agents` for every subagent a command
-improvises, `models.workers` for the parallel fan-out rounds (falling back to `models.agents`).
-Empty, absent, or no section → everything runs on the model you were launched with, and you say
-nothing.
+Three keys, and they govern **subagents only**: `models.agents` for every subagent a command
+improvises, `models.workers` for the parallel fan-out rounds, and `models.supervisors` for the
+bounded waits of §6.5 — the last two falling back to `models.agents`. Empty, absent, or no section
+→ everything runs on the model you were launched with, and you say nothing.
 
 - Pass the resolved value to every subagent you launch, **except** an agent named in `agents.<role>`,
   which keeps the model its own definition sets.
@@ -170,6 +170,11 @@ line. Never a question, never a gate; the artifact's cost line carries the same 
 Agents named in `agents.<role>` are the exception here as above: they keep whatever their own
 definition sets, so a round can mix inherited and self-declared models. Report which, not whether it
 was wise.
+
+**A delegated wait says the same line at one agent.** A round of fifteen and a single supervisor
+sitting on a forty-minute pipeline are the same blank cheque arriving at different speeds. So when a
+wait is dispatched (§6.5) with `models.supervisors` and `models.agents` both empty, say it in one
+line: the wait inherits this thread's model because no key is set. Name the key, never a model.
 
 ## 2. Autonomy — `autonomy.mode`
 
@@ -201,6 +206,10 @@ sensible default and record it.
 - (c) **Continuing to the next MR/PR of a train** — asked in `manual`, taken and recorded in `guided`/`auto`.
 - (d) **Size confirmation** — take the proposed size, record it, move on.
 - (e) **Anything already decided and recorded** in the work's artifacts or `meta.json.notes`. Reopen only when new evidence contradicts the premise — then lead with the evidence.
+- (f) **Delegating a wait** (§6.5) — handing a running pipeline, a deploy that has not landed or a
+  long suite to a supervisor is mechanics, and the cost objection to waiting is exactly what the
+  delegation removes. Take it, record it. What is still asked in `manual` is whatever the evidence
+  turns out to call for, once it is back.
 
 Asking these anyway is how an unattended run degrades into a manual one.
 
@@ -398,6 +407,48 @@ magnitude over what anyone intended.
   not an optimisation; four agents carrying three findings each is the intended shape.
 - **The cost is reported where the user reads it**, as `spent/budget`: a phase silently skipped for
   budget and a phase that found nothing are not the same result.
+
+### 6.5 — A wait is delegated, never sat through
+
+**Waiting is not a phase, and on this thread it is not free.** A pipeline polled from here charges
+the whole conversation for every cycle that reads `pending`: the context is resent, the model
+reasons about a state that has not moved, and a forty-minute suite costs more to *watch* than the
+diff it is checking cost to write. The expense was never the waiting — it is who does it.
+
+So a wait you expect to run **longer than a few minutes** goes to **one supervisor subagent**, with
+a brief closed at both ends:
+
+- **What to watch** — the exact command, run id or resource, never "the CI".
+- **How often, and until when** — the interval, and a deadline after which it returns what it has
+  instead of waiting forever.
+- **Every terminal state** — success *and* failure, so it neither comes back at the first red job
+  with three still running, nor sits out a queue that will never move.
+- **What it brings back** — status (`finished` · `failed` · `timed out`), and the evidence for it:
+  job names, exit codes, the log tail that matters, the run URL, the SHA it watched. Plus the path
+  it writes before replying, exactly like any other brief.
+
+**It reports; it never rules.** The supervisor says which job failed and hands you the log. It does
+not decide that the failure is flaky, that the threshold is close enough, or that the branch can
+merge now. Delegating that judgement is how a pipeline ends up declared green by whoever was
+cheapest to ask, which is the one thing `/flow:work:green` exists to forbid. Delegate the waiting
+and the evidence; the verdict stays here.
+
+**Then end the turn.** Dispatching a supervisor and staying in a poll loop of your own pays both
+bills and saves nothing. What wakes you is whatever the harness offers — a background task that
+re-invokes you when it finishes, a scheduled wake-up, a message back to this thread; where it offers
+none, the supervisor's evidence file is read at your next stop, and **you say that** rather than
+implying something is being watched. Refresh `panel.json` before you go (§4): the line carries
+`mark: "wait"` and `stale_after_minutes` set to the deadline you gave, because a thread that goes
+quiet with `current` on screen reads as a session that died.
+
+**A supervisor is a subagent** — it runs on `models.supervisors` (empty → `models.agents`, then what
+this thread runs on), and it counts against `agents.budget_max` like any other, relaunches included.
+Bound it with the deadline instead of relaunching a wait that has already told you the queue is not
+moving.
+
+**Not every wait is worth a brief.** A suite that finishes in ninety seconds costs more to delegate
+than to run — the brief, the round trip and the report are the whole of the saving. And anything you
+must *react to* mid-wait is not a wait at all: it is the work, and it stays here.
 
 ## 7. Deferred work — `followups[]`
 
