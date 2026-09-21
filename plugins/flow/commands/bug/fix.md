@@ -34,7 +34,7 @@ What is NOT touched:
 
 **Ask with `AskUserQuestion`** whether this reflects the expected fix — a hard gate, **in every mode, `auto` included**: widening the fix is the main source of collateral regressions, and this is the last point to settle scope before there is a diff.
 
-In `guided`/`auto` this is one of the only two stops of the whole flow (this one and `ship`): open with the **full stop header** (flow-core §3), then the brief. Options:
+In `auto` this is one of the only two stops of the whole flow (this one and `ship`; `guided` adds the plan of §2.0bis on a fix of more than two steps): open with the **full stop header** (flow-core §3), then the brief. Options:
 - **Yes, go ahead** → apply the fix.
 - **No, something is missing or wrong** → adjust the brief, ask again. No code until confirmed.
 
@@ -46,11 +46,38 @@ blockers lived in the half a third option let in.
 
 Save the brief at the top of `04-fix.md`. Any "also fix X while we're at it" during implementation → §2.3.
 
+## 2.0bis Plan the fix (more than 2 steps)
+
+A fix of one or two steps is its own plan, and a planning round on it is pure friction. Past that the steps stop fitting in the brief — which says what stops happening, never in which file — and the fix starts being discovered while it is typed. **Trigger: more than 2 fix steps.** Two or fewer → skip, record one line in `04-fix.md` (`plan: skipped — 2 steps`) and go to §2.1.
+
+The steps come from the root cause in `03-investigation.md`, not from the repo you are about to open: a step that cause never implied is either the investigation being wrong (§4.1) or scope that belongs in §2.3. **No code yet.** Under 200 words:
+
+```markdown
+## Plan
+1. <step> — `<file or path>` — <the test that proves it, or "covered by step M">
+2. …
+
+- **Point of no return**: <the migration, contract or published event after which rollback stops being a revert — or "none">.
+- **Out of this plan**: <the adjacent thing that will be tempting once these files are open>.
+```
+
+Rules, and the first one is the bug flow's own:
+- **The regression test is a step, and it comes first when it can fail before the fix.** `/flow:bug:validate` is what proves the fix, and `/flow:bug:review` refuses to run without it on size ≥ S (`/flow:bug:start §2`). A plan that leaves the test until last has the one step that can still say "the cause was not this" arriving after everything is already built on the answer.
+- **A step is a thing on disk**, not a phase of thought: "add the idempotency key on the retry path", not "look at the retry logic".
+- **A step that widens the blast radius is not part of the minimal fix** (§2.1) — it goes to §2.3 before it is written down here, not after it is built.
+- A fix whose plan needs more than about five steps is usually two tickets or a feature in disguise: check §4.2 before planning further.
+
+**Present it, then behave by mode:**
+- `manual` / `guided` → **stop**: full stop header (flow-core §3), the plan, one `AskUserQuestion` — **Approve and fix** · **Change the order or the steps**. On a bug the order is the decision: it is what settles whether the proof comes before the repair.
+- `auto` → **do not stop**. Print the numbered steps and the point of no return, record the plan as accepted, and open the same message with the call that starts §2.1 (flow-core §3: a report is never the last thing in a turn you meant to continue).
+
+Save it in `04-fix.md` under `## Plan`, right after the brief. **A fix that was going to be one step and turns into a third**: come back here and write it then — the trigger is the shape of the work, not the moment it was first guessed.
+
 ## 2.1 Work
 
 - Apply the minimal fix targeting the finding of `03-investigation.md` (or the diagnosis if investigate was skipped).
 - Sensitive area (authentication, payments, sensitive data) → consult the `agents.architecture` agent from FLOW.md to confirm the correct layer; empty → check against `conventions` in FLOW.md.
-- More than 2 fix steps → task list (`TaskCreate` where the harness offers one; otherwise a numbered list ticked off in `04-fix.md`).
+- More than 2 fix steps → the §2.0bis plan is already written: track its numbered steps with `TaskCreate` where the harness offers one, otherwise tick them off in `04-fix.md` where they stand. One task per step, same order, marked `in_progress` and `completed` as they go — not batched.
 - **Comment discipline**: comment only a *why* the code cannot say (a non-obvious constraint, the reason for a workaround, a subtle invariant); match the surrounding file's comment density. **Never write the ticket ID or "fix for #N" into a code comment** — that lives in the commit/branch/MR-PR.
 - Keep the log updated while editing.
 
@@ -103,6 +130,9 @@ A **product decision** the fix turns out to need is neither of these — not sco
 
 **What is NOT touched**:
 - <adjacent areas out of scope>
+
+## Plan
+<the numbered steps of §2.0bis, its point of no return and its "out of this plan" line — or one line saying the step was skipped and why (`plan: skipped — 2 steps`). What §2.1 tracks with `TaskCreate`. Steps are annotated as they are reworked, never deleted: a plan edited to match what happened records nothing.>
 
 ## Fix description
 <one sentence: "The fix consists of …">

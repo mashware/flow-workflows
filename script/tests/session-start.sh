@@ -210,6 +210,12 @@ cat > "$R/.claude/work/PROJ-13/04-fix.md" <<'EOF'
 **What is NOT touched**:
 - the retry policy itself
 
+## Plan
+1. failing test — `tests/DigestRetryTest.php` — proves the double send
+2. idempotency key — `src/Mailer/DigestMailer.php` — covered by step 1
+
+- **Point of no return**: none.
+
 ## Fix description
 The fix consists of an idempotency key.
 EOF
@@ -217,6 +223,7 @@ out=$(runsrc "$R" compact)
 contains "a bug's brief is restored too" "$out" "sent twice on a retry"
 contains "a bug's out-of-scope is restored" "$out" "the retry policy itself"
 contains "and it names the file it came from" "$out" "04-fix.md — a record"
+contains "a bug's plan is restored with its brief" "$out" "tests/DigestRetryTest.php"
 case "$out" in
   *"The fix consists of"*) printf '  FAIL %s\n' "a bug's contract stops at the brief"; fails=$((fails+1)) ;;
   *) printf '  ok   %s\n' "a bug's contract stops at the brief" ;;
