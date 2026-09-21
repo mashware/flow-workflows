@@ -13,6 +13,8 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 - **A review freezes what it is about to read.** `review` resolves one revision before it launches anything — `HEAD` over a clean tree, `git stash create` over a dirty one — and `flow bundle --rev` makes the pack that revision for every reader. The sha recorded at the end is the tree that was **read**, with the round's own fixes recorded separately as `fixed_sha`, so `ship` asks about them instead of reporting a match.
 - **A re-review reads the delta, and is sized by it.** The previous `reviewed_sha` becomes the review's own base when it is an ancestor of the candidate. A 30-line delta on a 900-line branch stops being reviewed as the 900, and the two commands that already promised a scoped re-review now get one.
 - **The implementation log names the commit of every step.** `05-implementation.md` gains a `## Steps` section — one line per step with its short sha, `—` when the step was not committed. The hot cut reads its cut point there and proposes a sha instead of a description.
+- **The review tier is computed, not narrated.** `flow tier` resolves the depth from the config the round already reads — changed lines, effective size, the effort with and without the sensitive-surface bump, the ceilings, the within-10% flag, the `sensitive_paths` that matched — and §2.0 shrinks to the judgement a command cannot make.
+- **A finding says which pass found it.** Dedup keeps every source rather than the first, `meta.json.review_findings[]` records them, and `flow cost` reports per origin how many findings each pass raised **alone** and how many of those survived verification. The rule for retiring a pass is written down before the data arrives.
 
 Four failures with one shape: a phase read a tree, and nothing in the flow could say which tree
 that was. Two of them came out of the same real run and could not be seen by reading the plugin;
@@ -102,6 +104,49 @@ is the one identifier that makes the log line and the git history the same recor
 `## Steps` section, one line each, written in every autonomy mode with no question, and a step that
 was **not** committed gets its line too with `—` where the sha would be — the absence of a commit
 is exactly what a reader of that log needs to see. The cut proposal names the sha it is cutting at.
+
+**The budget was code and the tier was still prose.** `v0.65.0` moved most of a round into the CLI
+— `bundle` assembles the material, `review` runs the panel, `cost` reads back what it spent, the
+`budget_max`/`fanout_max` cap is applied in code. §2.0 did not move: 822 words, the longest section
+of a 5 683-word file, instructing a model to measure `git diff --shortstat`, read a four-row table,
+take the lower of that and `meta.json.size`, apply the bump, and flag a diff landing within 10%
+under a threshold. Every step of it arithmetic, none of it judgement — and the real cost was not
+the tokens. `06-review.md` recorded `Review tier: … per §2.0`, which is the tier the agent *said*
+it derived: a round that eyeballed the diff and a round that measured it write a byte-identical
+artifact, on the one number in the command that the section itself says carries an incentive.
+
+`flow tier` prints it — changed lines over the reviewed range, diff size, `meta.json.size`,
+effective size, the built-in effort with and without the bump, whether the panel runs, the resolved
+ceilings, the within-10% flag, and which `quality.sensitive_paths` globs the diff matched with the
+path that matched each. Copied verbatim into §8, the way `bundle --checks` copies static analysis
+out. What it deliberately does **not** decide is what a command cannot see: whether a generic
+category applies (auth, secrets, payments, personal data, a public contract, a schema change), and
+whether a matched path is a control-flow change or observability only — a log level still gets the
+review its size earned. The sensitive list stays the repo's; the CLI reads the key and carries no
+idea of its own. No CLI or a non-zero exit falls back to the prose, kept in abbreviated form, with
+`Review path` naming the fallback. Twenty-five cases in `script/tests/tier.sh` pin the table at its
+boundaries — 150/151, 600/601, 1500/1501 — plus the lower-of-two rule, the misclassification note,
+the two `review_depth` short circuits, and that `--rev` makes the tier belong to the same revision
+the reviewers read.
+
+**And a finding did not say which pass found it, so no pass could ever be retired.** Beyond the
+built-in and the panel, a round runs four specialised passes — the completeness sweep, the
+data-access duel, the double-blind contract verification, the idiom audit — around 1 800 words of
+the command plus the agents each one launches. Every one was written after a real defect got
+through. Not one could show it is still earning its cost, because a finding that reached
+`## Blockers` had lost where it came from: one the built-in already had and one only the idiom
+audit saw were written identically, and after dedup a finding three sources raised looked exactly
+like a finding one source raised. The only available argument was an opinion, and opinions about
+this converge on whoever spoke last.
+
+Findings now carry an origin from §2.1 through to the artifact, **dedup keeps every source rather
+than the first**, and `meta.json.review_findings[]` records `{round, origin, severity, file,
+discarded_by_skeptic}` — machine-readable, no finding text, which stays in `06-review.md`.
+`flow cost` reads them back per origin: how many findings each pass contributed, how many **only**
+it raised, and how many of those survived §6. That last column is the one that decides anything.
+The retirement rule is written down before the data arrives so it cannot be argued backwards later
+— a pass with no exclusive surviving finding across twenty reviews comes out of the command. No
+pass is removed or weakened here; this only makes their contribution visible.
 
 ## v0.65.0 — Every phase rediscovered the same context, and nobody knew what it cost  ·  2026-09-21
 
