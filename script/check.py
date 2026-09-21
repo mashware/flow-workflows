@@ -200,17 +200,26 @@ MODELS_CLAUSE_FORMS = (
     "**Models: the subagents it launches take `models.agents`.**",
     "**Models: the subagents it launches take `models.agents`; its parallel rounds take "
     "`models.workers`.**",
+    "**Models: this command runs with the model it was launched with; the wait it delegates "
+    "takes `models.supervisors`.**",
+    "**Models: the subagents it launches take `models.agents`; the wait it delegates takes "
+    "`models.supervisors`.**",
+    "**Models: the subagents it launches take `models.agents`; its parallel rounds take "
+    "`models.workers`; the wait it delegates takes `models.supervisors`.**",
 )
 
 
 def check_models_clause(files):
-    """A command's `Models:` clause may only name the two keys that exist.
+    """A command's `Models:` clause may only name the three keys that exist.
 
     Fourteen commands announced *"Models key for this command: `review`"* for six
     releases after `models.study`/`code`/`test`/`review` were retired — pointing the
     reader at a key nothing reads. `check_template_keys_are_read` cannot see it: it
     walks template → commands, and the stale clause named the key bare (`` `review` ``),
-    not qualified. So the clause itself is pinned to its three legal forms.
+    not qualified. So the clause itself is pinned to its legal forms: which keys reach
+    a command is a closed question, and the clause is where a reader asks it. Section
+    numbers and the reason a wait exists belong in the body, not here — a clause that
+    varies per command is one nothing can check.
     """
     for f in files:
         if not f.startswith("plugins/flow/commands/") or not f.endswith(".md"):
@@ -223,8 +232,9 @@ def check_models_clause(files):
                 break
             clause = line[start:]
             if clause not in MODELS_CLAUSE_FORMS:
-                fail(f, f"line {n}: `Models:` clause is not one of the three legal "
-                        f"forms (only `models.agents` and `models.workers` exist)")
+                fail(f, f"line {n}: `Models:` clause is not one of the {len(MODELS_CLAUSE_FORMS)} "
+                        f"legal forms (only `models.agents`, `models.workers` and "
+                        f"`models.supervisors` exist)")
             break
 
 

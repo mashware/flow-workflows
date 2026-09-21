@@ -263,6 +263,7 @@ Ordered by effect. Each is one line in `FLOW.md`:
 
 | Change | What it drops | What you lose |
 |---|---|---|
+| `models.supervisors` to a cheaper tier | The waits — a running pipeline, a deploy that has not landed, a long suite — stop being watched on the thread's model | Nothing: a supervisor reports status and evidence, and the verdict on them was never its to give |
 | `models.agents` / `models.workers` to a cheaper tier | Subagents stop running on the thread's model | Little: a subagent reads a diff and reports ≤250 words |
 | `quality.review_depth: light` | The panel, the reinforcements, the skeptic fan-out | Depth on everything but the built-in reviewer; a sensitive surface still bumps back up |
 | `agents.budget_max`, `agents.fanout_max` | Rounds past the ceiling, in the order each command declares | Coverage — but named coverage: what a ceiling skipped is reported, never silently dropped |

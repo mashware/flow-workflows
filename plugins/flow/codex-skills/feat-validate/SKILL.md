@@ -20,7 +20,7 @@ description: "Validate tests, edge cases, and integrity before shipping"
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; the wait it delegates takes `models.supervisors`.**
 
 Verify the feature is complete: test coverage, edge cases, performance, regressions.
 
@@ -44,7 +44,7 @@ One of the three below writes and two of them read, so they do not all go at onc
 
    **A green suite is not a performance result** — a tiny fixture database proves a query's **rows**, never its **plan**. If `$flow:feat-review §3.6` left any query verdict `unresolved`, or an acceptance criterion concerns speed or volume: run the measurement of **`$flow:work-query §4`** with the volumes in `data.volumes` (or a data set shaped like them — the distribution matters more than the total), record plan and timings, and gate on the result. No `data.*` configuration and the criterion cannot be measured → it is `unproven` with the reason, never silently `proven`.
 
-3. **Full suite**: run `quality.test` from `FLOW.md` in the background; if empty, auto-discover the project's test command and note what you use. A repo with more than one suite chains them in that one key (`make test && make test-frontend`); when it does not and the diff touches a suite the key misses, run that one too and say so in one line.
+3. **Full suite**: run `quality.test` from `FLOW.md` in the background; if empty, auto-discover the project's test command and note what you use. **A suite measured in tens of minutes is a wait, not a step**: hand it to a supervisor subagent on `models.supervisors` (flow-core §6.5) — it runs it, times out, and brings back the exit code plus the failing tests' output, never a reading of whether those failures matter. Short suites stay here; delegating ninety seconds costs more than running them. A repo with more than one suite chains them in that one key (`make test && make test-frontend`); when it does not and the diff touches a suite the key misses, run that one too and say so in one line.
 
 ## 3. Criteria coverage (S and larger)
 
