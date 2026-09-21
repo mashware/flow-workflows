@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the adapter mirrors (opencode · Codex · Gemini · Hermes) from the plugin commands.
+"""Generate the adapter mirrors (opencode · Codex · Gemini · Hermes · zcode) from the plugin commands.
 
 The mirrors used to be condensed by hand — 1.7 MB of near-verbatim copies that drifted
 one release at a time. They are now build output: every file under
@@ -67,6 +67,20 @@ STATE_DIR = "~/.claude/flow"
 # Hermes reads the same skill shape as Codex — a folder with a `SKILL.md` keyed by
 # `name:`, the agentskills.io layout — from `~/.hermes/skills/`, and invokes it with a
 # slash like opencode: `/flow-feat-start`. So it is Codex's wrapper on opencode's sigil.
+#
+# zcode reads this package's Claude format directly — `.zcode-plugin/plugin.json` first,
+# then `.claude-plugin/plugin.json` — and exposes the same primitives under the same
+# names, so its mirror is the Claude page with two changes and no translation at all:
+#
+#   * `--harness zcode`, because the overlay is `FLOW.zcode.md`
+#   * a `flow/` folder above the command tree: zcode names a command after its path
+#     under the root it was found in and adds no plugin prefix, so `feat/start.md`
+#     alone would be `/feat:start` — a name that collides with the user's own and with
+#     zcode's built-ins (`/init`, `/doctor`). Nested one level down it is
+#     `/flow:feat:start`, which is what every page here already says to type.
+#
+# The shared rules are not mirrored: zcode qualifies a plugin's skills by plugin name,
+# so the plugin's own `flow:flow-core` is what the pointer already names.
 TARGETS = {
     "opencode": {
         "path": "adapters/opencode/commands/flow-{flat}.md",
@@ -82,6 +96,11 @@ TARGETS = {
         "path": "plugins/flow/codex-skills/{flat}/SKILL.md",
         "sep": "-", "head": ":", "sigil": "$", "args": "$ARGUMENTS", "overlay": "codex",
         "core": ("skill", "plugins/flow/codex-skills/flow-core/SKILL.md"),
+    },
+    "zcode": {
+        "path": "plugins/flow/zcode-commands/flow/{stem}.md",
+        "sep": ":", "head": ":", "sigil": "/", "args": "$ARGUMENTS", "overlay": "zcode",
+        "core": ("plugin", None),
     },
     "gemini": {
         "path": "adapters/gemini/commands/flow/{stem}.toml",
@@ -103,6 +122,7 @@ SKILL_SHAPED = ("codex", "codex-plugin", "hermes")
 # its version can never drift from the Claude one; `skills` is what points Codex at the
 # `codex-plugin` mirror instead of the plugin's own `skills/` folder.
 CODEX_MANIFEST = "plugins/flow/.codex-plugin/plugin.json"
+ZCODE_MANIFEST = "plugins/flow/.zcode-plugin/plugin.json"
 CLAUDE_MANIFEST = "plugins/flow/.claude-plugin/plugin.json"
 NPM_MANIFEST = "package.json"
 
@@ -151,6 +171,10 @@ LEGEND = {
         "`/model <value>` → Hermes's own `/model`; a subagent's model is `delegation.model` in `config.yaml`, one value for every child of a round.",
         "`knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `mcp_servers` in `~/.hermes/config.yaml` (see `config.snippet.yaml`).",
         "`$ARGUMENTS` → what the user typed after the skill name: Hermes takes everything from the first non-skill token on as the instruction.",
+    ],
+    "zcode": [
+        "Every primitive named below exists here under the same name — `AskUserQuestion`, `Agent <role>` and its subagents, `ScheduleWakeup`, `TaskCreate`, `Skill flow:<name>`, `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` (`${ZCODE_PLUGIN_ROOT}` is an alias). Nothing in this page is a translation of anything.",
+        "The overlay read here is `FLOW.zcode.md`, and every `flow-workflows` call below already names it. The same plugin also exposes its unprefixed Claude pages — `/feat:start`, `/bug:fix`, … — which name Claude's overlay instead, so type the `/flow:` names.",
     ],
 }
 
@@ -220,14 +244,19 @@ UNSET_ROOT = "`${CLAUDE_PLUGIN_ROOT}` unset or `CHANGELOG.md` missing"
 
 def translate(body, name, spec, flat_to_stem):
     kind, _dest = spec["core"]
-    body = body.replace(UNSET_ROOT, "`" + ("../.." if kind == "skill" else STATE_DIR)
-                        + "/CHANGELOG.md` missing")
+    # `plugin`: the mirror ships inside the package the prose was written for, so every
+    # pointer in it already reads true — the plugin root is a variable in zcode too, and
+    # `flow:flow-core` is what zcode calls the plugin's own skill. Rewriting either would
+    # be the only thing able to break them.
+    if kind != "plugin":
+        body = body.replace(UNSET_ROOT, "`" + ("../.." if kind == "skill" else STATE_DIR)
+                            + "/CHANGELOG.md` missing")
     if kind == "skill":
         # Inside the package the pointer already reads true: Codex namespaces a plugin's
         # skills, so the plugin's own `flow:flow-core` is what the sibling skill is called.
         body = body.replace("${CLAUDE_PLUGIN_ROOT}/skills/flow-core/SKILL.md", "../flow-core/SKILL.md")
         body = body.replace("${CLAUDE_PLUGIN_ROOT}", "../..")
-    else:
+    elif kind == "file":
         body = SKILL_POINTER.sub(
             # a function replacement expands no backreference: `\g<what>` here would ship literally
             lambda m: f"Read `{core_path(name)}` first ({m.group('what')}) — skip if you already read it in this session.", body)
@@ -244,14 +273,16 @@ def translate(body, name, spec, flat_to_stem):
     return retarget(body, spec["sep"], flat_to_stem, spec["sigil"], spec["head"])
 
 
-DISPLAY = {"codex-plugin": "codex plugin package"}
+DISPLAY = {"codex-plugin": "codex plugin package", "zcode": "zcode plugin package"}
 
 
 def legend(name, spec, flat_to_stem):
     lines = "\n".join(f"- {retarget(l, spec['sep'], flat_to_stem, spec['sigil'], spec['head'])}"
                       for l in LEGEND[name])
-    return (f"> **{DISPLAY.get(name, name + ' adapter')} — how the Claude Code primitives "
-            f"named below map here.**\n"
+    headline = ("the Claude Code primitives named below are the ones this harness has"
+                if spec["core"][0] == "plugin"
+                else "how the Claude Code primitives named below map here")
+    return (f"> **{DISPLAY.get(name, name + ' adapter')} — {headline}.**\n"
             + "\n".join("> " + l for l in lines.splitlines()) + "\n")
 
 
@@ -263,7 +294,7 @@ def render_command(name, stem, frontmatter, body, flat_to_stem):
     body = re.sub(r"^(#\s+.*\n)", lambda m: m.group(1) + "\n" + legend(name, spec, flat_to_stem),
                   body, count=1, flags=re.M)
     src = f"{PLUGIN_COMMANDS}/{stem}.md"
-    return wrap(name, desc, body, src, stem)
+    return wrap(name, desc, body, src, stem, frontmatter)
 
 
 def render_core(name, flat_to_stem):
@@ -278,8 +309,12 @@ def render_core(name, flat_to_stem):
     return f"{head}<!-- {BANNER.format(src=CORE_SKILL)} -->\n\n{body}\n"
 
 
-def wrap(name, desc, body, src, stem):
+def wrap(name, desc, body, src, stem, frontmatter=""):
     banner = BANNER.format(src=src)
+    if name == "zcode":
+        # zcode reads this exact frontmatter, `argument-hint` included, so it is carried
+        # over rather than rebuilt from `description` alone.
+        return f"---\n{frontmatter.strip()}\n---\n\n<!-- {banner} -->\n\n{body}\n"
     if name == "opencode":
         return f"---\ndescription: {desc}\n---\n\n<!-- {banner} -->\n\n{body}\n"
     if name in SKILL_SHAPED:
@@ -311,8 +346,11 @@ def expected():
             rel = spec["path"].format(stem=stem, flat=stem.replace("/", "-"))
             out[rel] = render_command(name, stem, frontmatter, body, flat_to_stem)
     for name, spec in TARGETS.items():
+        if spec["core"][0] == "plugin":
+            continue                          # zcode reads the plugin's own flow-core skill
         out[spec["core"][1]] = render_core(name, flat_to_stem)
     out[CODEX_MANIFEST] = codex_manifest()
+    out[ZCODE_MANIFEST] = zcode_manifest()
     out[NPM_MANIFEST] = npm_manifest()
     return out
 
@@ -328,6 +366,26 @@ def codex_manifest():
         "author": claude.get("author"),
         "homepage": claude.get("homepage"),
         "skills": "./codex-skills/",
+    }
+    return json.dumps({k: v for k, v in manifest.items() if v},
+                      indent=2, ensure_ascii=False) + "\n"
+
+
+def zcode_manifest():
+    """`.zcode-plugin/plugin.json` — zcode looks for this file before
+    `.claude-plugin/plugin.json`, and declaring `commands` here is what adds the
+    `zcode-commands/` mirror to the roots it scans. The plugin's own `commands/` and
+    `skills/` are picked up anyway, by being where zcode looks by default: the mirror is
+    an addition, so `/flow:feat:start` is the zcode name and the unprefixed Claude pages
+    stay reachable under their own."""
+    claude = json.loads(read(CLAUDE_MANIFEST))
+    manifest = {
+        "name": claude["name"],
+        "version": claude["version"],
+        "description": claude["description"],
+        "author": claude.get("author"),
+        "homepage": claude.get("homepage"),
+        "commands": "./zcode-commands/",
     }
     return json.dumps({k: v for k, v in manifest.items() if v},
                       indent=2, ensure_ascii=False) + "\n"
@@ -353,7 +411,7 @@ def npm_manifest():
         ],
         "engines": {"node": ">=18"},
         "keywords": ["workflow", "code-review", "opencode", "gemini-cli", "codex",
-                     "hermes", "coding-agent", "feature-flow", "bug-flow"],
+                     "hermes", "zcode", "coding-agent", "feature-flow", "bug-flow"],
         "author": claude.get("author"),
         "license": "MIT",
         "homepage": claude.get("homepage"),
@@ -373,6 +431,7 @@ MIRROR_ROOTS = {
               and os.path.basename(os.path.dirname(rel)).startswith("flow-")),
     "codex-plugin": ("plugins/flow/codex-skills",
                      lambda rel: os.path.basename(rel) == "SKILL.md"),
+    "zcode": ("plugins/flow/zcode-commands", lambda rel: rel.endswith(".md")),
     "gemini": ("adapters/gemini/commands/flow", lambda rel: rel.endswith(".toml")),
     "hermes": ("adapters/hermes/skills",
                lambda rel: os.path.basename(rel) == "SKILL.md"
@@ -390,10 +449,11 @@ def on_disk():
                 if is_ours(rel):
                     found.add(rel)
         core = TARGETS[name]["core"][1]
-        if os.path.exists(os.path.join(ROOT, core)):
+        if core and os.path.exists(os.path.join(ROOT, core)):
             found.add(core)
-    if os.path.exists(os.path.join(ROOT, CODEX_MANIFEST)):
-        found.add(CODEX_MANIFEST)
+    for manifest in (CODEX_MANIFEST, ZCODE_MANIFEST):
+        if os.path.exists(os.path.join(ROOT, manifest)):
+            found.add(manifest)
     return found
 
 

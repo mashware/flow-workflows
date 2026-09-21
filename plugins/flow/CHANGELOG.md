@@ -12,6 +12,7 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 - **The seeded defects come from this repository's own history**, not from imagination — a value recorded after the mutation instead of before, a failing call reported as a clean result, a filter that drops the item it exists to carry, several writers on one shared key, a threshold that is code in one place and a literal in another. A defect we invent is a defect shaped like something we were already looking for.
 - **Deterministic graders carry the score.** No judge model decides anything: a judge introduces the variance the bench exists to measure, and it changes the measuring stick exactly when the model changes. The `llm` grader is not used, and the two artifact checks that only the plugin can pass are marked as indicators outside the score, so the no-plugin arm stays comparable.
 - **A difference inside the base's own range is not a difference.** `script/bench-compare.py` reads two runs, reports the **median** of each case rather than the mean the summary prints, and prints `—` for anything that lands inside the range the base's own runs spanned. A bench that reports every wobble as a regression is one everybody learns to ignore.
+- **zcode is a harness the plugin knows.** It reads this same plugin package, so the commands were already there — but under names that collide with its built-ins, and resolving Claude Code's overlay. It now has its own `/flow:`-prefixed command set generated into the package, and `FLOW.zcode.md` is a recognised overlay everywhere, the CLI included.
 - **Baselines are versioned and committed**, one per plugin version and model, under `evals/baselines/`. When a new model ships, the suite runs with `--model` and everything else frozen — which is the only way to find out that a layer which used to help has started costing turns.
 
 Nothing in this repository could answer whether a change to `review` found more defects, fewer, or
@@ -72,6 +73,21 @@ what they exercise, so the suite splits by tag and each tier keeps its own basel
 
 Nothing is retired and no threshold moves here. The first run establishes the base; it does not
 judge anything.
+
+**zcode**, separately. It reads Claude-format plugin packages — `.zcode-plugin/plugin.json` first,
+then `.claude-plugin/plugin.json` — and exposes the same primitives under the same names, so
+installing flow from the marketplace worked on the first try and hid two things. A command is named
+after its path with no plugin prefix, so the set arrived as `/feat:start`, `/next`, `/init` and
+`/doctor` — the last two losing to zcode's own built-ins. And every `flow-workflows` call in the
+pages carries `--harness claude`, which on zcode reads another product's overlay and reports, in the
+pack's own header, that an overlay was read.
+
+Both are fixed by generation, not by prose: `plugins/flow/zcode-commands/flow/**` is the same
+generator's fifth target, the `flow/` folder is what makes zcode name them `/flow:feat:start`, and
+the flag is substituted like it is for every other mirror. `FLOW.zcode.md` joins the overlay names
+in flow-core, `init`, the template and the CLI — where an unknown `--harness` has always stopped
+the run rather than silently reading the base. The plugin's own Claude pages still show up
+unprefixed in zcode, so both the mirror's legend and the docs say to type the `/flow:` names.
 
 ## v0.66.0 — Every phase read a tree, and none of them could say which one  ·  2026-09-21
 

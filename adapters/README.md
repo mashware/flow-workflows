@@ -6,8 +6,9 @@ The `flow` plugin (in `../plugins/flow`) is for **Claude Code**. These adapters 
 rules in `../plugins/flow/skills/flow-core/SKILL.md`, and writes every file under
 `opencode/commands/`, `codex/skills/`, `gemini/commands/flow/`, `hermes/skills/` plus one
 `<harness>/CORE.md` each —
-and `../plugins/flow/codex-skills/`, the same Codex skills packaged inside the plugin so
-`codex plugin add` installs them (see `codex/README.md`).
+and the two mirrors that live inside the plugin package itself: `../plugins/flow/codex-skills/`,
+the same Codex skills so `codex plugin add` installs them (see `codex/README.md`), and
+`../plugins/flow/zcode-commands/`, the `/flow:`-prefixed set zcode reads (see the zcode row below).
 The **logic and prose are the plugin's, verbatim** — only the wrapper changes.
 
 | Harness | Commands | Subagents | MCP | Autopilot watch |
@@ -17,6 +18,7 @@ The **logic and prose are the plugin's, verbatim** — only the wrapper changes.
 | **Codex CLI** | `skills/*/SKILL.md` (`$flow-feat-start`) | `[agents.*]` in `config.toml` | `[mcp_servers.*]` | cron + `codex exec` |
 | **Codex CLI, packaged** | `plugins/flow/codex-skills/` (`$flow:feat-start`) | same | same | same |
 | **Hermes Agent** | `skills/*/SKILL.md` (`/flow-feat-start`) | `delegate_task`, built from the prompt | `config.yaml` `mcp_servers` | **native** `/cron add` |
+| **zcode, packaged** | `plugins/flow/zcode-commands/flow/**` (`/flow:feat:start`) | `Agent` + `subagent_type`, as in Claude Code | `mcp.servers` in `~/.zcode/cli/config.json` | **native** `ScheduleWakeup` |
 
 ## What the generator changes per harness
 
@@ -30,7 +32,13 @@ Only the mechanics, and only these:
   Codex plugin package (Codex namespaces a plugin's skills), `/flow:feat:build` for Gemini. Hermes
   invokes its skills with a slash, so it shares opencode's `/flow-feat-build`: the file is shaped
   like Codex's, the prefix is opencode's.
-- **`$ARGUMENTS`** → `{{args}}` for Gemini.
+- **`$ARGUMENTS`** → `{{args}}` for Gemini. zcode reads `$ARGUMENTS`, like Claude Code.
+- **Nothing at all, for zcode** — it reads this plugin's own format and exposes the same
+  primitives under the same names, so its mirror is the Claude page with the overlay flag changed
+  to `--harness zcode` and one `flow/` folder above the command tree. That folder is the whole
+  trick: zcode names a command after its path under the root it was found in and adds no plugin
+  prefix, so `feat/start.md` on its own would be `/feat:start` — colliding with zcode's built-ins
+  (`/init`, `/doctor`) and with the user's own commands.
 - **The CORE pointer** — the plugin's `flow:flow-core` skill and `${CLAUDE_PLUGIN_ROOT}` become
   `~/.claude/flow/CORE.<tool>.md`, the file `install.sh` places there. In the Codex package they stay
   a skill (`$flow:flow-core`) and a relative root (`../..`), because there both actually exist.

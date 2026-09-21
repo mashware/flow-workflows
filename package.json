@@ -23,6 +23,7 @@
     "gemini-cli",
     "codex",
     "hermes",
+    "zcode",
     "coding-agent",
     "feature-flow",
     "bug-flow"

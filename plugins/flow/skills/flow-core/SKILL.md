@@ -30,10 +30,14 @@ a command relies on is simply absent in that session, and nothing else will repo
   them. **Name the files this listing found the first time a phase reports any configured value**,
   so a missed overlay is visible in the artifact rather than invisible everywhere.
 - Read `FLOW.md` at the repo root as the base, then the optional overlay for the harness running
-  this command: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`, or
-  `FLOW.hermes.md`. The
+  this command: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`,
+  `FLOW.hermes.md`, or `FLOW.zcode.md`. The
   harness is the product executing the command, never guessed from a model name. An overlay is
-  valid without a base file; unknown `FLOW.*.md` names are ignored. Throughout every command,
+  valid without a base file; unknown `FLOW.*.md` names are ignored. **A page can outlive the product it
+  was written for**: zcode reads the plugin's Claude pages as well as its own `/flow:`-prefixed
+  mirror of them, so a `claude` in a path or in a `--harness` flag records where the page was
+  written, never who is running it. On zcode the overlay is `FLOW.zcode.md` and the flag is
+  `--harness zcode`, whichever of the two pages you were handed. Throughout every command,
   **"FLOW.md" means this effective merged configuration** unless the command explicitly names a
   file it will edit.
 - **"The repo root" is the main checkout's, not the worktree's.** With `git.worktree` set, every
