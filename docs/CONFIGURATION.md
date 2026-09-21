@@ -48,6 +48,12 @@ both the `/flow:`-prefixed mirror generated for it (which resolves `FLOW.zcode.m
 plugin's own Claude pages, unprefixed — `/feat:start`, `/bug:fix`, `/init`. Those resolve
 `FLOW.claude.md`, so on zcode type the `/flow:` names.
 
+A `- key:` line **inside a fenced block is an example**, not configuration. These files are prose
+with keys in them, and what makes a key a key is its shape — a `- key:` line under a `## section`
+— so a block written to be pasted used to be read as the config it illustrates, by the CLI and by
+the agent alike. Both now skip fenced regions, and `/flow:doctor` reports the keys it found inside
+one. To enable an example, move the line out of the fence.
+
 Resolution is per section and key:
 
 1. A key present in the active overlay wins, even when its value is empty.

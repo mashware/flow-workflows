@@ -17,7 +17,7 @@ Every `$flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.67.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.68.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -65,6 +65,15 @@ a command relies on is simply absent in that session, and nothing else will repo
   base branch — and goes out in no MR/PR at all. So a phase writing a tracked file writes it
   **here**, in the directory it is running in, and `$flow-feat-ship §5.5` is what catches the
   tools that could not be told.
+- **A fenced block in a FLOW file is an example, and an example is not configuration.** These
+  files are prose with keys in them, and the rule that decides what a key *is* — a `- key:` line
+  under a `## section` — knows nothing about triple backticks. So a block written to be pasted
+  ("add this to try it once") was read as the configuration it illustrates, for as long as it sat
+  there. It happened in a real repo: `agents.exec_cmd` came from the fenced example of a file whose
+  prose argued at length that it was deliberately unset, and every review round took the one-shot
+  path that prose warned against — with nothing anywhere to say so, because the file and the
+  configuration disagreed while both looked right. **Skip fenced regions when you read a FLOW
+  file**; `flow-workflows` does the same, so the two of you resolve the same config.
 - Merge by section and key. A key present in the active overlay replaces the base value; a key
   absent there inherits the base. **A present-but-empty overlay key masks the base** and resolves
   to the normal empty-key fallback — this is how Codex can inherit its session model while a legacy

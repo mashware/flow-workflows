@@ -127,6 +127,10 @@ Whether the world they describe exists —
 CLIs installed *and authenticated*, agents discoverable, hooks executable, the MCP reachable, the
 base branch resolvable — is §2 below; flag the key here, check the world there, never both.
 
+- **Keys inside a fenced block**: report them, one line, naming the file and the keys — they are
+  an example and resolve to nothing (flow-core §0), which is exactly what a reader who pasted a
+  block to enable it cannot tell from a key that works. Say what to do about it: move the line out
+  of the fence to make it real, leave it there to keep it an illustration.
 - **Fan-out and cost ceilings**: `agents.fanout_max` must be a positive integer; else flag and note
   the default `4` applies. `agents.budget_max` must be a non-negative integer (`0` = no ceiling);
   else flag and note the default `12`. **Both absent → say so as a finding, not a pass**: the review
