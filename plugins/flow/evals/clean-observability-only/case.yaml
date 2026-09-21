@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: clean-observability-only
+description: A log level and a message, on the surface `sensitive_paths` points at. Any must-fix finding here is a false positive.
+tags: [review, clean, xs]
+runs: 3
+expected_outcome: |
+  `src/billing/charge.py` logs the charge at info instead of debug and names the amount. No control flow, and no value that reaches the gateway, is touched.
+context:
+  scaffold_script: fixture.sh

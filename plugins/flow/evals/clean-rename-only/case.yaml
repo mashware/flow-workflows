@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: clean-rename-only
+description: A rename and its call site. Any must-fix finding here is a false positive.
+tags: [review, clean, xs]
+runs: 3
+expected_outcome: |
+  `summarise()` becomes `summarise_steps()` in `src/pipeline.py` and in the one test that calls it. No behaviour changes.
+context:
+  scaffold_script: fixture.sh

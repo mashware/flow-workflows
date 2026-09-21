@@ -1,0 +1,1900 @@
+{
+  "aggregates": {
+    "casesPassed": 8,
+    "casesTotal": 8,
+    "meanDelta": -0.04166666666666667,
+    "overallPassRate": 0.9583333333333334,
+    "overallScore": 0.9583333333333334
+  },
+  "cases": [
+    {
+      "aggregates": {
+        "delta": 0,
+        "passRate": 1,
+        "passRateWithout": 1,
+        "score": 1,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 1.4622165,
+            "durationSeconds": 260,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched (observability|log level|logging)",
+                "name": "observability-not-bumped",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:45:40.258Z",
+            "tracePath": "/tmp/claude-eval-j4pDuv/out/trace.jsonl",
+            "turns": 24
+          },
+          {
+            "costUsd": 1.5632042499999999,
+            "durationSeconds": 262,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched (observability|log level|logging)",
+                "name": "observability-not-bumped",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:45:40.258Z",
+            "tracePath": "/tmp/claude-eval-X5TdL3/out/trace.jsonl",
+            "turns": 26
+          },
+          {
+            "costUsd": 1.9566029999999996,
+            "durationSeconds": 391,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched (observability|log level|logging)",
+                "name": "observability-not-bumped",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:45:40.258Z",
+            "tracePath": "/tmp/claude-eval-ZuQHYd/out/trace.jsonl",
+            "turns": 27
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.513299,
+            "durationSeconds": 157,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:50:00.302Z",
+            "tracePath": "/tmp/claude-eval-5wRrRD/out/trace.jsonl",
+            "turns": 22
+          },
+          {
+            "costUsd": 0.480815,
+            "durationSeconds": 132,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:50:02.605Z",
+            "tracePath": "/tmp/claude-eval-ZgiwhF/out/trace.jsonl",
+            "turns": 21
+          },
+          {
+            "costUsd": 0.45907749999999997,
+            "durationSeconds": 133,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:52:11.691Z",
+            "tracePath": "/tmp/claude-eval-fVyDT2/out/trace.jsonl",
+            "turns": 21
+          }
+        ]
+      },
+      "dir": "evals/clean-observability-only",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "not_contains",
+            "pattern": "\\S+\\.py:\\d+",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "no-false-positive",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "i",
+            "match": "contains",
+            "pattern": "(observability|log level|logging)",
+            "target": "trace"
+          },
+          "name": "observability-not-bumped",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "im",
+            "match": "contains",
+            "pattern": "^\\s*none\\b",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "says-none",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "clean-observability-only",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-202`, its folder is `.claude/work/DEMO-202/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    },
+    {
+      "aggregates": {
+        "delta": 0,
+        "passRate": 1,
+        "passRateWithout": 1,
+        "score": 1,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 1.2377685,
+            "durationSeconds": 208,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:52:14.900Z",
+            "tracePath": "/tmp/claude-eval-1Qm5pu/out/trace.jsonl",
+            "turns": 26
+          },
+          {
+            "costUsd": 1.3901527500000002,
+            "durationSeconds": 202,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:52:37.136Z",
+            "tracePath": "/tmp/claude-eval-Hse9Dv/out/trace.jsonl",
+            "turns": 4
+          },
+          {
+            "costUsd": 1.5829729999999997,
+            "durationSeconds": 313,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:54:24.791Z",
+            "tracePath": "/tmp/claude-eval-CNa38j/out/trace.jsonl",
+            "turns": 28
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.393315,
+            "durationSeconds": 105,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:55:42.425Z",
+            "tracePath": "/tmp/claude-eval-k5Vf1F/out/trace.jsonl",
+            "turns": 20
+          },
+          {
+            "costUsd": 0.38366199999999995,
+            "durationSeconds": 74,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:55:58.643Z",
+            "tracePath": "/tmp/claude-eval-I7c72n/out/trace.jsonl",
+            "turns": 19
+          },
+          {
+            "costUsd": 0.40512800000000004,
+            "durationSeconds": 122,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:57:12.759Z",
+            "tracePath": "/tmp/claude-eval-6oJogs/out/trace.jsonl",
+            "turns": 20
+          }
+        ]
+      },
+      "dir": "evals/clean-rename-only",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "not_contains",
+            "pattern": "\\S+\\.py:\\d+",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "no-false-positive",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "im",
+            "match": "contains",
+            "pattern": "^\\s*none\\b",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "says-none",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "clean-rename-only",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-201`, its folder is `.claude/work/DEMO-201/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    },
+    {
+      "aggregates": {
+        "delta": 0,
+        "passRate": 1,
+        "passRateWithout": 1,
+        "score": 1,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 2.14214225,
+            "durationSeconds": 382,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:57:27.891Z",
+            "tracePath": "/tmp/claude-eval-YkSqu9/out/trace.jsonl",
+            "turns": 28
+          },
+          {
+            "costUsd": 1.4543465000000002,
+            "durationSeconds": 311,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:59:14.291Z",
+            "tracePath": "/tmp/claude-eval-nugLoo/out/trace.jsonl",
+            "turns": 27
+          },
+          {
+            "costUsd": 1.250665,
+            "durationSeconds": 228,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T09:59:37.573Z",
+            "tracePath": "/tmp/claude-eval-USNx8K/out/trace.jsonl",
+            "turns": 25
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.5009135,
+            "durationSeconds": 169,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:03:25.791Z",
+            "tracePath": "/tmp/claude-eval-59N3rG/out/trace.jsonl",
+            "turns": 18
+          },
+          {
+            "costUsd": 0.5221335,
+            "durationSeconds": 143,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:03:49.515Z",
+            "tracePath": "/tmp/claude-eval-XwobZe/out/trace.jsonl",
+            "turns": 18
+          },
+          {
+            "costUsd": 0.5368894999999999,
+            "durationSeconds": 133,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern absent as expected",
+                "name": "no-false-positive",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              },
+              {
+                "explanation": "matched ^\\s*none\\b",
+                "name": "says-none",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:04:25.426Z",
+            "tracePath": "/tmp/claude-eval-CacC4f/out/trace.jsonl",
+            "turns": 20
+          }
+        ]
+      },
+      "dir": "evals/clean-test-and-docs",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "not_contains",
+            "pattern": "\\S+\\.py:\\d+",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "no-false-positive",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "im",
+            "match": "contains",
+            "pattern": "^\\s*none\\b",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "says-none",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "clean-test-and-docs",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-203`, its folder is `.claude/work/DEMO-203/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    },
+    {
+      "aggregates": {
+        "delta": 0,
+        "passRate": 1,
+        "passRateWithout": 1,
+        "score": 1,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 1.8083457499999998,
+            "durationSeconds": 285,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-8])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:06:12.905Z",
+            "tracePath": "/tmp/claude-eval-XFxLmN/out/trace.jsonl",
+            "turns": 25
+          },
+          {
+            "costUsd": 1.4655292500000001,
+            "durationSeconds": 239,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-8])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:06:14.381Z",
+            "tracePath": "/tmp/claude-eval-ZyD9LG/out/trace.jsonl",
+            "turns": 25
+          },
+          {
+            "costUsd": 1.432519,
+            "durationSeconds": 193,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-8])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:06:37.982Z",
+            "tracePath": "/tmp/claude-eval-NgS9Xn/out/trace.jsonl",
+            "turns": 26
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.38708800000000004,
+            "durationSeconds": 124,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-8])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:09:50.534Z",
+            "tracePath": "/tmp/claude-eval-cEL9PD/out/trace.jsonl",
+            "turns": 18
+          },
+          {
+            "costUsd": 0.3152095,
+            "durationSeconds": 77,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-8])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:10:13.837Z",
+            "tracePath": "/tmp/claude-eval-Y86aZ0/out/trace.jsonl",
+            "turns": 16
+          },
+          {
+            "costUsd": 0.388719,
+            "durationSeconds": 80,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-8])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:10:58.116Z",
+            "tracePath": "/tmp/claude-eval-Xyvnzc/out/trace.jsonl",
+            "turns": 19
+          }
+        ]
+      },
+      "dir": "evals/seeded-boundary-drops-item",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "contains",
+            "pattern": "src/pipeline\\.py:(1[7-9]|2[0-8])",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "blocker-found",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "seeded-boundary-drops-item",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-103`, its folder is `.claude/work/DEMO-103/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    },
+    {
+      "aggregates": {
+        "delta": -0.33333333333333337,
+        "passRate": 0.6666666666666666,
+        "passRateWithout": 1,
+        "score": 0.6666666666666666,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 2.0373745,
+            "durationSeconds": 283,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-6])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:11:31.121Z",
+            "tracePath": "/tmp/claude-eval-U6pCJE/out/trace.jsonl",
+            "turns": 34
+          },
+          {
+            "costUsd": 1.53498875,
+            "durationSeconds": 236,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-6])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:11:54.221Z",
+            "tracePath": "/tmp/claude-eval-bS380W/out/trace.jsonl",
+            "turns": 26
+          },
+          {
+            "costUsd": 1.4257658,
+            "durationSeconds": 303,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "grader threw: case \"seeded-divergent-threshold\" grader focus file \"verdict.md\": path \"verdict.md\" does not exist",
+                "name": "blocker-found",
+                "passed": false,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": false,
+            "score": 0,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:12:17.637Z",
+            "tracePath": "/tmp/claude-eval-ZkH3nx/out/trace.jsonl",
+            "turns": 23
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.39137849999999996,
+            "durationSeconds": 115,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-6])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:15:50.676Z",
+            "tracePath": "/tmp/claude-eval-sLSdHw/out/trace.jsonl",
+            "turns": 20
+          },
+          {
+            "costUsd": 0.3778825,
+            "durationSeconds": 96,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-6])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:16:14.126Z",
+            "tracePath": "/tmp/claude-eval-pB9AZI/out/trace.jsonl",
+            "turns": 19
+          },
+          {
+            "costUsd": 0.39832000000000006,
+            "durationSeconds": 87,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-6])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:17:21.058Z",
+            "tracePath": "/tmp/claude-eval-EnArFx/out/trace.jsonl",
+            "turns": 18
+          }
+        ]
+      },
+      "dir": "evals/seeded-divergent-threshold",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "contains",
+            "pattern": "src/pipeline\\.py:(1[7-9]|2[0-6])",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "blocker-found",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "seeded-divergent-threshold",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-105`, its folder is `.claude/work/DEMO-105/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    },
+    {
+      "aggregates": {
+        "delta": 0,
+        "passRate": 1,
+        "passRateWithout": 1,
+        "score": 1,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 1.5994365000000001,
+            "durationSeconds": 250,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-5])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:17:45.289Z",
+            "tracePath": "/tmp/claude-eval-jmtn6F/out/trace.jsonl",
+            "turns": 29
+          },
+          {
+            "costUsd": 1.566266,
+            "durationSeconds": 233,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-5])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:17:50.185Z",
+            "tracePath": "/tmp/claude-eval-aQIVlJ/out/trace.jsonl",
+            "turns": 29
+          },
+          {
+            "costUsd": 2.110874999999999,
+            "durationSeconds": 465,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-5])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:18:47.583Z",
+            "tracePath": "/tmp/claude-eval-S86M3P/out/trace.jsonl",
+            "turns": 30
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.38873199999999997,
+            "durationSeconds": 119,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-5])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:21:43.653Z",
+            "tracePath": "/tmp/claude-eval-7VDG3l/out/trace.jsonl",
+            "turns": 19
+          },
+          {
+            "costUsd": 0.3976799999999999,
+            "durationSeconds": 105,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-5])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:21:55.583Z",
+            "tracePath": "/tmp/claude-eval-Vcxh4m/out/trace.jsonl",
+            "turns": 19
+          },
+          {
+            "costUsd": 0.4130449999999999,
+            "durationSeconds": 113,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-5])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:23:40.272Z",
+            "tracePath": "/tmp/claude-eval-iSIiPk/out/trace.jsonl",
+            "turns": 20
+          }
+        ]
+      },
+      "dir": "evals/seeded-last-writer-wins",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "contains",
+            "pattern": "src/pipeline\\.py:(1[7-9]|2[0-5])",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "blocker-found",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "seeded-last-writer-wins",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-104`, its folder is `.claude/work/DEMO-104/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    },
+    {
+      "aggregates": {
+        "delta": 0,
+        "passRate": 1,
+        "passRateWithout": 1,
+        "score": 1,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 1.526038,
+            "durationSeconds": 253,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "pattern not found in trace",
+                "name": "artifact-facts",
+                "passed": false,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:23:42.855Z",
+            "tracePath": "/tmp/claude-eval-cxNLwu/out/trace.jsonl",
+            "turns": 26
+          },
+          {
+            "costUsd": 1.3333083499999998,
+            "durationSeconds": 293,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:25:33.035Z",
+            "tracePath": "/tmp/claude-eval-Jhj41F/out/trace.jsonl",
+            "turns": 22
+          },
+          {
+            "costUsd": 1.7610497500000002,
+            "durationSeconds": 249,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:26:32.857Z",
+            "tracePath": "/tmp/claude-eval-04ks27/out/trace.jsonl",
+            "turns": 3
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.30303925,
+            "durationSeconds": 135,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:27:56.213Z",
+            "tracePath": "/tmp/claude-eval-GCA4cx/out/trace.jsonl",
+            "turns": 17
+          },
+          {
+            "costUsd": 0.34179175,
+            "durationSeconds": 121,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:30:11.613Z",
+            "tracePath": "/tmp/claude-eval-ndHhPf/out/trace.jsonl",
+            "turns": 18
+          },
+          {
+            "costUsd": 0.33481625000000004,
+            "durationSeconds": 93,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(1[7-9]|2[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:30:25.761Z",
+            "tracePath": "/tmp/claude-eval-C4nWBk/out/trace.jsonl",
+            "turns": 18
+          }
+        ]
+      },
+      "dir": "evals/seeded-record-after-mutation",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "contains",
+            "pattern": "src/pipeline\\.py:(1[7-9]|2[0-7])",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "blocker-found",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "seeded-record-after-mutation",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-101`, its folder is `.claude/work/DEMO-101/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    },
+    {
+      "aggregates": {
+        "delta": 0,
+        "passRate": 1,
+        "passRateWithout": 1,
+        "score": 1,
+        "scoreWithout": 1
+      },
+      "arms": {
+        "with": [
+          {
+            "costUsd": 1.5531767500000002,
+            "durationSeconds": 271,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(2[1-9]|3[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:30:41.626Z",
+            "tracePath": "/tmp/claude-eval-l1dfKR/out/trace.jsonl",
+            "turns": 28
+          },
+          {
+            "costUsd": 1.1936122500000002,
+            "durationSeconds": 192,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(2[1-9]|3[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:31:58.403Z",
+            "tracePath": "/tmp/claude-eval-bJX175/out/trace.jsonl",
+            "turns": 24
+          },
+          {
+            "costUsd": 1.24452025,
+            "durationSeconds": 241,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+                "name": "artifact-facts",
+                "passed": true,
+                "scored": false,
+                "weight": 1,
+                "withOnly": true
+              },
+              {
+                "explanation": "matched src/pipeline\\.py:(2[1-9]|3[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:32:13.067Z",
+            "tracePath": "/tmp/claude-eval-quti80/out/trace.jsonl",
+            "turns": 22
+          }
+        ],
+        "without": [
+          {
+            "costUsd": 0.35814,
+            "durationSeconds": 116,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(2[1-9]|3[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:35:10.219Z",
+            "tracePath": "/tmp/claude-eval-XLrhk1/out/trace.jsonl",
+            "turns": 19
+          },
+          {
+            "costUsd": 0.30828425,
+            "durationSeconds": 115,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(2[1-9]|3[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:35:12.135Z",
+            "tracePath": "/tmp/claude-eval-1vhvtg/out/trace.jsonl",
+            "turns": 17
+          },
+          {
+            "costUsd": 0.33510924999999997,
+            "durationSeconds": 76,
+            "error": null,
+            "graders": [
+              {
+                "explanation": "matched src/pipeline\\.py:(2[1-9]|3[0-7])",
+                "name": "blocker-found",
+                "passed": true,
+                "scored": true,
+                "weight": 1,
+                "withOnly": false
+              }
+            ],
+            "judgeCostUsd": 0,
+            "passed": true,
+            "score": 1,
+            "skippedPaidGraders": false,
+            "startedAt": "2026-09-21T10:36:14.534Z",
+            "tracePath": "/tmp/claude-eval-FJJo7W/out/trace.jsonl",
+            "turns": 17
+          }
+        ]
+      },
+      "dir": "evals/seeded-swallowed-failure",
+      "graders": [
+        {
+          "config": {
+            "arm": "with-only",
+            "flags": "",
+            "match": "contains",
+            "pattern": "Review tier:[\\s\\S]{0,800}?Effective size:[\\s\\S]{0,800}?Review path:",
+            "target": "trace"
+          },
+          "name": "artifact-facts",
+          "type": "regex",
+          "weight": 1
+        },
+        {
+          "config": {
+            "flags": "",
+            "match": "contains",
+            "pattern": "src/pipeline\\.py:(2[1-9]|3[0-7])",
+            "target": {
+              "path": "verdict.md",
+              "source": "file"
+            }
+          },
+          "name": "blocker-found",
+          "type": "regex",
+          "weight": 1
+        }
+      ],
+      "maxTurns": 60,
+      "name": "seeded-swallowed-failure",
+      "promptMarkdown": "/flow:feat:review\n\nReview the change on this branch before it goes out as a merge request. The work is `DEMO-102`, its folder is `.claude/work/DEMO-102/`, and the change is everything this branch has that `main` does not.\n\nWhen the review is finished, write `verdict.md` at the root of the repository, and put nothing else in it: one line per finding that **must** be fixed before this ships, each formatted `<path>:<line> \u2014 <what is wrong>`, or the single word `none` when there is nothing that must be fixed.",
+      "runsPerCase": 3,
+      "source": "mixed",
+      "timeoutSeconds": 1500
+    }
+  ],
+  "claudeVersion": "2.1.278",
+  "costUsd": 47.267345899999995,
+  "durationSeconds": 3111,
+  "partial": false,
+  "schemaVersion": 1,
+  "startedAt": "2026-09-21T09:45:40.192Z",
+  "suite": {
+    "ablation": "with-without",
+    "concurrency": 3,
+    "plugins": [
+      {
+        "name": "flow",
+        "path": "/home/vioque/Proyectos/flow-workflows/plugins/flow",
+        "version": "0.67.0-rc.1"
+      }
+    ],
+    "root": "/home/vioque/Proyectos/flow-workflows/plugins/flow",
+    "threshold": 0.5
+  }
+}

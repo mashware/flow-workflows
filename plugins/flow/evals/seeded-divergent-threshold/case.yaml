@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: seeded-divergent-threshold
+description: A threshold is code in one module and a repeated literal in another, and the two disagree. The review must name it.
+tags: [review, seeded, xs]
+runs: 3
+expected_outcome: |
+  `label_round()` compares against 1000 and 600 while `src/tier.py` — which its own docstring names as the one place the thresholds live — resolves L at 1500 and M at 601.
+context:
+  scaffold_script: fixture.sh

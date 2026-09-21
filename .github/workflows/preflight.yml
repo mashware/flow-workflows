@@ -41,3 +41,5 @@ jobs:
         run: bash script/tests/review-unwrap.sh
       - name: bundle size limits and config location
         run: bash script/tests/bundle-limits.sh
+      - name: the bench's reader of two eval runs
+        run: bash script/tests/bench-compare.sh

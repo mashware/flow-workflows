@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: seeded-swallowed-failure
+description: A checker that could not run is reported as a clean checker. The review must name it.
+tags: [review, seeded, xs]
+runs: 3
+expected_outcome: |
+  `run_checks()` returns an empty list when the checker raises, and `report_round()` reads empty as `checks clean` — a failure and a clean result told apart nowhere.
+context:
+  scaffold_script: fixture.sh
