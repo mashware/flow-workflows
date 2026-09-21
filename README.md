@@ -368,7 +368,9 @@ configuration, normally the active harness overlay. One worked set ships as an *
 never loaded: [`examples/symfony/`](plugins/flow/examples/symfony/) is a filled-in `FLOW.md` plus
 four reviewers for a Symfony + Doctrine repo, to copy and edit. Three generic hooks ship: a guard
 against pushing to `master`/`main`, an update notice at session start, and a session-start line
-saying which work this branch belongs to and where it stands. Optional dependencies (a knowledge
+saying which work this branch belongs to and where it stands — after a compaction, that last one
+prints the brief and plan the build is held to instead, since there the context is what was lost,
+not the thread. Optional dependencies (a knowledge
 source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific
 steps; without them those steps degrade and the rest works.
 

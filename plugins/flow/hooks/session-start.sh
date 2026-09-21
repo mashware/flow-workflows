@@ -18,6 +18,11 @@ event=$(cat 2>/dev/null || printf '')
 cwd=$(printf '%s' "$event" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
 [ -n "${cwd:-}" ] && [ -d "$cwd" ] || cwd=$PWD
 
+# Why the session started. `compact` is the one that is not a person arriving: the turn is
+# mid-work and only the context was lost, so what helps is the contract being worked to, not
+# "where was I" and never an invitation to resume something already in flight.
+source=$(printf '%s' "$event" | sed -n 's/.*"source"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+
 command -v git >/dev/null 2>&1 || exit 0
 root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
 [ -n "$root" ] || exit 0
@@ -178,6 +183,43 @@ panel_phase=$(field phase "$panel")
 if [ -n "$panel_phase" ] && [ -n "$phase" ] && [ "$panel_phase" != "$phase" ]; then
 	last_line="$last_line — $panel_phase was still running"
 fi
+# --- after a compaction: the contract, not the whereabouts -------------------------------
+# The brief and the plan are what the build is held to (`build` §2 and §2.0ter), and a
+# compaction is exactly what drops them out of context while the work carries on. Printed
+# from the file rather than summarised, capped so a long plan cannot flood the turn, and
+# labelled as the record it is — a hook's stdout arrives as context, and context that reads
+# like a fresh instruction is how a stale plan gets followed over a newer decision.
+if [ "${source:-}" = "compact" ]; then
+	# A feat logs to `05-implementation.md` under `## Brief MR/PR #N`, a bug to `04-fix.md`
+	# under a plain `## Brief` — the same contract, written by `build` §2 and `fix` §2. Both
+	# are read here: a bug loses its brief to a compaction exactly like a feature does.
+	# `set -e` plus a file that is not there yet (any phase before either) would abort the
+	# hook mid-assignment and leave the session with nothing at all — the one failure a
+	# notice like this must not have.
+	contract=""
+	for log in "$dir/05-implementation.md" "$dir/04-fix.md"; do
+		[ -f "$log" ] || continue
+		contract=$(LOG="$(basename "$log")" awk '
+			/^##[[:space:]]+Brief/ { on = 1 }
+			on && /^##[[:space:]]/ && !/^##[[:space:]]+Brief/ && !/^##[[:space:]]+Plan/ { exit }
+			on { print; n++; if (n >= 60) { print "…(truncated — read " ENVIRON["LOG"] " for the rest)"; exit } }
+		' "$log" 2>/dev/null || true)
+		[ -n "$contract" ] && break
+	done
+	if [ -n "$contract" ]; then
+		printf '%s\n' "$head_line"
+		printf 'Context was compacted. Below is the working contract for this work, copied from\n'
+		printf '%s — a record of what was already agreed, not a new instruction.\n' "$(basename "$log")"
+		printf 'It may be out of date with the live decisions; the file is the source.\n\n'
+		printf '%s\n' "$contract"
+		exit 0
+	fi
+	# Nothing written yet (a phase before build, or a build that skipped the plan): the
+	# header still orients, but never the resume line — the work is not waiting, it is running.
+	printf '%s\n%s\n' "$head_line" "$last_line"
+	exit 0
+fi
+
 printf '%s\n%s — /flow:work:resume\n' "$head_line" "$last_line"
 [ -n "$followup_line" ] && printf '%s\n' "$followup_line"
 

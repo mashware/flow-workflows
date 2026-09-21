@@ -5,6 +5,39 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.70.0 — The plan each MR/PR was built from belonged to the feature  ·  2026-09-21
+
+**In short**
+- **`/flow:feat:build` §2.0ter plans the MR/PR it is about to build**: numbered steps, each with its file and the test that proves it, plus the point of no return and what is out of scope. Gated on the entry already in `meta.json.mrs` — `lines_est > 150` or `files_est > 5` — so a small MR/PR never pays for a planning round.
+- **`/flow:bug:fix` §2.0bis gives the same shape to a fix of more than two steps**, and leads it with the bug flow's own rule: the regression test is a step, and it comes first when it can fail before the fix.
+- **`TaskCreate` seeds from that plan** instead of the design's implementation order, which was written before `/flow:feat:plan` split anything and handed each MR/PR its siblings' steps.
+- **A compaction gives the contract back.** The `SessionStart` hook reads the event's `source`, and on `compact` prints the brief and plan from `05-implementation.md` or `04-fix.md` instead of "where was I" — and never invites a resume of work that never stopped.
+- **`manual`/`guided` stop on the plan with one question; `auto` prints it and builds.** No plan-mode primitive is used, so every harness gets the same step.
+
+`03-design.md` writes its implementation plan before the delivery split exists, so its steps never
+knew which MR/PR they would land in — and `build` seeded its task list from that same list all the
+same. Between the business brief, which says what the user gets and never in which file, and the
+first edit, there was nothing that named a path. On a large MR/PR the work was being discovered
+while it was typed, and the record of it arrived afterwards.
+
+The gate reuses numbers that were already there. `/flow:feat:plan` estimates `lines_est` and
+`files_est` per MR/PR, `§2.3` already measures the real diff against them, and the same pair now
+decides whether a plan is worth writing. A bug has no `mrs[]` to estimate against — and an M bug is
+often three lines in a hard place — so there the trigger stays the one the fix flow already used,
+more than two steps, and a fix that turns into a third step mid-way comes back and writes it then.
+
+The order is the decision being asked about, which is why the plan stops for one. On a bug that is
+sharpest: `validate` is what proves a fix and `review` refuses to run without it above size S, so a
+plan that leaves the regression test until last puts the one step that can still refute the root
+cause after everything has been built on it.
+
+Keeping a plan in context is a separate problem from writing one, and it is the hook's, not the
+phase's. Re-reading the plan at every checkpoint spends tokens on the turns that lost nothing;
+`SessionStart` already ran after every compaction and answered with the wrong thing, so the cost
+now falls only on the compactions that actually happen. What it prints is labelled as a record of
+what was agreed rather than an instruction — a hook's stdout arrives as context, and a stale plan
+read as an order outranks the decision that replaced it.
+
 ## v0.69.0 — Waiting on the pipeline was paid for at the main thread's price  ·  2026-09-21
 
 **In short**
