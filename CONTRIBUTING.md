@@ -20,6 +20,11 @@ honour.
   generated and checked mechanically, and `adapters/README.md` says plainly that nobody has run a
   full chain in them. A report saying *"I ran `feat:start → ship` on Codex CLI and here is what
   broke"* is worth more than a patch.
+- **A case for the review bench.** `plugins/flow/evals/` scores what a review *found*, not what
+  it looked like, and eight cases is where it starts. The most valuable addition is a **seeded
+  defect from a failure that actually happened** — one you hit, with the diff that hid it — or a
+  **clean diff** a review of yours reported a blocker on. `plugins/flow/evals/README.md` says what
+  a case is made of; the ground truth is the part only you have.
 - **A real work's `.claude/work/` folder**, scrubbed of anything private, as a worked example of
   what the artifacts look like when the flow is used in anger.
 - **A bug report with the artifact that shows it.** `meta.json`, `panel.json` and the phase artifact
@@ -53,10 +58,11 @@ Stated as plainly as the README states what the plugin does not ship, and for th
    `adapters/opencode/`, `adapters/codex/`, `adapters/gemini/` and `adapters/hermes/` are generated. Run
    `python3 script/adapter-build.py` and commit both — a mirror edited by hand is undone by the next
    build. → [RELEASING §Keeping the adapters in step](RELEASING.md#keeping-the-adapters-in-step)
-2. **A hook or CLI change ships with its test.** Under `script/tests/`, in the shape of the four
+2. **A hook or CLI change ships with its test.** Under `script/tests/`, in the shape of the five
    that are there, and wired into `.github/workflows/preflight.yml`. The preflight refuses a hook
-   that no test file names; `bin/cli.mjs` is under the same rule by convention, because what it
-   parses — a harness's answer, a `FLOW.md` key — is exactly what no reader checks by eye.
+   that no test file names; `bin/cli.mjs` and `script/bench-compare.py` are under the same rule by
+   convention, because what they parse — a harness's answer, a `FLOW.md` key, another tool's result
+   document — is exactly what no reader checks by eye.
 3. **Version and CHANGELOG move together.** `plugins/flow/.claude-plugin/plugin.json`'s `version`
    must equal the newest heading in `plugins/flow/CHANGELOG.md`; the preflight refuses the drift,
    because `/flow:news` reads the changelog while the loader reads the manifest.
@@ -103,6 +109,21 @@ a CLI subcommand, a rule a phase now enforces — the bar is **one real work dri
 a repo that is not this one**. `examples/symfony/` names the obvious candidate, and the fact that
 its stack is one the plugin must not know about is what makes it the right test rather than a
 convenient one.
+
+**For a change to `/flow:feat:review` there is a second bar, and it is a number.** The bench under
+`plugins/flow/evals/` runs that command over fixtures whose outcome is known — a seeded defect at a
+known `file:line`, a clean diff where any blocker is a false positive — and scores what came back.
+Run it against the baseline for the version you started from, and put the delta table in the PR:
+
+```bash
+claude plugin eval ./plugins/flow --scaffold --allow-tools Bash Write Edit --no-publish
+python3 script/bench-compare.py plugins/flow/evals/baselines/<version>-<model>.json <result>.json
+```
+
+A pass added to that command without a case that shows it finding something is a pass nobody can
+ever retire — which is the situation the bench exists to end. Reading it is three rules, all in
+[`evals/README.md`](plugins/flow/evals/README.md): the median decides, the base's own range is the
+noise floor, and a threshold at `1.0` is a threshold everyone learns to ignore.
 
 
 ## How we write

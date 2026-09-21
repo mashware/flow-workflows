@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: clean-test-and-docs
+description: A test for behaviour that already existed, and the docstring that states it. Any must-fix finding here is a false positive.
+tags: [review, clean, xs]
+runs: 3
+expected_outcome: |
+  A test covers the minimum-charge rule and `charge()` documents it. No production behaviour changes.
+context:
+  scaffold_script: fixture.sh

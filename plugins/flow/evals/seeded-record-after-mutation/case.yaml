@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: seeded-record-after-mutation
+description: A round records the state it ended on, not the state it read. The review must name it.
+tags: [review, seeded, xs]
+runs: 3
+expected_outcome: |
+  `src/pipeline.py` records `store.head()` after the fixes have been applied, where the docstring says the recorded value is the head as it stood before them.
+context:
+  scaffold_script: fixture.sh

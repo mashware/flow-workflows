@@ -154,6 +154,12 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
   and drifted; a command that repeats one points at the skill instead.
 - **The config key table is current** — `config-keys.py --check`: `docs/CONFIGURATION.md`'s table is
   generated from `FLOW.template.md`.
+- **The review bench stays runnable.** Every case under `plugins/flow/evals/` has its
+  `case.yaml`, its `prompt.md` and at least one grader; the scaffold each case names exists and is
+  executable; the prompt still opens with the command under test — inside an eval run the agent
+  cannot invoke one, so a prompt reworded into prose measures a model reviewing a diff and not this
+  plugin — and the suite still holds both kinds of case. A bench with only seeded defects scores
+  the noisiest review there is.
 - **No retired `panel.json` vocabulary** (`Right now:`, `Waiting on you:`, grouping the train
   `under Left`) anywhere in the plugin or the adapters. The panel's reader knows `mark` and `ref`;
   those labels render as prose and quietly lose the column — this is where the spec drifted once.
@@ -166,6 +172,12 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
 (`script/tests/push-guard.sh`, `script/tests/notify-update.sh`, `script/tests/session-start.sh`).
 It is the same list as below, so a red CI is a tree the pre-tag steps would have rejected.
 
+`.github/workflows/bench.yml` is the other half, and it measures rather than checks: it runs the
+review bench (`plugins/flow/evals/`) at the release and on demand. It is deliberately not a gate on
+`publish.yml` — that workflow puts the package on npm in minutes, and a suite of ten cases at three
+runs across two arms is sixty full agent sessions. Without an `ANTHROPIC_API_KEY` secret the job
+says so and stops, rather than standing red on every release.
+
 ## Before the tag, run it whole
 
 ```bash
@@ -173,6 +185,7 @@ python3 script/adapter-smoke.py
 bash script/tests/push-guard.sh
 bash script/tests/notify-update.sh
 bash script/tests/session-start.sh
+bash script/tests/bench-compare.sh
 ```
 
 The half of the smoke test the preflight skips is the slow one: it executes `adapters/install.sh`
@@ -183,3 +196,31 @@ would notice `install.sh` copying into a path that no longer exists. The three h
 the push guard, the SessionStart update notice and the SessionStart work notice the same way,
 against a throwaway `HOME` and throwaway repos — and the preflight now refuses a hook that has
 none.
+
+## When the release touched `review`
+
+Everything above says the tree would load. Nothing in it says the review still finds what it used
+to find, and that is the one question a change to `/flow:feat:review` is ever about. When the
+release changes that command — a pass added or dropped, a threshold moved, an effort tier bumped —
+run the bench before the tag:
+
+```bash
+claude plugin eval ./plugins/flow --scaffold --allow-tools Bash Write Edit \
+  --trust-plugin --no-publish --max-cost-usd 120 --threshold 0.5 \
+  --json /tmp/flow-bench.json
+
+python3 script/bench-compare.py plugins/flow/evals/baselines/<previous>.json /tmp/flow-bench.json
+python3 script/bench-compare.py --save /tmp/flow-bench.json --model <model>   # then commit it
+```
+
+It needs a sandbox backend (`apt install bubblewrap socat`), it costs real money, and it takes the
+better part of an hour — which is why it is not in the list above and not a gate on the publish.
+Three things about reading it, all of them in
+[`plugins/flow/evals/README.md`](plugins/flow/evals/README.md): `--threshold` goes **below the
+observed range of the base**, never at the `1.0` default; the **median** decides and not a single
+run; and a difference inside the base's own range is not a difference, which is what
+`bench-compare.py` prints `—` for.
+
+**A new model is the other moment it runs**, with `--model` set and everything else frozen: same
+plugin version, same fixtures, same `FLOW.md`. A layer that used to help can start costing turns
+the day a model ships, and the only alternative to measuring it is noticing by feel, months later.

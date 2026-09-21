@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: seeded-boundary-drops-item
+description: The worklist filter drops exactly the item it exists to carry. The review must name it.
+tags: [review, seeded, xs]
+runs: 3
+expected_outcome: |
+  `steps_since()` selects `position > base_position` where the docstring says the worklist starts at `base_position`, so the first unread step is dropped on every round.
+context:
+  scaffold_script: fixture.sh

@@ -513,6 +513,28 @@ written down before the data arrived, so it cannot be argued backwards: no exclu
 finding across twenty reviews and the pass comes out. No pass was removed or weakened here.
 *Now:* feat:review §2.1, §8, §9; bug:review §2.1, §8; `flow cost`; work/README `meta.json`.
 
+**A change to `review` can now be checked against an outcome.** v0.67.0: every preflight in this
+repository checks shape — the adapters match their sources byte for byte, a cited path exists, a
+hook is executable — and nothing could say whether a change to the command found more defects,
+fewer, or the same ones more expensively. The README conceded the cost half of that gap (*"estimates,
+not measurements"*) and was silent on the quality half. It blocked work already written down: the
+retirement rule of v0.66.0 fires on twenty comparable reviews and nothing could run twenty, and the
+tier became computable one release before anything could say the computed tier was the right one.
+`plugins/flow/evals/` is a suite of eight cases, each a scaffolded repository with a flow work
+parked at `build` and a diff whose outcome is known first: five with a defect seeded at a known
+`file:line`, three clean, where a blocker is a false positive. Both kinds are mandatory — a bench
+of seeded defects alone scores the noisiest review there is. The defects are shapes this repo's own
+CHANGELOG records, because a defect we invent is one we were already looking for. Deterministic
+graders carry the score and no judge model touches it: a judge adds the variance the bench measures
+and changes the measuring stick exactly when the model changes. The two artifact checks only the
+plugin can pass are indicators outside the score, so the no-plugin arm stays comparable. The prompt
+opens with the literal command because an eval agent cannot invoke one, and continues in plain words
+because that is what the baseline arm answers. `script/bench-compare.py` reports the **median** of
+each case's runs and prints `—` for any difference inside the range the base's own runs spanned.
+Nothing was retired and no threshold moved: the first run is the base.
+*Now:* `plugins/flow/evals/`; `script/bench-compare.py`; `script/tests/bench-compare.sh`;
+check.py `check_eval_suite`; `.github/workflows/bench.yml`; RELEASING "When the release touched `review`".
+
 **The net that worked is not thickened.** In v0.24.0 the panel caught what reached it; the lesson was
 cheaper detection upstream, and the review was left alone.
 

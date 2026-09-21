@@ -269,7 +269,12 @@ compaction point — selective, on disk and reversible.
 → [PHILOSOPHY](docs/PHILOSOPHY.md#nothing-here-asks-you-to-compact)
 
 Cost figures in these docs are estimates, not measurements: the flow reports how many agents a
-command launched, not how many tokens they spent.
+command launched, not how many tokens they spent. **Quality used to be in the same position and no
+longer is, for one command.** `/flow:feat:review` has a bench —
+[`plugins/flow/evals/`](plugins/flow/evals/README.md) — that runs it over fixtures whose outcome is
+known: a defect seeded at a known `file:line` the review has to raise, and a clean diff where any
+blocker it reports is a false positive. Every other phase is still argued from judgement, and the
+design decisions inside `review` itself were too, until there was something to check them against.
 
 ## Other harnesses
 
@@ -335,9 +340,10 @@ bash script/tests/push-guard.sh      # the push guard's cases
 bash script/tests/notify-update.sh   # the update-notice hook's cases
 bash script/tests/session-start.sh   # the where-you-left-off hook's cases
 bash script/tests/review-unwrap.sh   # the answer shapes `flow review` has to unwrap
+bash script/tests/bench-compare.sh   # the reader that compares two runs of the review bench
 ```
 
-CI runs the same six on every PR. The preflight refuses what has shipped broken before: an empty tracked file, unparsable JSON or TOML, a manifest version out of step with `CHANGELOG.md`, a hook without its executable bit, a stale or unusable mirror. → [RELEASING](RELEASING.md)
+CI runs the same seven on every PR. The preflight refuses what has shipped broken before: an empty tracked file, unparsable JSON or TOML, a manifest version out of step with `CHANGELOG.md`, a hook without its executable bit, a stale or unusable mirror. → [RELEASING](RELEASING.md)
 
 ## What it does not ship (on purpose)
 

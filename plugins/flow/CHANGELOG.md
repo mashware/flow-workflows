@@ -5,6 +5,74 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.67.0 — Every layer of the review was argued from judgement, and none was ever checked  ·  2026-09-21
+
+**In short**
+- **The review now has a bench.** `plugins/flow/evals/` runs `/flow:feat:review` over fixtures whose outcome is known before the review starts, and scores what came back: eight cases, five with a defect seeded at a known `file:line` the review has to raise, three with a clean diff where any blocker it reports is a false positive.
+- **The seeded defects come from this repository's own history**, not from imagination — a value recorded after the mutation instead of before, a failing call reported as a clean result, a filter that drops the item it exists to carry, several writers on one shared key, a threshold that is code in one place and a literal in another. A defect we invent is a defect shaped like something we were already looking for.
+- **Deterministic graders carry the score.** No judge model decides anything: a judge introduces the variance the bench exists to measure, and it changes the measuring stick exactly when the model changes. The `llm` grader is not used, and the two artifact checks that only the plugin can pass are marked as indicators outside the score, so the no-plugin arm stays comparable.
+- **A difference inside the base's own range is not a difference.** `script/bench-compare.py` reads two runs, reports the **median** of each case rather than the mean the summary prints, and prints `—` for anything that lands inside the range the base's own runs spanned. A bench that reports every wobble as a regression is one everybody learns to ignore.
+- **Baselines are versioned and committed**, one per plugin version and model, under `evals/baselines/`. When a new model ships, the suite runs with `--model` and everything else frozen — which is the only way to find out that a layer which used to help has started costing turns.
+
+Nothing in this repository could answer whether a change to `review` found more defects, fewer, or
+the same ones more expensively. `script/check.py` proves the adapters match their sources byte for
+byte and that a cited path exists; the hook tests pin behaviour that is deterministic by
+construction. All of it checks **shape**, and the README already conceded half the gap — *"Cost
+figures in these docs are estimates, not measurements"* — while saying nothing at all about the
+other half.
+
+That gap was not abstract. The completeness sweep, the data-access duel, the idiom audit, the
+150/600/1500 thresholds, the sensitive-surface bump: every one of them was argued from judgement,
+and every one is now remembered as conviction. v0.66.0 wrote down the rule for retiring a pass —
+no exclusive surviving finding across twenty reviews and it comes out of the command — and there
+was no way to run twenty comparable reviews to trigger it. The same release made the tier
+computable and nothing could say whether the tier it computed was the right one. Both shipped
+instrumentation with no bench to read it on.
+
+**A case is a repository, not a prompt.** Each one scaffolds a small tree, a flow work parked at
+`build`, and a branch whose diff has a known outcome; the flow CLI is installed into the fixture
+from this checkout, so the round takes the CLI path and not its documented fallback. The prompt
+opens with the literal `/flow:feat:review` and then states the task in plain words — both halves
+are load-bearing. Inside an eval run the agent cannot invoke a plugin command on its own: asked in
+prose to use the review command it reads files instead and never reaches it, so only a prompt that
+*is* the command gets there. The plain-words half is what the no-plugin arm answers, which is what
+makes `Δ` mean anything.
+
+**Both kinds of case are mandatory**, and the second kind is the one that is easy to skip. Without
+a clean diff in the suite the score rewards the noisiest review there is, and noise is what makes
+people stop reading reviews at all. One of the three sits on a path `quality.sensitive_paths` names
+and moves a log level and nothing else — which is the judgement §2.0 says a CLI cannot make, checked
+for the first time.
+
+The release preflight gains the checks that keep the bench runnable — every case has its scaffold,
+its prompt and its graders, the prompt still opens with the command under test, and the suite still
+holds both kinds. Running it is deliberately **not** wired into `publish.yml`: that workflow puts
+the package on npm in minutes, and ten cases at three runs across two arms is sixty full agent
+sessions. `.github/workflows/bench.yml` runs at the release and on demand, and says so plainly when
+the repository has no credential for it rather than standing red.
+
+**What the first run said**, recorded here because a bench whose first result is left out of the
+notes is a bench nobody will believe later. 8 cases × 3 runs × 2 arms, 48 sessions, 52 minutes,
+$47.27, threshold 0.5, the CLI's default model: every case at or above the threshold, suite score
+0.96, and **mean Δ against the no-plugin arm of −0.04**. Seven of the eight cases scored 1.00 in
+both arms; the eighth (`seeded-divergent-threshold`) scored 0.67 with the plugin and 1.00 without,
+one run in three having missed it. The with-arm cost $1.57 and 4.5 minutes per run against $0.40
+and 1.9 minutes — **3.9× for the same findings**.
+
+The honest reading is about the fixtures before it is about the command, and the reason is
+mechanical: every case is tagged `xs`, and **at XS the command runs the built-in `code-review`
+alone** — no panel, and §3.5's sweep is M/L only. The layers this bench exists to judge did not run
+once in those 48 sessions, so the two arms were doing nearly the same work. Eight single-file diffs
+with a docstring stating the contract the code breaks is also a defect an unguided review finds,
+which puts both arms on the ceiling, where a delta can only fall.
+
+The second tier is written down rather than written: `deep` cases, M-sized, with a populated
+reviewer roster, a defect split across files and its contract in `03-design.md`. They cost roughly
+what they exercise, so the suite splits by tag and each tier keeps its own baseline.
+
+Nothing is retired and no threshold moves here. The first run establishes the base; it does not
+judge anything.
+
 ## v0.66.0 — Every phase read a tree, and none of them could say which one  ·  2026-09-21
 
 **In short**

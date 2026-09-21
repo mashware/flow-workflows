@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: seeded-last-writer-wins
+description: Every worker writes one shared key, so all but the last result is lost. The review must name it.
+tags: [review, seeded, xs]
+runs: 3
+expected_outcome: |
+  `collect_results()` records every worker under the key `result`, so the function returns the last worker's result while its docstring promises all of them.
+context:
+  scaffold_script: fixture.sh

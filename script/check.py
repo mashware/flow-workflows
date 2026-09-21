@@ -674,6 +674,67 @@ def check_no_stack_leak(files):
                      f"in a `FLOW.md` key, or beside the other stacks of a detection list")
 
 
+EVALS = "plugins/flow/evals/"
+EVAL_NOT_A_CASE = ("_lib", "baselines", "results", "mocks")
+
+
+def check_eval_suite(files):
+    """The review bench has to stay runnable, and it has to keep both kinds of case.
+
+    A case is four files that only mean anything together: a scaffold that builds the
+    fixture, a prompt that reaches the command, `case.yaml` pointing at the scaffold, and
+    the graders. Any one of them missing is not an error the suite reports — the case
+    simply stops measuring, silently, and the score goes up.
+
+    Two of these are worth the lines on their own. A prompt that no longer opens with the
+    literal `/flow:feat:review` measures a model reviewing a diff, not this plugin: inside
+    an eval run the agent cannot invoke a command, so only a prompt that *is* one reaches
+    it. And a suite with no clean diff in it rewards the noisiest review there is.
+    """
+    cases = {}
+    for f in files:
+        if not f.startswith(EVALS):
+            continue
+        rest = f[len(EVALS):]
+        case = rest.split("/")[0]
+        if "/" not in rest or case in EVAL_NOT_A_CASE:
+            continue
+        cases.setdefault(case, []).append(rest[len(case) + 1:])
+
+    if not cases:
+        return                                     # the suite is optional; a broken one is not
+
+    for case, members in sorted(cases.items()):
+        for required in ("case.yaml", "prompt.md"):
+            if required not in members:
+                fail(f"{EVALS}{case}", f"no `{required}` — the case does not load")
+        if not any(m.startswith("graders/") for m in members):
+            fail(f"{EVALS}{case}", "no grader — the case runs and scores nothing")
+
+        spec = read(f"{EVALS}{case}/case.yaml") if "case.yaml" in members else ""
+        for line in spec.splitlines():
+            if "scaffold_script:" in line:
+                script = line.split("scaffold_script:", 1)[1].strip()
+                if script not in members:
+                    fail(f"{EVALS}{case}/case.yaml",
+                         f"`scaffold_script: {script}` is not a file in the case")
+                elif not os.access(os.path.join(ROOT, EVALS, case, script), os.X_OK):
+                    fail(f"{EVALS}{case}/{script}", "scaffold is not executable (chmod +x)")
+
+        prompt = read(f"{EVALS}{case}/prompt.md") if "prompt.md" in members else ""
+        body = prompt.split("---", 2)[-1].strip()
+        if not body.startswith("/flow:"):
+            fail(f"{EVALS}{case}/prompt.md",
+                 "the prompt does not open with the command under test — an eval agent "
+                 "cannot invoke one, so a prompt that is not one never reaches the plugin")
+
+    kinds = {c.split("-", 1)[0] for c in cases}
+    for kind in ("seeded", "clean"):
+        if kind not in kinds:
+            fail(EVALS, f"no `{kind}-*` case — a bench with only one kind scores the "
+                        f"noisiest review (clean) or the quietest one (seeded)")
+
+
 def main():
     files = tracked_files()
     if not files:
@@ -701,6 +762,7 @@ def main():
     check_config_keys()
     check_panel_vocabulary_prose(files)
     check_no_stack_leak(files)
+    check_eval_suite(files)
 
     if problems:
         print("preflight failed:\n")

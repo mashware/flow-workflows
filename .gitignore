@@ -13,3 +13,7 @@
 # Python bytecode from the script/ helpers (importable modules leave it behind)
 __pycache__/
 *.pyc
+
+# eval runs: every `claude plugin eval` writes a timestamped result and an HTML report.
+# The baselines under evals/baselines/ are committed; the runs that produced them are not.
+plugins/flow/evals/results/

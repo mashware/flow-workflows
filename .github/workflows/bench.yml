@@ -1,0 +1,147 @@
+name: bench
+
+# The measured half of the release preflight. `preflight.yml` proves the tree would load;
+# this proves the review still finds what it used to find.
+#
+# It is deliberately NOT a gate on `publish.yml`. That workflow puts the package on npm and
+# has to finish in minutes, while a suite of ten cases at three runs across two arms is sixty
+# full agent sessions and the better part of an hour. A publish waiting on an agent suite is a
+# publish that gets cancelled by hand the first time it is slow, which is worse than one that
+# never claimed to be measured. So: it runs at the release, beside the publish, and by hand
+# whenever a new model ships — with `--model` set and everything else frozen.
+#
+#   gh workflow run bench.yml --ref main -f model=claude-sonnet-5 -f runs=3
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Model for the agent under test (empty = the CLI's default)"
+        required: false
+      runs:
+        description: "Runs per case per arm"
+        required: false
+        default: "3"
+      threshold:
+        description: "Case score below which the run exits 1. Set it under the base's observed range, never at 1.0"
+        required: false
+        default: "0.5"
+      max_cost_usd:
+        description: "Hard ceiling on the run's list-price estimate"
+        required: false
+        default: "120"
+      cases:
+        description: "Case name glob, e.g. seeded-* (empty = the whole suite)"
+        required: false
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      # `secrets` is not readable in a job-level `if`, so the presence of the credential
+      # becomes a value the steps can branch on. Without it the job says so and stops being
+      # a red cross nobody can fix.
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' && 'true' || 'false' }}
+      MODEL: ${{ inputs.model }}
+      RUNS: ${{ inputs.runs || '3' }}
+      THRESHOLD: ${{ inputs.threshold || '0.5' }}
+      MAX_COST: ${{ inputs.max_cost_usd || '120' }}
+      CASES: ${{ inputs.cases }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: no credential, no measurement
+        if: env.HAS_KEY != 'true'
+        run: |
+          echo "::notice::ANTHROPIC_API_KEY is not configured on this repository, so the review" \
+               "bench did not run. Run it locally before tagging — RELEASING.md says how — or add" \
+               "the secret to have it run here."
+          echo "The review bench did not run: no \`ANTHROPIC_API_KEY\` secret." >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-node@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          node-version: "24"
+      - uses: actions/setup-python@v5
+        if: env.HAS_KEY == 'true'
+        with:
+          python-version: "3.12"
+
+      # Granting a shell to an eval run requires a sandbox backend, and a run that cannot be
+      # confined is refused rather than run unconfined. Every case here drives git, so all of
+      # them need it.
+      - name: sandbox backend for the shell the cases need
+        if: env.HAS_KEY == 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q bubblewrap socat
+
+      - name: Claude Code
+        if: env.HAS_KEY == 'true'
+        run: npm install --global @anthropic-ai/claude-code
+
+      - name: run the suite
+        if: env.HAS_KEY == 'true'
+        id: suite
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -o pipefail
+          args=(./plugins/flow --scaffold --allow-tools Bash Write Edit
+                --trust-plugin --no-publish
+                --runs "$RUNS" --threshold "$THRESHOLD" --max-cost-usd "$MAX_COST"
+                --ablation with-without
+                --json "$RUNNER_TEMP/result.json")
+          if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
+          if [ -n "$CASES" ]; then args+=(--case "$CASES"); fi
+          set +e
+          claude plugin eval "${args[@]}"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: against the baseline for this version and model
+        if: always() && env.HAS_KEY == 'true'
+        run: |
+          version=$(node -p "require('./plugins/flow/.claude-plugin/plugin.json').version")
+          model="${MODEL:-default-model}"
+          base="plugins/flow/evals/baselines/$version-$model.json"
+          if [ ! -f "$base" ]; then
+            base=$(ls -1 plugins/flow/evals/baselines/*.json 2>/dev/null | tail -1)
+          fi
+          if [ -n "${base:-}" ] && [ -f "$base" ] && [ -f "$RUNNER_TEMP/result.json" ]; then
+            {
+              echo '```'
+              python3 script/bench-compare.py "$base" "$RUNNER_TEMP/result.json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No baseline to compare against: this run is the base, and a base judges nothing." \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: keep the result
+        if: always() && env.HAS_KEY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-result
+          path: |
+            ${{ runner.temp }}/result.json
+            plugins/flow/evals/results/**/report.html
+          if-no-files-found: ignore
+
+      # The suite's own exit code decides last, so the comparison and the artifact are written
+      # even when a case came in under the threshold — which is the run you most want to read.
+      - name: the suite's verdict
+        if: env.HAS_KEY == 'true'
+        env:
+          EXIT: ${{ steps.suite.outputs.exit }}
+        run: |
+          case "$EXIT" in
+            0) echo "every case at or above the threshold" ;;
+            2) echo "::warning::partial run — the cost ceiling was reached. Partial results are" \
+                    "not a measurement and do not belong in a trend."; exit 0 ;;
+            *) echo "::error::a case scored below --threshold $THRESHOLD, or the run could not" \
+                    "start. Read the report artifact before changing anything."; exit 1 ;;
+          esac
