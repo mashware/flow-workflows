@@ -45,7 +45,7 @@ Rules for writing it:
 
 **Ask the user with `AskUserQuestion`** whether the brief reflects what they expect — **hard gate, in every autonomy mode, `auto` included**: it is the last point where scope can be corrected before there is a diff to argue with.
 
-In `guided`/`auto` this is one of the only two stops per MR/PR, so it carries the **full stop header** (flow-core §3) — ticket, size, phase, `MR #<n> of <N>`, plan state — followed by the brief. Options:
+In `auto` this is one of the only two stops per MR/PR (`guided` adds the plan of §2.0ter on a big one), so it carries the **full stop header** (flow-core §3) — ticket, size, phase, `MR #<n> of <N>`, plan state — followed by the brief. Options:
 - **Yes, proceed** → start building.
 - **No, something is extra or missing** → the user clarifies, adjust the brief, ask again. **Do not touch code** until the brief is confirmed.
 
@@ -70,7 +70,36 @@ Hard rules:
 - **If there is a "Pattern deviation" section**: copy it too — it reminds you at coding time not to mimic the repo pattern.
 - **If the design says "none"** (no external surfaces), skip this step and record: "## Contracts to respect — none declared in design".
 
-Without this copy, do not proceed to §2.1.
+Without this copy, do not proceed to §2.0ter.
+
+## 2.0ter Plan this MR/PR (size-gated)
+
+`03-design.md` §"Implementation plan (order)" is the **feature's** order, written before `/flow:feat:plan` split anything — it does not know which of its steps belong to this MR/PR. The brief above says what this MR/PR delivers in business terms; neither says which files are touched in which order. On a MR/PR big enough to lose its thread, that plan is written here.
+
+**Gate — run this step only when the current `mrs[]` entry is big enough**: `lines_est > 150` **or** `files_est > 5`. No estimates in the entry (an older plan) → fall back to its `size`: `M`/`L` run it, `XS`/`S` skip. No `mrs[]` at all (XS/S, single MR/PR) → skip; the brief and the contracts are the whole plan, and a 30-line change does not earn a planning round. Skipped → record one line in `05-implementation.md` — the estimates that let it through (`plan: skipped — 40 lines / 2 files`), or `plan: skipped — single MR/PR` when there is no entry to read — and go to §2.1.
+
+Write it against `03-design.md` and the contracts just copied — **no code yet, no exploratory edits**. Under 250 words, as numbered steps:
+
+```markdown
+## Plan MR/PR #N
+1. <step> — `<file or path>` — <test that proves it, or "covered by step M">
+2. …
+
+- **Point of no return**: <the migration, contract, published event or flag after which rollback stops being a revert — or "none">.
+- **Out of this plan**: <what belongs to a later MR/PR and will be tempting while inside these files>.
+```
+
+Rules for the steps:
+- **A step is a thing on disk**, not a phase of thought: "add the nullable column + migration", not "analyse the schema". A step nobody can tell is finished is two steps or none.
+- **Order by what unblocks what**, and put the point of no return as late as the design allows: everything reversible lands before it.
+- **Every step names its test** or the step that covers it. A step that proves no acceptance criterion and guards no contract is a candidate to cut — same bar as `03-design.md` §"Planned tests".
+- Steps come from the **design**, not from the repo you are about to open. A step the design never mentions is either a deviation to log (§3 "Deviations from design") or scope that belongs in §2.4.
+
+**Present it, then behave by mode:**
+- `manual` / `guided` → **stop**: full stop header (flow-core §3), the plan, and one `AskUserQuestion` — **Approve and build** · **Change the order or the steps** (the user edits, rewrite it, ask again). This is a genuine decision point: the order of an irreversible step is exactly what is expensive to argue with once there is a diff.
+- `auto` → **do not stop**. Print the numbered steps and the point of no return, record the plan as accepted, and open the same message with the call that starts §2.1 (flow-core §3: a report is never the last thing in a turn you meant to continue).
+
+Save it in `05-implementation.md` under `## Plan MR/PR #N`, right after the brief. It is what seeds `TaskCreate` in §2.1, and what a §2.3 hot cut splits: the steps already done stay in this MR/PR, the ones still pending move to the new entry.
 
 ## 2.1 Work
 
@@ -101,7 +130,7 @@ Execution mode:
   - **Give it a bounded first step.** A piece with no natural first move ("do the whole module") produces nothing for hours; split it by file or by numbered step until it has one.
   - **Check the round at every stop of this command**, not only at the end: an agent past `agents.stall_after_minutes` (empty → 25) with nothing written to its path is stopped, split in two and relaunched.
 
-Use `TaskCreate` to track the steps from the design's implementation plan. Mark each step `in_progress` when starting and `completed` when done — do not batch.
+Use `TaskCreate` to track the steps of the **§2.0ter plan for this MR/PR** — one task per numbered step, same order. Step skipped there (small MR/PR) → seed from `03-design.md` §"Implementation plan (order)", taking only the steps this MR/PR covers per `04-mr-plan.md`; the feature's plan predates the split and carries steps that belong to siblings. Mark each step `in_progress` when starting and `completed` when done — do not batch.
 
 ### 2.1bis The premise this change rests on (any size, XS included)
 
@@ -207,7 +236,7 @@ Warning thresholds:
 
 If either is exceeded, **pause** and ask the user with `AskUserQuestion` (options, in this order):
 
-1. **Cut here (recommended if the current piece is coherent)**. What is built so far stays as this MR/PR; what remains of the plan goes into a new one inserted in `meta.json.mrs` right after. Zero code wasted.
+1. **Cut here (recommended if the current piece is coherent)**. What is built so far stays as this MR/PR; what remains — the §2.0ter steps still pending, or what is left of `04-mr-plan.md` where that step was skipped — goes into a new one inserted in `meta.json.mrs` right after. Zero code wasted.
 2. **Continue and record the overrun**. When the cut would be artificial. Note the deviation in `05-implementation.md` to calibrate `/flow:feat:plan` on future tickets.
 3. **Reopen plan**. Return to `/flow:feat:plan` to rethink the entire split. Only if the overrun shows the plan is wrong at a deeper level, not just that this MR/PR is slightly underestimated.
 
@@ -254,6 +283,9 @@ Keep `.claude/work/<TICKET>/05-implementation.md` updated as you work (not at th
 
 **This MR/PR does NOT include**:
 - <pieces that are out of scope>
+
+## Plan MR/PR #N
+<the numbered steps of §2.0ter, its point of no return and its "out of this plan" line — or one line saying the step was skipped and why (`plan: skipped — 40 lines / 2 files`). What §2.1 seeds `TaskCreate` from and what a §2.3 cut splits. Steps are struck through or annotated as they are reworked, never deleted: a plan edited to match what happened records nothing.>
 
 ## Changes per file
 - <file> — what changed and why (1 line each)
