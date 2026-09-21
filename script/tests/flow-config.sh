@@ -7,6 +7,12 @@
 # real repo had `agents.exec_cmd` set from the example of a file whose prose argued, at length,
 # that it was deliberately unset. `flow tier` is the observer: it prints the resolved ceilings and
 # the review depth, so what the parser took is visible without inventing a debug flag for it.
+#
+# Every pattern below carries its key — `budget_max 99`, never a bare `99`. The first line of that
+# output is `Changed lines: … \`<sha>\`..working tree`, and a base commit is made fresh on each run,
+# so a bare two-digit pattern also matches the roughly one run in twenty whose short sha happens to
+# contain those digits. That is how this file failed on a green tree, with the config read exactly
+# right and nothing to find in the diff.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI="$HERE/../../bin/cli.mjs"
@@ -59,7 +65,8 @@ To try the one-shot panel once, paste this and take it out again afterwards:
 FLOW
 node "$CLI" tier > "$BASE/fenced.txt" 2>&1
 check "the ceilings are the ones outside the fence" "$BASE/fenced.txt" hit 'budget_max 9 · fanout_max 3'
-check "and not the example's"                       "$BASE/fenced.txt" miss '99'
+check "and not the example's"                       "$BASE/fenced.txt" miss 'budget_max 99'
+check "nor its fanout"                              "$BASE/fenced.txt" miss 'fanout_max 99'
 check "review_depth too"                            "$BASE/fenced.txt" miss 'Tier: light'
 
 # A fence closed with a longer run, and one opened with tildes: both are fences (CommonMark),
@@ -82,7 +89,8 @@ FLOW
 node "$CLI" tier > "$BASE/tildes.txt" 2>&1
 check "a ~~~ block is a fence"        "$BASE/tildes.txt" hit 'budget_max 9'
 check "so is a four-backtick block"   "$BASE/tildes.txt" hit 'fanout_max 3'
-check "neither leaks its values"      "$BASE/tildes.txt" miss '77'
+check "neither leaks its values"      "$BASE/tildes.txt" miss 'budget_max 77'
+check "nor the four-backtick one"     "$BASE/tildes.txt" miss 'fanout_max 77'
 
 # What the fence must not do is swallow the rest of the file: an overlay's keys come after it.
 cat > FLOW.md <<'FLOW'
