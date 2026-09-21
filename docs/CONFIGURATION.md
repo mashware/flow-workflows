@@ -38,9 +38,15 @@ The supported overlay names are:
 | opencode | `FLOW.opencode.md` |
 | Gemini CLI | `FLOW.gemini.md` |
 | Hermes Agent | `FLOW.hermes.md` |
+| zcode | `FLOW.zcode.md` |
 
 The product executing the command chooses the overlay; a model name never does. Unknown
 `FLOW.*.md` files are ignored. The base is optional too, so an overlay-only configuration is valid.
+
+One caveat, and it is zcode's: zcode reads the same plugin package as Claude Code, so it lists
+both the `/flow:`-prefixed mirror generated for it (which resolves `FLOW.zcode.md`) and the
+plugin's own Claude pages, unprefixed — `/feat:start`, `/bug:fix`, `/init`. Those resolve
+`FLOW.claude.md`, so on zcode type the `/flow:` names.
 
 Resolution is per section and key:
 

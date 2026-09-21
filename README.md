@@ -1,7 +1,7 @@
 # flow-workflows
 
 Guided `feat` / `bug` workflows for terminal coding agents: a ticket reaches an open MR/PR through explicit, reviewable phases, not one big prompt.
-For developers running Claude Code (or opencode, Gemini CLI, Codex CLI, Hermes Agent) on real repos with tickets, reviewers and a deploy.
+For developers running Claude Code (or zcode, opencode, Gemini CLI, Codex CLI, Hermes Agent) on real repos with tickets, reviewers and a deploy.
 You get named phases, an artifact on disk after each one, hard gates the agent never crosses alone, and an autonomy dial from "ask me everything" to "run it and record what you decided".
 
 ## Quickstart
@@ -21,6 +21,14 @@ You get named phases, an artifact on disk after each one, hard gates the agent n
 codex plugin marketplace add https://github.com/mashware/flow-workflows.git
 codex plugin add flow@flow-plugins
 # then, in a new session: $flow:init · $flow:next
+```
+
+**zcode** — same plugin, from its own marketplace
+
+```bash
+zcode plugins marketplace add mashware/flow-workflows
+zcode plugins install flow@flow-plugins
+# then, in a new session: /flow:init · /flow:next
 ```
 
 **opencode, Gemini CLI, Hermes Agent** — one command, nothing to clone
@@ -194,7 +202,7 @@ Artifacts are **hand-editable**: rewrite `03-design.md` and the next phase respe
 ## Configuration: base plus harness overlay
 
 `FLOW.md` at the repo root is the shared base. `FLOW.claude.md`, `FLOW.codex.md`,
-`FLOW.opencode.md`, `FLOW.gemini.md`, or `FLOW.hermes.md` can sparsely override values for the product executing the
+`FLOW.opencode.md`, `FLOW.gemini.md`, `FLOW.hermes.md`, or `FLOW.zcode.md` can sparsely override values for the product executing the
 command. Existing repos with only `FLOW.md` behave exactly as before; anything effectively empty
 is auto-detected or asked for.
 
@@ -284,6 +292,7 @@ The same commands, in each harness's own shape. Only the invocation syntax diffe
 |---|---|---|
 | **Codex CLI** | `codex plugin add flow@flow-plugins` (see [Quickstart](#quickstart)) | `$flow:feat-start` |
 | **Codex CLI**, one repo only | `npx flow-workflows install codex project` → `.agents/skills/` | `$flow-feat-start` |
+| **zcode** | `zcode plugins install flow@flow-plugins` (see [Quickstart](#quickstart)) | `/flow:feat:start` |
 | **opencode** | `npx flow-workflows install opencode` | `/flow-feat-start` |
 | **Gemini CLI** | `npx flow-workflows install gemini` | `/flow:feat:start` |
 | **Hermes Agent** | `npx flow-workflows install hermes` | `/flow-feat-start` |
@@ -292,6 +301,11 @@ Updating is the same command again — it removes the previous version's files f
 dropped upstream does not linger. `npx flow-workflows check` compares what your harnesses run
 against the newest release. From a clone, `adapters/install.sh <harness> [project]` does the same
 thing without Node; the preflight installs both ways and fails if the results differ by one byte.
+
+**zcode** reads this plugin package directly and names a command after its path, with no plugin
+prefix — so the `/flow:`-prefixed set it installs is a generated mirror living beside the Claude
+one, and the plugin's own pages also show up there unprefixed (`/feat:start`, `/init`, …). Those
+name Claude's overlay, so type the `/flow:` names.
 
 The mirrors are **generated** from the plugin commands by `script/adapter-build.py` and checked mechanically on every preflight (format, prefix, cited paths, install location).
 They have **not** been executed end to end in those harnesses — validate as you use them. → [adapters/README](adapters/README.md)
@@ -319,6 +333,7 @@ flow-workflows/
 ├── .github/           preflight CI · issue forms · PR template
 ├── plugins/flow/
 │   ├── commands/      feat/ bug/ work/ + next, init, doctor, news
+│   ├── codex-skills/ · zcode-commands/   # generated mirrors for the two other plugin hosts
 │   ├── skills/flow-core/             # shared rules, loaded once per session
 │   ├── hooks/         push guard · update notice · where-you-left-off notice
 │   └── examples/       FLOW.template.md · symfony/ (a worked example, never loaded)

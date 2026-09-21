@@ -158,6 +158,17 @@ function claude() {
   console.log('Codex has its own too: codex plugin marketplace add https://github.com/mashware/flow-workflows.git')
 }
 
+function zcode() {
+  console.log('zcode reads this plugin package directly, from its own marketplace, not from npm:')
+  console.log()
+  console.log('  zcode plugins marketplace add mashware/flow-workflows')
+  console.log('  zcode plugins install flow@flow-plugins')
+  console.log()
+  console.log('Then /flow:init in your repo. Updates arrive through `zcode plugins update flow`.')
+  console.log('Type the /flow:-prefixed commands: zcode also exposes the plugin\'s Claude pages')
+  console.log('unprefixed (/feat:start, /init, …), and those carry --harness claude.')
+}
+
 function check() {
   const pkg = version()
   console.log(`this package:  v${pkg}`)
@@ -276,7 +287,7 @@ const configRoot = (repo) => rootHolding(repo, 'FLOW.md')
 // The overlay names flow-core §0 recognises. A `--harness` outside this set reads no
 // overlay and looks exactly like a repo that has none, so it stops the run instead: a typo
 // here is worth one error message and never worth a review round nobody can trust.
-const OVERLAY_HARNESSES = ['claude', 'codex', 'gemini', 'hermes', 'opencode']
+const OVERLAY_HARNESSES = ['claude', 'codex', 'gemini', 'hermes', 'opencode', 'zcode']
 
 // Every overlay sitting next to the base, whether or not this run reads one.
 function overlaysPresent(root) {
@@ -1107,8 +1118,9 @@ function usage() {
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
   "project" installs into the current repo instead of your user folder.
 
-Claude Code and Codex CLI have their own marketplaces:
+Claude Code, Codex CLI and zcode have their own marketplaces:
   npx flow-workflows install claude    shows how
+  npx flow-workflows install zcode     shows how
 
 "bundle" prints one context pack for the current branch — worklist, diff, the changed
   files in full, and the work's handoff — so a phase reads it in one call instead of
@@ -1161,10 +1173,11 @@ else if (cmd === 'cost') cost(process.argv.slice(3))
 else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()
 else if (cmd === 'install' && tool === 'claude') claude()
+else if (cmd === 'install' && tool === 'zcode') zcode()
 else if (cmd === 'install' && HARNESSES[tool]) install(tool, scope === 'project' ? 'project' : 'global')
 else if (cmd === 'install') {
   console.error(`Unknown harness: ${tool ?? '(none given)'}`)
-  console.error(`Expected one of: ${Object.keys(HARNESSES).join(', ')}, claude`)
+  console.error(`Expected one of: ${Object.keys(HARNESSES).join(', ')}, claude, zcode`)
   process.exit(1)
 } else if (cmd === '--version' || cmd === '-v') console.log(version())
 else if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') usage()

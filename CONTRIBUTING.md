@@ -16,7 +16,7 @@ honour.
   neighbouring stack — the shape is `examples/symfony/`, which is the only one so far. The plugin
   ships no agents on purpose ([why](docs/PHILOSOPHY.md#stack-agnostic-and-what-that-costs)); a
   worked example is the mitigation, and a second stack is the highest-value thing you can send.
-- **A harness actually run end to end.** The opencode, Gemini CLI, Codex CLI and Hermes Agent mirrors are
+- **A harness actually run end to end.** The opencode, Gemini CLI, Codex CLI, Hermes Agent and zcode mirrors are
   generated and checked mechanically, and `adapters/README.md` says plainly that nobody has run a
   full chain in them. A report saying *"I ran `feat:start → ship` on Codex CLI and here is what
   broke"* is worth more than a patch.
@@ -55,7 +55,8 @@ Stated as plainly as the README states what the plugin does not ship, and for th
 ## How a change lands
 
 1. **Edit the plugin, never the mirror.** `plugins/flow/` is the source of truth;
-   `adapters/opencode/`, `adapters/codex/`, `adapters/gemini/` and `adapters/hermes/` are generated. Run
+   `adapters/opencode/`, `adapters/codex/`, `adapters/gemini/`, `adapters/hermes/` and the two
+   in-package mirrors (`plugins/flow/codex-skills/`, `plugins/flow/zcode-commands/`) are generated. Run
    `python3 script/adapter-build.py` and commit both — a mirror edited by hand is undone by the next
    build. → [RELEASING §Keeping the adapters in step](RELEASING.md#keeping-the-adapters-in-step)
 2. **A hook or CLI change ships with its test.** Under `script/tests/`, in the shape of the five

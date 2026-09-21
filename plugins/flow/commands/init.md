@@ -6,9 +6,10 @@ description: Assistant that generates FLOW.md and its optional harness overlay (
 
 Creates or updates the effective FLOW configuration at the repo root: shared values in `FLOW.md`
 and optional harness-owned values in the active `FLOW.<harness>.md`. The active filename is
-`FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`, or `FLOW.hermes.md`;
-identify it from the
-product executing this command, never from the selected model. Every other `/flow:*` command reads
+`FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`, `FLOW.hermes.md`, or
+`FLOW.zcode.md`; identify it from the
+product executing this command, never from the selected model (zcode runs the Claude pages too, so
+the page you are reading does not name the harness). Every other `/flow:*` command reads
 the base and then that overlay. The user answers the **minimum**: what the repo can tell is
 auto-detected and only confirmed.
 

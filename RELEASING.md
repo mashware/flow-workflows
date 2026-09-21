@@ -105,9 +105,10 @@ block falls back to its first paragraph.
 Every file under `opencode/commands/`, `codex/skills/`, `gemini/commands/flow/`,
 `hermes/skills/` and each `<harness>/CORE.md` is
 written from the plugin commands and `plugins/flow/skills/flow-core/SKILL.md` — and so are
-`plugins/flow/codex-skills/` and `plugins/flow/.codex-plugin/plugin.json`, which live inside the
-plugin package but are mirrors like the rest (the Codex manifest takes its version from the Claude
-one, so a bump reaches it through the generator). The prose is not
+`plugins/flow/codex-skills/`, `plugins/flow/zcode-commands/` and the `.codex-plugin` /
+`.zcode-plugin` manifests, which live inside the plugin package but are mirrors like the rest
+(both manifests take their version from the Claude one, so a bump reaches them through the
+generator). The prose is not
 rewritten; only the wrapper, the invocation prefix, `$ARGUMENTS` → `{{args}}` for Gemini, the
 pointer to `~/.claude/flow/CORE.<tool>.md`, and a legend after the title mapping the Claude Code
 primitives to that harness (the `LEGEND` dict in the script — see `adapters/README.md`).
@@ -146,8 +147,8 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
 - **The adapters are generated and current** — `adapter-build.py --check`: no mirror missing,
   stale, or orphaned.
 - **The mirrors are usable, not just present** — `adapter-smoke.py --static-only`: each parses in
-  its harness's wrapper (opencode a `description:` · Codex and Hermes a `SKILL.md` keyed by `name:` ·
-  Gemini TOML), every `/flow…` invocation
+  its harness's wrapper (opencode and zcode a `description:` · Codex and Hermes a `SKILL.md` keyed
+  by `name:` · Gemini TOML), every `/flow…` invocation
   uses that harness's prefix, and every command and path it cites exists.
 - **The flow-core skill is present** (`plugins/flow/skills/flow-core/SKILL.md`, `name: flow-core`)
   **and no command carries a copy of its blocks.** Those blocks used to be pasted into 18 commands
