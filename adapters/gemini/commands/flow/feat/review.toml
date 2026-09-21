@@ -152,6 +152,8 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 
    **Every brief you write here ends with the report contract of flow-core §6** — `agents.report_max_words` (empty → 250), findings only, one line each as `file:line` + what is wrong + the fix. This file's own prompts (§3.5, §4, §5.5) already carry theirs; the panel briefs are yours to write, and an uncapped one is truncated in transit and reaches you looking exactly like a reviewer that found nothing. The built-in `code-review` takes no brief — bound it with the §2.0 effort tier and hold it to the same fan-out deadline (flow-core §6): over a large diff it is the likeliest member of this round to stall before its first sentence.
 
+**Nothing edits the tree while a round is in flight** (flow-core §6). Every reviewer here reads the same working tree, uncommitted part included, and the fixes this phase applies are the parent's own edits — applied mid-round they land underneath agents that are still reading, and the reviewer that then reports a line which has moved, or checks `git status` around its own reading to work out what it touched, is the one reading this phase exists to trust. Findings are fixed **after** the round is consolidated, so §3 onward launch against a tree that stopped moving.
+
 When both run, deduplicate overlapping correctness/simplification findings (count each once). The `review_skill` specialists (offensive/defensive security, silent failures, architecture) are not repeated in later phases.
 
 ### 2.2 Design truth vs design rationale (do not inherit rationalizations)

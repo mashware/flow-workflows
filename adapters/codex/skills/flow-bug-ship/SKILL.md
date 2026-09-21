@@ -173,6 +173,7 @@ nothing was measured. A slowness bug is the case where this comment *is* the pro
 
 ## 4. Close
 
+- **A worktree does not own the tree its tools wrote into — `$flow-feat-ship` §5.5, in full and unchanged.** First, before anything below: `meta.json.worktree` not null → read the main checkout's `git status --porcelain`, name any paths it holds in one line as what they are (in the main checkout, not in the branch just pushed, and not necessarily put there by this run), and offer once to carry them over. A fix consolidates its knowledge one phase earlier, in `$flow-bug-postmortem` §4, so by the time this runs those writes have already happened and the branch has already been pushed — which is exactly the window this check exists to close.
 - Update `meta.json`: add `ship` to `phases_done`, update `updated_at`. **`phase` becomes `done` only once the MR/PR is confirmed merged** — creating it is not finishing it. Right after §3.1 it is open, so ask once with `AskUserQuestion` whether it has already been merged: **no** (the normal answer) → leave `phase = "ship"`; **yes** → `phase = "done"`. `$flow-work-green` and `$flow-work-respond` work on the open MR/PR; `$flow-work-clean` only sweeps what merged.
 - Refresh `panel.json`: while the MR/PR is open its line is `wait` with the `link`; once merged it is `done`, and only then say there is nothing left here (`mark: "info"`, `style: "ok"`). Drop the `Decision` line either way.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).

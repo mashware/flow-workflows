@@ -463,6 +463,17 @@ something".
 **The net that worked is not thickened.** In v0.24.0 the panel caught what reached it; the lesson was
 cheaper detection upstream, and the review was left alone.
 
+**One writer of the working tree at a time; readers still fan out freely.** v0.66.0: `validate`
+launched a testing agent whose deliverable is files beside a suite and a performance pass that read
+the same tree, with the main thread editing throughout — "one suite run came back red because of a
+mutation belonging to another agent", a reviewer found a source file changed that was not its doing,
+and "the commit taken then was clean by luck, not by design". A writing agent is break, run, restore
+and composes with nothing else reading the same tree, so writers are serialised or given a worktree
+of their own, and the parent counts as a writer: a review round's own fixes land after the round is
+consolidated, never underneath reviewers still reading. Ordering costs wall clock; a reading nobody
+can trust costs the phase twice.
+*Now:* flow-core §6; feat:validate §2; feat:review §2.1; bug:review §2.1.
+
 ---
 
 ## 8. The query duel
@@ -566,6 +577,17 @@ moves work by `cherry-pick`. A second overrun means the plan is wrong, not the e
 branch you are only testing"; `worktree_resync` runs after each switch, confirmed because it is
 invasive.
 *Now:* feat:start §5.0/§5.4; work:try.
+
+**A tool that writes into the repo cannot be told which tree, so `ship` checks the other one.**
+v0.66.0: a work in a worktree consolidated five knowledge cards and they were written into the main
+checkout, standing on the base branch — the MR went out without them. The tool is started once per
+session, resolves the repo from where it started and takes no root in its call, so "nothing in the
+invocation could have corrected it"; flow is the only party that knows `meta.json.worktree` is set.
+`ship` reads the main checkout's `git status --porcelain` before its Close and names what is there
+as a reading, not an accusation — that checkout may have been dirty already. The one write flow does
+control was corrected at the source: "the repo root" is the main checkout's for reading a
+git-ignored config, and the opposite for a tracked file, which belongs to the branch.
+*Now:* flow-core §0; feat:ship §5.5; bug:ship §4.
 
 **`clean` sweeps what `ship` never gets to ask about.** v0.27.0: 22 and 14 worktrees, thirteen of
 fourteen merged, sixteen work folders and zero archived. Every offer was "a prompt at the end of a long
