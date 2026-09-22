@@ -47,3 +47,7 @@ jobs:
         run: bash script/tests/flow-config.sh
       - name: the review tier the CLI resolves
         run: bash script/tests/tier.sh
+      - name: the panel-vocabulary sentence every command carries
+        run: bash script/tests/panel-reminder.sh
+      - name: guards that must fail when what they guard is gone
+        run: bash script/tests/preflight-bindings.sh

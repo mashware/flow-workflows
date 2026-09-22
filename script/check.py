@@ -30,9 +30,16 @@ def repo_root():
     run against a directory git does not track — reporting nothing to check and
     exiting green, which is worse than having no hook at all. Resolve the link
     first, then ask git where the top of the tree is.
+
+    Except when git exported `GIT_DIR`, which it does for a commit made from a linked
+    worktree. The link then resolves into the *main* checkout, and git, asked from there
+    with `GIT_DIR` pointing at the worktree, answers with whatever directory it was asked
+    from: every tracked path is looked up under the wrong root and the hook checks zero
+    files. Git runs its hooks at the top of the tree being committed, so that is where to ask.
     """
     here = os.path.dirname(os.path.realpath(__file__))
-    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=here,
+    ask = os.getcwd() if os.environ.get("GIT_DIR") else here
+    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=ask,
                          capture_output=True, text=True)
     return top.stdout.strip() if top.returncode == 0 else os.path.dirname(here)
 
@@ -58,9 +65,12 @@ def tracked_files():
     check below reads what it inspects. Dropping those here keeps the run from
     dying on the deletion, and the parity check still notices the gap.
     """
-    out = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
-                         capture_output=True, text=True).stdout
-    return [f for f in out.split("\0")
+    run = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                         capture_output=True, text=True)
+    if run.returncode != 0:
+        fail(ROOT, f"`git ls-files` failed: {run.stderr.strip() or f'exit {run.returncode}'}")
+        return []
+    return [f for f in run.stdout.split("\0")
             if f and os.path.isfile(os.path.join(ROOT, f))]
 
 
@@ -585,15 +595,22 @@ def check_adapters_generated():
 # by adding the sentinel here; that would delete the one thing an agent keeps after a
 # compaction.
 CORE_SKILL = "plugins/flow/skills/flow-core/SKILL.md"
+#
+# Markers are opening sentences, never section titles: a command that cites a section by
+# its name, as the skill asks, is pointing at it rather than copying it.
+#
+# Each marker must also be text the skill still has. Rewritten, the skill moves on and a
+# marker left behind matches no command and no skill either, which reads exactly like a
+# clean tree — six of these eight once guarded nothing for that reason.
 CORE_ONLY_BLOCKS = (
     "**Never a question in `guided`/`auto`",
-    "**Reporting — how every stop reads.**",
-    "**Product altitude — the effect, not the implementation.**",
+    "**A stop is where you hand the screen back**",
+    "- **Product altitude.**",
     "**Zero-context rule.**",
-    "**Live panel — the same stop, written to disk.**",
-    "**`mark` says what a line *is*",
-    "**`link` is a field, never text inside `text`.**",
-    "**When to write it.**",
+    "**Two transports, one document.**",
+    "- **`mark` says what a line is**",
+    "- **`link` is a field, never a URL inside `text`**",
+    "(a) In pre-flight, as soon as `meta.json` is loaded",
 )
 
 
@@ -604,6 +621,11 @@ def check_core_skill(files):
     src = read(CORE_SKILL)
     if not src.startswith("---\n") or "\nname: flow-core" not in src[:400]:
         fail(CORE_SKILL, "skill frontmatter must declare `name: flow-core`")
+    for marker in CORE_ONLY_BLOCKS:
+        if marker not in src:
+            fail("script/check.py", f"CORE_ONLY_BLOCKS marker matches nothing in the skill "
+                                    f"({marker!r}) — reworded there, so this check is "
+                                    f"guarding nothing; copy the new wording")
     for f in files:
         if not (f.startswith(PLUGIN_COMMANDS) and f.endswith(".md")):
             continue
@@ -614,10 +636,46 @@ def check_core_skill(files):
                         f"point at the skill instead")
 
 
+# The two places that enumerate the panel words in prose rather than in the frozen
+# sentence: the skill every command loads, and the guide to the panel. Neither can be
+# pinned byte for byte — each list carries its own asides — so what is compared is the set
+# of words on the line that opens with the anchor. An anchor that opens no line fails too:
+# a list that moved is not a list that agrees.
+PROSE_VOCABULARY = (
+    (CORE_SKILL, "- **`mark` says what a line is**", MARKS),
+    ("plugins/flow/commands/work/README.md", "- **`mark`** —", MARKS),
+    ("plugins/flow/commands/work/README.md", "- **`style`** —", STYLES),
+)
+WORD_CHAIN = re.compile(r"`[a-z]+`(?:\s*\([^()]*\))?(?:\s*·\s*`[a-z]+`(?:\s*\([^()]*\))?)+")
+
+
+def check_panel_vocabulary_lists(files):
+    for f, anchor, words in PROSE_VOCABULARY:
+        if f not in files:
+            fail(f, "missing — PROSE_VOCABULARY names it, so its list of panel words is unchecked")
+            continue
+        line = next((ln for ln in read(f).splitlines() if ln.startswith(anchor)), None)
+        chain = WORD_CHAIN.search(line[len(anchor):]) if line else None
+        if chain is None:
+            fail(f, f"no line opens with {anchor!r} followed by a list of panel words — "
+                    "the list moved or was reworded, and nothing checks it any more")
+            continue
+        found = re.findall(r"`([a-z]+)`", re.sub(r"\([^()]*\)", "", chain.group(0)))
+        extra = [w for w in found if w not in words]
+        missing = [w for w in words if w not in found]
+        if extra:
+            fail(f, f"the list after {anchor!r} names words unknown to the reader: "
+                    f"{', '.join(extra)}")
+        if missing:
+            fail(f, f"the list after {anchor!r} leaves out words the reader knows — missing: "
+                    f"{', '.join(missing)}")
+
+
 # Panel vocabulary that a previous generation of these commands used. The reader knows
 # `mark`/`ref`; these labels render as plain prose, so a command still teaching them
 # writes a panel that silently loses its column — and this is exactly where the spec
-# already drifted once.
+# already drifted once. Unlike every other literal here, these must match *nothing*, so
+# an empty result is the clean case and no clause asks them to bind.
 RETIRED_PANEL_LABELS = ("Right now:", "Waiting on you:", "under `Left`")
 
 
@@ -827,12 +885,23 @@ def check_eval_suite(files):
                         f"noisiest review (clean) or the quietest one (seeded)")
 
 
-def main():
-    files = tracked_files()
-    if not files:
-        print("not a git checkout — nothing to check")
-        return 0
+def hand_over_to_the_tree():
+    """The exit code of the tree's own copy of this script, when git reached another one.
 
+    Hooks live in the common git dir, so a commit from a worktree runs the main checkout's
+    check.py over the worktree's files — and a branch that changes the checks would be
+    judged by the ones it is replacing. A child process rather than `exec`, because on
+    Windows `os.execv` returns to git before the checks finish.
+    """
+    mine = os.path.realpath(__file__)
+    theirs = os.path.realpath(os.path.join(ROOT, "script", "check.py"))
+    if mine == theirs or not os.path.isfile(theirs) or os.environ.get("FLOW_CHECK_HANDED_OVER"):
+        return None
+    env = dict(os.environ, FLOW_CHECK_HANDED_OVER="1")
+    return subprocess.run([sys.executable, theirs] + sys.argv[1:], cwd=ROOT, env=env).returncode
+
+
+def run_checks(files):
     check_no_empty_tracked_files(files)
     check_manifests()
     check_all_json(files)
@@ -854,8 +923,27 @@ def main():
     check_panel_reminder(files)
     check_config_keys()
     check_panel_vocabulary_prose(files)
+    check_panel_vocabulary_lists(files)
     check_no_stack_leak(files)
     check_eval_suite(files)
+
+
+def main():
+    # With the tree found, git's exported `GIT_DIR` has nothing left to say and only misleads:
+    # every script run from here resolves its own root, and would repeat `repo_root`'s mistake.
+    for var in ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"):
+        os.environ.pop(var, None)
+    code = hand_over_to_the_tree()
+    if code is not None:
+        return code
+    files = tracked_files()
+    if not files:
+        # Reached from a hook this used to exit 0, and did so on every commit made from a
+        # worktree: a preflight that checked nothing and said so in a line reading as news.
+        problems.append(f"no tracked files under {ROOT} — nothing was checked")
+
+    if files:
+        run_checks(files)
 
     if problems:
         print("preflight failed:\n")
