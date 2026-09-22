@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.72.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.73.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -236,7 +236,9 @@ terminal by construction, the turn is over before you notice.
   (`guided`/`auto` chaining, §2), the turn opens with the call that starts it, not with prose about
   the one that ended. **A report is never the last thing in a turn you meant to continue.**
 - **Progress belongs to the panel, not to a turn.** Someone watching reads the live panel (§4):
-  `Now`, `Next`. Writing it costs no turn and no stop; saying it in chat costs both.
+  `Now`, `Next`. Writing it costs no turn and no stop; saying it in chat costs both. **An answered
+  question is progress too**: the `Decision` line and the panel's claim on the user go the moment
+  the answer arrives, before the work resumes (§4.4e).
 - **Stopping? Then say so.** `I need:` names the decision or the action you are waiting on. It
   never announces that you are continuing — if you were, you would not be writing this header.
 
@@ -305,7 +307,7 @@ prose describing a file is otherwise obeyed to the letter.
 
 - **`mark` says what a line is**; the reader draws it. `done` · `current` (at most one) · `pending` · `wait` (waiting on someone else: an open MR/PR, a user decision) · `block` · `info`. Marked lines form an aligned column: symbol, `ref`, text, link pinned right. Do not set `style` on a marked line — except `mark: "info"` + `style: ok|warn|error` when the colour *is* the information (a monitoring verdict).
 - **`ref` need not be a number**: `#1`, `#3–#6`, `Now`, `Next`, `Decision`. Column width is per block; blocks are separated by blank lines — use them so the MR/PR train and the labels below do not drag each other wide.
-- **`link` is a field, never a URL inside `text`.**
+- **`link` is a field, never a URL inside `text`** — and **every line that names an MR/PR carries it**: the train entries, a blocker about somebody else's MR/PR, a `Now` or `Next` about the open one. The URL is in `meta.json.mrs[].url` or in whatever recorded that blocker; a bare `!10327` typed into `text` is a number the reader cannot make clickable, which is the whole point of the field. No URL recorded anywhere → the number in `text` and nothing else, and go and record it.
 - **Order:** (1) work title (`style: title`, no mark); (2) the MR/PR train, one entry per `meta.json.mrs[]` with `ref` `#n`, short title, real-state `mark`, `link` when there is a URL — not-started entries collapse into one `#a–#z` `pending` line; omit the block without `mrs`; (3) `Now` — what is running, the one fact `meta.json` cannot hold; (4) `Next`; (5) `Decision`, `mark: wait`, **only** when parked on the user — over the tools it travels with `attention: "wait"` (§4.2), and both are cleared together; (6) blockers, `mark: block` (a sibling repo with `contract_handoff: pending`, a red pipeline, an unmerged dependency).
 - **Rules:** `phase` is the phase you are **running now** (not `meta.json.phase`, which advances only at Close). `header: true` means ticket, type, phase and age are drawn by the reader — do not repeat them in `lines`. Keep it under ~14 lines. Every fact from `meta.json` and the artifacts — an invented MR/PR state is worse than a blank panel. Write in the language of the work's artifacts.
 
@@ -373,6 +375,13 @@ and `key` buy nothing here: the file panel is drawn from `mark` and `ref` alone.
 halfway is not shown as finished. When the stretch will outlast the ~30 min staleness warning, set
 `stale_after_minutes` to what it will really take; (d) wherever `## Close` updates `meta.json`. A
 held panel still goes stale: the app stamps each delivery's arrival.
+
+**(e) The moment a question is answered or a gate is cleared** — before you resume the work, not at
+the next stop. Drop the `Decision` line, clear `attention`, and move `Now` on: one patch, the first
+thing you do with the answer. A panel still asking what the user already answered is worse than one
+that never asked, because they answered it and the screen says it did not land; and an `attention`
+nobody clears keeps that tab claiming them for ever. The same applies to a blocker that lifted and
+to a `wait` line whose MR/PR merged.
 
 ### 4.5 `meta.json.cost[]` — what a phase measured, when it could
 

@@ -119,7 +119,7 @@ After a break the panel is most likely stale, and a resumed session is exactly w
 
 - `phase` = the phase you are resuming into (`meta.json.phase` does not yet say it).
 - `Now` in prose; `Next` names the command §4 suggested.
-- `Decision` marked `wait` is always set after a resume — nothing is running, the next move is the user's.
+- `Decision` marked `wait` is always set after a resume — nothing is running, the next move is the user's. It goes the moment they make it (flow-core §4.4e), not at the next stop.
 - `block` lines for the blockers §4 surfaced (`contract_handoff` `pending` in a sibling repo, a red pipeline, an unmerged dependency).
 - Train: one entry per `meta.json.mrs[]`, not-started collapsed into one `#a–#z` line; omit without `mrs`.
 - `updated_at` from `date -Iseconds` when the panel goes to the file; every fact from `meta.json` and the artifacts; language of the work's artifacts.
