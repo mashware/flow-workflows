@@ -21,7 +21,7 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow:feat:ship`, wi
 
 ## 0. Pre-flight
 
-Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
+Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `04-fix.md` (the Brief), `06-review.md` (the verdict), `05-validation.md`, the §"Root cause identified" of `03-investigation.md`, and `99-postmortem.md` if it exists. (flow-core §5)
 - Require `review` in `phases_done`; also `validate` if `size` ≥ S, and `postmortem` if `size` is M or L (the same sizes `/flow:bug:review §8` routes to postmortem — one rule). Missing → refuse and redirect to the missing step.
@@ -154,7 +154,7 @@ Only here — with the content approved in §2 — invoke `Skill commit-commands
 
 Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.squash`.
 
-**Record the URL the moment it exists**: write it into `meta.json` (the `mrs` entry if there is one) and refresh `panel.json` (flow-core §4) right here, before §3.2 and before anything else can fail.
+**Record the URL the moment it exists**: write it into `meta.json` (the `mrs` entry if there is one) and refresh the panel (flow-core §4) right here, before §3.2 and before anything else can fail.
 
 **The pipeline the push starts is not watched from this thread — `/flow:feat:ship` §4.1, in full and unchanged**: close with CI reported as *running*, or delegate the wait to a supervisor subagent on `models.supervisors` (flow-core §6.5) with a deadline, taking back status and failing-job evidence only. A red pipeline is `/flow:work:green`'s to triage, never this command's.
 
@@ -173,7 +173,7 @@ nothing was measured. A slowness bug is the case where this comment *is* the pro
 
 - **A worktree does not own the tree its tools wrote into — `/flow:feat:ship` §5.5, in full and unchanged.** First, before anything below: `meta.json.worktree` not null → read the main checkout's `git status --porcelain`, name any paths it holds in one line as what they are (in the main checkout, not in the branch just pushed, and not necessarily put there by this run), and offer once to carry them over. A fix consolidates its knowledge one phase earlier, in `/flow:bug:postmortem` §4, so by the time this runs those writes have already happened and the branch has already been pushed — which is exactly the window this check exists to close.
 - Update `meta.json`: add `ship` to `phases_done`, update `updated_at`. **`phase` becomes `done` only once the MR/PR is confirmed merged** — creating it is not finishing it. Right after §3.1 it is open, so ask once with `AskUserQuestion` whether it has already been merged: **no** (the normal answer) → leave `phase = "ship"`; **yes** → `phase = "done"`. `/flow:work:green` and `/flow:work:respond` work on the open MR/PR; `/flow:work:clean` only sweeps what merged.
-- Refresh `panel.json`: while the MR/PR is open its line is `wait` with the `link`; once merged it is `done`, and only then say there is nothing left here (`mark: "info"`, `style: "ok"`). Drop the `Decision` line either way.
+- Refresh the panel: while the MR/PR is open its line is `wait` with the `link`; once merged it is `done`, and only then say there is nothing left here (`mark: "info"`, `style: "ok"`). Drop the `Decision` line either way.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Tracker: move to done.** **Only when this ship set `phase = "done"`** (merge confirmed just above) and `tracker.tool` is not `none`/empty, `tracker.done_cmd` is set, and `meta.json.ticket` is a **real tracker id**: run `tracker.done_cmd` with `{TICKET}` = `meta.json.ticket`. Never on an open MR/PR. If the answer was "not merged", skip silently — the transition belongs to whoever confirms the merge (`/flow:work:clean` reports the branch as merged, and re-running this close is legitimate). Same contract as `/flow:bug:start §4.5`: **best-effort, idempotent, gated** (ask once in `autonomy.mode: manual`; automatic in `guided`/`auto`); failure or already-done ticket → warn and continue, never block. **Leave `tracker.done_cmd` empty on GitHub/GitLab** — `Closes #N` already auto-closes on merge; this is for Jira/Linear-style trackers.
 - Summarize: ticket, MR/PR URL, regression test added.

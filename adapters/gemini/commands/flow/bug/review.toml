@@ -18,7 +18,7 @@ Mandatory code review of the fix.
 
 ## 1. Pre-flight
 
-Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
+Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test). (flow-core §5)
 - **A premise left open by `fix` §2.2 is an input to this review, not a note.** Every row of "Premises the fix depends on" whose verdict is `unsettled` enters §5 as an **ambiguous finding** and is named in §7 whether or not that gate opened — in a bug it is usually the claim that the root cause was the whole cause, which is exactly what the regression test cannot prove.

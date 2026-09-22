@@ -20,7 +20,7 @@ description: "Sweep what finished work left behind — merged worktrees, dead br
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 The forge (`git.cli`) is **best-effort**: CLI missing, unauthenticated, or over ~5s → fall back to the local evidence in §4 and say so in one line; never block.
 

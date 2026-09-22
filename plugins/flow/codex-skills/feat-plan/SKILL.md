@@ -20,7 +20,7 @@ description: "Split the work into small, independently mergeable MRs/PRs before 
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
 
 Delivery planning phase. **No code is written.** Splits the feature into MRs/PRs that can each live on the main branch even if the subsequent ones never land.
 
@@ -154,7 +154,7 @@ A slice landing in **another repo** is not one of *this* repo's `mrs`: record it
 
 - Update `meta.json`: `phase = "plan"`, add `plan` to `phases_done`.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Refresh `panel.json`: from here on it carries one line per `mrs[]` entry. Nothing is merged or open yet, so every entry carries `mark: "pending"`, the not-yet-started ones collapsed into a single `#a–#z` line, and **no heading over the train** — `mark` states each entry's real state (schema in `$flow:work-README`).
+- Refresh the panel — a new train is a new *shape*, so republish it whole (flow-core §4): from here on it carries one line per `mrs[]` entry. Nothing is merged or open yet, so every entry carries `mark: "pending"`, the not-yet-started ones collapsed into a single `#a–#z` line, and **no heading over the train** — `mark` states each entry's real state (schema in `$flow:work-README`).
 - **Show the plan the way it will be executed**, not just as a list: print the wave line first, then the table:
 
   ```

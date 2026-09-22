@@ -18,7 +18,7 @@ description: "Your work assistant — a Scrum-style daily standup across all you
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `mcp_servers` in `~/.hermes/config.yaml` (see `config.snippet.yaml`).
 > - `$ARGUMENTS` → what the user typed after the skill name: Hermes takes everything from the first non-skill token on as the instruction.
 
-Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session.
+Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
 External sources (tracker, forge, `knowledge`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
 

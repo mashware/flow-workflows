@@ -39,9 +39,9 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 ## Principles
 
 - **Shared rules live in the `flow-core` skill** (`skills/flow-core/SKILL.md`): configuration merge,
-  `models`, autonomy and hard gates, never-a-question list, stop header, `panel.json`,
+  `models`, autonomy and hard gates, never-a-question list, stop header, the live panel,
   `00-summary.md`. Every command loads it once per session.
-- **One folder per ticket**: `.claude/work/{TICKET}/` holds `meta.json`, `00-summary.md`, `panel.json` and the numbered markdown artifacts.
+- **One folder per ticket**: `.claude/work/{TICKET}/` holds `meta.json`, `00-summary.md`, the numbered markdown artifacts and — where the terminal offers no panel tools — `panel.json`.
 - **Numbered artifacts**: each phase writes a `NN-phase.md` that the next step reads.
 - **`evidence/`**: what `$flow:*-validate` actually observed when it drove the running app — a screenshot, a response body, a log excerpt, one file per criterion, with a **before** where the change alters something already visible. `$flow:*-ship` attaches it to the MR/PR description. `quality.evidence: off` disables both halves.
 - **`meta.json` is the source of truth** for state (current phase, size, branch). Without it, commands refuse to continue.
@@ -66,7 +66,7 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **Commits follow the autonomy mode** (`$flow:feat-build` §2.2, `$flow:bug-fix` §2.1): changes **always reported before anything is recorded**. `manual`: **no `git commit` on its own**. `guided`: asks **once**. `auto`: WIP commit per step, cut by step (§2.3) — **`autonomy.mode: auto` plus typing the command is the explicit authorization**. WIP commits on the work branch **only**; push and MR/PR creation stay hard gates in every mode.
 - **A named next command is not a handoff**: each `## Close` carries the **autonomy handoff** — `manual` proposes the next command with one `AskUserQuestion`; `guided`/`auto` **chain in the same turn**. Never chained: `ship` (hard gate in every mode) and anything downstream of a red gate.
 - **Every stop opens with where you are** (flow-core §3): stop header, then ≤ ~10 product-altitude lines. Own process → the artifact; subagent notifications never earn a turn.
-- **The stop is also written to disk**: `.claude/work/<work>/panel.json` ([schema below](#paneljson-schema), flow-core §4), **overwritten whole, never patched**, written **before** a long stretch with an honest `updated_at`.
+- **The stop is also published to the live panel** ([document below](#the-panel-document), flow-core §4): through the terminal's `panel_set` / `panel_patch` tools where they exist, and `.claude/work/<work>/panel.json` **overwritten whole, never patched** where they do not. Published **before** a long stretch, never after, with an honest `updated_at`.
 - **What is never a question is as binding as what always is**: hard gates stop in **every** mode; in `guided`/`auto` flow mechanics, WIP commits, the train's next MR/PR, size confirmation and anything already decided are never asked (flow-core §2). Only new evidence reopens a decision.
 - **A correction is a convention, and a convention is written down**: when the user overrides something a phase proposed and the same correction would apply to an unrelated ticket in this repo, it becomes a `meta.json.conventions_candidates[]` row and a `## Conventions learned` line in the phase artifact, asking nothing (flow-core §8). `review`'s idiom audit reads them in the same work; `ship` offers them to `FLOW.md` once, at Close, in every mode. What is about *this* ticket stays in the artifact and goes no further.
 - **Work you decide not to do is recorded, not narrated**: every "idea for a separate ticket", out-of-scope piece, unmitigated risk, unchecked edge case and prevention action becomes a `meta.json.followups[]` entry (flow-core §7) alongside its artifact section. Written without asking, and only when it clears the bar of §7 (a named subject, a path someone has actually seen, waiting costing more than doing it). Triaged **once** at `ship`'s Close, behind a skeptic: 3 or more candidates go to an agent whose job is to refute that each deserves a ticket, and only the strongest `tracker.followup_ask_max` (empty → **2**) become questions (**Do it** / **Not worth it** / **Later**). The rest are logged. Published in the MR/PR description while still open, and surfaced by `status`/`daily`/`next` — from `_archive/` too — until decided. Creating the tracker issue for an accepted one is outward-facing: **asks in every mode**. Two kinds are not deferred work: a **`decision`** the diff depends on is asked when it surfaces (in every mode) and only a deferred one is recorded; a **`tooling`** gap is recorded with no question at all and never goes to the tracker.
@@ -159,9 +159,9 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 
 **`00-summary.md`** (flow-core §5): **≤ 15 lines, overwritten whole at every `## Close`**, read first by every phase (with `meta.json`) before any full artifact. Contents: what the work is (one line), size and current MR/PR, standing decisions (one line each), contracts declared or received (names and where the literal shape lives), what is pending, what the next phase must open in full. Missing (older work) → read the artifacts, write it at Close.
 
-## `panel.json` schema
+## The panel document
 
-`meta.json` is the *state machine*; `panel.json` is the *view* a reader outside the chat polls. Optional: a work that never writes it still resolves from `meta.json` alone. Writer rules (order, when, ceiling): flow-core §4.
+`meta.json` is the *state machine*; the panel is the *view* a reader outside the chat watches. Optional: a work that never publishes it still resolves from `meta.json` alone. Writer rules (order, when, ceiling) and the two transports — the terminal's `panel_set` / `panel_patch` / `panel_get` tools, or `.claude/work/<work>/panel.json` — are flow-core §4. The document below is the same either way.
 
 ```json
 {
@@ -192,11 +192,13 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **`style`** — `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`; semantic names, the reader owns the palette.
 - **`header`** — `true` (default): the reader draws ticket, type, phase and age, which never belong in `lines`. `false` hands every line to the writer.
 - **`phase`** — the phase running **right now** (`meta.json.phase` advances only at close); the reader prefers it.
-- **`updated_at`** — local ISO-8601 with offset from the real clock, never carried over; lets the reader flag a stale snapshot.
+- **`updated_at`** — local ISO-8601 with offset from the real clock, never carried over; lets the reader flag a stale snapshot. Over the tools the app stamps each delivery itself.
+- **`attention`** *(tools only)* — `wait` · `block` · `done`, beside `phase`, absent while simply working: the pane's claim on the user's attention, which the app never deduces from a line's `mark`. A tab's card shows the strongest claim among its panes, so an uncleared `wait` flags that tab for ever.
+- **`key`** *(tools only)* — a unique, never-painted name on any line a later `panel_patch` may replace or delete (`title`, `mr-1`, `now`, `next`, `decision`, `block-1`).
 
 **No headings over the train.** A shipped MR/PR is *open, waiting to merge*; `mark` says it per entry — `wait` shipped, `current` being worked, `done` only merged.
 
-**Who writes it.** The 18 phase commands (flow-core §4); `$flow:feat-ship` and `$flow:bug-ship` the instant an MR/PR URL exists; `$flow:feat-plan` when the train is populated; `$flow:work-resume` (§5); `$flow:work-watch` every cycle; `$flow:work-abandon` with a terminal state. Read-only `status`, `daily`, `config`, `doctor`, `news` never write it; `$flow:work-clean` archives the folder with the panel inside.
+**Who publishes it.** The 18 phase commands (flow-core §4); `$flow:feat-ship` and `$flow:bug-ship` the instant an MR/PR URL exists; `$flow:feat-plan` when the train is populated — a new train is a new shape, so a full republish; `$flow:work-resume` (§5), after reading what is on screen; `$flow:work-watch` every cycle; `$flow:work-abandon` with a terminal state. Read-only `status`, `daily`, `config`, `doctor`, `news` never publish; `$flow:work-clean` archives the folder with any panel file inside.
 
 ## Shortcuts by size
 

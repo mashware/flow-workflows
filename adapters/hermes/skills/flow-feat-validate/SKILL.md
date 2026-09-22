@@ -18,7 +18,7 @@ description: "Validate tests, edge cases, and integrity before shipping"
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `mcp_servers` in `~/.hermes/config.yaml` (see `config.snippet.yaml`).
 > - `$ARGUMENTS` → what the user typed after the skill name: Hermes takes everything from the first non-skill token on as the instruction.
 
-Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; the wait it delegates takes `models.supervisors`.**
+Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; the wait it delegates takes `models.supervisors`.**
 
 Verify the feature is complete: test coverage, edge cases, performance, regressions.
 

@@ -25,7 +25,7 @@ Start a bug. `$ARGUMENTS` is **optional**:
 
 ## 0. Pre-flight
 
-Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
+Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
 - Verify you are in the correct repo.
 - **Determine the mode** from `$ARGUMENTS`: non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
@@ -162,7 +162,7 @@ Create the work directory per §0: `.claude/work/<TICKET>-<slug>/` in ticket mod
 }
 ```
 
-`<work-dir>/panel.json`: write it now (flow-core §4). A bug has no MR/PR train, so it is short: the title (the symptom, `style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, and any sibling repo from §1.6 as a `block` line. Every later phase overwrites it whole.
+**Live panel**: publish it now (flow-core §4 — the panel tools, or `<work-dir>/panel.json`). A bug has no MR/PR train, so it is short: the title (the symptom, `style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, and any sibling repo from §1.6 as a `block` line. Every later phase updates it.
 
 Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the fix touches; `[]` for a single-repo fix. `pending` only when the fix **changes a surface that sibling consumes** (a payload key, an error code, a route, an event shape); otherwise `none`.
 

@@ -20,7 +20,7 @@ description: "Summary of all open works in .claude/work/"
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 Overview of works in progress; detects divergences between artifacts and actual git state.
 

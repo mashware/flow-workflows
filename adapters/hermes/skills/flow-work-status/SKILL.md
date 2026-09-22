@@ -18,7 +18,7 @@ description: "Summary of all open works in .claude/work/"
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `mcp_servers` in `~/.hermes/config.yaml` (see `config.snippet.yaml`).
 > - `$ARGUMENTS` → what the user typed after the skill name: Hermes takes everything from the first non-skill token on as the instruction.
 
-Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session.
+Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
 Overview of works in progress; detects divergences between artifacts and actual git state.
 

@@ -11,7 +11,7 @@ allowed-tools: Read, Glob, Grep, Bash(git status:*), Bash(git branch:*), Bash(gi
 > - Every primitive named below exists here under the same name — `AskUserQuestion`, `Agent <role>` and its subagents, `ScheduleWakeup`, `TaskCreate`, `Skill flow:<name>`, `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` (`${ZCODE_PLUGIN_ROOT}` is an alias). Nothing in this page is a translation of anything.
 > - The overlay read here is `FLOW.zcode.md`, and every `flow-workflows` call below already names it. The same plugin also exposes its unprefixed Claude pages — `/feat:start`, `/bug:fix`, … — which name Claude's overlay instead, so type the `/flow:` names.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 Overview of works in progress; detects divergences between artifacts and actual git state.
 

@@ -11,7 +11,7 @@ argument-hint: "[TICKET]"
 > - Every primitive named below exists here under the same name — `AskUserQuestion`, `Agent <role>` and its subagents, `ScheduleWakeup`, `TaskCreate`, `Skill flow:<name>`, `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` (`${ZCODE_PLUGIN_ROOT}` is an alias). Nothing in this page is a translation of anything.
 > - The overlay read here is `FLOW.zcode.md`, and every `flow-workflows` call below already names it. The same plugin also exposes its unprefixed Claude pages — `/feat:start`, `/bug:fix`, … — which name Claude's overlay instead, so type the `/flow:` names.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
 **Autopiloted post-deploy monitoring**: signals **scoped to the change** over a window (default 30 min), against a baseline; alert on errors or performance regressions from the deploy.
 
@@ -122,7 +122,7 @@ Over `[last cycle, now]`, scoped to the surface. **Default thresholds** (tunable
 
 After each cycle: update `monitor.md` (accumulated state — no repeated alerts, feeds the final summary) and **reschedule with `ScheduleWakeup`** (~270-300s, or the chosen interval) passing the same `/flow:work:watch {PREFIX}XXXXX` until `T_end`. Platform fails or slow → retry next cycle, never break.
 
-**Refresh the live panel every cycle** (only with a `<work-dir>` from §1). Overwrite `.claude/work/<work>/panel.json` **whole**:
+**Refresh the live panel every cycle** (only with a `<work-dir>` from §1), by the transport flow-core §4 selects — the panel tools where the terminal has them, `.claude/work/<work>/panel.json` overwritten **whole** where it does not:
 
 ```json
 {
@@ -163,7 +163,7 @@ Write the summary to `<work-dir>/monitor.md` (§1) and present it:
 - **Evidence strength**: low traffic (§4) → say it ("green, but the flow barely executed during the window: weak evidence"). Never sell a zero-traffic green as a guarantee.
 - **Honest limits**: no slow leaks, no regressions needing input not exercised in the window. A first-hour safety net.
 
-Final verdict to `panel.json` too — `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and a `Now` line reading `nothing — the watch window is over`. On 🔴, a `Decision` line marked `wait` pointing at `/flow:bug:start`.
+Final verdict to the panel too — `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and a `Now` line reading `nothing — the watch window is over`. On 🔴, a `Decision` line marked `wait` pointing at `/flow:bug:start`.
 
 `knowledge.stage` is set → `knowledge.stage` relevant findings (measured baselines, low-traffic signals, error patterns) for this branch's staging.
 

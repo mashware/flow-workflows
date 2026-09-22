@@ -39,9 +39,10 @@ Every phase reads `meta.json` and this file first; a full artifact only when nee
 advances `meta.json`. It is where the flow does its own compaction — selective, on disk, reversible —
 which is why no command ever suggests `/compact`. → [PHILOSOPHY](PHILOSOPHY.md#nothing-here-asks-you-to-compact)
 
-**`panel.json`** — the work's live state for a reader outside the chat (a pane, a status bar). Each
-line says what it *is* (`mark`, `ref`, `link`), not how to draw it. Overwritten whole, written *before*
-long stretches with an honest `updated_at`, carrying the phase actually running. → [work/README][wrpj]
+**Live panel** — the work's live state for a reader outside the chat (a pane, a status bar). Each
+line says what it *is* (`mark`, `ref`, `link`), not how to draw it. Published *before* long stretches
+and carrying the phase actually running — over the terminal's `panel_set` / `panel_patch` tools where
+they exist, otherwise as `panel.json`, overwritten whole with an honest `updated_at`. → [work/README][wrpj]
 
 **Size (XS/S/M/L) and pruning** — classified at `start`, revisable later. Size prunes phases: XS runs
 `start → build → review → ship`; S adds an abridged design and validate; M/L run the full chain with
@@ -162,7 +163,7 @@ over `docs/adr`. Empty roles degrade silently (no lookup, findings stay in the a
 
 **flow-core skill** — the rules every `/flow` command relies on, stated once and loaded once per
 session: FLOW config resolution, model keys, autonomy and hard gates, the never-a-question list, the stop header,
-`panel.json`, the `00-summary.md` handoff. A command file carries only its phase. → [flow-core][fc]
+the live panel, the `00-summary.md` handoff. A command file carries only its phase. → [flow-core][fc]
 
 **Adapter** — a mirror of the plugin's commands for another harness (opencode, Gemini CLI, Codex CLI,
 Hermes Agent),
@@ -176,7 +177,7 @@ harnesses. → [adapters/README](../adapters/README.md)
 [wrp]: ../plugins/flow/commands/work/README.md#principles
 [wrf]: ../plugins/flow/commands/work/README.md#full-flowfeat-flow
 [wrm]: ../plugins/flow/commands/work/README.md#metajson-schema
-[wrpj]: ../plugins/flow/commands/work/README.md#paneljson-schema
+[wrpj]: ../plugins/flow/commands/work/README.md#the-panel-document
 [wrs]: ../plugins/flow/commands/work/README.md#shortcuts-by-size
 [ca]: CONFIGURATION.md#autonomy
 [cnt]: CONFIGURATION.md#working-without-a-tracker

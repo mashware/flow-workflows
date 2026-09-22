@@ -10,7 +10,7 @@ description: Design the technical solution (architecture, DB, APIs, risks) befor
 > - Every primitive named below exists here under the same name — `AskUserQuestion`, `Agent <role>` and its subagents, `ScheduleWakeup`, `TaskCreate`, `Skill flow:<name>`, `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` (`${ZCODE_PLUGIN_ROOT}` is an alias). Nothing in this page is a translation of anything.
 > - The overlay read here is `FLOW.zcode.md`, and every `flow-workflows` call below already names it. The same plugin also exposes its unprefixed Claude pages — `/feat:start`, `/bug:fix`, … — which name Claude's overlay instead, so type the `/flow:` names.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
 Technical design phase. **Still no production code is written.** Opens the option space first (M/L), then designs the approach that was chosen. Output: a plan the next step executes.
 

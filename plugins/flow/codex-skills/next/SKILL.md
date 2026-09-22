@@ -54,4 +54,4 @@ runs a phase on its own and never advances `meta.json`.
 ## 3. Hand over
 
 Invoke the confirmed command with the arguments the user chose. Nothing to write, no
-artifact, no `panel.json`: the command it hands to owns the rest.
+artifact, no panel: the command it hands to owns the rest.

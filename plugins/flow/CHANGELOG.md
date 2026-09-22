@@ -5,6 +5,33 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.71.0 — The panel was a file because nothing better was listening  ·  2026-09-22
+
+**In short**
+- **The live panel is published to the terminal now, not written to disk**, wherever the terminal exposes `panel_set` / `panel_patch` / `panel_get`: the first publication claims the pane for the session, and every change after it is a patch carrying the one line that moved.
+- **Nothing changes for anyone else.** The document is identical, so a harness without those tools keeps writing `.claude/work/<work>/panel.json`, overwritten whole with an honest `updated_at`, exactly as before.
+- **`attention` says what the pane wants from you** — `wait`, `block`, `done`, or absent while simply working. The app never deduces it from a line, a tab's card shows the strongest claim among its panes, and an uncleared `wait` flags that tab for ever.
+- **A `key` on every line that may change later** makes a patch addressable, and `panel_get` before publishing is now the rule after a compaction, a restart or a resumed work.
+- **A stop can carry buttons.** `actions` paints up to eight, each sending literal text to this session's own prompt — so "Approve the design" answers without the user typing.
+- **`/flow:doctor` says which transport this session gets**, in one line, and neither is a fault.
+
+The panel was designed against a reader that polled a file, and every rule it carries came from that:
+overwrite whole because a partial write is a lie, never patch because two writers cannot agree, a
+timestamp in the document because the file cannot say when it arrived. None of that was the panel —
+it was the file. The terminal that draws the panel now serves it over MCP, and while a pane is
+claimed it does not read the file at all.
+
+What the MCP buys is the line. A phase that moves `Now` from "unit suite" to "shipping #2" no longer
+republishes the train, the title and the blockers to say it; it sends one op. The shape is published
+once, with `panel_set`, and republished only when the shape itself changes — a new MR/PR train, a
+different body. Either the whole op list applies or none of it does, so a patch is safe to send
+without reading first, and a patch whose answer never arrived is safe to send again.
+
+`attention` exists because the app must not guess. A `mark: "wait"` inside `lines` is body text: it
+says a line is waiting, not that the pane is waiting on the person reading it. The claim is made at
+the top level, deliberately, and clearing it is the writer's job — a tab that flags itself for ever
+is worse than one that never flags at all.
+
 ## v0.70.0 — The plan each MR/PR was built from belonged to the feature  ·  2026-09-21
 
 **In short**

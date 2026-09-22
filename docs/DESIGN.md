@@ -13,7 +13,7 @@ reasoning.
 Organisation is by **theme**, not by command. Each rule is one bold line, then the reasoning, then
 *Now:* — where it lives. "flow-core §N" is the shared skill `plugins/flow/skills/flow-core/SKILL.md`,
 which now carries the preamble once copied by hand into every phase command; "work/README" is
-`plugins/flow/commands/work/README.md` (principles and the `meta.json`/`panel.json` schemas); a bare
+`plugins/flow/commands/work/README.md` (principles, the `meta.json` schema and the panel document); a bare
 `feat:ship §6.3` is that command's numbered section; "CONFIGURATION" is `docs/CONFIGURATION.md`.
 
 ---
@@ -135,9 +135,9 @@ sibling's work done" and "does it know the payload" differ, and `scope` is prose
 literal (v0.24.0). Flow notes and reminds; it never scans the other repo.
 *Now:* feat:start §3.5; feat:design §7.5; feat:ship §6.3.
 
-**`panel.json` is the view; `meta.json` the state machine.** A work that never wrote a panel still
+**The panel is the view; `meta.json` the state machine.** A work that never published a panel still
 resolves from `meta.json`. See §5.
-*Now:* work/README "`panel.json` schema".
+*Now:* work/README "The panel document".
 
 ---
 
@@ -274,7 +274,16 @@ shipped" above it is unreadable (v0.26.0). `plan` prints the waves before its ta
 **The stop is also written to disk.** v0.29.0: three panes, and the question about each is always
 which MR/PR, how many left, waiting on me, what link — all in `meta.json`, none readable without asking
 the agent for a link it opened forty minutes ago. "The chat is a stream; the question is a state."
-*Now:* flow-core §4; work/README "`panel.json` schema".
+*Now:* flow-core §4; work/README "The panel document".
+
+**The file was the transport, never the contract.** v0.70.0: the terminal that draws the panel
+serves it over MCP, so a pane it has claimed stops reading the file — and a whole-document write per
+line changed was the file's constraint, not the panel's. With `panel_set` / `panel_patch` the shape is
+published once and each later change is the one line that moved; the document is the same either way,
+so a harness without the tools keeps the file and loses nothing. `attention` exists because the app
+must not deduce a claim on the user from body text: a `mark: "wait"` inside `lines` is prose, and a tab
+that flags itself for ever is worse than one that never flags.
+*Now:* flow-core §4; work/README "The panel document".
 
 **Written before a long stretch, overwritten whole, honest `updated_at`.** A file written only on
 success keeps showing as finished a step that died halfway — "the failure mode a panel makes *worse*

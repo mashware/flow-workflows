@@ -20,7 +20,7 @@ description: "Resume the work associated with the current branch and suggest the
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 Use when returning to a work after a break (next morning, another session).
 
@@ -94,7 +94,7 @@ With what is new (there is already work on disk):
 
 ## 5. Rebuild the live panel
 
-After a break `.claude/work/<work>/panel.json` is most likely stale. Overwrite it **whole** from the state just rebuilt (`meta.json`, git, the ticket) — rules in flow-core §4:
+After a break the panel is most likely stale, and a resumed session is exactly where flow-core §4 asks for `panel_get` **before** publishing: read what is on screen, then publish the whole document from the state just rebuilt (`meta.json`, git, the ticket) — `panel_set` where the terminal offers the panel tools, `.claude/work/<work>/panel.json` overwritten whole where it does not:
 
 ```json
 {
@@ -122,4 +122,4 @@ After a break `.claude/work/<work>/panel.json` is most likely stale. Overwrite i
 - `Decision` marked `wait` is always set after a resume — nothing is running, the next move is the user's.
 - `block` lines for the blockers §4 surfaced (`contract_handoff` `pending` in a sibling repo, a red pipeline, an unmerged dependency).
 - Train: one entry per `meta.json.mrs[]`, not-started collapsed into one `#a–#z` line; omit without `mrs`.
-- `updated_at` from `date -Iseconds`; every fact from `meta.json` and the artifacts; language of the work's artifacts.
+- `updated_at` from `date -Iseconds` when the panel goes to the file; every fact from `meta.json` and the artifacts; language of the work's artifacts.
