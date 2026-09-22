@@ -150,6 +150,8 @@ Execution mode:
 
 Use `TaskCreate` to track the steps of the **§2.0ter plan for this MR/PR** — one task per numbered step, same order. Step skipped there (small MR/PR) → seed from `03-design.md` §"Implementation plan (order)", taking only the steps this MR/PR covers per `04-mr-plan.md`; the feature's plan predates the split and carries steps that belong to siblings. Mark each step `in_progress` when starting and `completed` when done — do not batch.
 
+**Find the task-list tool before you conclude there is none.** `TaskCreate` is the Claude Code name; a harness may call it otherwise (`TodoWrite` on older builds), list it **deferred** — by name only, uncallable until its schema is loaded — or not offer it at all: Claude Code withholds it from newer models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=true` is set. A deferred tool is a tool that is there: load it and seed the list. Only when the search comes back empty, the plan in `05-implementation.md` **is** the list — tick each step there (`- [x]`) as it lands, same cadence, and say it once in the first step report (`no task-list tool here — steps tracked in 05-implementation.md`), so the user does not wait for a list that will never draw. An instruction to use a tool that is not there is otherwise skipped in silence, and the plan is written and never followed.
+
 ### 2.1bis The premise this change rests on (any size, XS included)
 
 `/flow-feat-design §6` challenges the beliefs a plan rests on — and XS never runs `design`. On a
@@ -197,9 +199,9 @@ The step's changes are **always reported before anything is recorded**. Who deci
 - **`guided`** — ask **once**, at the first step; apply the answer to the rest of this build and record it in `05-implementation.md`. Do not re-ask per step.
 - **`auto`** — commit the step's WIP yourself and continue. **Invoking a flow command with `autonomy.mode: auto` is the explicit authorization** the system rule (*never commit unless the user asks*) requires. It authorizes **only** WIP commits on the work branch: push and MR/PR creation remain hard gates in every mode.
 
-**After completing each `TaskCreate` step**:
+**After completing each plan step**:
 
-1. **Mark the step `completed`** in `TaskCreate`.
+1. **Mark the step `completed`** in the task list — or tick it in `05-implementation.md` where there is none (§2.1).
 2. **Report to the user** a step summary (≤ 5 lines):
    ```
    Step N done: <description>

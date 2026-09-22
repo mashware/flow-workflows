@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.76.0 — The plan was written for a list the terminal was never given  ·  2026-09-22
+
+**In short**
+- **`build` and `fix` look for the task-list tool before they use it**, including the deferred list,
+  and when there is none they tick the plan's steps in the phase artifact and say so once.
+- **`/flow:doctor` reports whether a task-list tool is there**, and on Claude Code names the setting
+  that brings it back.
+
+Since v0.70.0 `build` writes a plan per MR/PR and seeds the terminal's step list from it. On 22
+September the plan was written (`## Plan MR/PR #3`) and no list ever appeared: Claude Code withholds
+its task tools from newer models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=true` is set, and when the
+setting is on it lists them deferred. Either way the instruction named a tool that was not callable,
+and it was skipped without a word — across three sessions, not one task call.
+
 ## v0.75.0 — The words the panel understands now travel with every command  ·  2026-09-22
 
 **In short**

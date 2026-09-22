@@ -93,7 +93,7 @@ Save it in `04-fix.md` under `## Plan`, right after the brief. **A fix that was 
 
 - Apply the minimal fix targeting the finding of `03-investigation.md` (or the diagnosis if investigate was skipped).
 - Sensitive area (authentication, payments, sensitive data) → consult the `agents.architecture` agent from FLOW.md to confirm the correct layer; empty → check against `conventions` in FLOW.md.
-- More than 2 fix steps → the §2.0bis plan is already written: track its numbered steps with `TaskCreate` where the harness offers one, otherwise tick them off in `04-fix.md` where they stand. One task per step, same order, marked `in_progress` and `completed` as they go — not batched.
+- More than 2 fix steps → the §2.0bis plan is already written: track its numbered steps with `TaskCreate` where the harness offers one — looked for as `/flow-feat-build §2.1` says, since it may be deferred or named otherwise — otherwise tick them off in `04-fix.md` where they stand and say so once in the first step report. One task per step, same order, marked `in_progress` and `completed` as they go — not batched.
 - **Comment discipline**: comment only a *why* the code cannot say (a non-obvious constraint, the reason for a workaround, a subtle invariant); match the surrounding file's comment density. **Never write the ticket ID or "fix for #N" into a code comment** — that lives in the commit/branch/MR-PR.
 - Keep the log updated while editing.
 
