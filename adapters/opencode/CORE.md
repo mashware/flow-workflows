@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.76.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.77.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -295,6 +295,9 @@ prose describing a file is otherwise obeyed to the letter.
     "",
     {"ref": "#1", "text": "batch read sources", "mark": "wait", "link": "https://gitlab.com/…/merge_requests/9977"},
     {"ref": "#2", "text": "per-event and per-recipient counters", "mark": "current"},
+    {"ref": "1–2", "text": "counter columns + migration · repository query", "mark": "done", "indent": 4},
+    {"ref": "3", "text": "per-recipient aggregation in the use case", "mark": "current", "indent": 4},
+    {"ref": "4", "text": "expose both counters on the endpoint", "mark": "pending", "indent": 4},
     {"ref": "#3–#6", "text": "channel map · use case · document detail · route", "mark": "pending"},
     "",
     {"ref": "Now", "text": "unit suite and the test agent over #2", "mark": "info"},
@@ -306,10 +309,10 @@ prose describing a file is otherwise obeyed to the letter.
 }
 ```
 
-- **`mark` says what a line is**; the reader draws it. `done` · `current` (at most one) · `pending` · `wait` (waiting on someone else: an open MR/PR, a user decision) · `block` · `info`. Marked lines form an aligned column: symbol, `ref`, text, link pinned right. Do not set `style` on a marked line — except `mark: "info"` + `style: ok|warn|error` when the colour *is* the information (a monitoring verdict).
+- **`mark` says what a line is**; the reader draws it. `done` · `current` (at most one per block) · `pending` · `wait` (waiting on someone else: an open MR/PR, a user decision) · `block` · `info`. Marked lines form an aligned column: symbol, `ref`, text, link pinned right. Do not set `style` on a marked line — except `mark: "info"` + `style: ok|warn|error` when the colour *is* the information (a monitoring verdict).
 - **`ref` need not be a number**: `#1`, `#3–#6`, `Now`, `Next`, `Decision`. Column width is per block; blocks are separated by blank lines — use them so the MR/PR train and the labels below do not drag each other wide.
 - **`link` is a field, never a URL inside `text`** — and **every line that names an MR/PR carries it**: the train entries, a blocker about somebody else's MR/PR, a `Now` or `Next` about the open one. The URL is in `meta.json.mrs[].url` or in whatever recorded that blocker; a bare `!10327` typed into `text` is a number the reader cannot make clickable, which is the whole point of the field. No URL recorded anywhere → the number in `text` and nothing else, and go and record it.
-- **Order:** (1) work title (`style: title`, no mark); (2) the MR/PR train, one entry per `meta.json.mrs[]` with `ref` `#n`, short title, real-state `mark`, `link` when there is a URL — not-started entries collapse into one `#a–#z` `pending` line; omit the block without `mrs`; (3) `Now` — what is running, the one fact `meta.json` cannot hold; (4) `Next`; (5) `Decision`, `mark: wait`, **only** when parked on the user — over the tools it travels with `attention: "wait"` (§4.2), and both are cleared together; (6) blockers, `mark: block` (a sibling repo with `contract_handoff: pending`, a red pipeline, an unmerged dependency).
+- **Order:** (1) work title (`style: title`, no mark); (2) the MR/PR train, one entry per `meta.json.mrs[]` with `ref` `#n`, short title, real-state `mark`, `link` when there is a URL — not-started entries collapse into one `#a–#z` `pending` line; omit the block without `mrs`; (2b) **the plan steps of the MR/PR being built**, right under its train entry — only while `build` or `fix` is working through a written plan (`/flow-feat-build §2.0ter`, `/flow-bug-fix §2.0bis`); one line per step, `ref` its number (`1`, `2`…), `indent: 4`, `key` `step-<n>`, `mark` `done` · `current` · `pending` from the plan's ticks in the phase artifact — never ahead of them; past three finished steps they collapse into one `done` line (`1–4`, `key` `steps-done`), and past three pending ones the tail collapses the same way (`key` `steps-pending`), so the block stays at five lines or fewer; drop the block when the MR/PR's build ends. This is the step list the user watches: a harness's own task list, where there is one, is a bonus on top — the panel is what every harness can feed; (3) `Now` — what is running, the one fact `meta.json` cannot hold; (4) `Next`; (5) `Decision`, `mark: wait`, **only** when parked on the user — over the tools it travels with `attention: "wait"` (§4.2), and both are cleared together; (6) blockers, `mark: block` (a sibling repo with `contract_handoff: pending`, a red pipeline, an unmerged dependency).
 - **Rules:** `phase` is the phase you are **running now** (not `meta.json.phase`, which advances only at Close). `header: true` means ticket, type, phase and age are drawn by the reader — do not repeat them in `lines`. Keep it under ~14 lines. Every fact from `meta.json` and the artifacts — an invented MR/PR state is worse than a blank panel. Write in the language of the work's artifacts.
 
 ### 4.2 Over the terminal's MCP — `panel_set` once, `panel_patch` from then on
@@ -383,6 +386,10 @@ thing you do with the answer. A panel still asking what the user already answere
 that never asked, because they answered it and the screen says it did not land; and an `attention`
 nobody clears keeps that tab claiming them for ever. The same applies to a blocker that lifted and
 to a `wait` line whose MR/PR merged.
+
+**(f) Each plan step that lands** (the (2b) block): one patch, the moment its tick goes into the
+phase artifact — that step to `done`, the next to `current`, `Now` moved on. Not batched at the end
+of the MR/PR: a list that jumps from nothing to finished told the user nothing while it mattered.
 
 ### 4.5 `meta.json.cost[]` — what a phase measured, when it could
 

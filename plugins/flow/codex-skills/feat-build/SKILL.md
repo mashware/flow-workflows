@@ -152,7 +152,9 @@ Execution mode:
 
 Use `TaskCreate` to track the steps of the **§2.0ter plan for this MR/PR** — one task per numbered step, same order. Step skipped there (small MR/PR) → seed from `03-design.md` §"Implementation plan (order)", taking only the steps this MR/PR covers per `04-mr-plan.md`; the feature's plan predates the split and carries steps that belong to siblings. Mark each step `in_progress` when starting and `completed` when done — do not batch.
 
-**Find the task-list tool before you conclude there is none.** `TaskCreate` is the Claude Code name; a harness may call it otherwise (`TodoWrite` on older builds), list it **deferred** — by name only, uncallable until its schema is loaded — or not offer it at all: Claude Code withholds it from newer models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=true` is set. A deferred tool is a tool that is there: load it and seed the list. Only when the search comes back empty, the plan in `05-implementation.md` **is** the list — tick each step there (`- [x]`) as it lands, same cadence, and say it once in the first step report (`no task-list tool here — steps tracked in 05-implementation.md`), so the user does not wait for a list that will never draw. An instruction to use a tool that is not there is otherwise skipped in silence, and the plan is written and never followed.
+**The steps go to the live panel** (flow-core §4.1 (2b), §4.4 (f)) — that is the list the user watches, whatever the harness. Publish the block when the first step starts, patch it as each one lands.
+
+**A harness task list is optional on top.** `TaskCreate` is the Claude Code name; a harness may call it otherwise (`TodoWrite` on older builds), list it **deferred** — by name only, uncallable until its schema is loaded — or not offer it at all (Claude Code withholds it from newer models unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=true`). There → seed it too; not there → nothing is missing and nothing is said. Either way the plan in `05-implementation.md` is the record: tick each step there (`- [x]`) as it lands — the panel and any task list follow the ticks, never the other way round.
 
 ### 2.1bis The premise this change rests on (any size, XS included)
 
@@ -203,7 +205,7 @@ The step's changes are **always reported before anything is recorded**. Who deci
 
 **After completing each plan step**:
 
-1. **Mark the step `completed`** in the task list — or tick it in `05-implementation.md` where there is none (§2.1).
+1. **Tick the step** in `05-implementation.md`, patch the panel's step block (flow-core §4.4 (f)), and mark it `completed` in the harness task list if there is one (§2.1).
 2. **Report to the user** a step summary (≤ 5 lines):
    ```
    Step N done: <description>

@@ -237,7 +237,7 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
   a non-negative integer (`0` = no ceiling; else the default `12` applies). Report both effective
   numbers with the count of panel members `quality.review_skill`/`quality.reviewers` defines, so
   the widest command's cost is visible before it is paid, not after.
-- **A task-list tool** (`TaskCreate` on Claude Code, possibly deferred) is exposed. Absent → `build` and `fix` track their plan steps as a checklist in the phase artifact instead, and the terminal draws no step list — `warn`, not `fail`. On Claude Code the usual cause is a model the harness withholds it from by default: name the fix, `"CLAUDE_CODE_ENABLE_TODO_TOOLS": "true"` under `env` in `~/.claude/settings.json`.
+- **A task-list tool** (`TaskCreate` on Claude Code, possibly deferred) — informational only. The plan steps are shown in the live panel and recorded in the phase artifact; a harness task list is an extra. Absent on Claude Code → one line saying it is withheld from newer models unless `"CLAUDE_CODE_ENABLE_TODO_TOOLS": "true"` is set under `env`, for whoever wants it without a panel.
 - **The `flow-workflows` CLI, which `review` reaches for before it composes a panel**:
   `npx flow-workflows@<version> --version` answers, with `<version>` read from `version` in
   `../../.claude-plugin/plugin.json` — the same pin `review` uses, so the number that

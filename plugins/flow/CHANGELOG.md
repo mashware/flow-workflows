@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.77.0 — The steps of the MR/PR you are on are on the panel  ·  2026-09-22
+
+**In short**
+- **The live panel shows the plan steps of the MR/PR being built**, indented under its entry in the
+  train: finished, current and pending, updated as each one lands — on every harness that feeds the
+  panel, not only on the one that has a task list.
+- **A harness task list becomes an extra.** `build` and `fix` still seed it where it exists, but
+  nothing depends on it, and `/flow:doctor` reports it as information rather than a warning.
+
+v0.76.0 made the step list findable on Claude Code, where it only exists behind
+`CLAUDE_CODE_ENABLE_TODO_TOOLS` and costs context in every session. The panel already had the words
+for it (`done` · `current` · `pending`) and is fed the same way from Codex, OpenCode or zcode. The
+ticks in the phase artifact stay the record; the panel and any task list follow them. Steps past three
+on either side collapse into one line, so the block never takes more than five.
+
 ## v0.76.0 — The plan was written for a list the terminal was never given  ·  2026-09-22
 
 **In short**
