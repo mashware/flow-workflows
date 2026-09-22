@@ -157,7 +157,7 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 
 ## The panel document
 
-`meta.json` is the *state machine*; the panel is the *view* a reader outside the chat watches. Optional: a work that never publishes it still resolves from `meta.json` alone. Writer rules (order, when, ceiling) and the two transports — the terminal's `panel_set` / `panel_patch` / `panel_get` tools, or `.claude/work/<work>/panel.json` — are flow-core §4. The document below is the same either way.
+`meta.json` is the *state machine*; the panel is the *view* a reader outside the chat watches. Optional: a work that never publishes it still resolves from `meta.json` alone. Writer rules (order, when, ceiling) and the two transports — the terminal's `panel_set` / `panel_patch` / `panel_get` tools (namespaced by the harness, and possibly deferred: flow-core §4 says how to find them), or `.claude/work/<work>/panel.json` — are flow-core §4. The document below is the same either way.
 
 ```json
 {

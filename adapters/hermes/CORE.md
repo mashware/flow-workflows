@@ -17,7 +17,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.71.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.72.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -269,8 +269,17 @@ right now. **Any progress line you were about to type into the chat is a panel u
 **Two transports, one document.** When the tools `panel_set` / `panel_patch` / `panel_get` are
 available, this console is a pane of agent-terminal: publish the panel through them (§4.2) and
 **stop writing `.claude/work/<work>/panel.json`** — while a pane is claimed, its file is not read at
-all. When the tools are not there, write the file exactly as before (§4.3). No work folder
-(lightweight `respond`/`green`) → nothing to publish, either way.
+all. When they are not there, write the file exactly as before (§4.3). No work folder (lightweight
+`respond`/`green`) → nothing to publish, either way.
+
+**Look for them before you conclude they are missing**, once per session, in pre-flight. A harness
+namespaces an MCP server's tools, so what you are looking for is a tool whose name *ends* in
+`panel_set` — `mcp__panel__panel_set` on Claude Code, another prefix elsewhere — and the name is
+whatever it is called there, not `panel_set`. It may also be **deferred**: listed by name with no
+schema, uncallable until you load it, and indistinguishable from absent unless you read that list.
+A deferred tool is a tool that is there; load the three schemas and publish. The file is the answer
+only after that search comes back empty — and this is the one paragraph that decides it, because
+prose describing a file is otherwise obeyed to the letter.
 
 ### 4.1 The document — the same whichever transport carries it
 

@@ -192,7 +192,7 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
   `.agents/agents`, or a plugin. Report each missing name and that it falls back to `general-purpose`
   (a skill: skipped) — a panel missing agents reviews less and still reports a clean pass.
 - Harness cannot set a model per subagent → note that every `models.*` value degrades to inheritance.
-- **Where the live panel will go this session** (flow-core §4): `panel_set` / `panel_patch` exposed → the terminal draws the panel and no `panel.json` is written; absent → the panel is that file, as before. Neither is a fault — one line saying which one this session gets.
+- **Where the live panel will go this session** (flow-core §4): a tool whose name ends in `panel_set` / `panel_patch` — namespaced by the harness (`mcp__panel__panel_set` on Claude Code) and possibly **deferred**, which reads as absent until the list of deferred tools is checked → the terminal draws the panel and no `panel.json` is written; genuinely absent → the panel is that file, as before. Neither is a fault — one line naming the tools as they are actually called here, or saying the file is the transport.
 
 ### 2.3 Knowledge sources
 

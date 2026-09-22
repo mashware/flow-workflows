@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.72.0 — The tools were there, under a name nobody looked for  ·  2026-09-22
+
+**In short**
+- **A session with the panel tools connected kept writing the file.** The rule named them `panel_set` / `panel_patch`, and a harness namespaces an MCP server's tools — so the agent looked for a name that exists nowhere and concluded, reasonably, that there was no panel.
+- **Now the search is the rule**: once per session, in pre-flight, look for a tool whose name *ends* in `panel_set` — `mcp__panel__panel_set` on Claude Code, another prefix elsewhere.
+- **A deferred tool is a tool that is there.** Listed by name with no schema, it reads as absent to anything that does not check that list; flow loads the three schemas and publishes.
+- **The file is the answer only after that search comes back empty**, and `/flow:doctor` names the tools as they are actually called here.
+
+v0.71.0 gave the panel a second transport and described it with the names the server declares.
+Neither the plugin nor the agent reading it ever sees those: a harness prefixes them, and it may
+hand them over as names alone, uncallable until their schemas are loaded. Both together are
+indistinguishable from an absent server — and the fallback, "write the file exactly as before", is
+the most obeyed sentence in the section. So the transport chosen itself was the file, every time,
+on the one terminal that had the panel.
+
 ## v0.71.0 — The panel was a file because nothing better was listening  ·  2026-09-22
 
 **In short**
