@@ -55,7 +55,9 @@ Rules for writing it:
 
 **Ask the user with `AskUserQuestion`** whether the brief reflects what they expect — **hard gate, in every autonomy mode, `auto` included**: it is the last point where scope can be corrected before there is a diff to argue with.
 
-In `auto` this is one of the only two stops per MR/PR (`guided` adds the plan of §2.0ter on a big one), so it carries the **full stop header** (flow-core §3) — ticket, size, phase, `MR #<n> of <N>`, plan state — followed by the brief. Options:
+In `auto` this is one of the only two stops per MR/PR (`guided` adds the plan of §2.0ter on a big one), so it carries the **full stop header** (flow-core §3) — ticket, size, phase, `MR #<n> of <N>`, plan state — followed by the brief.
+
+**The brief travels inside the question** (flow-core §3): the user reads it in the prompt they are answering, never by opening `05-implementation.md`. Write the file, run whatever you need, and *then* open the gate — **nothing runs between the brief and the question**, because a tool call after it is what lets a terminal fold the brief into one collapsed line, and the gate is answered blind. Options:
 - **Yes, proceed** → start building.
 - **No, something is extra or missing** → the user clarifies, adjust the brief, ask again. **Do not touch code** until the brief is confirmed.
 

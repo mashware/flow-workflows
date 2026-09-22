@@ -24,7 +24,7 @@ Every `$flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.73.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.74.0`.** Compare it once, at the start of the session, against
 `version` in `../../.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -268,6 +268,7 @@ I need: <one line — the decision or action you are waiting on>
 - **Out of the chat, into the artifact:** your own process, your mistakes, corrections to subagent reports, bookkeeping. Subagent completion or idle notifications never earn a turn of their own.
 - **Zero-context rule.** First mention of an identifier carries 4–6 words of what it is. Never cite a section number without naming what it is. No jargon the user has not used first.
 - **If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose. If it does not deserve the menu, it is a decision you take and record.
+- **What the question is about travels with the question.** A brief, an MR/PR body, a plan, a finding: put it where the user answers it — in the question text and its options — and not only in the prose above. **Nothing runs between the two**: a tool call after that prose is what makes a terminal fold it away, and the last thing a chat UI collapses is exactly the thing they were asked to read. A gate answered without seeing what it was about is not a gate; "it is in `05-implementation.md`" is not showing it, because the answer then costs opening an editor and finding the file. Too long for the harness's question → print it as the **last** thing before asking, tool calls already done.
 
 ## 4. Live panel — over the terminal's MCP, or `panel.json`
 
