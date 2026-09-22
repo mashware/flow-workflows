@@ -138,6 +138,14 @@ hook from-a-worktree "$WT" "$GD"
 check "a worktree commit checks the worktree"     "$BASE/from-a-worktree.txt" miss 'no tracked files'
 check "and finds it in order, sub-scripts included" "$BASE/from-a-worktree.txt" hit  "preflight ok — "
 
+# The same tree as this repo passes wherever it is read from, so the run above cannot tell the
+# worktree from the main checkout. Break the worktree alone: only a hook that reads it fails.
+: > "$WT/package.json"
+hook worktree-broken "$WT" "$GD"
+check "what it reads is the worktree, not the main checkout" "$BASE/worktree-broken.txt" hit 'package.json: tracked file is empty'
+check "and the commit is refused"                 "$BASE/worktree-broken.txt" hit 'exit=1'
+git -C "$WT" checkout -q -- package.json
+
 # The same hook, where the worktree's check.py differs from the one git reached: the tree's own
 # copy is the one that runs, so a branch that changes the checks is judged by them.
 printf 'import os\nprint("ran the tree copy in", os.getcwd())\n' > "$WT/script/check.py"
