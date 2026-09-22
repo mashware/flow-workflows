@@ -18,6 +18,8 @@ description: Resume the work associated with the current branch and suggest the 
 
 Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 Use when returning to a work after a break (next morning, another session).
 
 ## 1. Detection

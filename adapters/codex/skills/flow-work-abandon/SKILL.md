@@ -20,6 +20,8 @@ description: "Close a work without shipping (discarded feature, non-issue, etc.)
 
 Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 Clean closure for works that will not reach the base branch: a feature discarded after `design`, a bug that is not one (expected behavior, external problem, user misconfiguration), a work absorbed by another ticket.
 
 ## 1. Pre-flight

@@ -10,6 +10,8 @@ Apply the fix. **Minimum viable**: no refactor of adjacent areas. Note other pro
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (root cause, constraints for the fix) (minimal reproduction, root cause, constraints for the fix). (flow-core §5)
 - `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix.
 - `size` ≥ S: require `investigate` in `phases_done` (on S it will have run its reproduction half only).

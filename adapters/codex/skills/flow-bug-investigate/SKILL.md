@@ -24,6 +24,8 @@ Investigation phase: reproduce the failure, then find **why it happened** — no
 
 Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
 - `type` is not `bug` → refuse. `size` is `XS` → suggest `$flow-bug-fix` and stop.
 - Require `context` in `phases_done`. A work whose `phase` is the retired `diagnose` (written before

@@ -849,6 +849,27 @@ loses its column and renders as prose; v0.35.0 found seven commands still teachi
 `Waiting on you:` / `under Left`, and the checks keep a third generation from appearing.
 *Now:* `check_embedded_json`, `check_panel_vocabulary`, `check_panel_vocabulary_prose`.
 
+**The panel vocabulary is repeated on purpose, and pinned because it is.** The rule the entry below
+set — prose lives once, in the skill — has a boundary, and v0.75.0 found it: `flow-core` is read once
+per session and a context compaction drops it, after which the agent keeps publishing panels from
+memory. The reader discards a word it does not know without saying so, so the panel degrades into
+unmarked grey text with nobody told (observed 2026-09-22: correct panels for thirty minutes, a
+compaction, then four lines carrying the invented mark `doing`). The boundary is what kind of text it
+is: **prose that can be reworded lives once, because no comparison can tell a legitimate edit from
+drift; a closed enumeration has no rewording that is still correct, so it may be repeated — if and
+only if a check pins every copy to one constant.** One sentence now sits in all 24 command files, on
+the line after the one that loads the skill — not at the points that order a publication, because
+`build`, `review` and `validate` order none of their own and are exactly where the failure was seen.
+The words belong to `mashware/agent-terminal` (`docs/04-contrato-panel.md`,
+`crates/panel-contract/src/panel.rs`); the day they change: edit `MARKS`/`STYLES` (the sentence is
+built from them and moves on its own), `sed` the 24 files (they are byte-identical), **edit the two
+files that also enumerate the vocabulary in prose and that no check reads — `flow-core` §4.1 and
+`plugins/flow/commands/work/README.md`** — then run `script/adapter-build.py` and `script/check.py`.
+Green means every copy the check covers agrees: the 24 sentences and the generated mirrors. It says
+nothing about those two prose lists, and nothing about the other repo — a word removed upstream stays
+taught here until someone reads it.
+*Now:* `PANEL_REMINDER`, `check_panel_reminder` in `script/check.py`.
+
 **The shared preamble: from eighteen hand copies to one skill.** At HEAD it was copied "on purpose (a
 command prompt must be self-contained)" and `check_shared_preamble` named the odd copy out; the
 condensed commands load `flow-core` once per session, and the preflight checks the skill and the config

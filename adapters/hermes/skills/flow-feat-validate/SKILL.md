@@ -20,6 +20,8 @@ description: "Validate tests, edge cases, and integrity before shipping"
 
 Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; the wait it delegates takes `models.supervisors`.**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 Verify the feature is complete: test coverage, edge cases, performance, regressions.
 
 ## 1. Pre-flight

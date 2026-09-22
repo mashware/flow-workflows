@@ -5,6 +5,35 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.75.0 — The words the panel understands now travel with every command  ·  2026-09-22
+
+**In short**
+- **Every command carries the panel's vocabulary on its own opening lines**, so an agent whose shared
+  rules were dropped by a context compaction keeps publishing a panel that can still be read.
+- **The panel stops degrading in silence.** The reader discards a word it does not know without
+  saying so, which is why the failure was invisible from the inside.
+- **The release check pins every copy to one constant**: the sentence is built from the vocabulary
+  so the two cannot disagree, a locally edited copy fails, a new command without the line fails, and
+  a trigger that stops matching any file fails instead of going quietly green.
+
+`flow-core` is read once per session. A compaction drops it, and from that moment the agent publishes
+panels from memory — observed on 22 September: correct panels for thirty minutes, a compaction, then
+four lines carrying the invented mark `doing`, and a panel that had become a paragraph of grey text
+next to a pane whose panel was still laid out in full. Nobody was told, because an unknown word is
+dropped by design.
+
+The fix is one frozen sentence in all 24 command files, on the line after the one that loads the
+skill — **not** at the points that order a publication: `build`, `review` and `validate` order none of
+their own, and they are exactly the long phases where the failure was seen. `check_panel_reminder`
+keeps the copies honest: every copy must be byte-identical to the constant, every file that loads the
+skill must carry one — so the twenty-fifth command is caught the day it is added rather than by a
+count nobody updated — and the check fails if its own trigger ever matches no file at all, which is
+how a guard retires without telling anyone.
+
+`docs/DESIGN.md` records the boundary this draws against the rule that removed eighteen hand copies of
+a shared preamble: prose that can be reworded lives once; a closed enumeration may be repeated, if and
+only if a check pins every copy to one constant.
+
 ## v0.74.0 — The thing you were asked to approve was the thing the terminal hid  ·  2026-09-22
 
 **In short**

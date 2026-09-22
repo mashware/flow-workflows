@@ -30,6 +30,8 @@ Extract from `git`: `host`, `cli` (empty → the default for that host), `defaul
 
 Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; the wait it delegates takes `models.supervisors`.**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 **Autonomy.** Modes as in flow-core §2; `guided`/`auto` record their choices in `09-ci.md` (e.g. a pure formatter auto-fix). **Hard gates — ALWAYS stop and ask, in every mode, no exceptions:**
 1. **Any push** (§6).
 2. Creating/switching a branch, or DB schema changes/migrations, if a fix requires them.
