@@ -26,6 +26,8 @@ Mandatory code review of the fix.
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` and `04-fix.md` (reviewer context, §2.1) and `05-validation.md` (regression test). (flow-core §5)
 - **A premise left open by `fix` §2.2 is an input to this review, not a note.** Every row of "Premises the fix depends on" whose verdict is `unsettled` enters §5 as an **ambiguous finding** and is named in §7 whether or not that gate opened — in a bug it is usually the claim that the root cause was the whole cause, which is exactly what the regression test cannot prove.
 - Require `fix` in `phases_done`; for `size` ≥ S also require `validate`.

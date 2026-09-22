@@ -454,8 +454,39 @@ def check_embedded_json(files):
 # The reader's vocabulary. A mark it does not know is not an error there — the
 # line simply loses its symbol and its column and renders as plain text — which
 # makes a typo in an example something no parse check would ever surface.
-MARKS = {"done", "current", "pending", "wait", "block", "info"}
-STYLES = {"normal", "dim", "title", "accent", "ok", "warn", "error"}
+MARKS = ("done", "current", "pending", "wait", "block", "info")
+STYLES = ("normal", "dim", "title", "accent", "ok", "warn", "error")
+
+def listed(words):
+    return " · ".join(f"`{word}`" for word in words)
+
+
+# The same vocabulary, as the one sentence every command file carries — **built from the
+# lists above, never typed beside them**. An earlier draft wrote the sentence by hand and
+# added a check that parsed it back into sets to confirm the two agreed; building it means
+# they cannot disagree, which is the version of that guarantee with no check to maintain.
+#
+# The lists are not held here for tidiness: they belong to `mashware/agent-terminal`
+# (`docs/04-contrato-panel.md`, and literally `crates/panel-contract/src/panel.rs`
+# `mark()`/`style()`), and flow only copies them. Copying them into twenty-four command
+# files is the drift this repo paid a release to remove — unless one constant pins every
+# copy, which is what `check_panel_reminder` below does.
+#
+# Why the copies exist at all: a command reads `flow-core` once per session, and a context
+# compaction drops it. The agent keeps publishing panels from memory, the reader discards a
+# word it does not know without saying so, and the panel degrades into unmarked grey text
+# with nobody told. Observed on 2026-09-22: correct panels for thirty minutes, a compaction,
+# then four lines carrying the invented mark `doing`.
+PANEL_REMINDER = (
+    f"**Panel words are closed** — `mark`: {listed(MARKS)}; `style`: {listed(STYLES)}. "
+    "Anything else is dropped by the reader in silence: the panel still paints, and nobody is told."
+)
+
+# The line that decides which files owe the sentence. Every command that loads the shared
+# skill can publish a panel, so the file set is read off the tree instead of being listed
+# here: a twenty-fifth command is caught the day it is added.
+PREFLIGHT_LINE = "Load the `flow:flow-core` skill first"
+PANEL_SENTINEL = "**Panel words are closed**"
 
 
 def check_panel_vocabulary(f, data):
@@ -475,6 +506,49 @@ def check_panel_vocabulary(f, data):
 
 PLUGIN_COMMANDS = "plugins/flow/commands/"
 BUILD = "script/adapter-build.py"
+
+
+def check_panel_reminder(files):
+    """The vocabulary reminder: same words as the sets, same sentence everywhere, no file missing it.
+
+    Three clauses, and each one failed for real before it was written. (a) the sentence
+    and the sets can only move together, so updating one and not the other is a red
+    build rather than twenty-four files teaching last year's contract. (b) every copy is
+    byte-identical, so a locally improved one fails instead of drifting quietly — the
+    property that makes this duplication defensible at all. (c) every file that loads the
+    shared skill carries one, because the file that does not is exactly the one whose
+    agent has nothing to fall back on after a compaction.
+
+    Deliberately not a count and not a list of file names: a hardcoded number fires on the
+    compliant case (a new command *with* the sentence) and stays green on the one that
+    matters (a new command *without* it).
+    """
+    owed = 0
+    for f in files:
+        if not (f.startswith(PLUGIN_COMMANDS) and f.endswith(".md")):
+            continue
+        body = read(f)
+        copies = [ln.strip() for ln in body.splitlines() if ln.strip().startswith(PANEL_SENTINEL)]
+        for copy in copies:
+            if copy != PANEL_REMINDER:
+                fail(f, "its panel-vocabulary line differs from PANEL_REMINDER — "
+                        "the sentence is frozen, edit the constant and rebuild")
+        if PREFLIGHT_LINE not in body:
+            continue
+        owed += 1
+        if not copies:
+            fail(f, "loads flow-core but carries no panel-vocabulary line "
+                    "(the one thing an agent keeps after a compaction)")
+
+    # **A trigger that matches nothing is the failure this check was written about.**
+    # `PREFLIGHT_LINE` is ordinary prose and has been reworded twice; reword it again and
+    # the loop above matches no file, reports nothing, and the preflight goes green having
+    # checked nobody — the same silent retirement that left six markers in
+    # `CORE_ONLY_BLOCKS` guarding text that no longer exists.
+    if not owed:
+        fail("script/check.py",
+             f"no command file contains PREFLIGHT_LINE ({PREFLIGHT_LINE!r}) — "
+             "the trigger was reworded and this check is now guarding nothing")
 
 
 def check_adapters_generated():
@@ -502,6 +576,14 @@ def check_adapters_generated():
 # Blocks that live in the flow-core skill and nowhere else. A command that carries a
 # copy again is the drift this repo used to have 18 times over: the copy reads fine on
 # its own and silently disagrees with the skill.
+#
+# `PANEL_REMINDER` is deliberately not one of these, and the distinction is the rule
+# rather than an exception to it: prose that can be reworded lives once, in the skill,
+# because no comparison can tell a legitimate edit from drift. A closed enumeration has
+# no rewording that is still correct, so it may be repeated — and only because
+# `check_panel_reminder` pins every copy to one constant. Do not "fix" the inconsistency
+# by adding the sentinel here; that would delete the one thing an agent keeps after a
+# compaction.
 CORE_SKILL = "plugins/flow/skills/flow-core/SKILL.md"
 CORE_ONLY_BLOCKS = (
     "**Never a question in `guided`/`auto`",
@@ -769,6 +851,7 @@ def main():
     check_adapters_generated()
     check_adapter_smoke()
     check_core_skill(files)
+    check_panel_reminder(files)
     check_config_keys()
     check_panel_vocabulary_prose(files)
     check_no_stack_leak(files)

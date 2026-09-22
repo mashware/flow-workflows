@@ -22,6 +22,8 @@ description: "Split the work into small, independently mergeable MRs/PRs before 
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 Delivery planning phase. **No code is written.** Splits the feature into MRs/PRs that can each live on the main branch even if the subsequent ones never land.
 
 ## 1. Pre-flight

@@ -20,6 +20,8 @@ description: "Point the main checkout at a branch to test it (then return), re-s
 
 Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 Temporarily point the **main checkout** at another branch to test it against this checkout's live environment (running stack, DB, containers), then return — a generic `make wt-try`/`wt-back` pair. The git switch is built in; the project-specific re-sync (e.g. migrations) comes from `git.worktree_resync` in `FLOW.md`. Operates **in place**; never creates or touches worktrees.
 
 ## 1. Parse the argument

@@ -12,6 +12,8 @@ Goal: capture lessons that prevent recurrence — not to blame anyone.
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 - Read `meta.json` and `00-summary.md`; open in full every previous artifact (`01-context.md` … `06-review.md`) — §2 needs the whole history. (flow-core §5)
 - Require `review` in `phases_done`.
 - `size` `XS` → suggest skipping to `/flow:bug:ship`.

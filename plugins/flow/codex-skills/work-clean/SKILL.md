@@ -22,6 +22,8 @@ description: "Sweep what finished work left behind — merged worktrees, dead br
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 The forge (`git.cli`) is **best-effort**: CLI missing, unauthenticated, or over ~5s → fall back to the local evidence in §4 and say so in one line; never block.
 
 The periodic sweep of the three residues a finished work leaves — its **worktree**, its **local branch**, its **`.claude/work/` folder** — which `$flow:feat-ship` and `$flow:work-abandon` only offer to remove at their end (and a train's intermediate MR/PR never sets `phase = "done"`). Inventory all three, judge each by **the forge's verdict**, remove only what is provably finished, and only after showing the whole list. The only flow command whose purpose is deletion; §0 governs.

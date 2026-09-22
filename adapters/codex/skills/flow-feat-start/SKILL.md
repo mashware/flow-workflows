@@ -20,6 +20,8 @@ description: "Start a new feature (read the tracker, classify size, create branc
 
 Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
 `$ARGUMENTS` is **optional**:
 
 - **Given** — an identifier in `tracker.prefix` format from `FLOW.md` → *ticket mode* (§2 reads it).
