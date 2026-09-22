@@ -178,13 +178,13 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **`lines`** — one entry per line. Bare string = plain line; object takes `text`, `ref`, `mark`, `link`, `style`, `indent`. Empty string = blank line **and alignment block separator** (`ref` widths per block).
 - **`mark`** — `done` · `current` · `pending` · `wait` (waiting on someone else) · `block` · `info`; the reader draws it. `style` on a marked line overrides its colour — right only when the colour *is* the information.
 - **`ref`** — the column label: `#1`, `#3–#6`, `Now`, `Next`, `Decision`.
-- **`link`** — URL as a **field, never pasted into `text`**; the reader shortens it to the MR/PR number and makes it clickable.
+- **`link`** — URL as a **field, never pasted into `text`**; the reader shortens it to the MR/PR number and makes it clickable. Every line naming an MR/PR carries one — train entry, blocker about another MR/PR, `Now`/`Next` about the open one (flow-core §4.1).
 - **`stale_after_minutes`** — raises the 30-minute staleness threshold for a stretch known to run long.
 - **`style`** — `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`; semantic names, the reader owns the palette.
 - **`header`** — `true` (default): the reader draws ticket, type, phase and age, which never belong in `lines`. `false` hands every line to the writer.
 - **`phase`** — the phase running **right now** (`meta.json.phase` advances only at close); the reader prefers it.
 - **`updated_at`** — local ISO-8601 with offset from the real clock, never carried over; lets the reader flag a stale snapshot. Over the tools the app stamps each delivery itself.
-- **`attention`** *(tools only)* — `wait` · `block` · `done`, beside `phase`, absent while simply working: the pane's claim on the user's attention, which the app never deduces from a line's `mark`. A tab's card shows the strongest claim among its panes, so an uncleared `wait` flags that tab for ever.
+- **`attention`** *(tools only)* — `wait` · `block` · `done`, beside `phase`, absent while simply working: the pane's claim on the user's attention, which the app never deduces from a line's `mark`. A tab's card shows the strongest claim among its panes, so an uncleared `wait` flags that tab for ever — it goes, with the `Decision` line, the moment the question is answered (flow-core §4.4e).
 - **`key`** *(tools only)* — a unique, never-painted name on any line a later `panel_patch` may replace or delete (`title`, `mr-1`, `now`, `next`, `decision`, `block-1`).
 
 **No headings over the train.** A shipped MR/PR is *open, waiting to merge*; `mark` says it per entry — `wait` shipped, `current` being worked, `done` only merged.

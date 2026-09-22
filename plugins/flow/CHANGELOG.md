@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.73.0 — The panel kept asking what you had already answered  ·  2026-09-22
+
+**In short**
+- **An answered question now clears the panel at once.** The `Decision` line and the pane's claim on your attention go the moment the answer arrives — before the work resumes, not at the next stop.
+- **Same for a blocker that lifted** and for a `wait` line whose MR/PR merged: the panel said "waiting for you" long after nothing was.
+- **Every line that names an MR/PR carries its link** — the train, a blocker about somebody else's MR/PR, a `Now` about the open one — so the reader can paint `!10327` as something you can click. A number typed into the text is a number the reader cannot use.
+
+A panel that still asks what you answered five minutes ago is worse than one that never asked: you
+answered, and the screen says it did not land. The rule that produced it was honest — publish before
+a stop, before a long stretch, at every close — and an answer is none of those three: it arrives
+mid-turn, between two pieces of work, and the next publication was whenever the phase happened to
+end. So the claim on the user outlived the question by an entire phase, and a tab whose card shows
+the strongest claim among its panes kept flagging itself.
+
+The link rule is the same failure in the other direction. `!10327` written into a line's text reads
+correctly and does nothing; the field exists so the reader can shorten a URL and make it clickable,
+and flow knows the URL — it is in `meta.json`. Where nothing recorded one, the number stays plain
+text and the fix is to record it.
+
 ## v0.72.0 — The tools were there, under a name nobody looked for  ·  2026-09-22
 
 **In short**
