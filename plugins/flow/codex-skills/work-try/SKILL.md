@@ -20,7 +20,7 @@ description: "Point the main checkout at a branch to test it (then return), re-s
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 Temporarily point the **main checkout** at another branch to test it against this checkout's live environment (running stack, DB, containers), then return — a generic `make wt-try`/`wt-back` pair. The git switch is built in; the project-specific re-sync (e.g. migrations) comes from `git.worktree_resync` in `FLOW.md`. Operates **in place**; never creates or touches worktrees.
 

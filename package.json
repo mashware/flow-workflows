@@ -1,6 +1,6 @@
 {
   "name": "flow-workflows",
-  "version": "0.70.0",
+  "version": "0.71.0",
   "description": "Guided feat/bug workflows (start→ship), post-deploy monitoring and multi-agent code review, stack-agnostic. Each repo uses a shared FLOW.md plus optional harness overlay.",
   "type": "module",
   "bin": {

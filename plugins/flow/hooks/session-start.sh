@@ -166,7 +166,8 @@ if [ -n "$train" ]; then
 fi
 
 # What the last session was doing, in its own words: the panel's `Now` line first, the
-# handoff's first line otherwise.
+# handoff's first line otherwise. A session that published its panel over the terminal's MCP
+# leaves no file here, so the handoff carries this on its own — absence is not an error.
 panel="$dir/panel.json"
 now=$(grep '"ref"[[:space:]]*:[[:space:]]*"Now"' "$panel" 2>/dev/null |
 	sed -n 's/.*"text"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)

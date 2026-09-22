@@ -5,7 +5,7 @@ argument-hint: "[--dry-run]"
 
 # `/flow:work:clean $ARGUMENTS`
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 The forge (`git.cli`) is **best-effort**: CLI missing, unauthenticated, or over ~5s → fall back to the local evidence in §4 and say so in one line; never block.
 

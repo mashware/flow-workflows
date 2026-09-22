@@ -10,7 +10,7 @@ description: Close a work without shipping (discarded feature, non-issue, etc.)
 > - Every primitive named below exists here under the same name — `AskUserQuestion`, `Agent <role>` and its subagents, `ScheduleWakeup`, `TaskCreate`, `Skill flow:<name>`, `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` (`${ZCODE_PLUGIN_ROOT}` is an alias). Nothing in this page is a translation of anything.
 > - The overlay read here is `FLOW.zcode.md`, and every `flow-workflows` call below already names it. The same plugin also exposes its unprefixed Claude pages — `/feat:start`, `/bug:fix`, … — which name Claude's overlay instead, so type the `/flow:` names.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 Clean closure for works that will not reach the base branch: a feature discarded after `design`, a bug that is not one (expected behavior, external problem, user misconfiguration), a work absorbed by another ticket.
 
@@ -83,7 +83,7 @@ Ask the user what to do with the branch — do not decide alone:
 - Update `meta.json`: `phase = "abandoned"`; `phases_done` not touched (it reflects what was actually done); `notes` += abandonment reason; `updated_at` updated.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Tracker: move to won't-do** (never "done" — this work did not ship). Only if `tracker.tool` is not `none`/empty, `tracker.abandon_cmd` is set, and `meta.json.ticket` is a **real tracker id** (skip for local-only slugs). Run `tracker.abandon_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contract as `/flow:feat:start §6.5`: **best-effort, idempotent, gated** (ask once in `autonomy.mode: manual`; automatic in `guided`/`auto`); failure or already-in-state ticket → warn and continue, never block. `tracker.abandon_cmd` empty → do nothing (the user closes the ticket by hand if they want).
-- `panel.json` present (`/flow:work:README`) → overwrite with a terminal state before archiving: the title, one `block` line saying the work was abandoned and why, no `Decision` line.
+- Panel published for this work (flow-core §4) → publish a terminal state before archiving: the title, one `block` line saying the work was abandoned and why, no `Decision` line, and `attention` cleared where the panel tools carry it — nothing is waiting on anyone any more.
 - Move the folder to `.claude/work/_archive/` **keeping its directory name** (`_archive/<work-dir>/`, the folder located in §1 — e.g. `<TICKET>-<slug>`) so `/flow:work:status` no longer lists it.
 - Report to the user: ticket abandoned, reason, what was done with the branch.
 

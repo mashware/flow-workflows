@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.70.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.71.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -235,7 +235,7 @@ terminal by construction, the turn is over before you notice.
 - **The continuing call goes first.** When a step closes and the next one runs anyway
   (`guided`/`auto` chaining, §2), the turn opens with the call that starts it, not with prose about
   the one that ended. **A report is never the last thing in a turn you meant to continue.**
-- **Progress belongs to the panel, not to a turn.** Someone watching reads `panel.json` (§4):
+- **Progress belongs to the panel, not to a turn.** Someone watching reads the live panel (§4):
   `Now`, `Next`. Writing it costs no turn and no stop; saying it in chat costs both.
 - **Stopping? Then say so.** `I need:` names the decision or the action you are waiting on. It
   never announces that you are continuing — if you were, you would not be writing this header.
@@ -259,11 +259,19 @@ I need: <one line — the decision or action you are waiting on>
 - **Zero-context rule.** First mention of an identifier carries 4–6 words of what it is. Never cite a section number without naming what it is. No jargon the user has not used first.
 - **If it is a question, it is `AskUserQuestion`.** Never end a message with a question in prose. If it does not deserve the menu, it is a decision you take and record.
 
-## 4. Live panel — `panel.json`
+## 4. Live panel — over the terminal's MCP, or `panel.json`
 
-Whenever the state a panel would show changes, overwrite `.claude/work/<work>/panel.json`
-**whole** (never patch) from `meta.json` plus what you know right now. **Any progress line you were
-about to type into the chat is a panel write instead** (§3):
+Whenever the state a panel would show changes, publish the panel from `meta.json` plus what you know
+right now. **Any progress line you were about to type into the chat is a panel update instead**
+(§3).
+
+**Two transports, one document.** When the tools `panel_set` / `panel_patch` / `panel_get` are
+available, this console is a pane of agent-terminal: publish the panel through them (§4.2) and
+**stop writing `.claude/work/<work>/panel.json`** — while a pane is claimed, its file is not read at
+all. When the tools are not there, write the file exactly as before (§4.3). No work folder
+(lightweight `respond`/`green`) → nothing to publish, either way.
+
+### 4.1 The document — the same whichever transport carries it
 
 ```json
 {
@@ -289,11 +297,75 @@ about to type into the chat is a panel write instead** (§3):
 - **`mark` says what a line is**; the reader draws it. `done` · `current` (at most one) · `pending` · `wait` (waiting on someone else: an open MR/PR, a user decision) · `block` · `info`. Marked lines form an aligned column: symbol, `ref`, text, link pinned right. Do not set `style` on a marked line — except `mark: "info"` + `style: ok|warn|error` when the colour *is* the information (a monitoring verdict).
 - **`ref` need not be a number**: `#1`, `#3–#6`, `Now`, `Next`, `Decision`. Column width is per block; blocks are separated by blank lines — use them so the MR/PR train and the labels below do not drag each other wide.
 - **`link` is a field, never a URL inside `text`.**
-- **Order:** (1) work title (`style: title`, no mark); (2) the MR/PR train, one entry per `meta.json.mrs[]` with `ref` `#n`, short title, real-state `mark`, `link` when there is a URL — not-started entries collapse into one `#a–#z` `pending` line; omit the block without `mrs`; (3) `Now` — what is running, the one fact `meta.json` cannot hold; (4) `Next`; (5) `Decision`, `mark: wait`, **only** when parked on the user; (6) blockers, `mark: block` (a sibling repo with `contract_handoff: pending`, a red pipeline, an unmerged dependency).
-- **When:** (a) in pre-flight, as soon as `meta.json` is loaded; (b) immediately **before** every stop header; (c) **before** any long stretch (fan-out, full suite, CI poll) — never after, so a step that dies halfway is not shown as finished. When the stretch will outlast the ~30 min staleness warning, set `stale_after_minutes` to what it will really take; (d) wherever `## Close` updates `meta.json`.
-- **Rules:** `phase` is the phase you are **running now** (not `meta.json.phase`, which advances only at Close). `header: true` means ticket, type, phase and age are drawn by the reader — do not repeat them in `lines`. Keep it under ~14 lines. Every fact from `meta.json` and the artifacts — an invented MR/PR state is worse than a blank panel. `updated_at` from the real clock (`date -Iseconds`), never carried over. Write in the language of the work's artifacts. No work folder (lightweight `respond`/`green`) → nothing to write.
+- **Order:** (1) work title (`style: title`, no mark); (2) the MR/PR train, one entry per `meta.json.mrs[]` with `ref` `#n`, short title, real-state `mark`, `link` when there is a URL — not-started entries collapse into one `#a–#z` `pending` line; omit the block without `mrs`; (3) `Now` — what is running, the one fact `meta.json` cannot hold; (4) `Next`; (5) `Decision`, `mark: wait`, **only** when parked on the user — over the tools it travels with `attention: "wait"` (§4.2), and both are cleared together; (6) blockers, `mark: block` (a sibling repo with `contract_handoff: pending`, a red pipeline, an unmerged dependency).
+- **Rules:** `phase` is the phase you are **running now** (not `meta.json.phase`, which advances only at Close). `header: true` means ticket, type, phase and age are drawn by the reader — do not repeat them in `lines`. Keep it under ~14 lines. Every fact from `meta.json` and the artifacts — an invented MR/PR state is worse than a blank panel. Write in the language of the work's artifacts.
 
-### `meta.json.cost[]` — what a phase measured, when it could
+### 4.2 Over the terminal's MCP — `panel_set` once, `panel_patch` from then on
+
+**The first publication of the session — `panel_set`.** `source: "flow"`. It claims the pane for as
+long as this session lives, and a second producer is refused by name. The document is the one §4.1
+specifies, plus two additions:
+
+- **`attention`, at the top level**, beside `phase`: `wait` when parked on the user, `block` when
+  stuck on somebody else (red pipeline, sibling repo's contract), `done` when the cycle closed and
+  nobody has looked. Absent while simply working. The app never deduces it: a `mark: "wait"` inside
+  `lines` is body text and claims nothing. The tab's card shows the strongest claim among its panes,
+  so a `wait` you forget to clear flags that tab for ever — clear it with
+  `{"op": "set", "field": "attention", "value": null}`.
+- **A `key` on every line you may want to change later** — `title`, `mr-1`, `now`, `next`,
+  `decision`, `block-1`. It is never painted, and it must be unique: a key that names two lines
+  refuses every patch addressing it.
+
+**Everything after that is `panel_patch`:**
+
+```json
+{"ops": [
+  {"op": "replace", "key": "now",
+   "line": {"key": "now", "ref": "Now", "text": "unit suite over #2", "mark": "info"}},
+  {"op": "set", "field": "phase", "value": "validate"},
+  {"op": "set", "field": "attention", "value": "wait"}]}
+```
+
+- Ops: `replace`, `before`, `after`, `delete` (by `key`), `first`, `last`, and `set` for `phase`,
+  `attention`, `header` or `stale_after_minutes`. They see each other, in the order written.
+- **Either the whole list applies or none of it does**, so a patch is safe to send without reading
+  first: the worst case is that nothing happened and you were told why.
+- **A patch whose answer never arrived may have been applied — send it again.** The resend is
+  refused rather than doubling the line.
+- At most 64 ops per call. `actions` are not patchable: change buttons with a whole `panel_set`.
+- Republish with `panel_set` only when the *shape* changes (a new MR/PR train, a different body).
+
+**Refusals are information, not noise.** `no line of this panel carries the key "…"` → your keys and
+the panel disagree: `panel_get` and republish. `publish with panel_set before patching` → this pane
+is still on its file. `this panel is held by "…"` → another producer owns it; do not fight it, say
+so at the next stop.
+
+**After a compaction, a restart or a resumed work**, call `panel_get` **before publishing**. It
+returns the document on screen — yours or one that arrived by file — and publishing it back leaves
+the panel exactly as it is. What comes back is the document as the app understood it: unknown fields
+are gone and defaults come back absent.
+
+**Optional — buttons at a stop.** At a stop parked on the user, `actions` (up to 8) paint a button
+whose command is shown literally and is written into this pane's program on one click — which here
+is this very session's prompt. So `{"label": "Approve the design", "send": "approve"}` answers you
+without the user typing. Plain text, no line breaks, never a credential: it is painted on screen and
+lands in the shell history.
+
+### 4.3 Without those tools — `.claude/work/<work>/panel.json`
+
+Overwrite the file **whole** (never patch) with the §4.1 document. `updated_at` from the real clock
+(`date -Iseconds`), never carried over — it is how the reader flags a stale snapshot. `attention`
+and `key` buy nothing here: the file panel is drawn from `mark` and `ref` alone.
+
+### 4.4 When to publish — whichever transport is in play
+
+(a) In pre-flight, as soon as `meta.json` is loaded; (b) immediately **before** every stop header;
+(c) **before** any long stretch (fan-out, full suite, CI poll) — never after, so a step that dies
+halfway is not shown as finished. When the stretch will outlast the ~30 min staleness warning, set
+`stale_after_minutes` to what it will really take; (d) wherever `## Close` updates `meta.json`. A
+held panel still goes stale: the app stamps each delivery's arrival.
+
+### 4.5 `meta.json.cost[]` — what a phase measured, when it could
 
 A phase that can measure what it spent appends one entry: `{ "phase": "review", "at": "<ISO>",
 "reviewers": 8, "usd": 0.0124, "source": "harness" }`. `flow review --record` writes it; `flow cost`
@@ -321,7 +393,7 @@ single largest token cost of a work, so every work carries a short handoff:
 - **Name the phase, never the command.** An artifact outlives the session that wrote it and may be
   resumed from a different agent, where the same phase is invoked under another name. Write the
   phase — `validate`, `review`, `ship #2` — not the invocation. Applies to `00-summary.md`,
-  `panel.json`'s `Next` line and every numbered artifact; the prose you *say* at a stop is exempt.
+  the panel's `Next` line and every numbered artifact; the prose you *say* at a stop is exempt.
 
 ## 6. Delegating — what every brief owes the parent
 
@@ -444,7 +516,7 @@ and the evidence; the verdict stays here.
 bills and saves nothing. What wakes you is whatever the harness offers — a background task that
 re-invokes you when it finishes, a scheduled wake-up, a message back to this thread; where it offers
 none, the supervisor's evidence file is read at your next stop, and **you say that** rather than
-implying something is being watched. Refresh `panel.json` before you go (§4): the line carries
+implying something is being watched. Refresh the panel before you go (§4): the line carries
 `mark: "wait"` and `stale_after_minutes` set to the deadline you gave, because a thread that goes
 quiet with `current` on screen reads as a session that died.
 

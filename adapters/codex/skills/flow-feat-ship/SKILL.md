@@ -18,7 +18,7 @@ description: "Commit, push, MR/PR, and offer to save domain knowledge"
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 > - `$ARGUMENTS` → whatever the user typed after the skill name, empty if nothing — Codex substitutes nothing, so read it off their message.
 
-Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
+Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
@@ -179,7 +179,7 @@ Only here — with the content approved in §3 — invoke `Skill commit-commands
 - `git.assignee` not empty → assign to that user. `git.squash` `true` → enable squash-before-merge.
 - `commit-push-pr` skill unavailable → commit and push manually and create the MR/PR with the `git.cli` CLI from `FLOW.md` — always with the content confirmed in §3.
 
-**Record the URL the moment it exists**: write it into this MR/PR's `meta.json.mrs` entry and refresh `panel.json` right here, before §4.2 and before anything else can fail.
+**Record the URL the moment it exists**: write it into this MR/PR's `meta.json.mrs` entry and refresh the panel (flow-core §4) right here, before §4.2 and before anything else can fail.
 
 **The push just started a pipeline, and this thread does not sit on it.** Its result belongs to `$flow-work-green`, not here, so either close the ship with CI reported as *running* — the honest state — or, when the user wants to hear how it ended, delegate the wait as any other (flow-core §6.5): one supervisor subagent on `models.supervisors`, a deadline, and back with status plus failing-job evidence. Whatever it returns, a red pipeline is triaged by `$flow-work-green`; this command never fixes CI and never closes reporting a green it did not see.
 
@@ -272,7 +272,7 @@ In every scenario:
   ```
 
   Nothing back → the content is **not** on the base whatever the forge says (see §6.2.1). Do not mark the entry `merged`: leave it `in_progress` with a `note`, tell the user in one line, and recover it with a fresh MR/PR against `git.default_base` before the train moves on.
-- Refresh `panel.json` from the updated `meta.json`. A shipped-but-open MR/PR is a `wait` line carrying its `link`; it becomes `done` only when confirmed merged. When this ship sets `phase = "done"`, say so in plain words (`mark: "info"` with `style: "ok"`: nothing left here) and drop the `Decision` line.
+- Refresh the panel from the updated `meta.json`. A shipped-but-open MR/PR is a `wait` line carrying its `link`; it becomes `done` only when confirmed merged. When this ship sets `phase = "done"`, say so in plain words (`mark: "info"` with `style: "ok"`: nothing left here) and drop the `Decision` line.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 
 ### 6.1.1 Tracker: move to done

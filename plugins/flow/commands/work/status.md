@@ -5,7 +5,7 @@ allowed-tools: Read, Glob, Grep, Bash(git status:*), Bash(git branch:*), Bash(gi
 
 # `/flow:work:status`
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context.
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
 Overview of works in progress; detects divergences between artifacts and actual git state.
 

@@ -30,7 +30,7 @@ Cross-cutting (`feat` or `bug` MR/PR alike), repeatable (one invocation per revi
 
 Extract from `git`: `host`, `cli` (empty → the default for that host), `assignee`. The term MR/PR follows `host`. From `tracker`: `tool` and `prefix`. From `quality`: `review_skill` (§6, non-trivial rounds). If `knowledge.search` is set, `knowledge.search` runs in §3.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with (no `models` key).**
 
 **Autonomy.** Modes as in flow-core §2 (`autonomy.mode`: `manual` | `guided` | `auto`; empty = `manual`); `guided`/`auto` record their choices in `08-feedback.md`. **Hard gates — ALWAYS stop and ask, in every mode, no exceptions:**
 1. **Posting any comment/reply** to the MR/PR (§7).

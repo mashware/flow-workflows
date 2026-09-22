@@ -49,7 +49,8 @@ So every stop, in every mode, opens with a fixed header before any prose: ticket
 Then at most ten lines of body, in the language of what changed for whoever uses the software rather
 than of the code that changed. The fewer stops a mode produces, the more each one has to carry: in
 `auto` there are two per MR/PR, the brief and `ship`, and everything between them ran while you were
-looking elsewhere. The same header has a twin on disk, `panel.json`, because the chat is a stream
+looking elsewhere. The same header has a twin in the live panel — published to the terminal that draws it, or to
+`panel.json` where there is none — because the chat is a stream
 and the question you actually have is a state — something a pane or a status bar can answer without
 you scrolling or asking.
 

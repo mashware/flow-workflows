@@ -18,7 +18,7 @@ description: "Start a new feature (read the tracker, classify size, create branc
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 > - `$ARGUMENTS` → whatever the user typed after the skill name, empty if nothing — Codex substitutes nothing, so read it off their message.
 
-Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
+Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**
 
 `$ARGUMENTS` is **optional**:
 
@@ -235,9 +235,9 @@ Create the work directory per §1: `.claude/work/<TICKET>-<slug>/` (ticket mode)
 - `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo; `[]` for a single-repo task.
 - **This work *is* an accepted follow-up** (the ticket came from another work's `followups[]`, flow-core §7) → set `origin: { "work": "<originating work dir>", "followup": "F<n>" }`, carry that entry's recorded `why` into `01-context.md` verbatim instead of re-deriving it, and set the originating entry to `in_progress` with `work` naming this folder. Not a follow-up → omit `origin` entirely.
 
-### `panel.json`
+### Live panel
 
-Write it now, next to `meta.json`, in the flow-core §4 shape. No train yet (`plan` has not run), so: the title (`style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, any §3.5 sibling repo as a `block` line. Every later phase overwrites it whole.
+Publish it now, in the flow-core §4 shape and by the transport that section selects. No train yet (`plan` has not run), so: the title (`style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, any §3.5 sibling repo as a `block` line. Every later phase updates it.
 
 ### `00-summary.md`
 
@@ -285,5 +285,5 @@ Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket`, `{ASSIGNEE}` = `tr
 ## 7. Close
 
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5) — first written in §6; refresh it if §6.5 changed anything.
-- Report **following the stop header** (flow-core §3), branch added, body 2-3 lines: ticket, size, branch; recommended next command per the §4 table — in `guided`/`auto` you run it in this same turn, so there is no report and no question here: update `panel.json` and chain (flow-core §3).
+- Report **following the stop header** (flow-core §3), branch added, body 2-3 lines: ticket, size, branch; recommended next command per the §4 table — in `guided`/`auto` you run it in this same turn, so there is no report and no question here: update the panel and chain (flow-core §3).
 - Apply `autonomy.mode`: `manual` → stop and let the user invoke the recommended command; `guided`/`auto` → chain into it, subject to the hard gates (the §5 branch-base ambiguity already stops on its own).

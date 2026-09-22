@@ -18,7 +18,7 @@ description: "Point the main checkout at a branch to test it (then return), re-s
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 > - `$ARGUMENTS` → whatever the user typed after the skill name, empty if nothing — Codex substitutes nothing, so read it off their message.
 
-Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session.
+Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
 Temporarily point the **main checkout** at another branch to test it against this checkout's live environment (running stack, DB, containers), then return — a generic `make wt-try`/`wt-back` pair. The git switch is built in; the project-specific re-sync (e.g. migrations) comes from `git.worktree_resync` in `FLOW.md`. Operates **in place**; never creates or touches worktrees.
 

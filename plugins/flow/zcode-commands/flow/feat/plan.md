@@ -10,7 +10,7 @@ description: Split the work into small, independently mergeable MRs/PRs before i
 > - Every primitive named below exists here under the same name — `AskUserQuestion`, `Agent <role>` and its subagents, `ScheduleWakeup`, `TaskCreate`, `Skill flow:<name>`, `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` (`${ZCODE_PLUGIN_ROOT}` is an alias). Nothing in this page is a translation of anything.
 > - The overlay read here is `FLOW.zcode.md`, and every `flow-workflows` call below already names it. The same plugin also exposes its unprefixed Claude pages — `/feat:start`, `/bug:fix`, … — which name Claude's overlay instead, so type the `/flow:` names.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
 
 Delivery planning phase. **No code is written.** Splits the feature into MRs/PRs that can each live on the main branch even if the subsequent ones never land.
 
@@ -144,7 +144,7 @@ A slice landing in **another repo** is not one of *this* repo's `mrs`: record it
 
 - Update `meta.json`: `phase = "plan"`, add `plan` to `phases_done`.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Refresh `panel.json`: from here on it carries one line per `mrs[]` entry. Nothing is merged or open yet, so every entry carries `mark: "pending"`, the not-yet-started ones collapsed into a single `#a–#z` line, and **no heading over the train** — `mark` states each entry's real state (schema in `/flow:work:README`).
+- Refresh the panel — a new train is a new *shape*, so republish it whole (flow-core §4): from here on it carries one line per `mrs[]` entry. Nothing is merged or open yet, so every entry carries `mark: "pending"`, the not-yet-started ones collapsed into a single `#a–#z` line, and **no heading over the train** — `mark` states each entry's real state (schema in `/flow:work:README`).
 - **Show the plan the way it will be executed**, not just as a list: print the wave line first, then the table:
 
   ```

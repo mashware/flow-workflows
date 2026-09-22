@@ -18,7 +18,7 @@ description: "Monitor the observability platform after a deploy and alert on err
 > - `knowledge.*` roles → whatever tools `FLOW.md` names there; an MCP tool keeps its name, its server is declared under `[mcp_servers.<name>]` in `config.toml` (see `config.snippet.toml`).
 > - `$ARGUMENTS` → whatever the user typed after the skill name, empty if nothing — Codex substitutes nothing, so read it off their message.
 
-Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
+Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
 **Autopiloted post-deploy monitoring**: signals **scoped to the change** over a window (default 30 min), against a baseline; alert on errors or performance regressions from the deploy.
 
@@ -129,7 +129,7 @@ Over `[last cycle, now]`, scoped to the surface. **Default thresholds** (tunable
 
 After each cycle: update `monitor.md` (accumulated state — no repeated alerts, feeds the final summary) and **reschedule with `ScheduleWakeup`** (~270-300s, or the chosen interval) passing the same `$flow-work-watch {PREFIX}XXXXX` until `T_end`. Platform fails or slow → retry next cycle, never break.
 
-**Refresh the live panel every cycle** (only with a `<work-dir>` from §1). Overwrite `.claude/work/<work>/panel.json` **whole**:
+**Refresh the live panel every cycle** (only with a `<work-dir>` from §1), by the transport flow-core §4 selects — the panel tools where the terminal has them, `.claude/work/<work>/panel.json` overwritten **whole** where it does not:
 
 ```json
 {
@@ -170,7 +170,7 @@ Write the summary to `<work-dir>/monitor.md` (§1) and present it:
 - **Evidence strength**: low traffic (§4) → say it ("green, but the flow barely executed during the window: weak evidence"). Never sell a zero-traffic green as a guarantee.
 - **Honest limits**: no slow leaks, no regressions needing input not exercised in the window. A first-hour safety net.
 
-Final verdict to `panel.json` too — `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and a `Now` line reading `nothing — the watch window is over`. On 🔴, a `Decision` line marked `wait` pointing at `$flow-bug-start`.
+Final verdict to the panel too — `mark: "info"` plus `style: ok|warn|error` for 🟢/🟡/🔴 — and a `Now` line reading `nothing — the watch window is over`. On 🔴, a `Decision` line marked `wait` pointing at `$flow-bug-start`.
 
 `knowledge.stage` is set → `knowledge.stage` relevant findings (measured baselines, low-traffic signals, error patterns) for this branch's staging.
 

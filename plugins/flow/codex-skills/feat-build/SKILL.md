@@ -20,7 +20,7 @@ description: "Implement the feature following the approved design and keep a run
 > - This skill is one of a plugin's, so every workflow here is invoked `$flow:<name>` — the shared rules are the sibling skill `$flow:flow-core`.
 > - `../..` in a path → the plugin root, two folders above the one this `SKILL.md` is in; Codex gives you this file's path.
 
-Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, `panel.json`, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`.**
 
 Implementation phase. Code is written here.
 
@@ -394,5 +394,5 @@ If there were no copied contracts (design said "none"), skip this step and recor
 - Update `meta.json`: `phase = "build"`, add to `phases_done`.
 - Multi-MR/PR build: leave the current MR/PR `in_progress` in `meta.json.mrs` (it becomes `merged` when `$flow:feat-ship` confirms the merge). **Also add `build` to that MR/PR's own `phases_done`** (its `mrs[]` entry) — the per-MR/PR marker the downstream gates read.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Report **following the stop header** (flow-core §3) **only when this is a stop** — `manual`, or a blocker in any mode. Then in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and **any premise left unsettled by §2.1bis** — one line, in the language of what breaks if it is false. An open premise the user never hears about is an assumption they were not asked about. In `guided`/`auto` `$flow:feat-review` runs in this same turn, so there is no report here: those same points go to the phase artifact, `panel.json` carries `Now`/`Next`, and the turn opens with the call that chains.
+- Report **following the stop header** (flow-core §3) **only when this is a stop** — `manual`, or a blocker in any mode. Then in bullets: files touched (high level), pending items, **result of §4.2 (contracts verified)**, and **any premise left unsettled by §2.1bis** — one line, in the language of what breaks if it is false. An open premise the user never hears about is an assumption they were not asked about. In `guided`/`auto` `$flow:feat-review` runs in this same turn, so there is no report here: those same points go to the phase artifact, the panel carries `Now`/`Next`, and the turn opens with the call that chains.
 - **Autonomy handoff.** The summary is a report, not the end of the flow. `manual`: stop and propose `$flow:feat-review` with a single `AskUserQuestion` (recommended option by default); invoke it only on confirmation, never make the user type it. `guided`/`auto`: **chain into `$flow:feat-review` automatically** in this same turn, without asking — never end the turn with the next command as a suggestion.
