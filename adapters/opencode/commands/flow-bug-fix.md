@@ -46,7 +46,9 @@ What is NOT touched:
 
 **Ask with `AskUserQuestion`** whether this reflects the expected fix — a hard gate, **in every mode, `auto` included**: widening the fix is the main source of collateral regressions, and this is the last point to settle scope before there is a diff.
 
-In `auto` this is one of the only two stops of the whole flow (this one and `ship`; `guided` adds the plan of §2.0bis on a fix of more than two steps): open with the **full stop header** (flow-core §3), then the brief. Options:
+In `auto` this is one of the only two stops of the whole flow (this one and `ship`; `guided` adds the plan of §2.0bis on a fix of more than two steps): open with the **full stop header** (flow-core §3), then the brief.
+
+**The brief travels inside the question** (flow-core §3) — read in the prompt being answered, not by opening `04-fix.md` — and **nothing runs between the brief and the question**: a tool call after it is what lets a terminal fold it away. Options:
 - **Yes, go ahead** → apply the fix.
 - **No, something is missing or wrong** → adjust the brief, ask again. No code until confirmed.
 

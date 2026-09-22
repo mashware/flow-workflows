@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.74.0 — The thing you were asked to approve was the thing the terminal hid  ·  2026-09-22
+
+**In short**
+- **What a gate asks about now travels with the question** — the brief, the MR/PR body, the plan — so it is read in the prompt being answered instead of by opening the artifact in an editor.
+- **Nothing runs between showing it and asking.** A tool call right after is what lets a terminal collapse that message into one line, and the line it collapses is exactly the one the user needed.
+- Applied at the two briefs (`feat:build`, `bug:fix`) and at the MR/PR preview, the three gates that exist to catch scope before there is a diff to argue with.
+
+The rule already said to print the brief and then ask. It never said what had to sit between them,
+so a status line, a file write or a `git` call landed in the middle — and a chat UI that folds a
+message once a tool call follows it turned a nine-line brief into "· summarized". What reached the
+user was a one-line paraphrase above a Yes/No, and the honest way to answer it was to open
+`05-implementation.md` and read the brief there, which is the cost the gate exists to avoid.
+
+Where a harness's question cannot hold the content, it is printed as the **last** thing before
+asking, with the tool calls already done.
+
 ## v0.73.0 — The panel kept asking what you had already answered  ·  2026-09-22
 
 **In short**

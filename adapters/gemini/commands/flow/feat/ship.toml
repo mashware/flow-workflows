@@ -149,7 +149,7 @@ Description:
 
 If there is pre-deploy SQL, ask the user to **explicitly confirm that the block is complete and correct** — it will be executed in production.
 
-Then ask with `AskUserQuestion` (header: "Create <MR or PR>"):
+The preview is the last thing before the question — **no tool call between them** (flow-core §3), or the block the user is meant to approve is the one their terminal folds away. Then ask with `AskUserQuestion` (header: "Create <MR or PR>"):
 
 - **Create with this content** → invoke §4.
 - **Edit before creating** → user says what to change (title, a section, both); adjust and return to §3 with the new preview.
