@@ -45,10 +45,6 @@ def repo_root():
 
 
 ROOT = repo_root()
-# The scripts this one runs resolve their own root the same way and inherit `GIT_DIR`, so
-# without this they would repeat the mistake above one process down.
-if os.environ.get("GIT_DIR"):
-    os.environ["GIT_WORK_TREE"] = ROOT
 MANIFEST = "plugins/flow/.claude-plugin/plugin.json"
 MARKETPLACE = ".claude-plugin/marketplace.json"
 CHANGELOG = "plugins/flow/CHANGELOG.md"
@@ -69,9 +65,12 @@ def tracked_files():
     check below reads what it inspects. Dropping those here keeps the run from
     dying on the deletion, and the parity check still notices the gap.
     """
-    out = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
-                         capture_output=True, text=True).stdout
-    return [f for f in out.split("\0")
+    run = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                         capture_output=True, text=True)
+    if run.returncode != 0:
+        fail(ROOT, f"`git ls-files` failed: {run.stderr.strip() or f'exit {run.returncode}'}")
+        return []
+    return [f for f in run.stdout.split("\0")
             if f and os.path.isfile(os.path.join(ROOT, f))]
 
 
@@ -597,18 +596,21 @@ def check_adapters_generated():
 # compaction.
 CORE_SKILL = "plugins/flow/skills/flow-core/SKILL.md"
 #
+# Markers are opening sentences, never section titles: a command that cites a section by
+# its name, as the skill asks, is pointing at it rather than copying it.
+#
 # Each marker must also be text the skill still has. Rewritten, the skill moves on and a
 # marker left behind matches no command and no skill either, which reads exactly like a
 # clean tree — six of these eight once guarded nothing for that reason.
 CORE_ONLY_BLOCKS = (
     "**Never a question in `guided`/`auto`",
-    "Reporting — how every stop reads",
+    "**A stop is where you hand the screen back**",
     "- **Product altitude.**",
     "**Zero-context rule.**",
-    "Live panel — over the terminal's MCP",
+    "**Two transports, one document.**",
     "- **`mark` says what a line is**",
     "- **`link` is a field, never a URL inside `text`**",
-    "When to publish — whichever transport is in play",
+    "(a) In pre-flight, as soon as `meta.json` is loaded",
 )
 
 
@@ -884,28 +886,22 @@ def check_eval_suite(files):
 
 
 def hand_over_to_the_tree():
-    """Run the tree's own copy of this script when git reached another one.
+    """The exit code of the tree's own copy of this script, when git reached another one.
 
     Hooks live in the common git dir, so a commit from a worktree runs the main checkout's
     check.py over the worktree's files — and a branch that changes the checks would be
-    judged by the ones it is replacing.
+    judged by the ones it is replacing. A child process rather than `exec`, because on
+    Windows `os.execv` returns to git before the checks finish.
     """
     mine = os.path.realpath(__file__)
     theirs = os.path.realpath(os.path.join(ROOT, "script", "check.py"))
-    if mine != theirs and os.path.isfile(theirs) and not os.environ.get("FLOW_CHECK_HANDED_OVER"):
-        os.environ["FLOW_CHECK_HANDED_OVER"] = "1"
-        os.execv(sys.executable, [sys.executable, theirs] + sys.argv[1:])
+    if mine == theirs or not os.path.isfile(theirs) or os.environ.get("FLOW_CHECK_HANDED_OVER"):
+        return None
+    env = dict(os.environ, FLOW_CHECK_HANDED_OVER="1")
+    return subprocess.run([sys.executable, theirs] + sys.argv[1:], cwd=ROOT, env=env).returncode
 
 
-def main():
-    hand_over_to_the_tree()
-    files = tracked_files()
-    if not files:
-        # Reached from a hook this used to exit 0, and did so on every commit made from a
-        # worktree: a preflight that checked nothing and said so in a line reading as news.
-        print(f"preflight failed: no tracked files under {ROOT} — nothing was checked")
-        return 1
-
+def run_checks(files):
     check_no_empty_tracked_files(files)
     check_manifests()
     check_all_json(files)
@@ -930,6 +926,24 @@ def main():
     check_panel_vocabulary_lists(files)
     check_no_stack_leak(files)
     check_eval_suite(files)
+
+
+def main():
+    # With the tree found, git's exported `GIT_DIR` has nothing left to say and only misleads:
+    # every script run from here resolves its own root, and would repeat `repo_root`'s mistake.
+    for var in ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE"):
+        os.environ.pop(var, None)
+    code = hand_over_to_the_tree()
+    if code is not None:
+        return code
+    files = tracked_files()
+    if not files:
+        # Reached from a hook this used to exit 0, and did so on every commit made from a
+        # worktree: a preflight that checked nothing and said so in a line reading as news.
+        problems.append(f"no tracked files under {ROOT} — nothing was checked")
+
+    if files:
+        run_checks(files)
 
     if problems:
         print("preflight failed:\n")

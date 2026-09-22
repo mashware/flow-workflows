@@ -11,8 +11,10 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
 CHECK="$REPO/script/check.py"
-BASE="${TMPDIR:-/tmp}/flow-preflight-bindings-test"
-rm -rf "$BASE"; mkdir -p "$BASE"
+# A fresh directory per run, resolved to its physical path: two sessions run this at once in
+# this repo, and on macOS the temporary directory is a symlink the scripts see resolved.
+BASE="$(cd "$(mktemp -d "${TMPDIR:-/tmp}/flow-preflight-bindings.XXXXXX")" && pwd -P)"
+trap 'rm -rf "$BASE"' EXIT
 fails=0
 
 check() {  # <label> <file> <expected: hit|miss> <pattern>
@@ -83,8 +85,12 @@ elif case == "vocabulary-drifted":
     report()
 
 elif case == "vocabulary-anchor-gone":
+    # Every anchor gone, the two in one file included — each edit on top of the last.
+    edited = {}
     for rel, anchor, _ in mod.PROSE_VOCABULARY:
-        put(rel, real_text(rel).replace(anchor, "- a list somebody rewrote"))
+        edited[rel] = edited.get(rel, real_text(rel)).replace(anchor, "- a list somebody rewrote")
+    for rel, body in edited.items():
+        put(rel, body)
     mod.ROOT = tree
     mod.check_panel_vocabulary_lists([r for r, _, _ in mod.PROSE_VOCABULARY])
     report()
@@ -115,15 +121,21 @@ check "a word the reader knows, missing, too"     "$BASE/vocabulary-drifted.txt"
 
 drive vocabulary-anchor-gone
 check "a list that moved is not a clean list"     "$BASE/vocabulary-anchor-gone.txt" hit 'no line opens with'
+check "every anchor is reported, not the first"   "$BASE/vocabulary-anchor-gone.txt" hit "no line opens with '- \*\*\`style\`\*\* —'"
+check "including the second one in the same file" "$BASE/vocabulary-anchor-gone.txt" hit "no line opens with '- \*\*\`mark\`\*\* —'"
 
-# A linked worktree of this repo, carrying the check.py under test so the hook has something of
-# its own to hand over to. A stub in place of it would prove the handover and nothing else.
+# A linked worktree of a throwaway clone — never of this repo, which a run killed halfway would
+# leave carrying a registration nobody removes. It is checked out at the tree under test,
+# uncommitted edits included (`stash create` makes them a commit without touching anything), so
+# the check.py and the files it judges are ones that exist together. Untracked files are in no
+# commit and stay out.
+SNAP="$(git -C "$REPO" stash create)"; SNAP="${SNAP:-$(git -C "$REPO" rev-parse HEAD)}"
+git clone -q --shared --no-checkout "$REPO" "$BASE/clone"
 WT="$BASE/worktree"
-git -C "$REPO" worktree add -q --detach "$WT" HEAD 2>/dev/null
-cp "$CHECK" "$WT/script/check.py"
+git -C "$BASE/clone" worktree add -q --detach "$WT" "$SNAP"
 GD="$(git -C "$WT" rev-parse --absolute-git-dir)"
 hook from-a-worktree "$WT" "$GD"
-check "a worktree commit checks the worktree"     "$BASE/from-a-worktree.txt" miss 'nothing to check'
+check "a worktree commit checks the worktree"     "$BASE/from-a-worktree.txt" miss 'no tracked files'
 check "and finds it in order, sub-scripts included" "$BASE/from-a-worktree.txt" hit  "preflight ok — "
 
 # The same hook, where the worktree's check.py differs from the one git reached: the tree's own
@@ -131,7 +143,6 @@ check "and finds it in order, sub-scripts included" "$BASE/from-a-worktree.txt" 
 printf 'import os\nprint("ran the tree copy in", os.getcwd())\n' > "$WT/script/check.py"
 hook hands-over "$WT" "$GD"
 check "the tree's own check.py is the one that runs" "$BASE/hands-over.txt" hit "ran the tree copy in $WT"
-git -C "$REPO" worktree remove --force "$WT"
 
 # A checkout with nothing tracked at all: an empty list is the loudest thing this script can
 # find, not the quietest.
@@ -141,6 +152,5 @@ hook zero-files "$EMPTY" "$EMPTY/.git"
 check "zero tracked files is a failure"           "$BASE/zero-files.txt" hit 'exit=1'
 check "and says it checked nothing"               "$BASE/zero-files.txt" hit 'no tracked files'
 
-rm -rf "$BASE"
 if [ "$fails" = 0 ]; then echo "preflight-bindings: all cases pass"
 else echo "preflight-bindings: $fails failure(s)"; exit 1; fi

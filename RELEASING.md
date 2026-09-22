@@ -130,6 +130,10 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
 
 `script/check.py` runs these, in order. Each exists because it shipped broken once:
 
+- **Something to check at all.** Zero tracked files is a failure, never "nothing to check" — that
+  line once passed every commit made from a worktree. From a worktree the hook finds that tree
+  (git exports `GIT_DIR` and runs hooks at its top) and hands over to the tree's own
+  `script/check.py`, so a branch that changes the checks is judged by them.
 - **No empty tracked file.** A zero-byte manifest went out in two releases and broke the plugin.
 - **The manifests** — `plugin.json` has `name` and `version`, `marketplace.json` has `plugins`, and
   every plugin source it advertises exists on disk.
@@ -152,7 +156,9 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
   uses that harness's prefix, and every command and path it cites exists.
 - **The flow-core skill is present** (`plugins/flow/skills/flow-core/SKILL.md`, `name: flow-core`)
   **and no command carries a copy of its blocks.** Those blocks used to be pasted into 18 commands
-  and drifted; a command that repeats one points at the skill instead.
+  and drifted; a command that repeats one points at the skill instead. Every marker must still be
+  text the skill has: rewritten, it matched nothing and the check guarded nothing, six of eight at
+  once.
 - **The config key table is current** — `config-keys.py --check`: `docs/CONFIGURATION.md`'s table is
   generated from `FLOW.template.md`.
 - **The review bench stays runnable.** Every case under `plugins/flow/evals/` has its
@@ -164,13 +170,17 @@ harness's prefix throughout, every command and path cited real, and `install.sh`
 - **No retired `panel.json` vocabulary** (`Right now:`, `Waiting on you:`, grouping the train
   `under Left`) anywhere in the plugin or the adapters. The panel's reader knows `mark` and `ref`;
   those labels render as prose and quietly lose the column — this is where the spec drifted once.
+- **The panel words listed in prose match the reader's** — the `mark` list in flow-core and the
+  `mark`/`style` lists in `commands/work/README.md` hold exactly `MARKS`/`STYLES`, and a list whose
+  opening line moved fails rather than going unchecked.
 
 ## CI
 
 `.github/workflows/preflight.yml` runs on every push and pull request: `script/check.py`,
 `script/adapter-smoke.py` whole (static + install against a throwaway `HOME`), both generators'
-`--check` (`adapter-build.py`, `config-keys.py`), and the three hook tests
-(`script/tests/push-guard.sh`, `script/tests/notify-update.sh`, `script/tests/session-start.sh`).
+`--check` (`adapter-build.py`, `config-keys.py`), and every test under `script/tests/` — the hook
+tests (`push-guard.sh`, `notify-update.sh`, `session-start.sh`) and those of the CLI and of the
+preflight itself (`panel-reminder.sh`, `preflight-bindings.sh`, among others).
 It is the same list as below, so a red CI is a tree the pre-tag steps would have rejected.
 
 `.github/workflows/bench.yml` is the other half, and it measures rather than checks: it runs the
