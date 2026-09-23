@@ -180,6 +180,7 @@ fx_work() {
   "defaults_used": [],
   "conventions_candidates": [],
   "specialists": [],
+  "agent_lessons": [],
   "started_at": "2026-01-05T09:00:00Z",
   "updated_at": "2026-01-05T11:00:00Z",
   "notes": ""

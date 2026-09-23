@@ -163,6 +163,8 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `quality` | `review_skill` | orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below |
 | `quality` | `reviewers` | if `review_skill` is empty: list of agents that run in parallel as a review panel (one per line with `- `). Empty with no skill = only the built-in `code-review` |
 | `agents` | `selection` | your roles as orders or as defaults. Empty = `configured` (named roles used as is); `open` = the model may pick past them |
+| `agents` | `learn` | agents learn from what they missed (flow-core §6.7). Empty = `offer`: when a reviewer or a delegated agent let |
+| `agents` | `lessons_max` | lines the lessons section of one agent may hold before a new lesson forces a consolidation. Empty = 10 |
 | `agents` | `architecture` | design/layers/architecture |
 | `agents` | `persistence` | DB/ORM/mappings/migrations/queries |
 | `agents` | `api` | endpoints/DTOs/routes/HTTP contracts |
@@ -523,6 +525,27 @@ Two more keys configure the **parallel fan-out** rather than naming an agent:
 | `fanout_max` | Max subagents launched in one parallel round | `4` |
 | `budget_max` | Max subagents one command run may launch in total | `12` |
 | `fanout_tool` | Orchestration tool to run the fan-out through | Plain parallel subagents |
+
+### Agents that learn from what they missed (`learn`, `lessons_max`)
+
+When a panel reviewer lets through something another source caught — the built-in review,
+another pass, a colleague on the MR — the flow records a one-line lesson for that agent, and so it
+does for a delegated agent whose code a finding lands in. Only evidence from outside the agent
+counts: an agent grading itself almost always passes.
+
+At the end of the work — after the MR/PR, the knowledge save and the specialists offer — `ship`
+(and `respond`, after a review round) shows each agent's resulting `## Lessons from past work`
+section and writes it on your yes, after copying the file to the work's `agent-backups/`.
+
+- **Your agents are asked in every mode**; agents flow created itself are written directly in
+  `guided`/`auto`.
+- **It stays small.** A lesson the file already holds is not repeated — the agent had the rule and
+  missed anyway, so it is offered as a check to move into the brief instead. At `lessons_max`
+  lines (empty → 10) a new lesson means consolidating the section first.
+- **Never edited:** agents installed from a plugin or marketplace, skills, `general-purpose`.
+- A lesson that is really a fact about the repo goes to `conventions`, as before.
+
+`learn: off` turns it off.
 
 ### How wide the fan-out goes (`fanout_max`)
 

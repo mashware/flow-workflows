@@ -135,6 +135,13 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
       "useful": true | false | null,
       "status": null | "saved" | "declined" | "later", "path": null }
   ],
+  "agent_lessons": [
+    { "agent": "query-reviewer", "signal": "missed" | "produced" | "human",
+      "phase": "review", "evidence": "finding or thread, one line, file:line or URL",
+      "lesson": "one imperative line, general, no ticket id",
+      "status": null | "written" | "declined" | "later" | "not-editable",
+      "path": null, "backup": null }
+  ],
   "origin": { "work": "{PREFIX}XXXXX", "followup": "F1" },
   "started_at": "2026-05-11T10:00:00Z",
   "updated_at": "2026-05-11T11:30:00Z",
@@ -152,6 +159,7 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **`defaults_used`**: an empty `FLOW.md` key a phase resolved with its default instead of asking — written in `guided`/`auto`, where asking would breach the never-a-question contract (flow-core §0). Not an error and not deferred work: a record, aggregated by `/flow:doctor` across every work including `_archive/`, so a key that keeps defaulting can be pinned once instead of decided every time. `[]` when nothing defaulted.
 - **`conventions_candidates`**: rules the user taught **this repo's flow** while correcting a phase — *«not a listener, a message handler»*, *«the test command is `make test-unit`»*. Written by the phase that heard one, asking nothing, only when it would apply to an unrelated ticket in this repo; read by `review`'s idiom audit in the same work; offered once at `ship`'s Close (**Add to FLOW.md** / **Not a rule** / **Later**, or **Replace**), in every mode, because it edits a file in the tree. Never domain knowledge — that filter is unchanged. Shape and rules: flow-core §8. `[]` when the work taught nothing.
 - **`specialists`**: agents a phase **created for this work** because nothing installed fit a role, under `agents.selection: open` (flow-core §6.6) — the brief it wrote and ran on `general-purpose`, and whether anything it returned was kept. Nothing is written to the harness's agent folders while the work runs; `/flow:feat:ship` §5.1 offers the useful ones for saving as real agents once the MR/PR is open and the knowledge is saved, and records where each went.
+- **`agent_lessons`**: what an agent was shown to lack **by evidence from outside it** — a surviving finding in its category that it did not report, a finding in code it wrote, a human review thread in its category that ended in a change (flow-core §6.7). Written by `review` and `respond` asking nothing; offered for the agent's file by `/flow:feat:ship` §5.2 and at `respond`'s close, with a backup under `agent-backups/`, never on plugin-installed agents or skills.
 - **`origin`**: set when this work *is* a follow-up someone accepted — which work raised it and which entry. Lets `start` carry the recorded "why" into `01-context.md` instead of re-deriving it, and lets that entry move to `done` when this work does. Absent for a work that came straight from a ticket.
 - Ticket format follows `tracker.prefix`; empty → free-form.
 

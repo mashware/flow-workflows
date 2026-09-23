@@ -248,14 +248,39 @@ the knowledge is saved, and what is left is whether an agent this work improvise
 3. **Asked in every mode**, `auto` included: it writes to your agent configuration, outside the
    tree, and that is never flow mechanics.
 4. **Save** → write the agent where and in the format your harness reads agents from (on Claude
-   Code, `~/.claude/agents/<name>.md`: frontmatter `name` and a one-line `description` of when to
-   use it, then the brief as the body — drop what only made sense for this ticket, keep the stack,
+   Code, `~/.claude/agents/<name>.md`: frontmatter `name`, a one-line `description` of when to
+   use it and `created_by: flow` (flow-core §6.7 reads it), then the brief as the body — drop what only made sense for this ticket, keep the stack,
    the checks and the typical mistakes). A file with that name already there → never overwrite:
    suffix the name and say so. **Save and use it** → also write `agents.<role>: <name>` to the
    active overlay (a harness-owned agent name, flow-core §0). Then `status: "saved"`, with the path.
    **No** → `"declined"`, never offered again. **Later** → `"later"`, offered by the re-run of this
    close.
 5. **One line on screen**: how many agents were saved and where.
+
+## 5.2 What the agents missed (offer)
+
+Read `meta.json.agent_lessons[]` (flow-core §6.7). `agents.learn: off`, or no entry with `status`
+unset or `"later"` → skip this section and say nothing. Last of the three offers on purpose: the
+MR/PR is open, the knowledge is saved, the specialists have their files — now the agents that
+exist get what this work showed they lacked.
+
+1. **Group by agent**, and resolve each agent's file (`~/.claude/agents`, the repo's agent folder,
+   the overlay's harness equivalent). Plugin- or marketplace-installed, a skill, or no file →
+   `status: "not-editable"` with which, and one line on screen; the lesson stays readable in
+   `meta.json`.
+2. **Apply the size rules of §6.7 before asking** — drop what the file already says (and turn it
+   into the "promote to a check" option instead), consolidate when the section is at
+   `agents.lessons_max` — so the question shows the section as it would end up, not a line to append.
+3. **One `AskUserQuestion`**, one entry per agent (at most 4, most lessons first): the agent, the
+   evidence in one line per lesson, and the resulting `## Lessons from past work` section. Options:
+   **Write it** · **No** · **Later**. Your agents are asked **in every mode**; agents with
+   `created_by: flow` are asked in `manual` and written directly in `guided`/`auto`.
+4. **Write it** → back up the file (§6.7), replace only that section, record the path and the
+   backup in each entry, `status: "written"`. A file tracked by the repo is left modified in the
+   tree, uncommitted, and said so in one line: it is the team's file and the team's commit.
+   **No** → `"declined"`. **Later** → `"later"`, offered again by the re-run of this close or by
+   `$flow-work-respond`.
+5. **One line on screen**: how many agents learned something, and where the backups are.
 
 ## 5.5 A worktree does not own the tree its tools wrote into
 
