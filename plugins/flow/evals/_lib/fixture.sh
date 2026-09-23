@@ -179,6 +179,7 @@ fx_work() {
   "followups": [],
   "defaults_used": [],
   "conventions_candidates": [],
+  "specialists": [],
   "started_at": "2026-01-05T09:00:00Z",
   "updated_at": "2026-01-05T11:00:00Z",
   "notes": ""

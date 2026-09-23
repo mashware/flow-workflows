@@ -97,8 +97,7 @@ a command relies on is simply absent in that session, and nothing else will repo
      "general-purpose", "phase": "review" }`. Asking here would break the never-a-question contract
      (§2); recording keeps the decision readable afterwards, and `/flow:doctor` aggregates it.
 
-  **The list, and it is short on purpose**: `agents.<role>` when a panel is about to improvise that
-  role on an M/L or sensitive diff · `quality.review_depth` after a review's cost line went over
+  **The list, and it is short on purpose**: `quality.review_depth` after a review's cost line went over
   `agents.budget_max` · `data.volumes` or `data.explain_cmd` when the query duel came back
   schema-only · `quality.functional_check` when `validate` found a runnable app and no way to drive
   it · `tracker.start_cmd`/`done_cmd`/`abandon_cmd` the first time a ticket could have been
@@ -578,6 +577,22 @@ command says *"`agents.<role>`, empty → `Agent general-purpose` with the role"
   specialist that does cover it. Every substitution is **one line in the phase artifact**: role,
   the agent configured, the agent used, and why. Unrecorded, a panel that ran with other agents
   reads exactly like the one you configured.
+
+  **Nothing installed fits → create the specialist for this work.** An installed agent is, in the
+  end, a brief with a name; what made it good is the brief. So instead of *"act as frontend"*, write
+  the one an expert would carry — the stack and its versions as this repo uses them, what to check
+  in this piece, the mistakes typical of it, and the report contract of this section — and launch
+  `general-purpose` with it. Nothing is written to the harness's agent folders: the specialist lives
+  for the brief, and it works on every harness, because every one has a general-purpose agent.
+  Record it in `meta.json.specialists[]`:
+
+  `{ "name": "react-form-reviewer", "role": "frontend", "phase": "review", "brief": "<the full text
+  you sent>", "useful": null, "status": null }`
+
+  Once its result is in, set `useful`: `true` when something it returned was kept — a finding
+  accepted, a piece merged into the diff — `false` otherwise. Only a useful one is ever offered for
+  saving, and only **when the work ends** (`/flow:feat:ship` §5.1), never mid-phase: by then the
+  MR/PR is open and it is plain which of them earned a place among your agents.
 
 Three things this never touches, in either mode:
 

@@ -500,7 +500,11 @@ stack** — the harness already lists them with a description — and only when 
 - **`open`** — the model may use an installed agent that fits a piece plainly better than the one
   you named, or hand a piece no role covers (a UI component in a backend-heavy work) to the
   specialist that covers it. Each substitution is one line in the phase artifact: role, configured
-  agent, agent used, why.
+  agent, agent used, why. **When nothing installed fits, it creates the specialist**: it writes the
+  brief an expert would carry — stack, what to check, typical mistakes — and runs it on the
+  general-purpose agent. Nothing is written to your agent folders during the work. When `ship`
+  closes — after the MR/PR and after the knowledge is saved — each specialist that contributed
+  something is offered for saving as a real agent, optionally wired to its empty role.
 
 ```
 ## agents

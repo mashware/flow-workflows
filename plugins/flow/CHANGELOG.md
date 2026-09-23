@@ -14,6 +14,10 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 - **`agents.selection: open` lets the model pick past the roles you named** — a better-fitting
   installed agent for a piece, or a specialist for a piece no role covers — recording each
   substitution in the phase artifact. Empty keeps your roles as orders.
+- **With `open`, a missing specialist is created for the work** — an expert brief written for this
+  stack and this piece, run on the general-purpose agent — and **offered for saving as a real agent
+  when `ship` closes**, after the MR/PR and the knowledge save, only if it contributed something.
+- **Flow stops offering to fill agent roles mid-phase**: they are optional overrides now, not gaps.
 - **`build` may delegate on small works too**, when a specialist would clearly do a piece better,
   instead of only consulting one when blocked.
 
