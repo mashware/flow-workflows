@@ -9,7 +9,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.78.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.79.0`.** Compare it once, at the start of the session, against
 `version` in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -601,6 +601,69 @@ Three things this never touches, in either mode:
 Record what you picked where a default would be recorded (§0): *"`agents.frontend` empty → used
 `react-expert` (installed)"*. That line is also the evidence for writing the role down when the
 next stop offers it.
+
+### 6.7 — An agent that missed something learns it, once
+
+A reviewer that let a defect through will let the same one through next time: nothing it is given
+changes between works. The fix is to its definition, and the evidence that it needs one arrives
+here, in the flow, where somebody else caught what it did not. So a phase that holds that evidence
+records it, and the work's close offers to write it into the agent.
+
+**Only evidence from outside the agent counts.** An agent judging its own performance almost
+always finds it good, and a lesson learned from that is a transient failure written down as a
+permanent rule. Three signals, and nothing else:
+
+- **Missed** — a finding that survived (§6 verification, or the user's acceptance) falls squarely in
+  the category a panel member or a named `agents.<role>` owns, and **that agent did not report it**
+  while another source did: the built-in review, another pass, a reinforcement, a human.
+- **Produced** — a surviving finding sits in code a delegated agent wrote (a `build` piece, the
+  testing agent's suite): the lesson goes to the agent that wrote it.
+- **Human caught** — a reviewer's thread in `/flow:work:respond` that ended in a code change, in a
+  category a panel member owns: the whole panel missed it, and the owner is the one to learn.
+
+**The same test as a convention (§8), aimed at the agent.** Would this lesson help that agent on an
+unrelated work in its domain? No → it belongs to this ticket, record nothing. Yes, but it is a fact
+about the **repo** rather than the agent's craft (*"the test command is `make test-unit`"*) → it is a
+`conventions_candidates[]` row, not a lesson. Yes, and it is about the craft (*"check that every
+state change inside a loop is flushed once, not per iteration"*) → a lesson.
+
+Record it in `meta.json.agent_lessons[]`, asking nothing:
+
+`{ "agent": "query-reviewer", "signal": "missed" | "produced" | "human", "phase":
+"review", "evidence": "<finding or thread, one line, with file:line or URL>", "lesson": "<one
+imperative line, general, no ticket id>", "status": null }`
+
+**What is never edited**, and the lesson stays recorded in `meta.json` for you to read:
+
+- an agent installed from a plugin or a marketplace — it is someone else's file, and the next
+  update would overwrite the edit anyway;
+- a skill (`quality.review_skill`) — it orchestrates agents rather than being one;
+- `general-purpose` and the improvised specialists of §6.6 that were not saved — no file to edit.
+
+**Writing it — only at the work's close** (`/flow:feat:ship` §5.2, `/flow:work:respond` §8), with
+`agents.learn` (empty → `offer`; `off` → nothing is recorded or offered):
+
+- **Your agents** (written by hand, or shared through the repo) → shown as a diff and written only
+  on an explicit yes, **in every mode**: it is your configuration, and in the repo it is your team's.
+- **Agents flow created** (§6.6 saved with `created_by: flow` in their frontmatter) → the same
+  question in `manual`; in `guided`/`auto` written directly and reported in one line.
+
+**How it is kept small** — without this, the file grows one line per incident until the rules
+nobody reads crowd out the ones that matter:
+
+1. Lessons live in one section at the end of the file, `## Lessons from past work`, one line each.
+   The rest of the file is never rewritten.
+2. **Already there, in any wording → the lesson is not added.** The agent had the rule and missed
+   anyway, which says the rule is weak, not absent: offer instead to move it out of the lessons
+   into the body of the brief, rewritten as a check the agent must perform.
+3. **At `agents.lessons_max` lines (empty → 10), adding one means consolidating first**: merge
+   lines that say the same thing, generalise two narrow ones into the rule they share, drop one a
+   later lesson supersedes. Show the section before and after in the same question.
+4. **Before any edit, copy the file** to `.claude/work/<work>/agent-backups/<name>.md` and record
+   the path in the lesson's entry. Undoing is copying it back. A file is never deleted.
+
+Then `status`: `"written"` (with the path) · `"declined"` (never offered again) · `"later"` ·
+`"not-editable"` (one of the three cases above, with which).
 
 ## 7. Deferred work — `followups[]`
 

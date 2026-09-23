@@ -5,6 +5,26 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.79.0 — The reviewer that missed it was never told  ·  2026-09-23
+
+**In short**
+- **An agent that let something through gets a one-line lesson in its own file.** A panel reviewer
+  that missed a finding in its category, a delegated agent whose code a finding landed in, a
+  reviewer whose category a colleague's MR comment exposed — recorded as the flow sees it, offered
+  when the work closes.
+- **Only outside evidence counts.** Another pass, the built-in review or a human caught it; an agent
+  grading itself is never the source.
+- **It stays small**: one section per agent, no repeats (a rule the agent already had becomes an
+  offer to turn it into a check), and a consolidation once it reaches `agents.lessons_max` (10).
+- **Your agents are asked in every mode, with a backup first**; agents flow created itself are
+  written directly in `guided`/`auto`. Plugin-installed agents and skills are never edited.
+- **The review stops offering to fill agent roles**, finishing what v0.78.0 started.
+
+Idea taken from Hermes Agent, which patches the skills it wrote and curates them so they do not
+pile up. What flow does differently is the signal: Hermes reviews its own transcript and admits it
+tends to think it did well; flow only learns when something outside the agent caught what it did
+not. `agents.learn: off` turns it off.
+
 ## v0.78.0 — The specialist was installed; the flow asked for a generalist  ·  2026-09-23
 
 **In short**

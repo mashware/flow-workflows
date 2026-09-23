@@ -180,6 +180,9 @@ the step if it was optional** (flow-core §6.6).
                     #   covers, and records each substitution. Nothing installed fits → it writes an expert brief and runs it
                     #   on the general-purpose agent; a useful one is offered for saving as an agent when `ship` closes.
                     #   Never touches `quality.reviewers`/`review_skill`
+- `learn:`          # agents learn from what they missed (flow-core §6.7). Empty = `offer`: when a reviewer or a delegated agent let
+                    #   through something another source caught, `ship` offers a one-line lesson for its file, with a backup. `off` = never
+- `lessons_max:`    # lines the lessons section of one agent may hold before a new lesson forces a consolidation. Empty = 10
 
 - `architecture:`   # design/layers/architecture
 - `persistence:`    # DB/ORM/mappings/migrations/queries
