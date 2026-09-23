@@ -131,8 +131,8 @@ Take the shape from the **Access paths** table in `03-design.md`; a query matchi
 
 Execution mode:
 
-- **Single-thread (XS/S/M)**: implement yourself, step by step; subagents only as point consultants when blocked — `agents.architecture` from `FLOW.md` for layer questions, `agents.persistence` for query/mapping questions (`Agent general-purpose` if either is empty).
-- **Partial delegation (M/L with clear pieces)**: `Agent` for isolated endpoints, plus `agents.testing` from `FLOW.md` in parallel to prepare the test suite (`Agent general-purpose` if empty). Pass the full `03-design.md` in the prompt so agents do not invent things.
+- **Single-thread (XS/S/M)**: implement yourself, step by step. Delegate a piece when a specialist would do it clearly better than you — a UI component to a frontend agent in a mostly backend work, a migration to a persistence agent — not because it is tedious; consult one when blocked — `agents.architecture` from `FLOW.md` for layer questions, `agents.persistence` for query/mapping questions. Which agent each role resolves to, and whether you may pick past a named one, is flow-core §6.6. A delegated piece follows the brief rules of the next bullet and the one-writer rule of flow-core §6.
+- **Partial delegation (M/L with clear pieces)**: `Agent` for isolated endpoints, plus `agents.testing` from `FLOW.md` in parallel to prepare the test suite (empty → flow-core §6.6). Pass the full `03-design.md` in the prompt so agents do not invent things.
 
   A brief here states the **output** as explicitly as the input (flow-core §6):
   - **Name the path the agent writes**, and require it to **save after each finished piece, not at the end**. Code, tests and generated content are the deliverable; the report is not. Then **verify the file** instead of believing the report — a piece half-written on disk is recoverable, what only exists in the agent's context is lost the moment it is stopped.

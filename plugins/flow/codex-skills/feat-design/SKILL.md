@@ -177,7 +177,7 @@ Save the result at the top of `03-design.md` under "## What already exists". Des
 ## 4. Work
 
 1. Load the project's skills (`FLOW.md` section `conventions`).
-2. Launch **in parallel** by feature/project type. Agent = `agents.<role>` from `FLOW.md`; empty → `Agent general-purpose` with the role in the prompt.
+2. Launch **in parallel** by feature/project type. Agent = `agents.<role>` from `FLOW.md`; empty → the installed agent that fits, else `Agent general-purpose` with the role in the prompt (flow-core §6.6).
 
 | When | Agent | Task |
 |---|---|---|

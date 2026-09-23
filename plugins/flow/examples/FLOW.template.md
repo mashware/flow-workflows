@@ -170,8 +170,14 @@ scripts, Gradle, dotnet, Xcode, Flutter, pyproject, Cargo, go.mod) and reports w
 Role→agent map for steps that delegate to a specialist (`design`, `investigate`,
 `validate`, `plan`, `build`, `fix`, `watch`, and the area reinforcements in `review`). Agents
 must exist and be discoverable on the machine (`~/.claude/agents`, `.agents/agents` in the repo, or
-another plugin) — this only states **which** one to invoke, it does not create it. **Empty role = the command uses
-`Agent general-purpose` with the role in the prompt, or skips the step if it was optional.**
+another plugin) — this only states **which** one to invoke, it does not create it. **Empty role = the command picks
+the installed agent that fits the role and the stack, else `Agent general-purpose` with the role in the prompt, or skips
+the step if it was optional** (flow-core §6.6).
+
+- `selection:`      # your roles as orders or as defaults. Empty = `configured` (named roles used as is); `open` = the model may pick past them
+                    #   Empty roles are picked from the installed agents either way. `open` = a named role is a default: the model
+                    #   may use an installed agent that fits a piece plainly better, or a specialist for a piece no role
+                    #   covers, and records each substitution. Never touches `quality.reviewers`/`review_skill`
 
 - `architecture:`   # design/layers/architecture
 - `persistence:`    # DB/ORM/mappings/migrations/queries

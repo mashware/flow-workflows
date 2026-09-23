@@ -24,7 +24,7 @@ Every `$flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.77.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.78.0`.** Compare it once, at the start of the session, against
 `version` in `../../.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -164,8 +164,8 @@ improvises, `models.workers` for the parallel fan-out rounds, and `models.superv
 bounded waits of §6.5 — the last two falling back to `models.agents`. Empty, absent, or no section
 → everything runs on the model you were launched with, and you say nothing.
 
-- Pass the resolved value to every subagent you launch, **except** an agent named in `agents.<role>`,
-  which keeps the model its own definition sets.
+- Pass the resolved value to every subagent you launch, **except** an agent named in `agents.<role>`
+  or picked from the installed ones (§6.6), which keeps the model its own definition sets.
 - **You cannot switch your own model**, so no key names the phases the main agent performs itself.
   A phase that wants another model says it in one line at the handoff (`this step reads better on
   <value>, you are on <current>` → `/model <value>`), records it in the artifact, and continues.
@@ -562,6 +562,45 @@ moving.
 **Not every wait is worth a brief.** A suite that finishes in ninety seconds costs more to delegate
 than to run — the brief, the round trip and the report are the whole of the saving. And anything you
 must *react to* mid-wait is not a wait at all: it is the work, and it stays here.
+
+### 6.6 — Which agent a role resolves to
+
+**The harness already tells you which agents are installed**, each with a line on what it is for,
+and choosing the one that fits a piece of work is something you do well without being told. A rule
+that answers every empty role with `general-purpose` throws that away: a repo with a frontend
+specialist installed and no `agents.frontend` got a generalist told to act like one. So wherever a
+command says *"`agents.<role>`, empty → `Agent general-purpose` with the role"*, it means this:
+
+1. **`agents.<role>` names an agent** → that agent, as always.
+2. **Empty** → the installed agent whose description fits the role **and this work's stack** best —
+   read the list your harness gives you, never a guess at a name. None fits clearly →
+   `general-purpose` with the role in the prompt, as before. An agent that fits the role but not the
+   stack (a PHP reviewer on a React diff) does not fit.
+
+**`agents.selection`** decides how far your judgement reaches:
+
+- **`configured`** (empty → this) — the two steps above. A role you named is never second-guessed.
+- **`open`** — a named role is a default, not an order: for a piece clearly outside what it
+  covers, or where an installed agent fits this piece plainly better, take that one. And a piece
+  **no role covers** — a UI component in a work whose roles are all backend — may go to the
+  specialist that does cover it. Every substitution is **one line in the phase artifact**: role,
+  the agent configured, the agent used, and why. Unrecorded, a panel that ran with other agents
+  reads exactly like the one you configured.
+
+Three things this never touches, in either mode:
+
+- **The review roster** (`quality.review_skill` / `quality.reviewers`) runs as defined, with no
+  substitutions: its value is being the same panel every time, so a result can be compared.
+- **The agents that are `general-purpose` by design** — challengers, skeptics, the completeness
+  critic, the blinded contract check. They are generalists *on purpose*: a specialist brings the
+  assumptions the blinding is there to strip. A step that writes `general-purpose` with no role
+  behind it means exactly that.
+- **The budget.** A picked agent counts against `agents.budget_max` like any other. Like a named
+  agent it keeps its own model (§1), and `models.agents` reaches it only when it has none.
+
+Record what you picked where a default would be recorded (§0): *"`agents.frontend` empty → used
+`react-expert` (installed)"*. That line is also the evidence for writing the role down when the
+next stop offers it.
 
 ## 7. Deferred work — `followups[]`
 
