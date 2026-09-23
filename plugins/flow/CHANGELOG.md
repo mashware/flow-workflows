@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.78.0 — The specialist was installed; the flow asked for a generalist  ·  2026-09-23
+
+**In short**
+- **An empty agent role now goes to the installed agent that fits it.** The harness already lists
+  your agents with what each is for; a role you left blank picks from that list, by role and by
+  stack, and falls back to `general-purpose` only when nothing fits clearly.
+- **`agents.selection: open` lets the model pick past the roles you named** — a better-fitting
+  installed agent for a piece, or a specialist for a piece no role covers — recording each
+  substitution in the phase artifact. Empty keeps your roles as orders.
+- **With `open`, a missing specialist is created for the work** — an expert brief written for this
+  stack and this piece, run on the general-purpose agent — and **offered for saving as a real agent
+  when `ship` closes**, after the MR/PR and the knowledge save, only if it contributed something.
+- **Flow stops offering to fill agent roles mid-phase**: they are optional overrides now, not gaps.
+- **`build` may delegate on small works too**, when a specialist would clearly do a piece better,
+  instead of only consulting one when blocked.
+
+Left alone, a current model reads the agent list and hands a React component to the React expert.
+Inside a flow command it could not: every empty role said `general-purpose`, so the command's text
+overrode the judgement the harness was set up to use. The review roster is untouched — it runs as
+defined in both modes — and the challengers and blinded checks stay generalists on purpose.
+
 ## v0.77.0 — The steps of the MR/PR you are on are on the panel  ·  2026-09-22
 
 **In short**

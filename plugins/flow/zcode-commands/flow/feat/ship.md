@@ -226,6 +226,29 @@ Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip wi
 3. **Combine staging + new findings** into a short list. Empty or only code-derivable → do not insist.
 4. 1+ relevant findings → ask the user whether to consolidate. Yes → run the consolidation of flow-core §0 (`read_staging`, then one decision and one `knowledge.save` per finding). No → do not insist.
 
+## 5.1 Specialists created (offer)
+
+Read `meta.json.specialists[]` (flow-core §6.6). **No entry with `useful: true` and `status` unset
+or `"later"` → skip this section and say nothing.** It comes after §5 on purpose: the MR/PR is open,
+the knowledge is saved, and what is left is whether an agent this work improvised deserves a name.
+
+1. **A harness with no file-defined agents** → the section does not exist; say so in one line if
+   there were useful specialists, so the brief is not mistaken for lost (it stays in `meta.json`).
+2. **One `AskUserQuestion`**, at most 4 entries, most useful first: its `name`, the role, the phase,
+   and in one line what it caught. Options: **Save as agent** · **Save and use it for `<role>`** ·
+   **No** · **Later**. The second option exists only when `agents.<role>` is empty.
+3. **Asked in every mode**, `auto` included: it writes to your agent configuration, outside the
+   tree, and that is never flow mechanics.
+4. **Save** → write the agent where and in the format your harness reads agents from (on Claude
+   Code, `~/.claude/agents/<name>.md`: frontmatter `name` and a one-line `description` of when to
+   use it, then the brief as the body — drop what only made sense for this ticket, keep the stack,
+   the checks and the typical mistakes). A file with that name already there → never overwrite:
+   suffix the name and say so. **Save and use it** → also write `agents.<role>: <name>` to the
+   active overlay (a harness-owned agent name, flow-core §0). Then `status: "saved"`, with the path.
+   **No** → `"declined"`, never offered again. **Later** → `"later"`, offered by the re-run of this
+   close.
+5. **One line on screen**: how many agents were saved and where.
+
 ## 5.5 A worktree does not own the tree its tools wrote into
 
 `meta.json.worktree` null → skip silently; there is nothing here that can go wrong.

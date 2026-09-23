@@ -136,6 +136,12 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
       "evidence": "the stop it came from",
       "status": "proposed" | "added" | "declined", "note": "" }
   ],
+  "specialists": [
+    { "name": "react-form-reviewer", "role": "frontend", "phase": "review",
+      "brief": "the full expert brief it was launched with",
+      "useful": true | false | null,
+      "status": null | "saved" | "declined" | "later", "path": null }
+  ],
   "origin": { "work": "{PREFIX}XXXXX", "followup": "F1" },
   "started_at": "2026-05-11T10:00:00Z",
   "updated_at": "2026-05-11T11:30:00Z",
@@ -152,6 +158,7 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 - **`followups`**: work a phase deliberately did **not** do here — a neighbouring defect found while building, a piece put out of scope while planning, a risk recorded but not mitigated, an edge case left unchecked, a prevention action from a postmortem. Written by the phase that parks it (asks nothing) when it clears the bar of flow-core §7, triaged **once** at `ship`'s Close behind a skeptic and a ceiling on how many may become questions, published in the MR/PR description while still open, and surfaced by `status`/`daily`/`next` — including from `_archive/` — until `declined` or `done`. Shape and rules: flow-core §7. `[]` when the work deferred nothing.
 - **`defaults_used`**: an empty `FLOW.md` key a phase resolved with its default instead of asking — written in `guided`/`auto`, where asking would breach the never-a-question contract (flow-core §0). Not an error and not deferred work: a record, aggregated by `$flow-doctor` across every work including `_archive/`, so a key that keeps defaulting can be pinned once instead of decided every time. `[]` when nothing defaulted.
 - **`conventions_candidates`**: rules the user taught **this repo's flow** while correcting a phase — *«not a listener, a message handler»*, *«the test command is `make test-unit`»*. Written by the phase that heard one, asking nothing, only when it would apply to an unrelated ticket in this repo; read by `review`'s idiom audit in the same work; offered once at `ship`'s Close (**Add to FLOW.md** / **Not a rule** / **Later**, or **Replace**), in every mode, because it edits a file in the tree. Never domain knowledge — that filter is unchanged. Shape and rules: flow-core §8. `[]` when the work taught nothing.
+- **`specialists`**: agents a phase **created for this work** because nothing installed fit a role, under `agents.selection: open` (flow-core §6.6) — the brief it wrote and ran on `general-purpose`, and whether anything it returned was kept. Nothing is written to the harness's agent folders while the work runs; `$flow-feat-ship` §5.1 offers the useful ones for saving as real agents once the MR/PR is open and the knowledge is saved, and records where each went.
 - **`origin`**: set when this work *is* a follow-up someone accepted — which work raised it and which entry. Lets `start` carry the recorded "why" into `01-context.md` instead of re-deriving it, and lets that entry move to `done` when this work does. Absent for a work that came straight from a ticket.
 - Ticket format follows `tracker.prefix`; empty → free-form.
 

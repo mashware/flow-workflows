@@ -162,6 +162,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `quality` | `respond_max_rounds` | how many rounds of `/flow:work:respond` one MR/PR gets before the command stops and hands the |
 | `quality` | `review_skill` | orchestrating skill for the code-review panel in /flow:*:review. Empty = no skill; see `reviewers` below |
 | `quality` | `reviewers` | if `review_skill` is empty: list of agents that run in parallel as a review panel (one per line with `- `). Empty with no skill = only the built-in `code-review` |
+| `agents` | `selection` | your roles as orders or as defaults. Empty = `configured` (named roles used as is); `open` = the model may pick past them |
 | `agents` | `architecture` | design/layers/architecture |
 | `agents` | `persistence` | DB/ORM/mappings/migrations/queries |
 | `agents` | `api` | endpoints/DTOs/routes/HTTP contracts |
@@ -487,8 +488,33 @@ put to use.
 
 The agents must already exist and be discoverable on your machine (`~/.claude/agents`,
 `.agents/agents` in the repo, or another plugin) — this only states **which** one to invoke, it
-never creates one. An empty role falls back to `general-purpose` with the role in the prompt, or
-skips the step if it was optional.
+never creates one. An empty role falls back to **the installed agent that fits the role and the
+stack** — the harness already lists them with a description — and only when none fits clearly to
+`general-purpose` with the role in the prompt, or skips the step if it was optional.
+
+### Your agents or the model's pick (`selection`)
+
+`selection` decides whether a role you named is an order or a default:
+
+- **Empty / `configured`** — a named role is used as is; the model only picks for empty roles.
+- **`open`** — the model may use an installed agent that fits a piece plainly better than the one
+  you named, or hand a piece no role covers (a UI component in a backend-heavy work) to the
+  specialist that covers it. Each substitution is one line in the phase artifact: role, configured
+  agent, agent used, why. **When nothing installed fits, it creates the specialist**: it writes the
+  brief an expert would carry — stack, what to check, typical mistakes — and runs it on the
+  general-purpose agent. Nothing is written to your agent folders during the work. When `ship`
+  closes — after the MR/PR and after the knowledge is saved — each specialist that contributed
+  something is offered for saving as a real agent, optionally wired to its empty role.
+
+```
+## agents
+- frontend: react-expert
+- selection: open
+```
+
+Either way, the review roster (`quality.review_skill` / `quality.reviewers`) runs exactly as
+defined, and the challengers and blinded checks stay `general-purpose` on purpose: a specialist
+brings the assumptions they exist to strip. The full rule is flow-core §6.6.
 
 Two more keys configure the **parallel fan-out** rather than naming an agent:
 
