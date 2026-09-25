@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: design-slow-rates-provider
+description: An L change that puts a slow, outage-prone provider on the charge path. The design must keep the charge off the provider's worst hour.
+tags: [design, l]
+runs: 3
+expected_outcome: |
+  The rates provider publishes once a day, has a p99 of 9 s and went down three times last quarter, and `src/billing/rates_client.py` calls it with no timeout. The design does not fetch rates live inside `charge()`: it uses a stored daily snapshot (or at least a bounded call with a fallback), and it names the provider's latency and outages as the risk it handles.
+context:
+  scaffold_script: fixture.sh

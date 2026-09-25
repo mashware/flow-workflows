@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: design-cap-is-config
+description: The ticket asks to build a counter and a cap that already exist; the fix is one setting. The design must see past the premise.
+tags: [design, m]
+runs: 3
+expected_outcome: |
+  `src/notify/reminders.py` already counts reminders per invoice and stops at `MAX_REMINDERS`, which `config/settings.py` sets to 5. The design lowers that setting to 3 and creates no new source file.
+context:
+  scaffold_script: fixture.sh

@@ -240,3 +240,127 @@ fx_repo() {
   fx_work "$1" "$2" "$3" "$4"
   fx_install_cli
 }
+
+# --- design cases -----------------------------------------------------------------
+#
+# A design case is a repository whose `main` already holds the piece the ticket's
+# obvious design walks past, and a flow work parked right after `start`. The case
+# writes that piece between `fx_design_repo` and `fx_design_work`.
+
+fx_design_repo() {
+  fx_git_init
+  fx_base_app
+}
+
+# `FLOW.md` for a design run. Two differences from the review fixture, both so the
+# panel runs the way a default install runs it: `auto`, because every stop in `manual`
+# is a question nobody inside an eval run is there to answer; and the fan-out keys
+# empty, so the width is the command's own default and not a ceiling that hides a lens.
+fx_flow_config_design() {
+  cat > FLOW.md <<'MD'
+# FLOW configuration
+
+## tracker
+- prefix: DEMO-
+- tool: none
+
+## git
+- host: github
+- default_base: main
+- squash: true
+
+## autonomy
+- mode: auto
+
+## quality
+- test:
+- static_analysis:
+- style_fix:
+- review_depth: proportional
+- sensitive_paths:
+  - src/billing/**
+- review_skill:
+- reviewers:
+
+## agents
+- fanout_max:
+- budget_max:
+
+## models
+- agents:
+- workers:
+MD
+}
+
+# The work folder a design reads in its pre-flight: parked at `context`, with the ticket
+# in `01-context.md`. The ticket body comes on stdin, as `/flow:feat:start` would have
+# copied it from the tracker.
+# $1 ticket · $2 title · $3 size (M or L)
+fx_design_work() {
+  local ticket="$1" title="$2" size="$3" body
+  body="$(cat)"
+  fx_flow_config_design
+  fx_commit "base"
+  git checkout -q -b "$ticket-change"
+  mkdir -p ".claude/work/$ticket"
+  cat > ".claude/work/$ticket/meta.json" <<JSON
+{
+  "ticket": "$ticket",
+  "type": "feat",
+  "title": "$title",
+  "branch": "$ticket-change",
+  "size": "$size",
+  "phase": "context",
+  "phases_done": ["context"],
+  "candidate_sha": "",
+  "reviewed_sha": "",
+  "fixed_sha": "",
+  "validated_sha": "",
+  "respond_rounds": 0,
+  "review_findings": [],
+  "mrs": [],
+  "related_repos": [],
+  "followups": [],
+  "defaults_used": [],
+  "conventions_candidates": [],
+  "specialists": [],
+  "agent_lessons": [],
+  "started_at": "2026-01-05T09:00:00Z",
+  "updated_at": "2026-01-05T09:20:00Z",
+  "notes": ""
+}
+JSON
+  cat > ".claude/work/$ticket/00-summary.md" <<MD
+# $ticket — $title
+
+- What: $title.
+- Size: $size (estimated at start).
+- Decision: none yet — the approach is the design's to choose.
+- Contracts: none received.
+- Pending: design.
+- Next phase opens in full: \`01-context.md\`.
+MD
+  cat > ".claude/work/$ticket/01-context.md" <<MD
+# Context $ticket
+
+## Ticket
+$body
+
+## Decided in the ticket thread
+No comments on the ticket.
+
+## Relevant domain knowledge
+No knowledge store configured.
+
+## Contracts received
+None.
+
+## Repo state at start
+Clean branch \`$ticket-change\` off \`main\`.
+
+## Estimated size: $size
+Set at start from the ticket's wording; the design may reclassify it.
+MD
+  fx_commit "$ticket start"
+  fx_install_cli
+}
