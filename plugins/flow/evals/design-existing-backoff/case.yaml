@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: design-existing-backoff
+description: The ticket asks for a retry that a neighbouring module already has. The design must build on it, not beside it.
+tags: [design, m]
+runs: 3
+expected_outcome: |
+  The charge retry is built on `src/net/backoff.py:call_with_backoff`, which the webhook sender already uses, with no second retry helper; and because a timed-out charge may have gone through, the retry carries the gateway's idempotency key.
+context:
+  scaffold_script: fixture.sh

@@ -464,7 +464,11 @@ in (v0.31.0).
 *Now:* feat:design §1.5.3; bug:investigate §3.A; work:query §3; CONFIGURATION "agents".
 
 **Panels are proportional too.** The approach panel's cross-critique "keeps the chairman from ranking on
-presentation instead of substance — and it is also the expensive one", so L only. The hypothesis sweep
+presentation instead of substance — and it is also the expensive one", so it ran on L only — until
+v0.80.0 dropped it along with the `reuse` lens: advisors on one base model share its blind spots, a
+round in which they attack each other converges rather than diverges, and the prior inventory every
+advisor now reads answers what `reuse` went looking for. The design bench's three cases scored the
+same with and without them. The hypothesis sweep
 gathers evidence for *and against*, because "an agent asked only to confirm will always find
 something".
 *Now:* feat:design §1.5.3; bug:investigate §3.A.

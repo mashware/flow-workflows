@@ -5,6 +5,23 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.80.0 — The advisors were arguing with themselves  ·  2026-09-25
+
+**In short**
+- **The design's approach panel is one round now, with no debate.** The L-only round in which each
+  advisor attacked the others is gone: advisors on one base model share its blind spots, and a
+  round of them critiquing each other converges on the most confident answer instead of finding a
+  new one. The adversarial pass is the challenger that already attacks the chosen design.
+- **`minimum` and `reuse` are one lens.** They kept proposing the same approach. The prior
+  inventory now runs **before** the panel and every advisor reads it, so the smallest approach is
+  built on what already exists without an agent spent going to look for it.
+- **M runs two advisors (`minimum`, `reframe`), L or a sensitive surface adds `operations`** —
+  down from three and four-plus-four.
+- **Measured, not argued.** A new design bench (`evals/design-*`): a duplicate a neighbouring module
+  already has, a ticket whose premise one setting answers, and an L change that puts a slow,
+  outage-prone provider on the charge path. Before and after: 9 of 9 runs caught every trap in both;
+  the three cases went from $17.66 to $13.85, and the L case from $2.89 to $1.78 per run.
+
 ## v0.79.0 — The reviewer that missed it was never told  ·  2026-09-23
 
 **In short**
