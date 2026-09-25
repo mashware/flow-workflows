@@ -2,7 +2,7 @@
 type: regex
 arm: with-only
 target: trace
-pattern: 'Panel (consensus|disagreement)'
+pattern: '(?i)(consensus|disagree)'
 ---
 
 The approach panel ran and its synthesis was written: §1.5.5 prefixes the recommendation with a
