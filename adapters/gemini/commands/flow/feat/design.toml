@@ -38,13 +38,18 @@ read.)*
 **No code, and no design yet.** The output of this section is a ranked set of options and one chosen
 approach; §3 onwards designs *that* approach.
 
-### 1.5.1 Focused knowledge query
+### 1.5.1 Focused knowledge query, then the inventory
 
 `knowledge.search` set → 2-3 parallel queries on the **concept or pattern** the feature covers, not
 its title (`/flow:feat:start` already queried that): tracking → `"tracking deduplication"`,
 `"hash collision"`; payments → `"trial expiration"`, `"plan downgrade flow"`; an integration →
 `"attachment handler"`, `"tax rules integration"`. Two seconds, then continue regardless. Hits go
 under "Additional domain context" in §5's template.
+
+**Then the inventory.** Run §3's prior inventory **now**, before any approach is proposed, and keep
+its result for `03-design.md`'s "## What already exists". An approach proposed without it reinvents
+what the repository already has, and a lens whose only job was to go and look for it spends an
+agent on what one search answers for every advisor at once. §3 is then already done.
 
 ### 1.5.2 Panel or single agent?
 
@@ -54,11 +59,14 @@ under "Additional domain context" in §5's template.
   panel, note it in one line of `03-design.md`, go to §1.5.3.
 - Declined, or the user insisted on running this on S → §1.5.4.
 
-### 1.5.3 Approach panel (parallel fan-out — LLM-council pattern)
+### 1.5.3 Approach panel (parallel fan-out, one round)
 
-**Launch the advisors as parallel subagents** — one per lens, single round, each blind to the others
-(LLM-council: independent advisors, then a chairman synthesises; a **cross-critique** round in
-between for **L** only).
+**Launch the advisors as parallel subagents** — one per lens, a single round, each blind to the
+others; then you synthesise. **There is no debate round.** Advisors that share one base model share
+its blind spots: a round in which they read and attack each other tends to converge on the most
+confident answer rather than surface a new one, and it costs as many agents as the first round. The
+diversity is in what each lens is asked to *optimise*, and the adversarial pass is §6's challenger,
+which attacks the design that was actually chosen.
 
 **How wide the fan-out goes** — `agents.fanout_max` from `FLOW.md` (empty → **4**): never more than
 that in one round, and never more than `agents.budget_max` (empty → **12**) across this whole
@@ -66,22 +74,16 @@ command run (flow-core §6); a round that does not fit is truncated and the trun
 (`3/4`). With `models.workers` and `models.agents` empty, a round of 4 or more inherits this thread's
 model — say so in one line before launching, naming the key and never a model (flow-core §1).
 
-| Size | Rounds |
-|---|---|
-| M | Advisors → you synthesise |
-| L | Advisors → cross-critique → you synthesise |
+**You are the chairman.** The advisors are subagents; the synthesis and the ranking are yours, never
+a subagent's — you hold the work's context and you write `03-design.md`.
 
-**You are the chairman.** Round 1 (and round 2 on L) are subagents; the synthesis and the ranking are
-yours, never a subagent's — you hold the work's context and you write `03-design.md`.
-
-**Round 1 — advisors (parallel, blind to each other).** One subagent per lens, up to `fanout_max`.
-M → the first three lenses; L → add `operations`, and also on a sensitive surface (authentication or
+**Advisors (parallel, blind to each other).** One subagent per lens, up to `fanout_max`. M → the
+first two lenses; L → add `operations`, and also on a sensitive surface (authentication or
 authorization, payments, personal data, a public contract, a migration):
 
 | Lens | Brief |
 |---|---|
-| `minimum` | The **smallest** approach that solves the declared use case, nothing more (strict MVP) |
-| `reuse` | The approach that **most reuses** existing pieces in the affected module or its neighbours |
+| `minimum` | The **smallest** approach that solves the declared use case, built on what the inventory found before anything new (strict MVP) |
 | `reframe` | **Challenge the premise**: what if the problem is solved without building what was asked, or somewhere else? |
 | `operations` | The most production-solid approach (observability, integration failure, data at scale) |
 
@@ -89,31 +91,22 @@ Each advisor gets this brief, with its lens substituted:
 
 > Propose ONE approach to solve ticket `<TICKET>`, from this lens: `<lens brief>`. Read
 > `.claude/work/<TICKET>/01-context.md` for context and the effective FLOW configuration (base plus
-> active harness overlay) for project conventions. Do not
+> active harness overlay) for project conventions. What already exists in the repository:
+> `<the §1.5.1 inventory>` — propose a new piece only where nothing there fits. Do not
 > write code. Be specific about real modules and layers of this project. Report: name, what it is
 > (one sentence), modules/layers affected, main risk, and why it could be a bad idea. Under 250 words.
 > **Write that same answer to `.claude/work/<TICKET>/approaches/<lens>.md` before you reply** — the
 > file is the deliverable and the reply is a copy of it.
 
-**Round 2 — cross-critique (L only, parallel).** Each advisor receives the full set and attacks the
-*others* from its own lens:
-
-> You are the "`<lens>`" advisor. The approaches proposed for `<TICKET>` are in
-> `.claude/work/<TICKET>/approaches/` — read them all, plus `.claude/work/<TICKET>/01-context.md`.
-> From your lens (`<lens brief>`), critique the
-> OTHER approaches — not your own. For each one name its single biggest flaw for THIS project, or
-> "none". Then say which is strongest and which weakest, and why. Be concrete and grounded in the
-> project; do not invent flaws to fill space. **Write your critique to
-> `.claude/work/<TICKET>/approaches/critique-<lens>.md` before you reply.**
-
-**Round 3 — you synthesise.** A reply that arrived is already in your context and its file adds
+**Then you synthesise.** A reply that arrived is already in your context and its file adds
 nothing — **open only the files of the lenses that did not answer**, and only then. Rank the
-approaches best to worst *for this case* (project fit and
-simplicity, not generic merit), weighing the fatal flaws the critique surfaced. State explicitly
-where the advisors **agreed** and where they **disagreed** — the disagreement is the useful part.
+approaches best to worst *for this case* (project fit and simplicity, not generic merit), weighing
+each one's own "why it could be a bad idea" against the others' — rank on substance, not on which
+advisor wrote best. State explicitly where the advisors **agreed** and where they **disagreed** —
+the disagreement is the useful part.
 
-`agents.fanout_tool` set → run the rounds through that tool instead of plain parallel subagents; the
-rounds, the briefs and the ceiling do not change.
+`agents.fanout_tool` set → run the round through that tool instead of plain parallel subagents; the
+lenses, the briefs and the ceiling do not change.
 
 **A round that answers nothing is read off disk before it is written off** (flow-core §6). The
 advisors write their files first and reply second, so `ls .claude/work/<TICKET>/approaches/` settles
@@ -121,15 +114,15 @@ what actually happened: a file there is an answer that got lost in transit, and 
 it without spending a single agent. Only a lens with no file is empty — **it is asked once for its
 answer and then dropped, never relaunched**, because an empty result is as often a truncated report
 as an advisor with nothing to say, and a relaunched round is paid for twice out of one
-`agents.budget_max`. Synthesise from those that answered and record `N/M`. An empty critique round
-→ rank from the approaches alone.
+`agents.budget_max`. Synthesise from those that answered and record `N/M`.
 
 ### 1.5.4 Single agent (the S case, or a declined panel)
 
 Launch a `general-purpose` subagent with this short, self-contained brief:
 
 > Generate 3-5 distinct approaches to solve `<title>` following the project conventions (see
-> the effective FLOW configuration and `.claude/work/<TICKET>/01-context.md`). For each: a
+> the effective FLOW configuration and `.claude/work/<TICKET>/01-context.md`), building on what
+> already exists: `<the §1.5.1 inventory>`. For each: a
 > one-sentence description,
 > modules/layers affected, main risk, and why it could be a bad idea. Do not write code. Report in
 > markdown, under 400 words.
@@ -162,7 +155,7 @@ A sensitive domain (payments, authentication, tracking) → launch **in parallel
 
 ## 3. Prior inventory (reuse before creating)
 
-**Before** launching the design subagents, list what the feature needs that **already exists** in code or DB. Launch an `Agent` with `subagent_type: Explore`:
+**M/L already ran this in §1.5.1** — reuse that result and skip to §4. XS/S: **before** launching the design subagents, list what the feature needs that **already exists** in code or DB. Launch an `Agent` with `subagent_type: Explore`:
 
 > For feature `<title>` (see `.claude/work/<TICKET>/01-context.md`), search the repo for related pieces that already exist and could be reused: domain entities, value objects, repositories, services, events, columns or tables, CQRS commands/queries, and similar endpoints. Do not propose design — only list what is found with one line each and its location. If the feature mentions concepts like `<concept1>`, `<concept2>`, search for those specifically.
 

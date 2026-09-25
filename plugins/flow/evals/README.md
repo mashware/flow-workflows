@@ -6,8 +6,8 @@ deterministic by construction. None of it can answer the only question a change 
 `/flow:feat:review` is ever about: did it find more defects, fewer, or the same ones more
 expensively.
 
-This suite answers that one, and nothing else. **Scope is `review`.** The rest of the chain is out
-deliberately: review is where ground truth is cheap to build and where the open decisions are — the
+This suite answers that one, and — since v0.80.0 — one more about `design`, in its own tier
+(below). **Otherwise scope is `review`.** The rest of the chain is out deliberately: review is where ground truth is cheap to build and where the open decisions are — the
 completeness sweep, the data-access duel, the idiom audit, the 150/600/1500 thresholds, the
 sensitive-surface bump. Every one of them was argued from judgement and has never been checked
 against an outcome.
@@ -116,6 +116,41 @@ claude plugin eval ./plugins/flow --tag deep  ...   # a release, or a change to 
 ```
 
 Each tier keeps its own baseline, so a comparison is always the same cases against themselves.
+
+## The design tier
+
+Three cases tagged `design` put `/flow:feat:design`'s approach panel on trial, one trap each, built
+so that the obvious design walks into it:
+
+- `design-existing-backoff` (M, payments): the retry the ticket asks for already exists one module
+  over, and a timed-out charge may have gone through. Graded: builds on the existing helper, adds no
+  second one, names the idempotency key.
+- `design-cap-is-config` (M): the ticket asks for a counter and a cap that already exist; the fix is
+  one setting. Graded: names the setting, adds no source file.
+- `design-slow-rates-provider` (L, payments): the change puts a provider that publishes once a day,
+  answers in 9 s at p99 and goes down on the charge path. Graded: names the risk, and keeps the
+  charge off the live call.
+
+The work is parked right after `start`, `FLOW.md` runs in `auto` with the fan-out keys empty, and
+the design writes a four-line `verdict.md` (`chosen` · `new_files` · `reuses` · `risks`) the graders
+read. `panel-ran` is an indicator: it reads the synthesis line off the transcript.
+
+```bash
+claude plugin eval ./plugins/flow --case 'design-*' --ablation none --scaffold \
+  --allow-tools Bash Write Edit --trust-plugin --no-publish -j 3 --json /tmp/design.json
+```
+
+`--ablation none` on purpose: the question here is one version of the panel against another, not
+the plugin against no plugin, and the no-plugin arm would double the bill to answer something
+nobody asked. `bench-compare.py` reads these runs too; it counts every case that is not `seeded-`
+as a clean one, so ignore its recall/clean line for this tier.
+
+**What v0.80.0 measured.** Before and after dropping the L cross-critique and folding `reuse` into
+`minimum`, 3 runs a case: every scored grader passed in 9 of 9 runs both times. Cost $17.66 → $13.85
+for the tier; the L case $2.89 → $1.78 and 445 s → 276 s per run (medians). The honest limit: the
+base already scored the ceiling, so these cases can only catch a regression, never show a gain —
+and on a repository this small the main thread reads every file before the panel runs, which is
+exactly where advisors add least.
 
 ## Adding a case
 

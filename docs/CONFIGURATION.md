@@ -552,8 +552,8 @@ section and writes it on your yes, after copying the file to the work's `agent-b
 Three steps widen into parallel subagents — the approach panel in `/flow:feat:design` §1.5.3,
 the hypothesis sweep in `/flow:bug:investigate` §3.A, and the finding verification in
 `/flow:feat:review` §6 / `/flow:bug:review` §5. `fanout_max` is the ceiling on **one round**, not
-on the command: a panel that runs advisors and then a critique round launches up to `fanout_max` in
-each.
+on the command: a command that runs a round and then another (a review's panel, then its skeptics)
+launches up to `fanout_max` in each.
 
 ### What one command may spend (`budget_max`)
 
