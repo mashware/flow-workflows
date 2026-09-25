@@ -2,7 +2,8 @@
 type: regex
 arm: with-only
 target: trace
-pattern: '(?i)(consensus|disagree)'
+pattern: '(consensus|disagree)'
+flags: "i"
 ---
 
 The approach panel ran and its synthesis was written: §1.5.5 prefixes the recommendation with a
