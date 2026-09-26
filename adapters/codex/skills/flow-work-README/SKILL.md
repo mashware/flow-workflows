@@ -117,11 +117,11 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
   ],
   "followups": [
     { "id": "F1",
-      "kind": "prevention" | "audit" | "out-of-scope" | "risk" | "edge-case" | "other-bug",
+      "kind": "prevention" | "audit" | "out-of-scope" | "risk" | "edge-case" | "other-bug" | "tooling" | "decision",
       "title": "one line, what would be done",
       "why": "one line, why it was parked and why it still matters",
       "source": "design" | "plan" | "build" | "validate" | "fix" | "postmortem",
-      "status": "proposed" | "accepted" | "in_progress" | "declined" | "done",
+      "status": "proposed" | "accepted" | "in_progress" | "declined" | "logged" | "done",
       "ticket": null, "work": null, "note": "" }
   ],
   "defaults_used": [

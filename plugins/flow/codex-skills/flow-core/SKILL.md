@@ -37,12 +37,9 @@ a command relies on is simply absent in that session, and nothing else will repo
 - **Look before you read.** The first thing a phase does about configuration is list what is there:
   `ls <root>/FLOW*.md` (the root being the one the next bullet resolves). One call, and it is not
   optional — **an overlay you did not list is an overlay you did not read**, and nothing downstream
-  will notice. This is not a hypothetical: every command below, and every artifact they write,
-  refers to the effective configuration as "`FLOW.md`", which is a file that exists, so reading it
-  and stopping feels finished. Two real sessions in a row read the base in full and never went
-  looking for the overlay sitting beside it — the models it set were silently the defaults, and
-  both runs reported the keys as unset with no way to tell that apart from a repo that never set
-  them. **Name the files this listing found the first time a phase reports any configured value**,
+  will notice. Every command and artifact calls the effective configuration "`FLOW.md`", a file that
+  exists, so reading it and stopping feels finished — and a missed overlay reports its keys as unset,
+  indistinguishable from a repo that never set them. **Name the files this listing found the first time a phase reports any configured value**,
   so a missed overlay is visible in the artifact rather than invisible everywhere.
 - Read `FLOW.md` at the repo root as the base, then the optional overlay for the harness running
   this command: `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, `FLOW.gemini.md`,
@@ -75,11 +72,8 @@ a command relies on is simply absent in that session, and nothing else will repo
 - **A fenced block in a FLOW file is an example, and an example is not configuration.** These
   files are prose with keys in them, and the rule that decides what a key *is* — a `- key:` line
   under a `## section` — knows nothing about triple backticks. So a block written to be pasted
-  ("add this to try it once") was read as the configuration it illustrates, for as long as it sat
-  there. It happened in a real repo: `agents.exec_cmd` came from the fenced example of a file whose
-  prose argued at length that it was deliberately unset, and every review round took the one-shot
-  path that prose warned against — with nothing anywhere to say so, because the file and the
-  configuration disagreed while both looked right. **Skip fenced regions when you read a FLOW
+  ("add this to try it once") would be read as the configuration it illustrates, while the prose
+  around it says otherwise and nothing reports the disagreement. **Skip fenced regions when you read a FLOW
   file**; `flow-workflows` does the same, so the two of you resolve the same config.
 - Merge by section and key. A key present in the active overlay replaces the base value; a key
   absent there inherits the base. **A present-but-empty overlay key masks the base** and resolves
@@ -100,7 +94,7 @@ a command relies on is simply absent in that session, and nothing else will repo
      alongside whatever it was already asking. Resolve the destination by the ownership rule below.
      Never a question of its own, never a key off the list, and at most **one key per work** — the
      second one waits for the next work or for `$flow:init`.
-  3. `guided`/`auto` → take the default and **record** it: one line in the phase artifact as today,
+  3. `guided`/`auto` → take the default and **record** it: one line in the phase artifact,
      plus an entry in `meta.json.defaults_used[]` — `{ "key": "agents.security", "default":
      "general-purpose", "phase": "review" }`. Asking here would break the never-a-question contract
      (§2); recording keeps the decision readable afterwards, and `$flow:doctor` aggregates it.
@@ -127,8 +121,7 @@ a command relies on is simply absent in that session, and nothing else will repo
   the consolidation appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
   `knowledge.timeout_s` (empty = 2 s); a failure or timeout → continue without it, silently.
 **How a consolidation runs** (`ship`, `postmortem`, `abandon`, and the offer in `$flow:work-status`
-when `read_staging` has entries). No role set at all → say so in one line and stop; nothing here is
-worth a command of its own, which is why there is no longer one:
+when `read_staging` has entries). No role set at all → say so in one line and stop:
 
 1. **Read the staging** for this branch with `knowledge.read_staging`; the role empty → the "why"
    findings already written in this work's artifacts (`03-design.md` ADR-light and challenges,
@@ -278,7 +271,7 @@ right now. **Any progress line you were about to type into the chat is a panel u
 **Two transports, one document.** When the tools `panel_set` / `panel_patch` / `panel_get` are
 available, this console is a pane of agent-terminal: publish the panel through them (§4.2) and
 **stop writing `.claude/work/<work>/panel.json`** — while a pane is claimed, its file is not read at
-all. When they are not there, write the file exactly as before (§4.3). No work folder (lightweight
+all. When they are not there, write the file (§4.3). No work folder (lightweight
 `respond`/`green`) → nothing to publish, either way.
 
 **Look for them before you conclude they are missing**, once per session, in pre-flight. A harness
@@ -421,8 +414,7 @@ single largest token cost of a work, so every work carries a short handoff:
   MR/PR of `04-mr-plan.md`; `review` opens the design's contracts and the implementation log;
   `ship` opens the brief and the review verdict. A summary that does not answer the question you
   have is the cue to open the artifact — never a licence to guess.
-- Missing summary (a work started before this rule) → read the artifacts as before, write the
-  summary at your Close.
+- Missing summary → read the artifacts, write the summary at your Close.
 - **Name the phase, never the command.** An artifact outlives the session that wrote it and may be
   resumed from a different agent, where the same phase is invoked under another name. Write the
   phase — `validate`, `review`, `ship #2` — not the invocation. Applies to `00-summary.md`,
@@ -457,7 +449,7 @@ around each of its own findings to work out which changes are its doing, and how
 looks clean is clean by luck. **The parent thread is a writer too**: applying a round's fixes while
 its agents are still reading is the same collision, from the side nobody counts.
 
-So a round that contains a writer is not one round. Readers fan out freely, as they always did;
+So a round that contains a writer is not one round. Readers fan out freely;
 writers go one at a time, each either alone or in a worktree of its own, and the readers sit
 entirely before them or entirely after them. The parent's own edits wait until the round is
 consolidated. Ordering costs wall clock and the phase says so in one line — a reading nobody can
@@ -499,8 +491,7 @@ Dropping a silent agent is always allowed, and always reported (`N/M` reported).
 no deadline is what costs a session.
 
 **The budget belongs to the command, not to the round.** `agents.fanout_max` caps *one* parallel
-round; nothing capped what a command spends across all of its rounds, and the phases that fan out
-compose: a review can run a panel, then area reinforcements, then a coverage sweep that relaunches
+round, and the phases that fan out compose: a review can run a panel, then area reinforcements, then a coverage sweep that relaunches
 the panel, then one skeptic per finding — each round inside its own cap and the command an order of
 magnitude over what anyone intended.
 
@@ -565,15 +556,13 @@ must *react to* mid-wait is not a wait at all: it is the work, and it stays here
 ### 6.6 — Which agent a role resolves to
 
 **The harness already tells you which agents are installed**, each with a line on what it is for,
-and choosing the one that fits a piece of work is something you do well without being told. A rule
-that answers every empty role with `general-purpose` throws that away: a repo with a frontend
-specialist installed and no `agents.frontend` got a generalist told to act like one. So wherever a
+and choosing the one that fits a piece of work is something you do well without being told. Answering every empty role with `general-purpose` throws that away. So wherever a
 command says *"`agents.<role>`, empty → `Agent general-purpose` with the role"*, it means this:
 
-1. **`agents.<role>` names an agent** → that agent, as always.
+1. **`agents.<role>` names an agent** → that agent.
 2. **Empty** → the installed agent whose description fits the role **and this work's stack** best —
    read the list your harness gives you, never a guess at a name. None fits clearly →
-   `general-purpose` with the role in the prompt, as before. An agent that fits the role but not the
+   `general-purpose` with the role in the prompt. An agent that fits the role but not the
    stack (a PHP reviewer on a React diff) does not fit.
 
 **`agents.selection`** decides how far your judgement reaches:
@@ -719,11 +708,11 @@ one more thing the user has to decide about.
   "title": "one line, what would be done",
   "why": "one line, why it was parked and why it still matters",
   "source": "design" | "plan" | "build" | "validate" | "fix" | "postmortem",
-  "status": "proposed" | "accepted" | "declined" | "logged" | "done",
+  "status": "proposed" | "accepted" | "in_progress" | "declined" | "logged" | "done",
   "ticket": null, "work": null, "note": "" }
 ```
 
-The artifact keeps its human-readable section exactly as before, with the `F<n>` id in front of each
+The artifact keeps its human-readable section, with the `F<n>` id in front of each
 row so the prose and the record never drift. **The record is the addition, not a replacement**: a
 reader of `05-implementation.md` still sees the ideas in context.
 
@@ -758,8 +747,8 @@ at `ship`'s Close, when the work is done and the user can see the whole set.
 
 **A skeptic sorts them before the user sees them.** `$flow:*-review` already refuses to hand over an
 unverified finding: its §6 gives each ambiguous one to a skeptic whose job is to *refute* it, burden
-of proof on the finding. Deferred work reached the user through no filter at all, judged only by the
-phase that parked it — the one party that cannot judge it, having just found it. So at Close, when
+of proof on the finding. Deferred work needs the same filter: the phase that parked it is the one party that cannot judge
+it, having just found it. So at Close, when
 **3 or more** entries are still `proposed`, they go to a skeptic first (grouped into at most
 `agents.fanout_max` briefs, the ceilings of §6 unchanged; **fewer than 3 → no agent**, the command
 applies the bar itself):
@@ -786,15 +775,10 @@ Then, and only then, the survey:
   **Not worth it** · **Later**. The `title` and `why` are the entire prompt. **`decision` entries
   are asked as their product question** — they never go to the skeptic, a question's value not being
   a thing to refute — and sit outside the ceiling.
-- **`tooling` asks nothing.** `logged`, and a count on screen. Asking **Log it** about a lint floor
-  with slack in it was one question too many.
+- **`tooling` asks nothing.** `logged`, and a count on screen.
 - **Not worth it** → `declined`, with the reason if given. Never asked again.
 - **`logged` is a status, not a destination.** The entry stays exactly where it already is — in
-  `meta.json.followups[]` and in its artifact section — and no file is written anywhere. This used
-  to append a line to a versioned debt log, one per repo; **that file is gone**. No command read it,
-  `status` and `daily` excluded it on purpose, and it duplicated a record the work already keeps
-  forever, so it grew without ever being triaged. A note nobody reads is not a lighter obligation
-  than a ticket, it is the same obligation with the reader removed. If a gap in the machinery is
+  `meta.json.followups[]` and in its artifact section — and no file is written anywhere. If a gap in the machinery is
   worth someone's time, it is worth a ticket; if it is not, the record in the work is where it ends.
 - **A `decision` answered** → the answer is written into the artifact that owns it and the entry
   becomes `done` with the answer in `note`. Deferred again → stays `proposed`.
@@ -886,7 +870,7 @@ largest saving the review has.
 
 **What follows from that is a temptation, and it belongs to the diff, not to the plan.** A threshold
 that buys a lighter review pays whoever lands just under it: twelve lines below 150 is a review at
-`medium` with no project panel and no §6 round, twelve above it is the panel. So, in every phase:
+`medium`, twelve above it is one at `high`; at 600 the project panel joins. So, in every phase:
 
 **The diff reports the change; the change is never shaped to fit the number.** Never delete a
 comment, a test, a blank line or a log line, never compress readable code into fewer statements,

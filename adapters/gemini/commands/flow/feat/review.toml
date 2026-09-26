@@ -36,7 +36,7 @@ Mandatory review phase. **`/flow:feat:ship` cannot run without passing through h
   member runs its own `git diff` and opens the same files pays for that material once per agent, and
   a reviewer that spends its turns exploring has fewer left to review. **Any non-zero exit is a
   fallback, not a failure** — no CLI on the machine, a base that does not resolve, a network that
-  cannot reach it: read the diff from git as before and carry on, once, without retrying variants.
+  cannot reach it: read the diff from git and carry on, once, without retrying variants.
   What is not optional is the `Review path` line of §8: a round that skipped the pack and one that
   used it are indistinguishable from the artifact otherwise, which is how a phase quietly stops
   paying for itself.
@@ -65,7 +65,7 @@ Mandatory review phase. **`/flow:feat:ship` cannot run without passing through h
 
 ### 1.5 Freeze what you are about to read, and resolve what to compare it against
 
-Two questions, answered here and nowhere later: **which tree** this round reads, and **against which base**. Both used to be answered implicitly — by the checkout as it happened to stand at each moment, and by `git.default_base` always — and both answers were wrong in a way no artifact could show.
+Two questions, answered here and nowhere later: **which tree** this round reads, and **against which base**. Neither is implicit: the checkout changes while the round runs, and `git.default_base` is not always the right base.
 
 **The candidate.** A round applies its own fixes; the README's own first-minute example is *"3 reviewers, one finding — fixed"*. So "the working tree" is a different tree for the reviewer that read it first, for the skeptic that read it last, and for the `git rev-parse HEAD` taken at §9 — which by construction contains code no reviewer ever saw, and which `/flow:feat:ship §1` then compares against `HEAD` and finds equal. Resolve one revision before §2 launches anything:
 
@@ -75,11 +75,11 @@ Two questions, answered here and nowhere later: **which tree** this round reads,
 - Anchor it so it cannot be collected: `git update-ref refs/flow/candidate/<TICKET> <sha>`. A `stash create` object is unreferenced, and a candidate the `ship` gate cannot resolve is a gate that reports nothing. The ref is local, never pushed, and `/flow:feat:ship §6.5` deletes it.
 - Write `candidate_sha` to `meta.json` — work-level and in the current `mrs[]` entry — **in this pre-flight**. A candidate recorded after the reading is not a freeze.
 
-**The review base.** `reviewed_sha` already records the tree the last passing review read, and `ship` trusts it enough to stop a push — yet the review itself never read it, so a second review re-reads every line the first one cleared, and §2.0 resolves the tier on the accumulated total: a 30-line delta on a 900-line branch reviewed as the 900. Resolve:
+**The review base.** `reviewed_sha` records the tree the last passing review read, and `ship` trusts it enough to stop a push. Reading only the delta since it keeps a second review from re-reading every line the first one cleared, and keeps §2.0 from resolving the tier on the accumulated total — a 30-line delta on a 900-line branch is a 30-line review. Resolve:
 
 - The current MR/PR's `reviewed_sha` (work-level when there is no train) when it is **non-empty** and **an ancestor of the candidate** (`git merge-base --is-ancestor <sha> <candidate>`) → that is the base.
 - Otherwise `git.default_base`. A `reviewed_sha` that is not an ancestor means history was rewritten or the branch recut; say so in one line rather than producing a nonsensical delta.
-- **A first review has no `reviewed_sha` and reads the whole branch**, exactly as before. The delta path only exists after a review that passed.
+- **A first review has no `reviewed_sha` and reads the whole branch**. The delta path only exists after a review that passed.
 - `/flow:feat:review --full` ignores `reviewed_sha` and reads the branch on demand.
 - **Fall back to `git.default_base` and say why** when either holds, because a delta cannot see how it interacts with what was cleared before: the delta touches a file the previous review left a finding on, or it changes an external contract copied under `/flow:feat:build §2.0bis`.
 
@@ -93,7 +93,7 @@ Scope for every reviewer: **the candidate revision of §1.5, against the review 
 
 **The CLI resolves it; you obey the output and record any deviation.** `npx flow-workflows@<version> tier --harness gemini --rev <candidate_sha> --base <review base>` prints, from the config it already parses: changed lines over the §1.5 range, diff size, `meta.json.size`, **effective size** (the lower of the two), the built-in `code-review` effort with and without the sensitive-surface bump, whether the panel runs, the resolved `agents.budget_max`/`fanout_max`, whether the measurement landed **within 10% under** a threshold that changed the tier, and which `quality.sensitive_paths` globs the diff matched, with the path that matched each.
 
-Every step of that is arithmetic, and the cost of leaving it here was never mainly the tokens: `06-review.md` recorded the tier *this agent said it derived*, so a round that eyeballed the diff and a round that measured it wrote a byte-identical artifact — on the one number in this command that carries an incentive on it. Same treatment `Review path` and `Cost:` already got, for the same reason.
+Every step of that is arithmetic. A tier this agent derives itself writes the same artifact whether it measured the diff or eyeballed it — on the one number in this command that carries an incentive on it.
 
 **Copy the output verbatim** into the `Review tier` and `Effective size` lines of §8, the way `bundle --checks` copies static analysis out. A computed line, not a narrated one.
 
@@ -103,7 +103,7 @@ Every step of that is arithmetic, and the cost of leaving it here was never main
 - **Whether a matched path is a sensitive *diff*.** The bump asks what the change *does* there, not where it lives: it applies to **control flow, or the data that reaches a person, a charge or a stored record** — a new guard, a new `catch`, a changed condition, a changed value, a changed contract. It does **not** apply when the diff moves **observability alone**: a log level, a channel, a message's text, a metric, a comment. Mixed diff → not observability-only, so it bumps. **Say which of the two it was in one line**; a diff demoted here is the one place a missed defect is expensive.
 - **Query changes.** §3.6 duels every query the diff adds or modifies, at every size, whatever this section resolved — routing them through the bump buys a second opinion on prose where §3.6 buys a plan.
 
-**No CLI, or a non-zero exit → the prose fallback**, and `Review path` names it with the reason (the same contract the panel follows). Measure `git diff --shortstat <review base>...<candidate_sha>`; **≤150 → XS · 151-600 → S · 601-1500 → M · >1500 → L**; effective size = the lower of that and `meta.json.size`; `proportional` runs the built-in at **medium/high/high/xhigh** by size and the panel at M and above (at S only on a sensitive surface); the bump raises the effort one tier (medium→high→xhigh→**max**) and always runs the panel; `full` is **xhigh** plus the panel at any size, `light` is the built-in alone at **medium** with no panel, no §3 and no §6 — and a sensitive surface lifts `light` to the proportional tier for that work. The thresholds and the ladder are documented in `docs/CONFIGURATION.md`, where they can be read without being re-taught to a model on every invocation.
+**No CLI, or a non-zero exit → the prose fallback**, and `Review path` names it with the reason (the same contract the panel follows). Measure `git diff --shortstat <review base>...<candidate_sha>`; **≤150 → XS · 151-600 → S · 601-1500 → M · >1500 → L**; effective size = the lower of that and `meta.json.size`; `proportional` runs the built-in at **medium/high/high/xhigh** by size and the panel at M and above (at S only on a sensitive surface); the bump raises the effort one tier (medium→high→xhigh→**max**) and always runs the panel; `full` is **xhigh** plus the panel at any size, `light` is the built-in alone at **medium** with no panel, no §3 and no §6 — and a sensitive surface lifts `light` to the proportional tier for that work.
 
 **The diff pointing *higher* than `meta.json.size`** is worth one line in `06-review.md` (the work may be misclassified), never a heavier review. **The sensitive-surface bump is never scaled away** — a 12-line change to an authorization check still gets the panel, on a delta exactly as on a first review.
 
@@ -152,7 +152,7 @@ Launch the reviewers selected in §2.0 and **consolidate their findings into a s
 
 When both run, deduplicate overlapping correctness/simplification findings (count each once). The `review_skill` specialists (offensive/defensive security, silent failures, architecture) are not repeated in later phases.
 
-**Dedup keeps every source, not the first one.** A finding carries its **origin** from here to §8 — `built-in`, a panel role, or the pass that raised it (`§3.5`, `§3.6`, `§5`, `§5.5`) — and a finding more than one source raised lists all of them. Counted once, credited to each. Beyond the built-in and the panel this command runs four specialised passes, roughly 1 800 of its words, every one added after a real defect got through and not one able to show it still earns that cost: a finding only the idiom audit saw and a finding three sources raised say opposite things about that pass, and until now both were written identically. The `Cost:` line stopped being a headcount when `meta.json.cost[]` arrived; this is the same move for the thing those costs are spent on.
+**Dedup keeps every source, not the first one.** A finding carries its **origin** from here to §8 — `built-in`, a panel role, or the pass that raised it (`§3.5`, `§3.6`, `§5`, `§5.5`) — and a finding more than one source raised lists all of them. Counted once, credited to each: a finding only one pass saw and a finding three sources raised say opposite things about that pass, and §9 records the difference.
 
 ### 2.2 Design truth vs design rationale (do not inherit rationalizations)
 `03-design.md` goes to reviewers as context, with unequal authority:
@@ -171,7 +171,7 @@ Only what §2 does **not** already cover; skipped entirely under `light` (§2.0)
 
 ## 3.5. Completeness sweep (anti-abandonment, M/L only)
 
-Counters a reviewer abandoning a large diff early. **Only if `meta.json.size` is M or L**, and only
+Counters a reviewer abandoning a large diff early. **Only if the effective size of §2.0 is M or L**, and only
 if §2.0b's budget still covers it (it is the first phase dropped).
 
 **It runs after §2-§3 are consolidated, never in parallel with them.** The whole phase is an audit of
@@ -263,7 +263,7 @@ Findings enter the normal flow: §6, then the output. Blinded for the same reaso
 
 A filter against over-reporting, not a second review; narrow gate. Never runs under `light` (§2.0).
 
-**When it runs.** All three conditions:
+**When it runs.** All four conditions:
 
 | Condition | Threshold |
 |---|---|
@@ -272,7 +272,7 @@ A filter against over-reporting, not a second review; narrow gate. Never runs un
 | Findings | **≥ 4** ambiguous findings across §2-§5 |
 | Budget | §2.0b's budget still covers a round (§6 is the second phase dropped) |
 
-Read the real diff (`git diff --stat` against the target branch), not the recorded size.
+Read the real diff (`git diff --stat <review base>...<candidate_sha>`, §1.5), not the recorded size.
 
 When all three hold: in **`manual`**, offer it with `AskUserQuestion` ("Verify the ambiguous findings with skeptics in parallel? Discards false positives before you go fix them."). In **`guided`/`auto`, do not ask** — flow mechanics: run it and note in `06-review.md` that you did.
 
@@ -352,7 +352,7 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 ## Discarded by adversarial verification
 <only if §6 was run; list of refuted findings with reason, or "not applicable">
 <if the `fanout_max` cap left ambiguous findings unverified, list them here as "unverified (cap)">
-<if §6 did not run, one line saying which condition did not hold — size, diff size, or count>
+<if §6 did not run, one line saying which condition did not hold — size, diff size, count, or budget>
 
 ## Blockers (must-fix)
 1. [file:line] · <origin> · description + concrete proposal
@@ -375,12 +375,11 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 - Blockers → **do not advance `phase`**. Leave `phase = "build"`; the user resolves them.
 - No blockers → `phase = "review"`, add to `phases_done`. **In a multi-MR/PR work**, also add `review` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — `/flow:feat:ship §1` gates on it per MR/PR.
 - **Record *what* you reviewed, and separately what you changed after reading it**, in the same write, work-level and — in a multi-MR/PR work — in this MR/PR's `mrs[]` entry too:
-  - `reviewed_sha` = **the candidate of §1.5**, the revision the reviewers actually read. Not `git rev-parse HEAD`, which is what it used to be and which by then holds this round's own fixes — code no reviewer saw, recorded as reviewed, and `ship` finding it equal to `HEAD` every time.
-  - `fixed_sha` = `git rev-parse HEAD` after this round's fixes, or **empty** when the round applied none. Two fields because they are two facts, and collapsing them is what hid the delta.
+  - `reviewed_sha` = **the candidate of §1.5**, the revision the reviewers actually read. Not `git rev-parse HEAD`, which by then holds this round's own fixes — code no reviewer saw, recorded as reviewed, and `ship` finding it equal to `HEAD` every time.
+  - `fixed_sha` = `git rev-parse HEAD` after this round's fixes, or **empty** when the round applied none. Two fields because they are two facts.
   - `phases_done` says a review *happened*; these say which tree, and `/flow:feat:ship §1` reads both before pushing. Written whenever the phase advances, never when it does not: a review that ended in blockers reviewed nothing that stands.
 - **Record which pass found what**, in the same write: `meta.json.review_findings[]`, one entry per finding **per source** — `{ round, origin, severity, file, discarded_by_skeptic }`, and no finding text, which stays in the artifact. `flow review --record` writes these itself when the CLI ran the panel; when the agentic panel ran, write them here from the origins §2.1 carried. `flow cost` reads them back per origin: how many findings each pass contributed, how many only it raised, and how many of those survived §6. That last number is the only evidence a pass is still earning its words.
-  **The retirement rule, written down before the data arrives** so it cannot be argued backwards later: a pass that contributes **no exclusive surviving finding across twenty reviews** is removed from this command. Zero is zero, and the decision is made against the number rather than against whoever is most attached to the pass.
-- **Stage what the review taught** (`knowledge.stage` set; silence by default). Review is where a project teaches the most and, until now, the one phase that never staged — a work with three review rounds and seventeen blockers produced zero knowledge cards because nothing asked for them while they were in context. Candidates are findings about the **domain or the codebase's real behaviour**, not about this diff: a library that does other than its name says, a test disguise that kept the suite green over a live defect, a module rule the reviewers had to cite from its own prose, a measurement. A blocker fixed here is not knowledge; *why it was written wrong* may be. Same evidence rule as `/flow:feat:design` §8 — one line of evidence per finding or it is not staged. One call per finding, one line to the user («Staged N finding(s) for `ship`»). Never `knowledge.save` here.
+- **Stage what the review taught** (`knowledge.stage` set; silence by default). Review is where a project teaches the most, and this is the only moment its findings are in context. Candidates are findings about the **domain or the codebase's real behaviour**, not about this diff: a library that does other than its name says, a test disguise that kept the suite green over a live defect, a module rule the reviewers had to cite from its own prose, a measurement. A blocker fixed here is not knowledge; *why it was written wrong* may be. Same evidence rule as `/flow:feat:design` §8 — one line of evidence per finding or it is not staged. One call per finding, one line to the user («Staged N finding(s) for `ship`»). Never `knowledge.save` here.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Record what the agents missed** (flow-core §6.7, `agents.learn` not `off`; asking nothing): for each finding that survived, the panel member or named `agents.<role>` whose category it falls in and who did not report it, and the delegated `build` agent whose code it sits in → one `meta.json.agent_lessons[]` row each, only when the lesson passes the §6.7 test. The origins §2.1 carried are what make this possible — a finding with no origin teaches nobody.
 - **Configuration this phase earned the right to ask about** (flow-core §0, `manual` only, at most one key per work, as an extra option on this same stop — never a question of its own): a `Cost:` line that went over `agents.budget_max` → `quality.review_depth`. In `guided`/`auto` neither is asked: the default is taken and recorded in `meta.json.defaults_used[]`.
