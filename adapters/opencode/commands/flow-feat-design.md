@@ -25,7 +25,7 @@ Technical design phase. **Still no production code is written.** Opens the optio
 ## 1. Pre-flight
 
 - Load `meta.json` by current branch. Missing → ask the user to start with `/flow-feat-start`.
-- Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received), and `02-brainstorm.md` when a work started before v0.53.0 has one — its options are §1.5's output, already done. (flow-core §5)
+- Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received). (flow-core §5)
 - `size` is `XS` → suggest jumping to `/flow-feat-build` and stop unless the user insists.
 
 ## 1.5 Approaches — open the option space first (M/L)
@@ -33,9 +33,6 @@ Technical design phase. **Still no production code is written.** Opens the optio
 Design that starts from the first idea is design that never had a second one. **M and L run this
 section; XS and S skip it** and go straight to §2 — the cost does not pay on a change whose shape is
 obvious.
-
-*(This was the `feat:brainstorm` command until v0.53.0: a command whose whole output only this one ever
-read.)*
 
 **No code, and no design yet.** The output of this section is a ranked set of options and one chosen
 approach; §3 onwards designs *that* approach.
