@@ -5,6 +5,23 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.81.0 — The review stopped contradicting itself  ·  2026-09-26
+
+**In short**
+- **The skeptic round and the coverage sweep open when they should.** Both now read the diff's
+  effective size over the range the review froze at the start. Before, one counted "three"
+  conditions out of four and measured against the target branch (the whole branch again on a second
+  review), and the other gated on the size recorded at `start`.
+- **The shared rules agree with the review on the panel.** A diff just over 150 lines is reviewed at
+  `high`, and the project panel joins at 600 — `flow-core` said the panel came in at 150.
+- **Deferred work has one list of states and kinds.** `flow-core` and the `meta.json` reference now
+  both list `in_progress`, `logged`, `tooling` and `decision`.
+- **Less history on every run.** The commands no longer tell the model what they were called before
+  v0.53.0, the incidents behind a rule or which files were retired; each rule keeps its reason. Works
+  still on the retired `brainstorm`/`diagnose` phases are no longer mapped on resume.
+
+Found by running Anthropic's prompt-audit guide over `feat:review` and `flow-core` (#164).
+
 ## v0.80.0 — The advisors were arguing with themselves  ·  2026-09-25
 
 **In short**
