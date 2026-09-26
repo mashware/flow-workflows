@@ -72,7 +72,6 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
   "branch": "{PREFIX}XXXXX-slug",
   "size": "XS" | "S" | "M" | "L",
   "phase": "context" | "design" | "plan" | "build" | "review" | "validate" | "ship" | "investigate" | "fix" | "postmortem" | "done" | "abandoned",
-  // retired in v0.53.0 and still read from older works: "brainstorm" → treat as "context", "diagnose" → as "investigate"
   "phases_done": ["context", ...],
   "candidate_sha": "40-char sha the current review froze before reading, or ''",
   "reviewed_sha": "40-char sha the last passing review read, or ''",

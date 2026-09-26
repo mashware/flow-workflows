@@ -34,9 +34,6 @@ Print this **before** the environment checks: a key nobody set is the commonest 
 below looks broken. Read against `examples/FLOW.template.md` — do not invent keys, and do report
 documented keys absent from the effective configuration (the "empty → fallback" rows).
 
-**This was the `config` command until v0.53.0.** One question — *what will the flow do in this repo* —
-had two commands answering different halves of it.
-
 ### 1.5.1 Effective config, per section
 
 For **every** documented key in `examples/FLOW.template.md`, one row:

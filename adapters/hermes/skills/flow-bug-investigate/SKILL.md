@@ -28,18 +28,13 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
 - `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow-bug-fix` and stop.
-- Require `context` in `phases_done`. A work whose `phase` is the retired `diagnose` (written before
-  v0.53.0) is treated as having finished §1.5: read its `02-diagnose.md`, carry it into
-  `03-investigation.md`, and go straight to §3.
+- Require `context` in `phases_done`.
 
 ## 1.5 Reproduce — what is failing, before why
 
 Isolate **what** fails before looking for **why**. On **S** this is the whole of this command's
 first half and the chain is `start → investigate (reproduce only) → fix → …`; on **M/L** it is the
 ground §3 stands on. **XS** skips straight to `/flow-bug-fix`.
-
-*(This was the `bug:diagnose` command until v0.53.0. Reproducing and finding the cause were two commands
-sharing five headings, and the S-size chain already ran them back to back.)*
 
 1. **Focused knowledge query on the symptom.** `knowledge.search` set → 2-3 parallel queries about
    the **suspected component** (handler, worker, endpoint, module): the same root cause often
