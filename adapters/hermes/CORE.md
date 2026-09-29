@@ -385,21 +385,26 @@ present, **applies it only when every check holds**, in this order:
 5. `answer` is one of the labels, or `free_text` is `true` (`option`).
 
 Applying it: write the answer, quoted and with its `id`, where the table below says → add
-`{ "key": "unattended:answer:<gate>", "default": "<answer>", "id": "<id>", "phase": "<phase>" }` to
+`{ "key": "unattended:answer:<gate>", "default": "<answer>", "id": "<id>", "phase": "<phase>", "head": "<head>" }` to
 `meta.json.defaults_used[]` → delete `answer.json` → write `running` → go to `resume_at`, reading
 what the phase computed before the stop from its artifact instead of computing it again. **Which
 site takes it**:
 
 - **The site at `resume_at`** takes the answer the pickup applied and does not stop.
 - **A phase that re-runs from its pre-flight or re-enters at its Close** (`validate`, `ship`,
-  `review`) may pass more than one of its gates on the way: each of its sites takes a
-  `defaults_used[]` answer with **the same phase, the same gate and the current `head`** — so an
-  answer given to that phase at this commit still holds when the next one is asked.
+  `review`) may pass more than one of its gates on the way: its `migration`, `ship` and
+  `high_findings` sites take a `defaults_used[]` answer with **the same phase, the same gate and
+  the same `head`** as now — so an answer given to that phase at this commit still holds when the
+  next one is asked. Each of those gates is asked once per phase at a commit; a `decision` is not,
+  and never takes an answer this way.
 - **A plan step a review wrote as approved by an `id`** — the `migration` row below — is answered
   when that `id` is in `defaults_used[]` with gate `migration` and phase `review`; build checks it
   there, never on the step's word.
 - **Every other site asks anew**, with its own `id` — a later phase, a later commit, another round.
   A site never recomputes an `id` to look an answer up.
+
+*Fix them* whose build or fix produces no new commit ends the run `blocked`: at the same `head`,
+the next review would take *Fix them* again, with nothing left to fix.
 
 Any check failing → apply nothing: rewrite the stop file exactly as it was, changing only
 `answer_rejected` (the first check that failed) and a one-line `detail` — a question regenerated in
