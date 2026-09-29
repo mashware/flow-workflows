@@ -6,6 +6,11 @@ description: Find the root cause of the bug (not just the symptom)
 
 Investigation phase: reproduce the failure, then find **why it happened** — not just what is failing.
 
+**In `unattended`** (flow-core §2.1) this command asks nothing. The hypothesis sweep runs as in
+`auto` · a size that no longer fits → record the new size · a `high` challenge with no response →
+question `investigation_challenge`, the findings and their options in the stop file · a bug that
+cannot be reproduced and needs a person to try → blocked.
+
 ## 1. Pre-flight
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
