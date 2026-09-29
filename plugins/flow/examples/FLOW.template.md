@@ -89,7 +89,7 @@ Branch and Pull/Merge Request conventions.
 ## autonomy
 How much the flow advances on its own vs. stopping to ask you.
 
-- `mode:`             # `manual` (default) | `guided` | `auto`. Empty = `manual`.
+- `mode:`             # `manual` (default) | `guided` | `auto` | `unattended`. Empty = `manual`.
                       #   manual — every phase stops at each decision point and, at the end, proposes the
                       #            next command as a one-click confirmation (you accept to advance, it is
                       #            never typed for you and never runs without your confirmation).
@@ -99,7 +99,11 @@ How much the flow advances on its own vs. stopping to ask you.
                       #            automatically (no advance confirmation).
                       #   auto   — as guided, plus auto-resolves the remaining decision points with sensible
                       #            (recorded) defaults, chaining phases without pausing.
-                      # HARD GATES stop and ask in EVERY mode, no exceptions: any push or MR/PR (ship),
+                      #   unattended — as auto, for a run nobody watches (script, container, headless CLI):
+                      #            never asks; each hard gate is recorded, becomes a draft MR/PR, or ends
+                      #            the run with a question in .claude/work/<work>/stop.json for a runner
+                      #            to post; `/flow:work:resume <answer>` continues. Only when written here.
+                      # HARD GATES stop and ask in manual/guided/auto, no exceptions: any push or MR/PR (ship),
                       # branch creation with an ambiguous base, DB schema changes/migrations, a review
                       # with high-severity findings, and the business brief confirmed just before the
                       # first edit in `build`/`fix`.
@@ -107,6 +111,10 @@ How much the flow advances on its own vs. stopping to ask you.
                       # (panels, challengers, how many reviewers), WIP commits, continuing a train when
                       # the train's next MR/PR in `guided`/`auto`, size confirmation, and anything already decided
                       # and recorded — only new contradicting evidence reopens a settled decision.
+- `unattended_ship:`  # What `ship` does in `unattended`: `draft` | `stop`. Empty = `stop`.
+                      #   draft — push the work branch and open the MR/PR as draft; never merge, never ready.
+                      #   stop  — nothing is pushed; ship ends the run with a question in stop.json.
+                      # Read only when mode is `unattended`.
 
 ## quality
 Repo commands for quality gates, whatever the stack — `make test`, `./gradlew test`, `dotnet test`,
