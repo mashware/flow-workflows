@@ -29,8 +29,8 @@ pushes. Each place it would ask:
   Empty or `stop` → nothing is pushed: question `ship`, the §3 preview as the question, and the run
   ends; a person ships it from a session of their own. Pre-deploy SQL in the branch → question
   `migration`, whatever `unattended_ship` says. A runner's answer (flow-core §2.1) relaunches this
-  command from §1, since the draft lives only in context: the site that finds its `id` in
-  `meta.json.defaults_used[]` takes it — *Create it as draft* creates the draft as `draft` would,
+  command from its pre-flight, since the draft lives only in context, and the site it was for takes
+  the answer the pickup applied — *Create it as draft* creates the draft as `draft` would,
   *The SQL is complete — ship it* goes on to the MR/PR.
 - **The §1 tree check** — `reviewed_sha` or `validated_sha` behind `HEAD` with more than tests →
   re-run what is behind, **once per MR/PR**: the review on the delta, then `validate`. First record

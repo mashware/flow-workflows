@@ -37,8 +37,8 @@ Then:
 1. Run only that test with `quality.test_one` from FLOW.md; it must pass.
 2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if slow; measured in tens of minutes → delegate it as a wait to a supervisor subagent on `models.supervisors`, flow-core §6.5 — it returns the exit code and the failing output, and the reading of them stays here).
 3. DB touched → verify the schema has no unexpected differences (`quality.db_update` or the FLOW.md equivalent, if defined; in `unattended` it is never run without an answer — a schema difference to apply is question
-`migration`, flow-core §2.1; a runner's *Apply it* relaunches this phase, and this site, finding its
-`id` in `meta.json.defaults_used[]`, runs it).
+`migration`, flow-core §2.1; a runner's *Apply it* relaunches this phase, this site takes the answer
+the pickup applied and runs it, and the migration line of `05-validation.md` names that answer).
 4. Security or authentication touched → launch the `agents.security` agent from FLOW.md in parallel over the fix files (empty → `Agent general-purpose` with a security role).
 
 ## 2.5 Reproduce the original symptom against the running app

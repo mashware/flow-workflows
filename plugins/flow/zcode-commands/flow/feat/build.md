@@ -62,9 +62,10 @@ The gate's purpose moves to the draft MR/PR, whose body carries the brief for th
 of one → stop file, end the run. A person continues from there, or a runner's answer re-enters here
 (flow-core §2.1): the brief, the contracts and the plan are already written — keep them — and the
 MR/PR is the one already `in_progress`, not a new pick. *Write it and continue* → the first unticked
-step, the migration included · *Change the design first* → `blocked`. Re-entered from a review's
-`high_findings` *Fix them* → the findings are unticked steps at the end of this MR/PR's plan: build
-them in order, then chain into `/flow:feat:review`, which reads the delta.
+step, the migration included · *Change the design first* → `blocked`. A plan step marked approved
+by an answer's `id` (a review wrote it) is that migration already answered: write it, do not stop.
+Chained from a review's `high_findings` *Fix them* → the findings are unticked steps at the end of
+this MR/PR's plan: build them in order, then chain into `/flow:feat:review`.
 
 **The brief travels inside the question** (flow-core §3): the user reads it in the prompt they are answering, never by opening `05-implementation.md`. Write the file, run whatever you need, and *then* open the gate — **nothing runs between the brief and the question**, because a tool call after it is what lets a terminal fold the brief into one collapsed line, and the gate is answered blind. Options:
 - **Yes, proceed** → start building.

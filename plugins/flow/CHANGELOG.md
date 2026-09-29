@@ -16,7 +16,7 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   it was asked on (`head`), the command to relaunch (`resume`) and where that command re-enters.
   The wrong id, a different commit, an option that was not offered or another command → nothing
   is applied, the question stays, and `answer_rejected` says which check failed.
-- **Every question can be answered this way**: a migration, serious review findings (*Fix them*
+- **Every named question can be answered this way**: a migration, serious review findings (*Fix them*
   goes back to build, *Accept and go on* continues and lists them in the MR/PR), shipping the draft,
   a product decision, doubts about the ticket, a design challenge. Nothing already written is
   worked out again: no second review of the same code, no new approach panel.

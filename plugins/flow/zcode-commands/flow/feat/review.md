@@ -388,5 +388,8 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
   (flow-core §2.1). *Accept and go on* → this command re-enters at this Close: no reader is
   launched again, the findings are recorded under "Answered (unattended)" as accepted by that
   answer, `reviewed_sha` = the candidate, and the phase advances and chains; `ship` lists them in
-  the body. *Fix them* → `/flow:feat:build` re-enters with each finding as a step, and the next
-  review reads only that delta.
+  the body. *Fix them* → this command re-enters at this Close too: it writes each finding as an
+  unticked step under this MR/PR's plan in `05-implementation.md`, leaves `phase = build`, and
+  chains into `/flow:feat:build`, which builds those steps and chains back here. A migration one of
+  this round's fixes needs is question `migration` asked here, answered the same way (flow-core
+  §2.1).
