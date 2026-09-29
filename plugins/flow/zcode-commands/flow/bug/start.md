@@ -22,8 +22,8 @@ that table says. Here: a ticket is required — empty, or a tracker read that fa
 owns the checkout · cross-repo scope (§1.6) → only the repos the ticket names · `git.worktree: ask`
 → in place · a linked remote branch → skipped, nothing is pushed before `ship` · the tracker
 transition (§4.5) → as `auto`. **A thread that changes what the bug *is* (§1.1 precedence) waits
-until the branch and the work folder exist** — create them (§3, §4) first, then write question
-`clarify`, so `resume` can find the work and continue this phase.
+until the branch and the work folder exist** — create them (§3, §4) first, write it into
+`01-context.md` as open, then question `clarify`. The person answers it where they pick the work up.
 
 ## 0. Pre-flight
 

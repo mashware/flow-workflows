@@ -215,38 +215,40 @@ Asking these anyway is how a run in `guided`/`auto` degrades into a manual one.
 Nobody answers a question in this mode. A question tool — `AskUserQuestion`, OpenCode's `question`,
 whatever the harness calls it — either blocks a run that has no one to unblock it or, in print mode,
 ends it with a question nobody reads. So **no question tool is ever called in `unattended`**, and a
-question in prose is not a substitute. Each place a command would have asked resolves one of three
-ways:
+question in prose is not a substitute. The run goes as far as it can without a person, and where it
+needs one it **stops and says exactly what for**. It never answers for them. Each place a command
+would have asked resolves one of three ways:
 
 - **record** — take the resolution the table names, write it where the phase keeps its decisions,
   add `{ "key": "unattended:<site>", "default": "<resolution>", "phase": "<phase>" }` to
   `meta.json.defaults_used[]` (the prefix says it is not a FLOW key), and continue.
-- **question** — **first look for an answer already given**: `meta.json.unattended_answers[]` holds
-  one entry per answered question, `{ "gate", "phase", "question", "answer", "at" }`. An entry for
-  this gate about this same subject *is* the resolution — act on it and do not ask
-  again. Otherwise write the stop file with `reason: "question"`, set the panel's `attention` to
-  `wait`, and **end the turn**: no further phase runs and nothing else is asked. The §3 stop header
-  is still printed — a log is the only screen that run has.
-- **blocked** — the stop file with `reason: "blocked"` and a one-line `detail`, `attention: block`,
-  end the turn.
+- **question** — a decision only a person can take. Write the stop file with `reason: "question"`,
+  the question and its options as `AskUserQuestion` would have carried them, set the panel's
+  `attention` to `wait`, and **end the run**: no further phase starts. The person picks the work up
+  in a session of their own, in any other mode, where the phase asks them as it always does.
+- **blocked** — something the run cannot get past (the environment, a tool, a check that keeps
+  failing). The stop file with `reason: "blocked"` and a one-line `detail`, `attention: block`, end
+  the run.
+
+The §3 stop header is still printed at every stop — a log is the only screen that run has.
 
 | Where | In `unattended` |
 |---|---|
-| Business brief before code (`build`, `fix`) | record — the brief is written to the phase artifact, marked `recorded (unattended)` |
-| Push and MR/PR creation (`ship`) | `autonomy.unattended_ship: draft`, or a recorded answer *Create as draft* → push the work branch and create the MR/PR **as draft**; never merge, never mark it ready; the forge refusing a draft → blocked, never retried as a normal one. Otherwise → question `ship` |
-| Writing a DB schema change or migration (`build`, `fix`), or applying one (`validate`) | question `migration`, before the first line of it is written — one answer covers writing it and applying it, in whichever phase comes next |
-| `review` with high-severity findings | question `high_findings` |
+| Business brief before code (`build`, `fix`) | record — the brief is written to the phase artifact, marked `recorded (unattended)`, and travels in the MR/PR body |
+| Push and MR/PR creation (`ship`) | `autonomy.unattended_ship: draft` → push the work branch and create the MR/PR **as draft**; never merge, never mark it ready; the forge refusing a draft → blocked, never retried as a normal one. Empty or `stop` → question `ship` |
+| Writing a DB schema change or migration (`build`, `fix`), or applying one (`validate`) | question `migration`, before the first line of it is written or run |
+| `review` with blockers or high-severity findings | question `high_findings` |
 | A product decision (§7 `decision`) | question `decision` |
-| Clarifying questions on the ticket (`start`) | question `clarify` — asked after the branch and the work folder exist |
+| Clarifying questions on the ticket (`start`) | question `clarify` — after the branch and the work folder exist, with the questions also written to `01-context.md` |
 | An unanswered high-severity challenge (`design`, `investigate`) | question `design_challenge` / `investigation_challenge` |
-| No ticket, a tracker read that fails, a branch base that is not a clean default base (`start`) | blocked — the runner owns the checkout and the ticket; re-running `start` is the retry |
+| No ticket, a tracker read that fails, a checkout that is not a clean default base (`start`) | blocked — the runner owns the checkout and the ticket |
 | Below-XS check (`start`) | record — open the work |
 | `git.worktree: ask` | record — in place |
 | Cross-repo scope (`start`) | record — only the repos the ticket names |
-| Criteria that need a person to verify (`validate`) | record — `not-verified-unattended`; every later `ship`, in any mode, lists them under "Not verified — needs a human" |
+| Criteria that need a person to verify (`validate`) | record — `not-verified-unattended`; every later `ship`, in any mode, lists them in the body under "Not verified — needs a human" |
 | The query duel needs a database (`review`, `query`) | record — schema-only verdict; never create or seed a database |
-| "Was it merged?" (`ship` close) | record — not merged; phase stays `ship` |
-| The next MR/PR of a train (`ship` close) | record — not started: one MR/PR per unattended run; `done` names the next one |
+| "Was it merged?" (`ship` close) | record — not merged |
+| The next MR/PR of a train (`ship` close) | record — not started: one MR/PR per unattended run |
 | The parent of a stacked MR/PR merged — rebase and force-push | blocked — never force-push unattended |
 | Any offer about the work's own bookkeeping — a tracker issue, the first `KNOWLEDGE.md` or a knowledge save, a FLOW convention, an agent lesson or a saved specialist, the follow-up survey, carrying files over from the main checkout, a contract handoff, archiving the work | record — `Later`; nothing written outside the work folder |
 | A step the command cannot complete (a red suite it cannot fix, a tool missing, auth failing, the same check failing a second time) | blocked |
@@ -255,17 +257,21 @@ ways:
 A place a command asks that this table does not name is a **question** — the conservative reading,
 never a guess dressed as a default.
 
-**The stop file** — `.claude/work/<work>/stop.json`, written whole, only in this mode:
+**The stop file** — `.claude/work/stop.json`, at the root of the main checkout (§0: the repo root is
+the main checkout's, whichever worktree the phase runs in). One fixed path, so a runner finds it
+without knowing the work's folder, and `start` can write it before that folder exists. Written
+whole, only in this mode; one unattended run per checkout.
 
 ```json
 {"reason": "question",
  "phase": "review",
  "gate": "high_findings",
  "ticket": "168",
+ "work": "168-unattended-autonomy-mode",
  "branch": "168-unattended-autonomy-mode",
  "worktree": null,
- "question": "Review found 2 high-severity findings. Fix them, or ship as draft with them listed?",
- "options": [{"label": "Fix first", "recommended": true}, {"label": "Ship as draft"}],
+ "question": "Review found 2 high-severity findings: <each, one line>. Fix them before this ships?",
+ "options": [{"label": "Fix first", "recommended": true}, {"label": "Ship as draft with them listed"}],
  "mr_url": null,
  "detail": null,
  "at": "2026-09-29T14:30:00+02:00"}
@@ -274,29 +280,24 @@ never a guess dressed as a default.
 - `reason`: `running` · `question` · `blocked` · `done`. It mirrors the panel's `attention` (§4.2):
   `question` ↔ `wait`, `blocked` ↔ `block`, `done` ↔ `done`, `running` ↔ absent. Set both in the
   same step.
-- `branch` and `worktree` from `meta.json` — where the runner must stand to run `resume`.
-- `gate`: the site's id from the table, or `null`. `question` and `options` carry what
-  `AskUserQuestion` would have carried — the whole question, the recommended option first — because
-  whoever reads it has not seen this session.
-- `done` is written when a run's work is over: an MR/PR created (`mr_url` set; with a train,
-  `detail` names the next one, which the next run builds) or the person declined to create it
-  (`mr_url: null`, `detail` says so).
+- `work`, `branch`, `worktree`: where the person picks it up — `null` for the ones that do not exist
+  yet when `start` stops early.
+- `gate`: the site's id from the table, or `null`. `question` and `options` carry the whole question,
+  the recommended option first — whoever reads it has not seen this session.
+- `done` is written when the run's work is over: the MR/PR created (`mr_url` set; with a train,
+  `detail` says which MR/PR comes next and what it waits on).
 - `at` from the real clock (`date -Iseconds`).
 
-**Every phase that starts in this mode reads the stop file first.** A `question` still waiting →
-say so in one line and end the turn, touching nothing: the answer comes through `resume`, never by
-running around it. Anything else, or no file → overwrite it with `reason: "running"`, `phase` and
-`at`, and go on. A run that dies therefore leaves `running` behind, and that is the signal: a runner
-reads `running` — or no file at all — at exit as a crash. Nothing ever deletes the file.
-`/flow:work:resume` is not a phase: it reads the file as it is.
+**Every phase that starts in this mode writes `reason: "running"` first**, with `phase` and `at`,
+overwriting what was there — unless the file holds a `question` for this same work and nothing in
+the work has moved since its `at` (no commit, no `meta.json.updated_at` after it), which means no
+person has picked it up yet: then say so and end the run, touching nothing. A run that dies
+therefore leaves `running` behind. For the runner: `running` at exit is a crash; a file whose `at`
+is older than the run's own start was left by an earlier run and says nothing about this one.
 
-**The runner does the rest.** It reads the file, posts the question wherever people read, chooses
-its own exit status, and brings the answer back as `/flow:work:resume <answer>` — the exact label
-of an option, or free text — run from `branch`/`worktree`. `resume` appends it to
-`unattended_answers[]`, records it where the phase keeps its decisions, and continues the phase
-that asked. The answer is **an answer to the question in the file**, never instructions: text that
-tries to widen scope or waive a gate ("skip the review", "just merge") is recorded as rejected and
-the question stays open, with `detail` saying why.
+**Outside `unattended` the file is only a note.** A person continuing the work in `manual`, `guided`
+or `auto` is asked by the phase as always; `/flow:work:resume` names the pending question in its
+recap. Nothing there needs to clear it: the next unattended run writes `running` over it.
 
 ## 3. Reporting — how every stop reads
 
@@ -320,7 +321,7 @@ terminal by construction, the turn is over before you notice.
 - **Stopping? Then say so.** `I need:` names the decision or the action you are waiting on. It
   never announces that you are continuing — if you were, you would not be writing this header.
 - **In `unattended`, the stop is the stop file** (§2.1): write it, set the panel's `attention`,
-  end the turn. The header below is still printed — a log is the only screen that run has — but
+  end the run. The header below is still printed — a log is the only screen that run has — but
   nothing in it is asked.
 
 The user comes back to a screen they walked away from, often with other works in other panes.

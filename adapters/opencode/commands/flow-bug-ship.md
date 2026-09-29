@@ -23,13 +23,13 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow-feat-ship`, wi
 
 **In `unattended`** (flow-core §2.1) this command asks nothing — the same resolutions as
 `/flow-feat-ship`'s unattended paragraph, and its "In every mode" paragraph too, applied to the
-sections here: the MR/PR (§2–§3) is a draft only with `autonomy.unattended_ship: draft` or an answer
-*Create as draft*, created as `/flow-feat-ship §4.1` says for a draft (never through
-`commit-push-pr`); otherwise question `ship`; pre-deploy SQL → question `migration` first. The delta
-check (§0) runs the review on the delta once per run, then `blocked`; the performance comment (§3.3)
-is not posted; every offer and survey at Close (§4) — follow-ups, conventions, archiving — is
-`Later`; "was it merged?" is not merged; and Close writes `stop.json` with `reason: "done"` and
-`mr_url`.
+sections here: the MR/PR (§2–§3) is a draft only with `autonomy.unattended_ship: draft`, created as
+§3.1 says for a draft; otherwise question `ship` and the run ends; pre-deploy SQL → question
+`migration`. The tree check (§0) re-runs what is behind `HEAD` once each — here `validate` first,
+since it ran before the review, then the review on the delta — and is `blocked` after that. The
+performance comment (§3.3) is not posted; every offer and survey at Close (§4) — follow-ups,
+conventions, archiving — is `Later`; "was it merged?" is not merged; and Close writes the stop file
+with `reason: "done"` and `mr_url`.
 
 ## 0. Pre-flight
 
@@ -164,11 +164,11 @@ Same as `/flow-feat-ship` §4.0: `git rev-parse --abbrev-ref HEAD` must not be t
 
 ### 3.1 Create MR/PR
 
-Only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
+**A draft (`unattended`) — read this first:** exactly as `/flow-feat-ship §4.1` says for a draft — never `commit-push-pr`, never the plain CLI; the forge CLI with its draft flag; a refused draft → `blocked`.
+
+Otherwise, only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
 
 Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.squash`.
-
-**A draft (`unattended`)** → as `/flow-feat-ship §4.1` says for a draft: not through `commit-push-pr`, the forge CLI with its draft flag, a refused draft → `blocked`.
 
 **Record the URL the moment it exists**: write it into `meta.json` (the `mrs` entry if there is one) and refresh the panel (flow-core §4) right here, before §3.2 and before anything else can fail.
 

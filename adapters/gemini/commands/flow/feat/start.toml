@@ -30,8 +30,11 @@ branch other than the main one (§5.1) → `blocked`: the runner owns the checko
 (§3.5) → only the repos the ticket names · below-XS (§4) → open the work · `git.worktree: ask`
 (§5.0) → in place · §5.5's linked branch → skipped, it pushes a branch and nothing is pushed before
 `ship` · the tracker transition (§6.5) → as `auto`. **Clarifying questions (§2.1 precedence, §3)
-wait until the branch and the work folder exist** — create them (§5, §6) first, then write question
-`clarify` with all of them in one stop, so `resume` can find the work and continue this phase.
+wait until the branch and the work folder exist** — create them (§5, §6) first, write the questions
+into `01-context.md` under "Decisions clarified at start" as open, then question `clarify` with all
+of them in one stop. The person answers them where they pick the work up; `design` reads them there.
+A `blocked` before the folder exists still has the stop file: its path does not depend on the folder
+(flow-core §2.1).
 
 ## 1. Pre-flight
 

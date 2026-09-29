@@ -390,13 +390,5 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 - Report findings and next step **following the stop header** (flow-core §3) **when this is a stop**; in `guided`/`auto` with a clean gate the next command runs in this same turn, so this goes to `06-review.md` and the turn opens with the call that chains — the `Cost:` line then travels to the stop the run does reach, added to that phase's own. Include it once. Body: the findings that **survived** verification and what you did with each — a blocker, an applied fix, a rejection with its reason. Corrections to the reviewers' own reports go to `06-review.md`, not here.
 - **Autonomy handoff.** Only when there are **no blockers and no unresolved high-severity findings** — with any of those, stop in every mode (hard gate; in `unattended`, see below). Clean: in `manual`, propose `$flow-feat-validate` with a single `AskUserQuestion` and invoke it on confirmation; in `guided`/`auto`, **chain into `$flow-feat-validate` automatically** in this same turn. Never chain into `$flow-feat-ship` from here — ship is reached through `validate`.
 - **In `unattended`** (flow-core §2.1), blockers or unresolved high-severity findings are question
-  `high_findings` — the surviving findings in `question`, options **Fix first** (recommended) ·
-  **Ship as draft**. First look in `meta.json.unattended_answers[]` for an answer about these same
-  findings:
-  - **Fix first** → apply the fixes this round proposed, as this review applies its own (after the round is
-    consolidated, §2.1 above), commit them as WIP, set `fixed_sha`, and run one delta round over them. The same
-    findings standing after that round → `blocked`, not a second question.
-  - **Ship as draft** → the findings are recorded in `06-review.md` as *accepted by a person
-    (unattended)*, the phase advances as if clean, and `ship` lists them in the body under
-    "Accepted review findings".
-  - No answer → the stop file, and the turn ends.
+  `high_findings`: the surviving findings in `question`, one line each, and the run ends. A person
+  picks it up — fixing them, or accepting them — in a session of their own.

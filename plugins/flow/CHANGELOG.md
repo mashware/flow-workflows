@@ -11,20 +11,20 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 - **A new autonomy mode, `unattended`, for runs nobody watches** — a script, a container, a headless
   CLI. It behaves like `auto` and never asks. Before, such a run stopped for good at the first hard
   gate: the brief, a serious review finding, `ship`, or any question left in prose for nobody.
-- **Each place a person would be asked is resolved on purpose.** The business brief is written
-  down and not asked. `ship` opens a **draft** MR/PR only with `autonomy.unattended_ship: draft` —
-  never merged, never marked ready. Migrations, high-severity findings, an unclear branch base, a
-  product decision or a doubt about the ticket end the run with the question in
-  `.claude/work/<work>/stop.json`. Nothing that protects the repo is approved in silence.
-- **The runner does the rest.** It reads `stop.json`, posts the question wherever people read, picks
-  its own exit status (the file still saying `running` = the run crashed), and brings the answer back
-  as `/flow:work:resume <answer>`, which records it and continues the phase that asked — no answered
-  question is asked twice.
-- **One MR/PR per run.** With a train, `done` names the next MR/PR and the next run builds it.
-- **Only when written by hand.** `unattended` is never inferred from a headless harness, `/flow:init`
-  does not offer it, and `manual`, `guided` and `auto` are unchanged.
+- **It goes as far as it can without a person, and says exactly where it needs one.** The business
+  brief is written down and travels in the MR/PR body. `ship` opens a **draft** MR/PR only with
+  `autonomy.unattended_ship: draft` — never merged, never marked ready, never force-pushed. A
+  migration, serious review findings, a product decision or a doubt about the ticket end the run with
+  the question and its options in `.claude/work/stop.json`; a checkout or ticket the run cannot use
+  ends it as `blocked`. Nothing that protects the repo is approved in silence.
+- **A runner reads one file.** `.claude/work/stop.json` says `running` while a phase works (left
+  behind = the run crashed), then `question`, `blocked` or `done` with the MR/PR. The runner posts
+  what it needs to; a person picks the work up in their own session, where `/flow:work:resume` shows
+  the pending question and the phase asks it as usual.
+- **One MR/PR per run**, and only when written by hand: `unattended` is never inferred from a
+  headless harness, `/flow:init` does not offer it, and `manual`, `guided` and `auto` are unchanged.
 
-Asked for in #168.
+Asked for in #168. Continuing a run automatically from an answer is not in this release.
 
 ## v0.81.0 — The review stopped contradicting itself  ·  2026-09-26
 

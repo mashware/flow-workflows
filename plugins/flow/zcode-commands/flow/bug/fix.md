@@ -48,7 +48,7 @@ In `unattended` (flow-core §2.1) nobody is there to answer: write the brief, ma
 `recorded (unattended)` under its heading, record the site in `meta.json.defaults_used[]`, and fix.
 The gate's purpose moves to the draft MR/PR, whose body carries the brief for the person who reads it.
 **A schema change or migration is still a question** (`migration`): before writing the first line
-of one, look in `meta.json.unattended_answers[]`; no answer for it → stop file, end the turn.
+of one → stop file, end the run. A person continues from there.
 
 **The brief travels inside the question** (flow-core §3) — read in the prompt being answered, not by opening `04-fix.md` — and **nothing runs between the brief and the question**: a tool call after it is what lets a terminal fold it away. Options:
 - **Yes, go ahead** → apply the fix.
