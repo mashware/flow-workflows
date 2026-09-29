@@ -51,3 +51,5 @@ jobs:
         run: bash script/tests/panel-reminder.sh
       - name: guards that must fail when what they guard is gone
         run: bash script/tests/preflight-bindings.sh
+      - name: every unattended question has a way back
+        run: bash script/tests/unattended-gates.sh

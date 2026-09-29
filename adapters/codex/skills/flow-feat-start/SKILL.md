@@ -37,7 +37,8 @@ branch other than the main one (§5.1) → `blocked`: the runner owns the checko
 wait until the branch and the work folder exist** — create them (§5, §6) first, write the questions
 into `01-context.md` under "Decisions clarified at start" as open, then question `clarify` with all
 of them in one stop. Whoever picks the work up is asked them by the next phase, first (flow-core
-§2.1).
+§2.1). That next phase is the stop's `resume` — the one §4 routes this size to — so a runner's answer
+lands there and `start` is never relaunched.
 A `blocked` before the folder exists still has the stop file: its path does not depend on the folder
 (flow-core §2.1).
 

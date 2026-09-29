@@ -165,7 +165,9 @@ gets status `not-verified-unattended` with what a person must do to verify it, a
 If the feature has UI or critical flows:
 - Payments → test with the test cards or credentials the provider publishes for its sandbox (and the harness skill for that provider, if installed).
 - Workers/queues → make sure no jobs are stuck in dead-letter. Stuck jobs that are not yours: do not touch them here.
-- Migrations → run `quality.db_update` from `FLOW.md` (if defined; in `unattended`, never — a migration to apply is question `migration`, flow-core §2.1); verify no unexpected schema difference with the comparison command the project uses.
+- Migrations → run `quality.db_update` from `FLOW.md` (if defined; in `unattended`, never without an answer — a migration to apply is question `migration`, flow-core
+§2.1; a runner's *Apply it* relaunches this phase from §1, this site takes the answer the pickup
+applied and runs it, and §6 names that answer beside the migration under "Edge cases verified"); verify no unexpected schema difference with the comparison command the project uses.
 
 ## 6. Output
 

@@ -36,7 +36,7 @@ Last updated:   <updated_at>
 Notes:          <meta.notes>
 Cross-repo:     <meta.related_repos entries not "done", as "repo: scope"; or "—">
 Ticket thread:  <new since <updated_at>: <n> comment(s) that change the work — detailed below · or "nothing new" · or "not read">   (line only in ticket mode, from §2.5)
-Unattended:     <from `.claude/work/stop.json` when its `work` is this one: `question` → the gate and the question, verbatim, with its options · `blocked` → the detail · `running` → "a run is working in <phase>, or died there, at <at>" · `done` → the MR/PR · `picked_up` → omit the line>   (line only when that file names this work)
+Unattended:     <from `.claude/work/stop.json` when its `work` is this one: `question` → the gate and the question, verbatim, with its options, its `id` and `resume` — and, when `answer_rejected` is set, which check the runner's answer failed (`answer_rejected`) · `blocked` → the detail · `running` → "a run is working in <phase>, or died there, at <at>" · `done` → the MR/PR · `picked_up` → omit the line>   (line only when that file names this work)
 ```
 
 - `MR/PRs:` and `Waves:` from `meta.json.mrs` (same format as `/flow:work:status §2`). `∥` = can run in parallel, `→` = waits for the previous wave to merge.

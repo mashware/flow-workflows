@@ -163,7 +163,7 @@ base branch resolvable — is §2 below; flag the key here, check the world ther
   echo the mode and remind that the hard gates stop and ask in `manual`/`guided`/`auto` and that `guided`/`auto`
   never ask about the flow's own mechanics or anything already decided (both lists: `flow:flow-core`
   skill §2). Unrecognized value → flag, `manual` assumed. `unattended` → say what it does instead of
-  the gates (flow-core §2.1): nothing is asked, questions end the run in `.claude/work/stop.json` for a runner,
+  the gates (flow-core §2.1): nothing is asked, questions end the run in `.claude/work/stop.json` for a runner, whose answer in `.claude/work/answer.json` lets the relaunched run continue,
   and `ship` is a draft only when `autonomy.unattended_ship` is `draft` — echo that value, or that it
   is empty and ship will stop on a question. Say which file set it: every session that reads that file
   — a person's included, when they share the checkout and the harness — stops asking too, so it

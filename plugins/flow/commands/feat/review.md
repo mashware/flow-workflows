@@ -376,5 +376,14 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 - Report findings and next step **following the stop header** (flow-core §3) **when this is a stop**; in `guided`/`auto` with a clean gate the next command runs in this same turn, so this goes to `06-review.md` and the turn opens with the call that chains — the `Cost:` line then travels to the stop the run does reach, added to that phase's own. Include it once. Body: the findings that **survived** verification and what you did with each — a blocker, an applied fix, a rejection with its reason. Corrections to the reviewers' own reports go to `06-review.md`, not here.
 - **Autonomy handoff.** Only when there are **no blockers and no unresolved high-severity findings** — with any of those, stop in every mode (hard gate; in `unattended`, see below). Clean: in `manual`, propose `/flow:feat:validate` with a single `AskUserQuestion` and invoke it on confirmation; in `guided`/`auto`, **chain into `/flow:feat:validate` automatically** in this same turn. Never chain into `/flow:feat:ship` from here — ship is reached through `validate`.
 - **In `unattended`** (flow-core §2.1), blockers or unresolved high-severity findings are question
-  `high_findings`: the surviving findings in `question`, one line each, and the run ends. A person
-  picks it up in a session of their own, where they are fixed and reviewed again.
+  `high_findings`: the surviving findings in `question`, one line each, and the run ends — after
+  §8 has written them to `06-review.md` and the round's own fixes are committed. A person picks it
+  up in a session of their own, where they are fixed and reviewed again; or a runner answers
+  (flow-core §2.1). *Accept and go on* → this command re-enters at this Close: no reader is
+  launched again, the findings are recorded under "Answered (unattended)" as accepted by that
+  answer, `reviewed_sha` = the candidate, and the phase advances and chains; `ship` lists them in
+  the body. *Fix them* → this command re-enters at this Close too: it writes each finding as an
+  unticked step under this MR/PR's plan in `05-implementation.md` (`04-fix.md` for a bug), leaves
+  `phase = build` (`fix`), and chains into `/flow:feat:build` (`/flow:bug:fix`), which builds those
+  steps and chains back here — a bug through `/flow:bug:validate` first, as its order has it. A migration one of this round's fixes needs is question `migration`
+  asked here — after `high_findings`, in its own stop — and answered the same way (flow-core §2.1).

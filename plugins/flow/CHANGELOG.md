@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.83.0 — A runner can answer, and the run goes on  ·  2026-09-29
+
+**In short**
+- **An unattended run that stopped on a question can now continue by itself.** Until now a question
+  in `.claude/work/stop.json` could only be picked up by a person in their own session. Now a
+  runner writes the answer to `.claude/work/answer.json` and relaunches the command the stop names;
+  the run picks up where it stopped and does not ask again.
+- **An answer only counts for its question, on its commit.** The stop carries an `id`, the commit
+  it was asked on (`head`), the command to relaunch (`resume`) and where that command re-enters.
+  The wrong id, a different commit, an option that was not offered or another command → nothing
+  is applied, the question stays, and `answer_rejected` says which check failed.
+- **Every named question can be answered this way**: a migration, serious review findings (*Fix them*
+  goes back to build, *Accept and go on* continues and lists them in the MR/PR), shipping the draft,
+  a product decision, doubts about the ticket, a design challenge. Nothing already written is
+  worked out again: no second review of the same code, no new approach panel.
+- **A question stop commits the run's work first**, so the runner can keep that exact commit until
+  the answer comes. Keeping it between containers is the runner's job; flow still pushes nothing
+  before `ship`.
+
+Asked for in #170. Nothing changes for a person picking a question up in their own session.
+
 ## v0.82.1 — A red suite no longer ships because the run called it old  ·  2026-09-29
 
 **In short**

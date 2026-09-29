@@ -14,7 +14,11 @@ Technical design phase. **Still no production code is written.** Opens the optio
 `auto` · questions the options surfaced (§1.5.5) or an acceptance criterion that is ambiguous (§9) →
 question `clarify` · a size that no longer fits (§1.5.5, §7) → record the new size · a `high`
 challenge with no response (§6) → question `design_challenge`, the findings and their options in the
-stop file · the design review (§9) → recorded as accepted, as in `auto`.
+stop file · the design review (§9) → recorded as accepted, as in `auto`. Each of these stops comes
+after `03-design.md` holds what the phase computed, and a runner's answer re-enters where flow-core
+§2.1's table says: the approaches are not generated again, the design is not written again — the
+answer goes into its section, and the phase continues from the choice (§1.5.5), from §9, or from §7
+after writing each challenge's Response.
 
 ## 1. Pre-flight
 

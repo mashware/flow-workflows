@@ -23,7 +23,9 @@ owns the checkout · cross-repo scope (§1.6) → only the repos the ticket name
 → in place · a linked remote branch → skipped, nothing is pushed before `ship` · the tracker
 transition (§4.5) → as `auto`. **A thread that changes what the bug *is* (§1.1 precedence) waits
 until the branch and the work folder exist** — create them (§3, §4) first, write it into
-`01-context.md` as open, then question `clarify`; the next phase asks it first (flow-core §2.1).
+`01-context.md` as open, then question `clarify`; the next phase asks it first (flow-core §2.1). That
+phase is the stop's `resume` — `/flow:bug:fix` for XS, `/flow:bug:investigate` otherwise — so a
+runner's answer lands there and `start` is never relaunched.
 
 ## 0. Pre-flight
 

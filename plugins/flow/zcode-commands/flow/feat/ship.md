@@ -24,7 +24,10 @@ pushes. Each place it would ask:
   The body gains one line saying an unattended run opened it and nobody confirmed its brief.
   Empty or `stop` → nothing is pushed: question `ship`, the §3 preview as the question, and the run
   ends; a person ships it from a session of their own. Pre-deploy SQL in the branch → question
-  `migration`, whatever `unattended_ship` says.
+  `migration`, whatever `unattended_ship` says. A runner's answer (flow-core §2.1) relaunches this
+  command from its pre-flight, since the draft lives only in context, and the site it was for takes
+  the answer the pickup applied — *Create it as draft* creates the draft as `draft` would,
+  *The SQL is complete — ship it* goes on to the MR/PR.
 - **The §1 tree check** — `reviewed_sha` or `validated_sha` behind `HEAD` with more than tests →
   re-run what is behind, **once per MR/PR**: the review on the delta, then `validate`. First record
   `{ "key": "unattended:ship-recheck", "default": "mr <n>", "phase": "ship" }` in
@@ -46,7 +49,8 @@ pushes. Each place it would ask:
 **In every mode**, criteria `07-validation.md` marks `not-verified-unattended` go into the body under
 `## Not verified — needs a human`, with what to do for each — and so do the tests the suite left red
 because they also fail on the base (`unattended:validate-red-base`): each name, and the base sha
-where it failed too. The §3 preview shows that section like
+where it failed too — and the review findings a runner's answer accepted unfixed
+(`06-review.md` "Answered (unattended)"), one line each. The §3 preview shows that section like
 any other, and the person reading it is the check the run could not do.
 
 ## 1. Pre-flight

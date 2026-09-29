@@ -22,7 +22,9 @@ Investigation phase: reproduce the failure, then find **why it happened** — no
 
 **In `unattended`** (flow-core §2.1) this command asks nothing. The hypothesis sweep runs as in
 `auto` · a size that no longer fits → record the new size · a `high` challenge with no response →
-question `investigation_challenge`, the findings and their options in the stop file · a bug that
+question `investigation_challenge`, the findings and their options in the stop file, after
+`03-investigation.md` holds them; a runner's answer writes each Response and the phase continues
+after the challenge, without running the sweep again (flow-core §2.1) · a bug that
 cannot be reproduced and needs a person to try → blocked.
 
 ## 1. Pre-flight
