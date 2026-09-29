@@ -29,7 +29,8 @@ branch other than the main one (§5.1) → `blocked`: the runner owns the checko
 `ship` · the tracker transition (§6.5) → as `auto`. **Clarifying questions (§2.1 precedence, §3)
 wait until the branch and the work folder exist** — create them (§5, §6) first, write the questions
 into `01-context.md` under "Decisions clarified at start" as open, then question `clarify` with all
-of them in one stop. The person answers them where they pick the work up; `design` reads them there.
+of them in one stop. Whoever picks the work up is asked them by the next phase, first (flow-core
+§2.1).
 A `blocked` before the folder exists still has the stop file: its path does not depend on the folder
 (flow-core §2.1).
 
