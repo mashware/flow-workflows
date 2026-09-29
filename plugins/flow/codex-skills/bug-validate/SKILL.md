@@ -42,7 +42,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 Then:
 1. Run only that test with `quality.test_one` from FLOW.md; it must pass.
 2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if slow; measured in tens of minutes → delegate it as a wait to a supervisor subagent on `models.supervisors`, flow-core §6.5 — it returns the exit code and the failing output, and the reading of them stays here).
-3. DB touched → verify the schema has no unexpected differences (`quality.db_update` or the FLOW.md equivalent, if defined).
+3. DB touched → verify the schema has no unexpected differences (`quality.db_update` or the FLOW.md equivalent, if defined; in `unattended` it is never run — a schema difference to apply is question `migration`, flow-core §2.1).
 4. Security or authentication touched → launch the `agents.security` agent from FLOW.md in parallel over the fix files (empty → `Agent general-purpose` with a security role).
 
 ## 2.5 Reproduce the original symptom against the running app
@@ -95,7 +95,7 @@ this is the same gate as a red test.
 
 ## 5. Close
 
-- Red test, regressions, **or the original symptom still reproducible in §2.5** → `phase` stays at `fix`; the user iterates. A red gate stops in every mode.
+- Red test, regressions, **or the original symptom still reproducible in §2.5** → `phase` stays at `fix`; the user iterates. A red gate stops in every mode (in `unattended`, the run ends `blocked` with the failing test named, flow-core §2.1).
 - Green → `phase = "validate"`, add to `phases_done`; in the same write record `validated_sha` = `git rev-parse HEAD` — the tree the regression test passed on, which `$flow:bug-ship §0` reads. Suggest `$flow:bug-review`.
 - **Other bugs detected become `followups[]` entries** (flow-core §7) when they clear its bar — a reproducible symptom with someone who suffers it, not «this looks fragile» — per the output template.
 - **Stage what the validation taught** (`knowledge.stage` set; silence by default): a mutation that stayed green, a disguise the scenario wore, a fixture that could not produce the case — findings about how this codebase is tested, not about this diff. Same rule and evidence line as the review's Close.

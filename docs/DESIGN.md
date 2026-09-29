@@ -193,9 +193,11 @@ and no phase to hang it on.
 also resolves the rest. Every decision a mode took alone is written to the artifact.
 *Now:* flow-core §2; CONFIGURATION "autonomy".
 
-**Hard gates stop in every mode, each for a reason.** *Push or MR/PR creation* — outward-facing;
-hence `validate`, `bug:review` (XS/S) and `postmortem` never chain into `ship`: the unattended run
-"ends where it always should have: asking whether to publish" (v0.25.0). *A branch on an ambiguous
+**Hard gates stop in `manual`, `guided` and `auto`, each for a reason** (`unattended` resolves each
+one instead, never by approving it: a draft only when allowed, otherwise the run ends on the
+question — flow-core §2.1). *Push or MR/PR creation* — outward-facing; hence `validate`,
+`bug:review` (XS/S) and `postmortem` never chain into `ship` in `auto`: that run "ends where it
+always should have: asking whether to publish" (v0.25.0). *A branch on an ambiguous
 base* — a real accidental deploy sits behind it (§9). *Schema changes*, including any DDL or database
 the query duel wants. *High-severity review findings* — nothing chains downstream of a red gate. *The
 business brief.* Commands add their own where an action is outward or irreversible: posting a reply,

@@ -59,14 +59,19 @@ every decision and proposes the next command. `guided` resolves low-risk decisio
 at the real ones, chains phases. `auto` also resolves the rest with recorded defaults and never pauses.
 → [CONFIGURATION §autonomy][ca]
 
-**Hard gate** — a stop that holds in every mode, `auto` included: any push or MR/PR creation, a branch
+**Hard gate** — a stop that holds in `manual`, `guided` and `auto`: any push or MR/PR creation, a branch
 on an ambiguous base, a DB schema change or migration, shipping a review with high-severity findings,
-the business brief before code. `respond`, `green`, `query`, `clean` add their own. → [flow-core §2][fc]
+the business brief before code. `respond`, `green`, `query`, `clean` add their own. In `unattended`
+each is resolved by a table instead — recorded, a draft, or the run ending on the question — and
+none is approved in silence. → [flow-core §2][fc]
+
+**Stop file** — `.claude/work/stop.json`, what an `unattended` run leaves for the runner that
+launched it: `running`, `question`, `blocked`, `done` or `picked_up`. → [flow-core §2.1][fc]
 
 **"Never a question" list** — the symmetric rule: what `guided`/`auto` decide, record and move past.
 Flow mechanics (panels, challengers, skeptics, how many), WIP commits, continuing a train when
-the train's next MR/PR, size confirmation, anything already recorded. Asking these is how an
-unattended run degrades into a manual one. → [flow-core §2][fc]
+the train's next MR/PR, size confirmation, anything already recorded. Asking these is how a run
+in `auto` degrades into a manual one. → [flow-core §2][fc]
 
 **Stop header** — the fixed lines every stop opens with: `<TICKET> · <size> · phase · MR #n of N`, the
 plan state from `meta.json.mrs`, what just finished, what is needed from you. Then at most ~10 lines

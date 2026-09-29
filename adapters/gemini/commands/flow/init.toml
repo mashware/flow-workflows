@@ -94,9 +94,10 @@ review, not a questionnaire. Then, and only then, five questions:
    in the confirmation screen, not a question.
 3. **Autonomy** (`autonomy.mode`): `manual` *(Recommended)* — stops at each decision, only recommends
    the next command; `guided` — resolves low-risk decisions and chains phases, asks at the real ones;
-   `auto` — also resolves the rest with recorded defaults. Explain the hard gates that stop in every
-   mode and the list of what `guided`/`auto` never ask (both in the `~/.claude/flow/CORE.gemini.md` §2), so
-   `auto` is genuinely unattended between the brief and `ship`. Editable any time. Empty = `manual`.
+   `auto` — also resolves the rest with recorded defaults. Explain the hard gates that stop in these
+   three modes and the list of what `guided`/`auto` never ask (both in the `~/.claude/flow/CORE.gemini.md` §2),
+   so `auto` runs without a stop between the brief and `ship`. Do not offer `unattended`: it is for a
+   runner, written by hand where only the runner reads it. Editable any time. Empty = `manual`.
 4. **The quality commands as one block** (`quality.test`, `test_one`, `static_analysis`, `style_fix`,
    `db_update`, `db_diff`) — confirm or edit what §2 found, all in one question, each may stay empty
    (= auto-discover at the moment it is needed). Several suites chain into `test` with `&&`.

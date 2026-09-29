@@ -147,7 +147,8 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `git` | `worktree` | `off` (default) \| `ask` \| `always`. Whether `/flow:feat:start` & `/flow:bug:start` create the new branch as a git worktree instead of switching in place. `ask` = prompt each time; `always` = always; `off`/empty = never (in-place, current behavior) |
 | `git` | `worktree_path` | path template for the worktree dir. `{branch}` and `{repo}` are substituted. Empty with `worktree`≠`off` = `.worktrees/{branch}` at the repo root (git-ignore it). e.g. `.worktrees/{branch}` or `../{repo}.worktrees/{branch}` |
 | `git` | `worktree_resync` | commands `/flow:work:try` runs after switching the main checkout to a branch (and again on `--back`), to re-sync the environment (e.g. DB schema, assets). One command per line with `- `, run in order. Empty = `/flow:work:try` only does the git switch, no env re-sync. e.g.: |
-| `autonomy` | `mode` | `manual` (default) \| `guided` \| `auto`. Empty = `manual` |
+| `autonomy` | `mode` | `manual` (default) \| `guided` \| `auto` \| `unattended`. Empty = `manual` |
+| `autonomy` | `unattended_ship` | What `ship` does in `unattended`: `draft` \| `stop`. Empty = `stop` |
 | `quality` | `test` | e.g. `make test`. Several suites in one repo (a backend and a frontend, an app and a service) chain into this one key: |
 | `quality` | `test_one` | e.g. `make test-filter filter={FILTER}` · `./gradlew test --tests {FILTER}` · `dotnet test --filter {FILTER}` (`{FILTER}` is substituted) |
 | `quality` | `static_analysis` | e.g. `make phpstan-ci` · `./gradlew lint` · `dotnet build -warnaserror` · `flutter analyze` |
@@ -342,11 +343,15 @@ How much the flow advances on its own versus stopping to ask you.
 | `manual` *(default)* | Every phase stops at each decision point and, at the end, **proposes** the next command as a one-click confirmation — you accept to advance; it is never typed for you and never runs unconfirmed |
 | `guided` | Resolves low-risk, unambiguous decisions itself with the recommended default (recorded in the artifact), still asks at genuine decision points, and chains into the next command automatically |
 | `auto` | As `guided`, plus auto-resolves the remaining decision points with sensible recorded defaults, chaining phases without pausing |
+| `unattended` | As `auto`, for a run nobody watches — a script, a container, a headless CLI. It never asks: each place a person would be asked is recorded, becomes a draft MR/PR (`autonomy.unattended_ship: draft`), or ends the run with the question written to `.claude/work/stop.json`. A runner posts it and a person picks the work up in their own session. One MR/PR per run. The file reads `running` while a phase works, so a run that dies leaves `running` behind. Never inferred — only when written in the FLOW config |
 
-**Hard gates stop and ask in every mode, no exceptions:**
+**Hard gates stop and ask in `manual`, `guided` and `auto`, no exceptions** (in `unattended` each
+one is resolved by the shared rules' table: the brief is written down unconfirmed and travels in
+the draft's body, ship is a draft only when allowed, and a migration or a serious review finding
+ends the run as a question):
 
-- any push, or opening an MR/PR — so `validate` and `bug:review` never chain into `ship`: the
-  unattended run deliberately ends there, with `ship` proposed for you to confirm
+- any push, or opening an MR/PR — so `validate` and `bug:review` never chain into `ship`: a run in
+  `auto` deliberately ends there, with `ship` proposed for you to confirm
 - creating a branch when the base is ambiguous
 - DB schema changes and migrations
 - a review that came back with high-severity findings

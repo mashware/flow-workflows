@@ -23,6 +23,17 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `$flow-feat-ship`, wi
 1. If `99-postmortem.md` exists, **include the link or the executive summary** in the MR/PR description.
 2. The knowledge-consolidation offer was already made in `$flow-bug-postmortem` — do not ask again here.
 
+**In `unattended`** (flow-core §2.1) this command asks nothing — the same resolutions as
+`$flow-feat-ship`'s unattended paragraph, and its "In every mode" paragraph too, applied to the
+sections here: the MR/PR (§2–§3) is a draft only with `autonomy.unattended_ship: draft`, created as
+§3.1 says for a draft; otherwise question `ship` and the run ends; pre-deploy SQL → question
+`migration`. The tree check (§0) re-runs what is behind `HEAD` once per MR/PR, recorded as
+`$flow-feat-ship` says — here `validate` first, since it ran before the review, then the review on
+the delta — and is `blocked` after that. The
+performance comment (§3.3) is not posted; every offer and survey at Close (§4) — follow-ups,
+conventions, archiving — is `Later`; "was it merged?" is not merged; and Close writes the stop file
+with `reason: "done"` and `mr_url`.
+
 ## 0. Pre-flight
 
 Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
@@ -122,7 +133,7 @@ Determine whether the fix modifies the database (migrations, mappings/schema, or
 
 ## 2. Show to user and wait for confirmation (REQUIRED)
 
-**Never skip this step** — hard gate: the user approves what will be published before anything is created. Print in this exact format:
+**Never skip this step** — hard gate: the user approves what will be published before anything is created (in `unattended`, the unattended paragraph above decides it). Print in this exact format:
 
 ```
 ─── Preview of {MR or PR, per git.host} (fix) ──────────────────────────────────
@@ -156,7 +167,9 @@ Same as `$flow-feat-ship` §4.0: `git rev-parse --abbrev-ref HEAD` must not be t
 
 ### 3.1 Create MR/PR
 
-Only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
+**A draft (`unattended`) — read this first:** exactly as `$flow-feat-ship §4.1` says for a draft — never `commit-push-pr`, never the plain CLI; the forge CLI with its draft flag; a refused draft → `blocked`.
+
+Otherwise, only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
 
 Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.squash`.
 

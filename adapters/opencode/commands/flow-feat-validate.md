@@ -151,12 +151,17 @@ Verify `needs-manual` criteria **together with the user**, one or a few at a tim
    - **Blocked** → status `unproven`; record why. Does not pass the gate.
 4. Repeat until every `needs-manual` criterion is `proven-manually`, or the user decides to stop (the rest stay `unproven`, which blocks advancing in §7).
 
+**In `unattended`** there is nobody to run the check (flow-core §2.1): each `needs-manual` criterion
+gets status `not-verified-unattended` with what a person must do to verify it, and that status does
+**not** block §7 — the MR/PR can only be a draft, and `ship` lists these criteria in its body under
+"Not verified — needs a human". A criterion §3.5 could have driven and did not is still `unproven`.
+
 ## 5. Manual edge cases
 
 If the feature has UI or critical flows:
 - Payments → test with the test cards or credentials the provider publishes for its sandbox (and the harness skill for that provider, if installed).
 - Workers/queues → make sure no jobs are stuck in dead-letter. Stuck jobs that are not yours: do not touch them here.
-- Migrations → run `quality.db_update` from `FLOW.md` (if defined); verify no unexpected schema difference with the comparison command the project uses.
+- Migrations → run `quality.db_update` from `FLOW.md` (if defined; in `unattended`, never — a migration to apply is question `migration`, flow-core §2.1); verify no unexpected schema difference with the comparison command the project uses.
 
 ## 6. Output
 
@@ -210,11 +215,14 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 ## 7. Close
 
 - **Do not advance `phase`** if tests are red, regressions are found, or **any acceptance criterion is `unproven`** (no test demonstrably asserts it, and neither §3.5 nor the user confirmed it). The criterion→test mapping is part of the gate — the same "do not advance on red" rule. The user resolves the gap (add the missing test, fix the implementation, or finish the manual verification) and returns to `/flow-feat-validate`.
-- Suite green **and** every acceptance criterion `proven-by-test`, `proven-by-agent` or `proven-manually` → `phase = "validate"`, add to `phases_done`. **Multi-MR/PR work** → also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow-feat-ship §1` gates on. Suggest `/flow-feat-ship`.
+- Suite green **and** every acceptance criterion `proven-by-test`, `proven-by-agent` or `proven-manually` (in `unattended`, also `not-verified-unattended`, §4) → `phase = "validate"`, add to `phases_done`. **Multi-MR/PR work** → also add `validate` to the current `in_progress` MR/PR's own `phases_done` (its `mrs[]` entry) — the per-MR/PR marker `/flow-feat-ship §1` gates on. Suggest `/flow-feat-ship`.
 - **Record *what* you validated**, in the same write and only when the phase advances: `validated_sha` = `git rev-parse HEAD`, work-level and in this MR/PR's `mrs[]` entry. `/flow-feat-ship §1` reads it to tell "the suite passed here" from "the suite passed on something else".
 - **Unchecked edge cases and open risks become `followups[]` entries** (flow-core §7) before advancing — see the output template above.
 - **Stage what the validation taught** (`knowledge.stage` set; silence by default): a mutation that stayed green, a disguise the scenario wore, a fixture that could not produce the case — findings about how this codebase is tested, not about this diff. Same rule and evidence line as the review's Close.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- **Autonomy handoff — this one stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR: a hard gate in every mode, so do **not** chain into it. Stop here and propose `/flow-feat-ship` with a single `AskUserQuestion` (recommended option by default), invoking it only when the user confirms. This is the deliberate end of the unattended run.
+- **Autonomy handoff — this one stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR: a hard gate in every mode, so do **not** chain into it. Stop here and propose `/flow-feat-ship` with a single `AskUserQuestion` (recommended option by default), invoking it only when the user confirms. This is the deliberate end of a run in `auto`.
+  **In `unattended`** (flow-core §2.1): the phase advanced → chain into `/flow-feat-ship`, which
+  decides from `autonomy.unattended_ship` between a draft MR/PR and a question. It did not advance
+  (red suite, a criterion `unproven`) → `blocked`, naming what failed; never chain.
 
-In `guided`/`auto` this is, together with the brief in `/flow-feat-build §2`, **the only stop of the whole MR/PR** — everything between them ran unattended. It carries the **full stop header** and the body answers, in this order: what is green, what this MR/PR proves and what it does not, and what shipping it takes. Assume the user has read none of the build and review.
+In `guided`/`auto` this is, together with the brief in `/flow-feat-build §2`, **the only stop of the whole MR/PR** — everything between them ran without a person. It carries the **full stop header** and the body answers, in this order: what is green, what this MR/PR proves and what it does not, and what shipping it takes. Assume the user has read none of the build and review.

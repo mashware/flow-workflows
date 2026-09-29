@@ -102,7 +102,9 @@ supervisors  (empty)  →  the delegated waits (running pipeline, pending deploy
 empty key in `guided`/`auto` records it rather than asking. This block is where that record is read
 back.
 
-Aggregate `defaults_used[]` from every `.claude/work/*/meta.json`, **`_archive/` included**. One row
+Aggregate `defaults_used[]` from every `.claude/work/*/meta.json`, **`_archive/` included**, leaving
+out keys prefixed `unattended:` — those record how an unattended run resolved a stop, not a FLOW key
+with a line to paste. One row
 per key: the key, the default that was used, in how many works, and the last phase that used it.
 Sort by count, most-used first, and cap the block at the ten busiest keys with a count of the rest.
 
@@ -165,9 +167,15 @@ base branch resolvable — is §2 below; flag the key here, check the world ther
   run against a development or throwaway database, never a live one.
 - **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and, at the
   end, proposes the next command as a one-click confirmation — never runs it unconfirmed). Set →
-  echo the mode and remind that the hard gates stop and ask in every mode and that `guided`/`auto`
+  echo the mode and remind that the hard gates stop and ask in `manual`/`guided`/`auto` and that `guided`/`auto`
   never ask about the flow's own mechanics or anything already decided (both lists: `flow:flow-core`
-  skill §2). Unrecognized value → flag, `manual` assumed.
+  skill §2). Unrecognized value → flag, `manual` assumed. `unattended` → say what it does instead of
+  the gates (flow-core §2.1): nothing is asked, questions end the run in `.claude/work/stop.json` for a runner,
+  and `ship` is a draft only when `autonomy.unattended_ship` is `draft` — echo that value, or that it
+  is empty and ship will stop on a question. Say which file set it: every session that reads that file
+  — a person's included, when they share the checkout and the harness — stops asking too, so it
+  belongs in a FLOW file only the runner's environment has. `unattended_ship` set with any other mode → note it is ignored; a
+  value other than `draft`/`stop` → flag, `stop` assumed.
 
 ## 2. Checks
 

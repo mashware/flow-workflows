@@ -5,6 +5,28 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.82.0 — Nobody at the terminal, and the run still gets somewhere  ·  2026-09-29
+
+**In short**
+- **A new autonomy mode, `unattended`, for runs nobody watches** — a script, a container, a headless
+  CLI. It behaves like `auto` and never asks. Before, such a run stopped for good at the first hard
+  gate: the brief, a serious review finding, `ship`, or any question left in prose for nobody.
+- **It goes as far as it can without a person, and says exactly where it needs one.** The business
+  brief is written down and travels in the MR/PR body. `ship` opens a **draft** MR/PR only with
+  `autonomy.unattended_ship: draft` — never merged, never marked ready, never force-pushed. A
+  migration, serious review findings, a product decision or a doubt about the ticket end the run with
+  the question and its options in `.claude/work/stop.json`; a checkout or ticket the run cannot use
+  ends it as `blocked`. Nothing that protects the repo is approved in silence.
+- **A runner reads one file.** `.claude/work/stop.json` says `running` while a phase works (left
+  behind = the run crashed), then `question`, `blocked` or `done` with the MR/PR. While a question is
+  pending no new unattended run goes past it. A person picks the work up in their own session:
+  `/flow:work:resume` shows the question, the next phase asks it first, and the file then says
+  `picked_up`. Keep `unattended` in a FLOW file only the runner's environment reads.
+- **One MR/PR per run**, and only when written by hand: `unattended` is never inferred from a
+  headless harness, `/flow:init` does not offer it, and `manual`, `guided` and `auto` are unchanged.
+
+Asked for in #168. Continuing a run automatically from an answer is not in this release.
+
 ## v0.81.0 — The review stopped contradicting itself  ·  2026-09-26
 
 **In short**

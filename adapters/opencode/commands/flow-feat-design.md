@@ -22,6 +22,12 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 
 Technical design phase. **Still no production code is written.** Opens the option space first (M/L), then designs the approach that was chosen. Output: a plan the next step executes.
 
+**In `unattended`** (flow-core §2.1) this command asks nothing. Panel and approach choice run as in
+`auto` · questions the options surfaced (§1.5.5) or an acceptance criterion that is ambiguous (§9) →
+question `clarify` · a size that no longer fits (§1.5.5, §7) → record the new size · a `high`
+challenge with no response (§6) → question `design_challenge`, the findings and their options in the
+stop file · the design review (§9) → recorded as accepted, as in `auto`.
+
 ## 1. Pre-flight
 
 - Load `meta.json` by current branch. Missing → ask the user to start with `/flow-feat-start`.

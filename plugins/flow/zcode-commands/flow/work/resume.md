@@ -15,7 +15,11 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy,
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-Use when returning to a work after a break (next morning, another session).
+Use when returning to a work after a break (next morning, another session) — including a work an
+unattended run left waiting on a person (flow-core §2.1).
+
+**In `unattended`** this command asks nothing: recap, name the next step, end. It is how a person
+reads where the run got to, not how the run continues.
 
 ## 1. Detection
 
@@ -38,6 +42,7 @@ Last updated:   <updated_at>
 Notes:          <meta.notes>
 Cross-repo:     <meta.related_repos entries not "done", as "repo: scope"; or "—">
 Ticket thread:  <new since <updated_at>: <n> comment(s) that change the work — detailed below · or "nothing new" · or "not read">   (line only in ticket mode, from §2.5)
+Unattended:     <from `.claude/work/stop.json` when its `work` is this one: `question` → the gate and the question, verbatim, with its options · `blocked` → the detail · `running` → "a run is working in <phase>, or died there, at <at>" · `done` → the MR/PR · `picked_up` → omit the line>   (line only when that file names this work)
 ```
 
 - `MR/PRs:` and `Waves:` from `meta.json.mrs` (same format as `/flow:work:status §2`). `∥` = can run in parallel, `→` = waits for the previous wave to merge.
@@ -79,6 +84,7 @@ With what is new (there is already work on disk):
 
 ## 4. Next step
 
+- A pending `question` in the `Unattended:` line → say that the next phase will ask it first (flow-core §2.1); the next step itself comes from `phase` as always.
 - Suggest the concrete command from `phase` and `size`. Interrupted phase (e.g. `build` with an empty artifact) → suggest rerunning it with `/flow:feat:build` or `/flow:bug:fix`.
 - §2.5 found something new → let it inform the suggestion (a contract that arrived after you left may mean rerunning `design` rather than continuing `build`); say why in one line.
 - `meta.json.related_repos` entries not `done` → remind that a **sibling repo still has a pending part** (`<repo>: <scope>`, plus `contract not handed over` when its `contract_handoff` is `pending`); suggest `/flow:feat:start <TICKET>` there. flow only reminds; it never scans or touches the other repo.

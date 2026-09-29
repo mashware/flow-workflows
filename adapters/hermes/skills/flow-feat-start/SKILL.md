@@ -27,6 +27,20 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 - **Given** — an identifier in `tracker.prefix` format from `FLOW.md` → *ticket mode* (§2 reads it).
 - **Empty** — *ticket-less mode*: do **not** stop or demand a ticket. Draft a ticket from the conversation just held (§2.5), as `/flow-feat-ship` builds the MR/PR body from the work log. Ask for a one-liner only if there is no conversation to draft from.
 
+**In `unattended`** (flow-core §2.1) this command asks nothing; each place it would ask resolves as
+that table says. Here: a ticket is required — empty, or a tracker read that fails, ends the run
+`blocked` (there is no conversation to draft from and nobody to paste it) · uncommitted changes or a
+branch other than the main one (§5.1) → `blocked`: the runner owns the checkout · cross-repo scope
+(§3.5) → only the repos the ticket names · below-XS (§4) → open the work · `git.worktree: ask`
+(§5.0) → in place · §5.5's linked branch → skipped, it pushes a branch and nothing is pushed before
+`ship` · the tracker transition (§6.5) → as `auto`. **Clarifying questions (§2.1 precedence, §3)
+wait until the branch and the work folder exist** — create them (§5, §6) first, write the questions
+into `01-context.md` under "Decisions clarified at start" as open, then question `clarify` with all
+of them in one stop. Whoever picks the work up is asked them by the next phase, first (flow-core
+§2.1).
+A `blocked` before the folder exists still has the stop file: its path does not depend on the folder
+(flow-core §2.1).
+
 ## 1. Pre-flight
 
 - Read the effective FLOW configuration per flow-core §0; neither base nor active overlay → each

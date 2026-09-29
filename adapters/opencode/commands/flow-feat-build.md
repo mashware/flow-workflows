@@ -29,9 +29,9 @@ Implementation phase. Code is written here.
 - `size` XS/S: may start without a design — ask the user for a 2-3 line note on what will be done and save it as a minimal `03-design.md`. No MR/PR plan (always 1 MR/PR).
 - **If `meta.json.mrs` has more than one entry**: pick the **startable** MR/PR — the `pending` one with the **lowest `n` whose `depends_on` are all `merged`**. Dependencies still `pending`/`in_progress` → not startable, even with a low `n`. (No `wave`/`depends_on` — an older plan — → "first pending by `n`".)
   - **Parallel siblings**: startable `pending` MRs/PRs in the **same `wave`** with no dependency between them can be built in parallel or as a train. `manual`: let the user choose which to take now (default: lowest `n`); `guided`/`auto`: take the lowest `n`, record the choice. Mark the chosen one `in_progress`.
-  - All `merged` → warn: feature is done, nothing to build.
-  - Some `pending` but **none** startable → start nothing: tell the user which MR/PR must merge to unlock the next wave, and stop.
-  - **Train/stacked**: this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/flow-feat-ship §6.2` creates and links it when it chains here; if you arrived directly and are still on the previous branch, create it now per `/flow-feat-start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow-feat-start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
+  - All `merged` → warn: feature is done, nothing to build (in `unattended`: `done`, `detail` saying so).
+  - Some `pending` but **none** startable → start nothing: tell the user which MR/PR must merge to unlock the next wave, and stop. In `unattended`: `blocked`, the detail naming it.
+  - **Train/stacked** (never in `unattended`: there the startable MR/PR gets a **new branch of its own** from `git.default_base`, created as `/flow-feat-start §5.2` (in place) or `§5.4` (worktree) says — `git.worktree: always` → worktree, `off`/empty/`ask` → in place; base `git.default_base`, already decided, so §5.1 asks nothing; `--no-track`, no linked remote branch — and never commits onto a previous MR/PR's branch; flow-core §2.1): this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/flow-feat-ship §6.2` creates and links it when it chains here; if you arrived directly and are still on the previous branch, create it now per `/flow-feat-start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow-feat-start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
 
 ## 2. Business brief (before typing)
 
@@ -60,6 +60,12 @@ Rules for writing it:
 **Ask the user with `AskUserQuestion`** whether the brief reflects what they expect — **hard gate, in every autonomy mode, `auto` included**: it is the last point where scope can be corrected before there is a diff to argue with.
 
 In `auto` this is one of the only two stops per MR/PR (`guided` adds the plan of §2.0ter on a big one), so it carries the **full stop header** (flow-core §3) — ticket, size, phase, `MR #<n> of <N>`, plan state — followed by the brief.
+
+In `unattended` (flow-core §2.1) nobody is there to answer: write the brief, mark it
+`recorded (unattended)` under its heading, record the site in `meta.json.defaults_used[]`, and build.
+The gate's purpose moves to the draft MR/PR, whose body carries the brief for the person who reads it.
+**A schema change or migration is still a question** (`migration`): before writing the first line
+of one → stop file, end the run. A person continues from there.
 
 **The brief travels inside the question** (flow-core §3): the user reads it in the prompt they are answering, never by opening `05-implementation.md`. Write the file, run whatever you need, and *then* open the gate — **nothing runs between the brief and the question**, because a tool call after it is what lets a terminal fold the brief into one collapsed line, and the gate is answered blind. Options:
 - **Yes, proceed** → start building.
@@ -184,7 +190,7 @@ said in one line, never silently skipped. `manual` → offer it with `AskUserQue
 premise that X before building on it?"). `guided`/`auto` → run it and record it; it is flow
 machinery, not a decision.
 
-**The verdict, and the rule that makes it worth running.** **Refuted** → the brief or the design is
+**The verdict, and the rule that makes it worth running** (in `unattended`, *Refuted* ends the run as `blocked`, flow-core §2.1). **Refuted** → the brief or the design is
 wrong, not the code: stop, say what fell, and go back (§2.4 for a brief, `/flow-feat-design` for a
 contract) rather than patching around it. **Holds** → one row in §3 with what was read. **Unsettled
 stays unsettled** — the same rule as the query duel's *no number, no win*: it is recorded as an open
@@ -254,7 +260,7 @@ Warning thresholds:
 - **Real lines > `lines_est * 1.5`**, or
 - **Real files > `files_est + 2`**.
 
-If either is exceeded, **pause** and ask the user with `AskUserQuestion` (options, in this order):
+If either is exceeded, **pause** and ask the user with `AskUserQuestion` (options, in this order — in `unattended`, take option 2 and record it):
 
 1. **Cut here (recommended if the current piece is coherent)**. What is built so far stays as this MR/PR; what remains — the §2.0ter steps still pending, or what is left of `04-mr-plan.md` where that step was skipped — goes into a new one inserted in `meta.json.mrs` right after. Zero code wasted.
 2. **Continue and record the overrun**. When the cut would be artificial. Note the deviation in `05-implementation.md` to calibrate `/flow-feat-plan` on future tickets.
@@ -281,7 +287,7 @@ slip under a threshold buys itself the review a smaller change had earned.
 
 ### 2.4 Does something fall outside the brief?
 
-If during the build the temptation arises to add something **not in the §2 brief** ("while I'm here…", "this test would also cover X…", "this rename would improve Y…"), **pause before doing it** and ask the user with `AskUserQuestion`:
+If during the build the temptation arises to add something **not in the §2 brief** ("while I'm here…", "this test would also cover X…", "this rename would improve Y…"), **pause before doing it** and ask the user with `AskUserQuestion` (in `unattended`: *No, leave it out*, recorded):
 - **Yes, add it to the brief** — update the brief in `05-implementation.md` and continue. (If the addition is large, consider §2.3: it could trigger a MR/PR cut.)
 - **No, leave it out** — note it in the "Ideas for separate tickets" section of `05-implementation.md` **and append it to `meta.json.followups[]`** as `kind: "out-of-scope"`, `source: "build"` (flow-core §7): the section keeps it in context, the record is what survives the archive. **Only when it clears the bar of flow-core §7** — a named subject, a path that has actually been seen, and waiting costing more than doing it now; short of that the artifact section keeps it and `followups[]` never sees it. Continue with the original brief.
 

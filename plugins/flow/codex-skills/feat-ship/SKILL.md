@@ -26,6 +26,37 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
+**In `unattended`** (flow-core §2.1) this command asks nothing, and it is the only place that run
+pushes. Each place it would ask:
+
+- **The MR/PR itself (§3–§4)** — `autonomy.unattended_ship: draft` → skip the confirmation and
+  create it **as draft** with the §2 content (§4.1 says how); never merge it, never mark it ready.
+  The body gains one line saying an unattended run opened it and nobody confirmed its brief.
+  Empty or `stop` → nothing is pushed: question `ship`, the §3 preview as the question, and the run
+  ends; a person ships it from a session of their own. Pre-deploy SQL in the branch → question
+  `migration`, whatever `unattended_ship` says.
+- **The §1 tree check** — `reviewed_sha` or `validated_sha` behind `HEAD` with more than tests →
+  re-run what is behind, **once per MR/PR**: the review on the delta, then `validate`. First record
+  `{ "key": "unattended:ship-recheck", "default": "mr <n>", "phase": "ship" }` in
+  `meta.json.defaults_used[]` — the record, not the context, is what remembers it; an entry with this
+  MR/PR's `n` already there → `blocked`, whatever the sha. Tracked changes this run's own phases left uncommitted → commit them
+  as WIP first (a WIP commit is `auto`'s to make) and check again · **blocking TODO/FIXME (§1)** →
+  continue and list them in the body.
+- **Posting anything else** — the performance comment (§4.3), a contract handoff (§6.3) — → not
+  posted; the numbers go in the body, the handoff stays `pending`.
+- **The offers and surveys (§5, §5.1, §5.2, §5.5, §6.4, §6.4bis)** → `Later`; nothing written outside
+  the work folder.
+- **"Was it merged?" (§6.1)** → not merged; `meta.json` as §6.1 says for an unmerged MR/PR. **The
+  parent merged first (§6.2.1)** → blocked, never force-push. **Train continuation (§6.2)** → not
+  started: one MR/PR per unattended run.
+- **At Close** write the stop file with `reason: "done"`, `mr_url`, and — with `mrs` still pending —
+  `detail` naming the next MR/PR and what it waits on (its `depends_on` merged, then
+  `$flow:feat-build`). It is the last thing the run does.
+
+**In every mode**, criteria `07-validation.md` marks `not-verified-unattended` go into the body under
+`## Not verified — needs a human`, with what to do for each. The §3 preview shows that section like
+any other, and the person reading it is the check the run could not do.
+
 ## 1. Pre-flight
 
 - Read `meta.json` and `00-summary.md`; open in full only the `Brief MR/PR #N` of `05-implementation.md`, the `## Summary`/blockers of `06-review.md` and `07-validation.md`. (flow-core §5)
@@ -137,7 +168,7 @@ Determine whether the branch modifies the database (migrations, mappings/schema,
 
 ## 3. Show the user and wait for confirmation (MANDATORY)
 
-**Never skip this step, even when the content seems obvious.** Hard gate in every mode.
+**Never skip this step, even when the content seems obvious.** Hard gate in every mode — in `unattended`, the unattended paragraph above decides it.
 
 Print to the user in this exact format:
 
@@ -178,7 +209,14 @@ git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null   # must NOT be
 - Train mode (`stacked_on` ≠ null) → the MR/PR must target that parent branch, not the main base.
 
 ### 4.1 Create MR/PR
-Only here — with the content approved in §3 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask for the content; if it does, answer with what was confirmed. Any push it does must be `git push -u origin HEAD` (own branch), never to the base branch.
+**A draft (`unattended`, flow-core §2.1) — read this first: it replaces the invocation below.** Do
+**not** invoke `commit-push-pr`, and do not use the plain CLI fallback below: both open a normal
+MR/PR. Commit, `git push -u origin HEAD`, and create it with the forge CLI and its draft flag
+(`gh pr create --draft`, `glab mr create --draft`, the equivalent elsewhere), assignee and squash as
+below. The forge refusing a draft → `blocked` with its message; never retried without the flag.
+Then record the URL, as the paragraph after the bullets says.
+
+Otherwise, only here — with the content approved in §3 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask for the content; if it does, answer with what was confirmed. Any push it does must be `git push -u origin HEAD` (own branch), never to the base branch.
 
 - `git.assignee` not empty → assign to that user. `git.squash` `true` → enable squash-before-merge.
 - `commit-push-pr` skill unavailable → commit and push manually and create the MR/PR with the `git.cli` CLI from `FLOW.md` — always with the content confirmed in §3.
@@ -471,7 +509,7 @@ Read `meta.json.conventions_candidates[]` (flow-core §8). **No entries with `st
 
 ### 6.4ter Defaults that were used (one line, no question)
 
-`meta.json.defaults_used[]` non-empty → **one line** in the Close: how many empty `FLOW.md` keys this
+`meta.json.defaults_used[]` non-empty (keys prefixed `unattended:` not counted) → **one line** in the Close: how many empty `FLOW.md` keys this
 work resolved with their default, and that `$flow:doctor` lists which ones and prints the line to
 paste. Never a list here, and never a question: in `guided`/`auto` not asking is the contract
 (flow-core §0, §2), and in `manual` the phases already offered what they were allowed to offer.
