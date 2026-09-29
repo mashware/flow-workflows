@@ -89,7 +89,9 @@ supervisors  (empty)  →  the delegated waits (running pipeline, pending deploy
 empty key in `guided`/`auto` records it rather than asking. This block is where that record is read
 back.
 
-Aggregate `defaults_used[]` from every `.claude/work/*/meta.json`, **`_archive/` included**. One row
+Aggregate `defaults_used[]` from every `.claude/work/*/meta.json`, **`_archive/` included**, leaving
+out keys prefixed `unattended:` — those record how an unattended run resolved a stop, not a FLOW key
+with a line to paste. One row
 per key: the key, the default that was used, in how many works, and the last phase that used it.
 Sort by count, most-used first, and cap the block at the ten busiest keys with a count of the rest.
 

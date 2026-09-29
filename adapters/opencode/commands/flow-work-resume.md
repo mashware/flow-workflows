@@ -29,27 +29,31 @@ Use when returning to a work after a break (next morning, another session).
 Only when `$ARGUMENTS` is not empty. After §1 has found the work:
 
 - **The work must be waiting on a question**: `autonomy.mode` is `unattended` and
-  `.claude/work/<work>/stop.json` exists with `reason: "question"` (flow-core §2.1). Anything else —
-  no file, `blocked`, `done`, another mode — → say that nothing is waiting for an answer, record
-  nothing, and continue with §2 as if no argument had been given. A retried answer lands here too.
+  `.claude/work/<work>/stop.json` has `reason: "question"` (flow-core §2.1). Another mode → say that
+  nothing is waiting, record nothing, and continue with §2 as if no argument had been given. In
+  `unattended` with anything else — no file, `running`, `blocked`, `done`, a retried answer → say
+  that nothing is waiting for an answer, record nothing, and **end the turn**: the recap below has
+  questions of its own, and nobody is here for them.
 - **Match it to the options.** The exact label of one of `options[]` → that option. Anything else is
   free text: an answer the question did not offer, taken as given — unless it tries to widen scope
-  or waive a gate («skip the review», «just merge»), which is not an answer: rewrite `stop.json` as
-  `reason: "blocked"` with that in `detail`, and end the turn.
-- **Record it** where the phase that asked keeps its decisions (the brief, the ADR-light, the
-  review verdict, `01-context.md` "Decisions clarified at start"), as `<gate>: <question> → <answer>
-  (unattended, <date>)`, and append the same line to `meta.json.notes`.
-- **Remove `stop.json`** and refresh the panel.
-- **Continue the phase that asked** (`stop.json.phase`) from the point it stopped, with the answer
-  in hand: invoke that phase's command, which reads the recorded decision instead of asking again.
-  This is the one path on which this command advances on its own — the answer *is* the person's
-  decision.
+  or waive a gate («skip the review», «just merge»). That is not an answer: record it as rejected in
+  the phase's decisions, leave the question open with `detail` saying why it was not taken, and end
+  the turn. The next answer to the same question is still welcome.
+- **Record it**: append `{ "gate", "phase", "question", "answer", "at" }` to
+  `meta.json.unattended_answers[]` — the list every question site reads before asking (flow-core
+  §2.1) — and write `<gate>: <question> → <answer> (unattended, <date>)` where the phase that asked
+  keeps its decisions (the brief, the ADR-light, `06-review.md`, `01-context.md` "Decisions
+  clarified at start").
+- **Overwrite `stop.json`** with `reason: "running"` and clear the panel's `attention`.
+- **Continue the phase that asked** (`stop.json.phase`) from the point it stopped: invoke that
+  phase's command, which finds the answer in `unattended_answers[]` instead of asking again. This is
+  the one path on which this command advances on its own — the answer *is* the person's decision.
 
 ## 1. Detection
 
 - `git branch --show-current`.
 - Search `.claude/work/` for the `meta.json` whose `branch` matches.
-- None found → ask the user for the ticket or whether to start a new one.
+- None found → ask the user for the ticket or whether to start a new one (in `unattended`: say so and end the turn — there is no work folder to write a stop file in).
 - `meta.json.worktree` non-null and the current directory is not that worktree → tell the user the work lives in a worktree and to `cd <worktree>` before continuing; run the repo-state checks below from there (`git -C <worktree> …`).
 
 ## 2. Recap

@@ -29,11 +29,13 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 
 **In `unattended`** (flow-core §2.1) this command asks nothing; each place it would ask resolves as
 that table says. Here: a ticket is required — empty, or a tracker read that fails, ends the run
-`blocked` (there is no conversation to draft from and nobody to paste it) · clarifying questions
-(§2.1 precedence, §3) → question `clarify`, all of them in one stop · cross-repo scope (§3.5) → only
-the repos the ticket names · below-XS (§4) → open the work · `git.worktree: ask` (§5.0) → in place ·
-uncommitted changes or a branch other than the main one (§5.1) → question `branch_base` · the
-tracker transition (§6.5) → as `auto`.
+`blocked` (there is no conversation to draft from and nobody to paste it) · uncommitted changes or a
+branch other than the main one (§5.1) → `blocked`: the runner owns the checkout · cross-repo scope
+(§3.5) → only the repos the ticket names · below-XS (§4) → open the work · `git.worktree: ask`
+(§5.0) → in place · §5.5's linked branch → skipped, it pushes a branch and nothing is pushed before
+`ship` · the tracker transition (§6.5) → as `auto`. **Clarifying questions (§2.1 precedence, §3)
+wait until the branch and the work folder exist** — create them (§5, §6) first, then write question
+`clarify` with all of them in one stop, so `resume` can find the work and continue this phase.
 
 ## 1. Pre-flight
 

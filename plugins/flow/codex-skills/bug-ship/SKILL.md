@@ -26,12 +26,14 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `$flow:feat-ship`, wi
 2. The knowledge-consolidation offer was already made in `$flow:bug-postmortem` — do not ask again here.
 
 **In `unattended`** (flow-core §2.1) this command asks nothing — the same resolutions as
-`$flow:feat-ship`'s unattended paragraph, applied to the sections here: the MR/PR (§2–§3) is created
-as draft only with `autonomy.unattended_ship: draft` (else question `ship`; pre-deploy SQL →
-question `migration`), the body carries the brief recorded unattended and a `## Not verified — needs
-a human` section when anything was; the delta check (§0) runs the review on the delta; the
-performance comment (§3.3) is not posted; the follow-up and conventions surveys (§4) are `Later`;
-"was it merged?" is not merged; and Close writes `stop.json` with `reason: "done"` and `mr_url`.
+`$flow:feat-ship`'s unattended paragraph, and its "In every mode" paragraph too, applied to the
+sections here: the MR/PR (§2–§3) is a draft only with `autonomy.unattended_ship: draft` or an answer
+*Create as draft*, created as `$flow:feat-ship §4.1` says for a draft (never through
+`commit-push-pr`); otherwise question `ship`; pre-deploy SQL → question `migration` first. The delta
+check (§0) runs the review on the delta once per run, then `blocked`; the performance comment (§3.3)
+is not posted; every offer and survey at Close (§4) — follow-ups, conventions, archiving — is
+`Later`; "was it merged?" is not merged; and Close writes `stop.json` with `reason: "done"` and
+`mr_url`.
 
 ## 0. Pre-flight
 
@@ -169,6 +171,8 @@ Same as `$flow:feat-ship` §4.0: `git rev-parse --abbrev-ref HEAD` must not be t
 Only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
 
 Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.squash`.
+
+**A draft (`unattended`)** → as `$flow:feat-ship §4.1` says for a draft: not through `commit-push-pr`, the forge CLI with its draft flag, a refused draft → `blocked`.
 
 **Record the URL the moment it exists**: write it into `meta.json` (the `mrs` entry if there is one) and refresh the panel (flow-core §4) right here, before §3.2 and before anything else can fail.
 

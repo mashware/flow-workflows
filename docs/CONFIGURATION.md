@@ -343,14 +343,15 @@ How much the flow advances on its own versus stopping to ask you.
 | `manual` *(default)* | Every phase stops at each decision point and, at the end, **proposes** the next command as a one-click confirmation — you accept to advance; it is never typed for you and never runs unconfirmed |
 | `guided` | Resolves low-risk, unambiguous decisions itself with the recommended default (recorded in the artifact), still asks at genuine decision points, and chains into the next command automatically |
 | `auto` | As `guided`, plus auto-resolves the remaining decision points with sensible recorded defaults, chaining phases without pausing |
-| `unattended` | As `auto`, for a run nobody watches — a script, a container, a headless CLI. It never asks: each place a person would be asked is recorded, becomes a draft MR/PR (`autonomy.unattended_ship: draft`), or ends the run with the question written to `.claude/work/<work>/stop.json`. A runner posts it, and `/flow:work:resume <answer>` continues. Never inferred — only when written in the FLOW config |
+| `unattended` | As `auto`, for a run nobody watches — a script, a container, a headless CLI. It never asks: each place a person would be asked is recorded, becomes a draft MR/PR (`autonomy.unattended_ship: draft`), or ends the run with the question written to `.claude/work/<work>/stop.json`. A runner posts it, and `/flow:work:resume <answer>` continues. One MR/PR per run. The file reads `running` while a phase works, so a run that dies leaves `running` behind. Never inferred — only when written in the FLOW config |
 
 **Hard gates stop and ask in `manual`, `guided` and `auto`, no exceptions** (in `unattended` each
-one is resolved by the shared rules' table — the brief is recorded, ship is a draft only when
-allowed, and the rest end the run as a question; none is approved in silence):
+one is resolved by the shared rules' table: the brief is written down unconfirmed and travels in
+the draft's body, ship is a draft only when allowed, and a migration or a serious review finding
+ends the run as a question):
 
-- any push, or opening an MR/PR — so `validate` and `bug:review` never chain into `ship`: the
-  unattended run deliberately ends there, with `ship` proposed for you to confirm
+- any push, or opening an MR/PR — so `validate` and `bug:review` never chain into `ship`: a run in
+  `auto` deliberately ends there, with `ship` proposed for you to confirm
 - creating a branch when the base is ambiguous
 - DB schema changes and migrations
 - a review that came back with high-severity findings

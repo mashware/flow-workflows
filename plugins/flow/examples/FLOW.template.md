@@ -264,7 +264,7 @@ subagent ignores the value and the step says so once, in one line.
               #   brings back status plus evidence — job names, exit codes, log tail, run URL — and never
               #   rules on it: triage and the merge verdict stay on the main thread whatever this says.
               #   Empty = falls back to `agents`, then to what the command runs on, and the dispatch says so
-              #   in one line — an unattended wait is the one place an unpriced default runs longest.
+              #   in one line — an unwatched wait is the one place an unpriced default runs longest.
 
 **Three keys, one per kind of subagent — not one per kind of step.** There used to be five —
 `study`, `code`, `test`, `review` — named after phases. They promised a granularity no harness

@@ -18,10 +18,12 @@ Start a bug. `$ARGUMENTS` is **optional**:
 
 **In `unattended`** (flow-core §2.1) this command asks nothing; each place it would ask resolves as
 that table says. Here: a ticket is required — empty, or a tracker read that fails, ends the run
-`blocked` · a thread that changes what the bug *is* (§1.1 precedence) → question `clarify` ·
-cross-repo scope (§1.6) → only the repos the ticket names · `git.worktree: ask` → in place ·
-uncommitted changes or a branch other than the main one (§3) → question `branch_base` · the tracker
-transition (§4.5) → as `auto`.
+`blocked` · uncommitted changes or a branch other than the main one (§3) → `blocked`: the runner
+owns the checkout · cross-repo scope (§1.6) → only the repos the ticket names · `git.worktree: ask`
+→ in place · a linked remote branch → skipped, nothing is pushed before `ship` · the tracker
+transition (§4.5) → as `auto`. **A thread that changes what the bug *is* (§1.1 precedence) waits
+until the branch and the work folder exist** — create them (§3, §4) first, then write question
+`clarify`, so `resume` can find the work and continue this phase.
 
 ## 0. Pre-flight
 

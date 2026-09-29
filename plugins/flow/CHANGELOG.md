@@ -17,8 +17,10 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   product decision or a doubt about the ticket end the run with the question in
   `.claude/work/<work>/stop.json`. Nothing that protects the repo is approved in silence.
 - **The runner does the rest.** It reads `stop.json`, posts the question wherever people read, picks
-  its own exit status (no file = the run crashed), and brings the answer back as
-  `/flow:work:resume <answer>`, which records it and continues the phase that asked.
+  its own exit status (the file still saying `running` = the run crashed), and brings the answer back
+  as `/flow:work:resume <answer>`, which records it and continues the phase that asked — no answered
+  question is asked twice.
+- **One MR/PR per run.** With a train, `done` names the next MR/PR and the next run builds it.
 - **Only when written by hand.** `unattended` is never inferred from a headless harness, `/flow:init`
   does not offer it, and `manual`, `guided` and `auto` are unchanged.
 
