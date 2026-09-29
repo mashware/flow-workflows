@@ -93,7 +93,7 @@ this is the same gate as a red test.
 
 ## 5. Close
 
-- Red test, regressions, **or the original symptom still reproducible in §2.5** → `phase` stays at `fix`; the user iterates. A red gate stops in every mode (in `unattended`, the run ends `blocked` with the failing test named, flow-core §2.1).
+- Red test, regressions, **or the original symptom still reproducible in §2.5** → `phase` stays at `fix`; the user iterates. A red gate stops in every mode (in `unattended`, the run ends `blocked` with the failing test named, flow-core §2.1 — unless every failing test also fails on the base, the one exception that row records; the reproduction test lives in a file this diff touches, so it never qualifies).
 - Green → `phase = "validate"`, add to `phases_done`; in the same write record `validated_sha` = `git rev-parse HEAD` — the tree the regression test passed on, which `$flow-bug-ship §0` reads. Suggest `$flow-bug-review`.
 - **Other bugs detected become `followups[]` entries** (flow-core §7) when they clear its bar — a reproducible symptom with someone who suffers it, not «this looks fragile» — per the output template.
 - **Stage what the validation taught** (`knowledge.stage` set; silence by default): a mutation that stayed green, a disguise the scenario wore, a fixture that could not produce the case — findings about how this codebase is tested, not about this diff. Same rule and evidence line as the review's Close.
