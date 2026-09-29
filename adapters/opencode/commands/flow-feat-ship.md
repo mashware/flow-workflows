@@ -22,6 +22,26 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
+**In `unattended`** (flow-core §2.1) this command asks nothing, and it is the only place that run
+reaches outside the work folder. Each place it would ask:
+
+- **The MR/PR itself (§3–§4)** — `autonomy.unattended_ship: draft` → skip the confirmation, create it
+  **as draft** (`gh pr create --draft`, `glab mr create --draft`, the forge's equivalent) with the
+  §2 content, and never merge it or mark it ready. The body gains two sections: `## Not verified —
+  needs a human` (every `not-verified-unattended` criterion from `07-validation.md`, with what to do)
+  and one line saying the MR/PR was opened by an unattended run whose brief nobody confirmed. Empty
+  or `stop` → nothing is pushed: question `ship`, the §3 preview as the question, **Create as draft**
+  recommended. Pre-deploy SQL in the branch → question `migration`, whatever `unattended_ship` says.
+- **A delta the review did not read (§1)** → run the review on the delta, as the recommended option
+  says, and come back · **blocking TODO/FIXME (§1)** → continue and list them in the body.
+- **Posting anything else** — the performance comment (§4.3), a contract handoff (§6.3) — → not
+  posted; the numbers go in the body, the handoff stays `pending`.
+- **The offers and surveys (§5, §5.1, §5.2, §5.5, §6.4, §6.4bis)** → `Later`; nothing written outside
+  the work folder.
+- **"Was it merged?" (§6.1)** → not merged; `phase` stays `ship`. **The parent merged first
+  (§6.2.1)** → blocked, never force-push. **Train continuation (§6.2)** → as `auto`.
+- **At Close** write `stop.json` with `reason: "done"` and `mr_url` — the last thing the run does.
+
 ## 1. Pre-flight
 
 - Read `meta.json` and `00-summary.md`; open in full only the `Brief MR/PR #N` of `05-implementation.md`, the `## Summary`/blockers of `06-review.md` and `07-validation.md`. (flow-core §5)
@@ -133,7 +153,7 @@ Determine whether the branch modifies the database (migrations, mappings/schema,
 
 ## 3. Show the user and wait for confirmation (MANDATORY)
 
-**Never skip this step, even when the content seems obvious.** Hard gate in every mode.
+**Never skip this step, even when the content seems obvious.** Hard gate in every mode — in `unattended`, the unattended paragraph above decides it.
 
 Print to the user in this exact format:
 

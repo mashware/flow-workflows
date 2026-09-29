@@ -26,7 +26,7 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 
 Invoked by `$flow-feat-review` and `$flow-bug-review` (duel over the diff), `$flow-work-respond` (a reviewer objected to a query), `$flow-feat-design` (access paths), `$flow-feat-build`, `$flow-feat-validate`. Invoke directly for any doubt outside them (chat question, comment on an open MR/PR, a year-old query).
 
-**Autonomy.** Modes as in flow-core §2. The duel, challenger count and whether to measure are flow mechanics — never a question, in any mode. **Hard gates — stop and ask, in every mode:** (1) **creating, seeding or dropping any database, schema or table**, including a throwaway one (§4) — show exact commands and target, never a database the project uses; (2) **any DDL** on a real database (index, column, collation) — the flow's schema gate; (3) editing code (output is a verdict, not a patch); (4) posting anything to an MR/PR or ticket.
+**Autonomy.** Modes as in flow-core §2. The duel, challenger count and whether to measure are flow mechanics — never a question, in any mode. **Hard gates — stop and ask, in every mode:** (1) **creating, seeding or dropping any database, schema or table**, including a throwaway one (§4) — show exact commands and target, never a database the project uses; (2) **any DDL** on a real database (index, column, collation) — the flow's schema gate; (3) editing code (output is a verdict, not a patch); (4) posting anything to an MR/PR or ticket. **In `unattended`** (flow-core §2.1) (1) and (2) are never done: the verdict is schema-only and says so; (3) and (4) do not apply, this command never edits or posts.
 
 ## 1. Resolve the subject
 

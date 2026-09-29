@@ -48,6 +48,10 @@ What is NOT touched:
 
 In `auto` this is one of the only two stops of the whole flow (this one and `ship`; `guided` adds the plan of §2.0bis on a fix of more than two steps): open with the **full stop header** (flow-core §3), then the brief.
 
+In `unattended` (flow-core §2.1) nobody is there to answer: write the brief, mark it
+`recorded (unattended)` under its heading, record the site in `meta.json.defaults_used[]`, and fix.
+The gate's purpose moves to the draft MR/PR, whose body carries the brief for the person who reads it.
+
 **The brief travels inside the question** (flow-core §3) — read in the prompt being answered, not by opening `04-fix.md` — and **nothing runs between the brief and the question**: a tool call after it is what lets a terminal fold it away. Options:
 - **Yes, go ahead** → apply the fix.
 - **No, something is missing or wrong** → adjust the brief, ask again. No code until confirmed.
@@ -114,13 +118,13 @@ the fix is minimal precisely because it trusts that. When the fix depends on X b
 cause and the investigation's evidence does not close that — one reproduction, a correlation, a
 `git blame` that fits the story — that is the premise, and one skeptic on it costs less than the
 second regression. **Refuted** → back to `/flow:bug:investigate`, never a second patch layered on
-the first. **Unsettled** → recorded in `04-fix.md` under "Premises the fix depends on" and carried
+the first (in `unattended`, the run ends `blocked` there, flow-core §2.1). **Unsettled** → recorded in `04-fix.md` under "Premises the fix depends on" and carried
 into the stop, because `/flow:bug:validate` writes a regression test against the cause the fix
 assumed.
 
 ## 2.3 Something outside the brief comes up?
 
-Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this rename fits here", "this extra test covers another case"): **pause before touching it** and ask with `AskUserQuestion`:
+Anything **not in the §2 brief** ("while I'm at it, I'll also fix X", "this rename fits here", "this extra test covers another case"): **pause before touching it** and ask with `AskUserQuestion` (in `unattended`: *No, leave it out*, recorded):
 - **Yes, add it to the brief** — update the brief in `04-fix.md`, continue.
 - **No, leave it out** — note it under "Areas with similar risk" (a risk from the same pattern) or under "Ideas for separate tickets" in `04-fix.md`, **and append it to `meta.json.followups[]`** as `kind: "audit"` (similar risk) or `kind: "out-of-scope"`, `source: "fix"` (flow-core §7). **Only when it clears the bar of flow-core §7** — a named subject, a path that has actually been seen, and waiting costing more than doing it now; short of that the artifact section keeps it and `followups[]` never sees it.
 

@@ -23,6 +23,13 @@ Start a bug. `$ARGUMENTS` is **optional**:
 - **Given** — a ticket (format `tracker.prefix` from FLOW.md) → *ticket mode*: start from it (§1 reads it).
 - **Empty** — *ticket-less mode*: do **not** stop. Synthesize the bug from the conversation just held with the user (§1.5). Ask for a one-line symptom only if there is no conversation to draft from.
 
+**In `unattended`** (flow-core §2.1) this command asks nothing; each place it would ask resolves as
+that table says. Here: a ticket is required — empty, or a tracker read that fails, ends the run
+`blocked` · a thread that changes what the bug *is* (§1.1 precedence) → question `clarify` ·
+cross-repo scope (§1.6) → only the repos the ticket names · `git.worktree: ask` → in place ·
+uncommitted changes or a branch other than the main one (§3) → question `branch_base` · the tracker
+transition (§4.5) → as `auto`.
+
 ## 0. Pre-flight
 
 Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: this command runs with the model it was launched with (no `models` key).**

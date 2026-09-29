@@ -160,7 +160,13 @@ base branch resolvable — is §2 below; flag the key here, check the world ther
   end, proposes the next command as a one-click confirmation — never runs it unconfirmed). Set →
   echo the mode and remind that the hard gates stop and ask in every mode and that `guided`/`auto`
   never ask about the flow's own mechanics or anything already decided (both lists: `flow:flow-core`
-  skill §2). Unrecognized value → flag, `manual` assumed.
+  skill §2). Unrecognized value → flag, `manual` assumed. `unattended` → say what it does instead of
+  the gates (flow-core §2.1): nothing is asked, questions end the run in `stop.json` for a runner,
+  and `ship` is a draft only when `autonomy.unattended_ship` is `draft` — echo that value, or that it
+  is empty and ship will stop on a question. Set in the base `FLOW.md` rather than an overlay → note
+  that every harness reading that base stops asking, interactive sessions included; an overlay for
+  the runner's harness keeps it to the runner. `unattended_ship` set with any other mode → note it is ignored; a
+  value other than `draft`/`stop` → flag, `stop` assumed.
 
 ## 2. Checks
 
