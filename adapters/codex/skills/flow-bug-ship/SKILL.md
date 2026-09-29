@@ -27,8 +27,9 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `$flow-feat-ship`, wi
 `$flow-feat-ship`'s unattended paragraph, and its "In every mode" paragraph too, applied to the
 sections here: the MR/PR (§2–§3) is a draft only with `autonomy.unattended_ship: draft`, created as
 §3.1 says for a draft; otherwise question `ship` and the run ends; pre-deploy SQL → question
-`migration`. The tree check (§0) re-runs what is behind `HEAD` once each — here `validate` first,
-since it ran before the review, then the review on the delta — and is `blocked` after that. The
+`migration`. The tree check (§0) re-runs what is behind `HEAD` once per `HEAD`, recorded as
+`$flow-feat-ship` says — here `validate` first, since it ran before the review, then the review on
+the delta — and is `blocked` after that. The
 performance comment (§3.3) is not posted; every offer and survey at Close (§4) — follow-ups,
 conventions, archiving — is `Later`; "was it merged?" is not merged; and Close writes the stop file
 with `reason: "done"` and `mr_url`.

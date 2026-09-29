@@ -271,7 +271,8 @@ conservative reading, never a guess dressed as a default.
 **The stop file** — `.claude/work/stop.json`, at the root of the main checkout (§0: the repo root is
 the main checkout's, whichever worktree the phase runs in). One fixed path, so a runner finds it
 without knowing the work's folder, and `start` can write it before that folder exists. Written
-whole, every time, with every field; only in this mode. **One unattended run per repository**: its
+whole, every time, with every field — by unattended runs, and outside that mode only to mark it
+`picked_up` (below). **One unattended run per repository**: its
 worktrees all share this file. A clean-tree check never counts `.claude/work/` — the flow's own
 folder.
 
@@ -298,24 +299,29 @@ folder.
 - `gate`: the site's id from the table, or `null`. `question` and `options` carry the whole question,
   the recommended option first — whoever reads it has not seen this session.
 - `done` is written when the run's work is over: the MR/PR created (`mr_url` set; with a train,
-  `detail` says which MR/PR comes next and what it waits on).
+  `detail` says which MR/PR comes next and what it waits on), or a phase that finds nothing to do
+  (every MR/PR merged, a work already shipped) — `detail` says which. **No unattended phase ends
+  with `running` in the file**: every ending is one of `question`, `blocked` or `done`.
 - `at` from the real clock (`date -Iseconds`).
 
 **Every phase that starts in this mode writes `reason: "running"` first** — the whole file, `work`,
-`branch` and `worktree` included — unless it holds a `question` for this same work: no person has
-answered it yet, so say so and end the run, touching nothing. (A `blocked` is overwritten: running
+`branch` and `worktree` included — unless it holds a `question`, for this work or any other: no
+person has answered it yet, and the file is the only record of it, so say so and end the run,
+touching nothing. One question at a time per repository. (A `blocked` is overwritten: running
 again *is* its retry, once the runner has fixed what it named.) A run that dies therefore leaves
 `running` behind. For the runner: `running` at exit is a crash; a `question` older than the run's
 own start is the earlier stop, still waiting, and the run refused to go past it.
 
 **A person picks it up in any other mode.** `/flow-work-resume` names the pending stop in its
-recap, and **the next phase that runs asks it first** — the question, verbatim, with its options —
-before doing anything else, then overwrites the file with `reason: "picked_up"` and goes on as
-usual. From there the work is an ordinary one: `high_findings` is answered by fixing them and
-reviewing again, `migration` by the phase writing it with the person's go-ahead, `ship` by the
-person's own ship. **The person's session must not itself be `unattended`**: put the mode where only
-the runner reads it — the overlay of a harness the person does not use, or a FLOW file the runner's
-environment writes (`/flow-doctor` says which file it came from).
+recap, and **the next phase that runs on that work** (`stop.json.work` is this one — never another
+work's) **asks it first** — the question, verbatim, with its options — before doing anything else,
+then overwrites the file with `reason: "picked_up"`. The answer decides what happens next, as any
+answer does: *go on* → the phase goes on; *change the design*, *fix them* → the phase does that
+instead (back to `design`, fix and review again). A `ship` question is not replayed: `ship`'s own
+preview asks it, fresh. **The person's session must not itself be `unattended`**: set the mode where
+only the runner reads it — a FLOW file the runner's own environment writes (its container, its CI
+checkout), or the overlay of a harness only the runner uses. `/flow-doctor` says which file the
+mode came from.
 
 ## 3. Reporting — how every stop reads
 

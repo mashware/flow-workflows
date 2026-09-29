@@ -102,7 +102,8 @@ How much the flow advances on its own vs. stopping to ask you.
                       #   unattended — as auto, for a run nobody watches (script, container, headless CLI):
                       #            never asks; each hard gate is recorded, becomes a draft MR/PR, or ends
                       #            the run with a question in .claude/work/stop.json for a runner to
-                      #            post and a person to pick up. One MR/PR per run. Only when written here.
+                      #            post and a person to pick up. One MR/PR per run. Only when set explicitly —
+                      #            in a FLOW file only the runner's environment reads.
                       # HARD GATES stop and ask in manual/guided/auto, no exceptions: any push or MR/PR (ship),
                       # branch creation with an ambiguous base, DB schema changes/migrations, a review
                       # with high-severity findings, and the business brief confirmed just before the

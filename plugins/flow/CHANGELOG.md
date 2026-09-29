@@ -18,9 +18,10 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   the question and its options in `.claude/work/stop.json`; a checkout or ticket the run cannot use
   ends it as `blocked`. Nothing that protects the repo is approved in silence.
 - **A runner reads one file.** `.claude/work/stop.json` says `running` while a phase works (left
-  behind = the run crashed), then `question`, `blocked` or `done` with the MR/PR. The runner posts
-  what it needs to; a person picks the work up in their own session, where `/flow:work:resume` shows
-  the pending question and the phase asks it as usual.
+  behind = the run crashed), then `question`, `blocked` or `done` with the MR/PR. While a question is
+  pending no new unattended run goes past it. A person picks the work up in their own session:
+  `/flow:work:resume` shows the question, the next phase asks it first, and the file then says
+  `picked_up`. Keep `unattended` in a FLOW file only the runner's environment reads.
 - **One MR/PR per run**, and only when written by hand: `unattended` is never inferred from a
   headless harness, `/flow:init` does not offer it, and `manual`, `guided` and `auto` are unchanged.
 
