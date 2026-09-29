@@ -223,7 +223,8 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 - **Stage what the validation taught** (`knowledge.stage` set; silence by default): a mutation that stayed green, a disguise the scenario wore, a fixture that could not produce the case — findings about how this codebase is tested, not about this diff. Same rule and evidence line as the review's Close.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Autonomy handoff — this one stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR: a hard gate in every mode, so do **not** chain into it. Stop here and propose `/flow-feat-ship` with a single `AskUserQuestion` (recommended option by default), invoking it only when the user confirms. This is the deliberate end of a run in `auto`.
-  **In `unattended`** (flow-core §2.1) chain into `/flow-feat-ship` — it is `ship` that decides,
-  from `autonomy.unattended_ship`, between a draft MR/PR and a question in the stop file.
+  **In `unattended`** (flow-core §2.1): the phase advanced → chain into `/flow-feat-ship`, which
+  decides from `autonomy.unattended_ship` between a draft MR/PR and a question. It did not advance
+  (red suite, a criterion `unproven`) → `blocked`, naming what failed; never chain.
 
 In `guided`/`auto` this is, together with the brief in `/flow-feat-build §2`, **the only stop of the whole MR/PR** — everything between them ran without a person. It carries the **full stop header** and the body answers, in this order: what is green, what this MR/PR proves and what it does not, and what shipping it takes. Assume the user has read none of the build and review.

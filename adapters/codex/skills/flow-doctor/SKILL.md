@@ -167,10 +167,10 @@ base branch resolvable — is §2 below; flag the key here, check the world ther
   run against a development or throwaway database, never a live one.
 - **Autonomy**: `autonomy.mode` empty → note it defaults to `manual` (every phase stops and, at the
   end, proposes the next command as a one-click confirmation — never runs it unconfirmed). Set →
-  echo the mode and remind that the hard gates stop and ask in every mode and that `guided`/`auto`
+  echo the mode and remind that the hard gates stop and ask in `manual`/`guided`/`auto` and that `guided`/`auto`
   never ask about the flow's own mechanics or anything already decided (both lists: `flow:flow-core`
   skill §2). Unrecognized value → flag, `manual` assumed. `unattended` → say what it does instead of
-  the gates (flow-core §2.1): nothing is asked, questions end the run in `stop.json` for a runner,
+  the gates (flow-core §2.1): nothing is asked, questions end the run in `.claude/work/stop.json` for a runner,
   and `ship` is a draft only when `autonomy.unattended_ship` is `draft` — echo that value, or that it
   is empty and ship will stop on a question. Set in the base `FLOW.md` rather than an overlay → note
   that every harness reading that base stops asking, interactive sessions included; an overlay for

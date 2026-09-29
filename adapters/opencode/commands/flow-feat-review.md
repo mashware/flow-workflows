@@ -389,4 +389,4 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 - **Autonomy handoff.** Only when there are **no blockers and no unresolved high-severity findings** — with any of those, stop in every mode (hard gate; in `unattended`, see below). Clean: in `manual`, propose `/flow-feat-validate` with a single `AskUserQuestion` and invoke it on confirmation; in `guided`/`auto`, **chain into `/flow-feat-validate` automatically** in this same turn. Never chain into `/flow-feat-ship` from here — ship is reached through `validate`.
 - **In `unattended`** (flow-core §2.1), blockers or unresolved high-severity findings are question
   `high_findings`: the surviving findings in `question`, one line each, and the run ends. A person
-  picks it up — fixing them, or accepting them — in a session of their own.
+  picks it up in a session of their own, where they are fixed and reviewed again.

@@ -35,8 +35,9 @@ pushes. Each place it would ask:
   `migration`, whatever `unattended_ship` says.
 - **The §1 tree check** — `reviewed_sha` or `validated_sha` behind `HEAD` with more than tests →
   re-run what is behind, **once each per run**: the review on the delta, then `validate`. Still
-  behind after that, or a dirty tree → `blocked` · **blocking TODO/FIXME (§1)** → continue and list
-  them in the body.
+  behind after that → `blocked`. Tracked changes this run's own phases left uncommitted → commit them
+  as WIP first (a WIP commit is `auto`'s to make) and check again · **blocking TODO/FIXME (§1)** →
+  continue and list them in the body.
 - **Posting anything else** — the performance comment (§4.3), a contract handoff (§6.3) — → not
   posted; the numbers go in the body, the handoff stays `pending`.
 - **The offers and surveys (§5, §5.1, §5.2, §5.5, §6.4, §6.4bis)** → `Later`; nothing written outside
