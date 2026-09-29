@@ -66,7 +66,12 @@ each is resolved by a table instead — recorded, a draft, or the run ending on 
 none is approved in silence. → [flow-core §2][fc]
 
 **Stop file** — `.claude/work/stop.json`, what an `unattended` run leaves for the runner that
-launched it: `running`, `question`, `blocked`, `done` or `picked_up`. → [flow-core §2.1][fc]
+launched it: `running`, `question`, `blocked`, `done` or `picked_up`. A `question` carries an `id`,
+the commit it was asked on (`head`) and the command to relaunch (`resume`). → [flow-core §2.1][fc]
+
+**Answer file** — `.claude/work/answer.json`, how a runner answers that question: the `id` and
+one of its options. Relaunched on the same commit, the phase applies it where it stopped and goes
+on; an answer that does not fit its question is refused, and the question stays. → [flow-core §2.1][fc]
 
 **"Never a question" list** — the symmetric rule: what `guided`/`auto` decide, record and move past.
 Flow mechanics (panels, challengers, skeptics, how many), WIP commits, continuing a train when
