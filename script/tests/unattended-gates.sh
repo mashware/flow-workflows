@@ -12,11 +12,17 @@ fails=0
 ok()   { printf '  ok   %s\n' "$1"; }
 fail() { printf '  FAIL %s\n' "$1"; fails=$((fails+1)); }
 
-# Gates a file asks, whatever the line breaks: question `a`, question `a` / `b`, (`a`).
-gates_asked() {
+# Gates a text asks, whatever the line breaks: question `a`, question `a` / `b`, or a known gate
+# written as (`a`).
+gates_asked() {  # <file> [known gates, |-separated]
+  local known="${2:-migration}"
   tr '\n' ' ' < "$1" | tr -s ' ' \
-    | grep -oE 'question `[a-z_]+`( / `[a-z_]+`)?|\(`(migration|clarify|decision|ship|high_findings|design_challenge|investigation_challenge)`\)' \
+    | grep -oE "question \`[a-z_]+\`( / \`[a-z_]+\`)?|\(\`($known)\`\)" \
     | grep -oE '`[a-z_]+`' | tr -d '`' | sort -u
+}
+# The stop-site table of flow-core §2.1 (header "| Where | In `unattended` |"), as a file.
+site_table() {
+  awk '/^\| Where \| In `unattended` \|/{t=1; next} t && /^\|/{print; next} t{exit}' "$CORE"
 }
 # Rows of the re-entry table (the one whose header names `resume_at`): "<gate>|<asked in>".
 rows() {
@@ -26,11 +32,15 @@ rows() {
 
 table=$(rows)
 [ -n "$table" ] || { fail "no re-entry table in flow-core §2.1"; exit 1; }
+SITES="${TMPDIR:-/tmp}/flow-unattended-sites.$$"; site_table > "$SITES"; trap 'rm -f "$SITES"' EXIT
+[ -s "$SITES" ] || { fail "no stop-site table in flow-core §2.1"; exit 1; }
+core_gates=$(gates_asked "$SITES")
+known=$(printf '%s\n' $core_gates | paste -sd'|')
 
 # Each command's gates: a row for that gate must name the command's phase, or "any phase".
 while IFS= read -r f; do
   phase=$(basename "$f" .md)
-  for g in $(gates_asked "$f"); do
+  for g in $(gates_asked "$f" "$known"); do
     if printf '%s\n' "$table" | awk -F'|' -v g="$g" -v p="$phase" \
          '$1==g && ($2 ~ "`" p "`" || $2 ~ /any phase/) {hit=1} END{exit !hit}'; then
       ok "$phase asks $g — re-entry row names it"
@@ -41,7 +51,6 @@ while IFS= read -r f; do
 done < <(find "$ROOT/commands" -name '*.md' | sort)
 
 # The stop-site table and the re-entry table name the same gates.
-core_gates=$(gates_asked "$CORE")
 row_gates=$(printf '%s\n' "$table" | cut -d'|' -f1 | sort -u)
 for g in $core_gates; do printf '%s\n' "$row_gates" | grep -qx "$g" && ok "flow-core gate $g has a row" || fail "flow-core gate $g has no re-entry row"; done
 for g in $row_gates; do printf '%s\n' "$core_gates" | grep -qx "$g" || fail "re-entry row $g is not a gate of the stop-site table"; done

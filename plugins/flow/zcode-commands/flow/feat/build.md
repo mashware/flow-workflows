@@ -63,7 +63,9 @@ of one → stop file, end the run. A person continues from there, or a runner's 
 (flow-core §2.1): the brief, the contracts and the plan are already written — keep them — and the
 MR/PR is the one already `in_progress`, not a new pick. *Write it and continue* → the first unticked
 step, the migration included · *Change the design first* → `blocked`. A plan step marked approved
-by an answer's `id` (a review wrote it) is that migration already answered: write it, do not stop.
+by an answer's `id` (a review wrote it) is that migration already answered **when that `id` is in
+`meta.json.defaults_used[]` with gate `migration` and phase `review`**: write it, do not stop. Not
+there → it is a question like any other.
 Chained from a review's `high_findings` *Fix them* → the findings are unticked steps at the end of
 this MR/PR's plan: build them in order, then chain into `/flow:feat:review`.
 

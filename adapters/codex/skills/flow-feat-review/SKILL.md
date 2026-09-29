@@ -397,7 +397,7 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
   launched again, the findings are recorded under "Answered (unattended)" as accepted by that
   answer, `reviewed_sha` = the candidate, and the phase advances and chains; `ship` lists them in
   the body. *Fix them* → this command re-enters at this Close too: it writes each finding as an
-  unticked step under this MR/PR's plan in `05-implementation.md`, leaves `phase = build`, and
-  chains into `$flow-feat-build`, which builds those steps and chains back here. A migration one of
-  this round's fixes needs is question `migration` asked here, answered the same way (flow-core
-  §2.1).
+  unticked step under this MR/PR's plan in `05-implementation.md` (`04-fix.md` for a bug), leaves
+  `phase = build` (`fix`), and chains into `$flow-feat-build` (`$flow-bug-fix`), which builds those
+  steps and chains back here. A migration one of this round's fixes needs is question `migration`
+  asked here — after `high_findings`, in its own stop — and answered the same way (flow-core §2.1).

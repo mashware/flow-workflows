@@ -315,12 +315,14 @@ folder.
   other reason writes them `null`.
   - `head` = `git rev-parse HEAD` in the work's checkout, after the WIP commit; `id` =
     `<work>:<phase>:<gate>:<first 7 of head>:<first 7 of the sha1 of question>`
-    (`printf '%s' "$question" | sha1sum`). The commit binds an answer to its MR/PR — the next
+    — hashed from the exact string written as `question`, through a file, never through shell
+    interpolation (backticks in the text would run). The commit binds an answer to its MR/PR — the next
     MR/PR has commits of its own — and the phase and the question text keep two questions asked
     at one commit apart.
   - `resume` = the command to relaunch, as this harness invokes it; `resume_at` = where that
     command re-enters. Both come from the re-entry table below, never improvised.
-  - `free_text`: `true` only where the table allows a free answer.
+  - `free_text`: `true` only where the table allows a free answer; a question with no options
+    (`clarify`) writes `options: []`.
   - `answer_rejected`: `null`, or the check an answer failed — `malformed` · `id` · `command` ·
     `head` · `option`.
 - `at` from the real clock (`date -Iseconds`): when the question was asked. A rewrite for a
@@ -384,13 +386,23 @@ present, **applies it only when every check holds**, in this order:
 Applying it: write the answer, quoted and with its `id`, where the table below says → add
 `{ "key": "unattended:answer:<gate>", "default": "<answer>", "id": "<id>", "phase": "<phase>" }` to
 `meta.json.defaults_used[]` → delete `answer.json` → write `running` → go to `resume_at`, reading
-what the phase computed before the stop from its artifact instead of computing it again. **The
-answer is spent once, on the site it was for**: the first site of that gate the run reaches after
-the pickup takes the answer the pickup applied and does not stop; any later site, or the same gate
-in a later run, asks anew with its own `id`. A site never recomputes an `id` to look an answer up.
+what the phase computed before the stop from its artifact instead of computing it again. **Which
+site takes it**:
 
-Any check failing → apply nothing: write the same question back with `answer_rejected` set to
-the first check that failed and a one-line `detail`, leave `answer.json` in place, and end the
+- **The site at `resume_at`** takes the answer the pickup applied and does not stop.
+- **A phase that re-runs from its pre-flight or re-enters at its Close** (`validate`, `ship`,
+  `review`) may pass more than one of its gates on the way: each of its sites takes a
+  `defaults_used[]` answer with **the same phase, the same gate and the current `head`** — so an
+  answer given to that phase at this commit still holds when the next one is asked.
+- **A plan step a review wrote as approved by an `id`** — the `migration` row below — is answered
+  when that `id` is in `defaults_used[]` with gate `migration` and phase `review`; build checks it
+  there, never on the step's word.
+- **Every other site asks anew**, with its own `id` — a later phase, a later commit, another round.
+  A site never recomputes an `id` to look an answer up.
+
+Any check failing → apply nothing: rewrite the stop file exactly as it was, changing only
+`answer_rejected` (the first check that failed) and a one-line `detail` — a question regenerated in
+new words would carry a new `id` and orphan the answer — leave `answer.json` in place, and end the
 run. The question is not lost, and the runner can read why without parsing prose.
 
 | Gate | Asked in | `resume` | `resume_at` | The answer is written to | Options |
@@ -401,10 +413,10 @@ run. The question is not lost, and the runner can read why without parsing prose
 | `investigation_challenge` | `investigate` | `investigate` | the section after the challenge | the "Response" of each high finding | *Apply the recommended response to each* · free text `F<n>: <response>` |
 | `decision` | any phase | the same phase | the step that surfaced it | where that phase keeps its decisions (§7) | the options that were on the table · free text |
 | `migration` | `build` / `fix` | the same phase | the unticked plan step that writes it | "Decisions made during implementation" in `05-implementation.md` / `04-fix.md` | *Write it and continue* · *Change the design first* |
-| `migration` | `validate` (apply) | the same phase | its pre-flight — it re-runs whole, and its apply site takes the answer the pickup applied | `meta.json.defaults_used[]` only: the artifact is written whole at the end, and its migration line names the answer (`07-validation.md` / `05-validation.md`) | *Apply it* |
+| `migration` | `validate` (apply) | the same phase | its pre-flight — it re-runs whole, and its apply site takes the answer the pickup applied | `meta.json.defaults_used[]` only — the artifact is written whole at the end, and names the answer beside the migration it applied (`07-validation.md` "Edge cases verified" / `05-validation.md`) | *Apply it* |
 | `migration` | `ship` (pre-deploy SQL) | the same phase | its pre-flight — the draft lives only in context; the site takes the answer the pickup applied | `05-implementation.md` / `04-fix.md`, beside the SQL | *The SQL is complete — ship it* |
-| `high_findings` | `review` | `review` | its Close — no reader is launched again | `06-review.md` "Answered (unattended)", one line per finding. *Fix them* also writes each as an unticked step under this MR/PR's plan, sets `phase = build` and chains into `build` (`fix` for a bug) | *Fix them* · *Accept and go on* |
-| `migration` | `review` (a fix it needs) | `review` | its Close | as the row above; *Write it and continue* writes the fix as an unticked plan step marked approved by this `id`, and chains into `build` / `fix` — whose migration site takes a step marked approved as answered | *Write it and continue* · *Change the design first* |
+| `high_findings` | `review` | `review` | its Close — no reader is launched again | `06-review.md` "Answered (unattended)", one line per finding. *Fix them* also writes each as an unticked step under this MR/PR's plan (`05-implementation.md` / `04-fix.md`), leaves `phase = build` (`fix`) and chains into `build` (`fix`) | *Fix them* · *Accept and go on* |
+| `migration` | `review` (a fix it needs) | `review` | its Close — asked after `high_findings`, never in the same stop | as the row above; *Write it and continue* writes the fix as an unticked plan step marked approved by this `id`, leaves `phase = build` (`fix`) and chains into `build` / `fix` | *Write it and continue* · *Change the design first* |
 | `ship` | `ship` | the same phase | its pre-flight — the draft lives only in context; the site takes the answer the pickup applied | `05-implementation.md` / `04-fix.md`, under the brief | *Create it as draft* |
 
 An option that sends the work back to a person's judgement (*Change the design first*) is applied
