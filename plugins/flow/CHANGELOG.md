@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.82.1 — A red suite no longer ships because the run called it old  ·  2026-09-29
+
+**In short**
+- **An unattended `validate` could pass a red suite on its own judgement.** It decided the failures
+  were "pre-existing", chained into `ship`, recorded nothing, and the draft MR/PR never said the suite
+  was red.
+- **Now that call is a measurement.** A red suite advances only when every failing test also fails,
+  under the same name, on the base; none of them is in a file the diff touches; and none proves an
+  acceptance criterion. Anything short of that ends the run `blocked`.
+- **And it is visible.** The run records it in `meta.json`, `07-validation.md` names each test and
+  the base it was checked on, and the MR/PR lists them under "Not verified — needs a human".
+
+Reported in #172.
+
 ## v0.82.0 — Nobody at the terminal, and the run still gets somewhere  ·  2026-09-29
 
 **In short**

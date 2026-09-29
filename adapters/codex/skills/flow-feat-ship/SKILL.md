@@ -52,7 +52,9 @@ pushes. Each place it would ask:
   `$flow-feat-build`). It is the last thing the run does.
 
 **In every mode**, criteria `07-validation.md` marks `not-verified-unattended` go into the body under
-`## Not verified — needs a human`, with what to do for each. The §3 preview shows that section like
+`## Not verified — needs a human`, with what to do for each — and so do the tests the suite left red
+because they also fail on the base (`unattended:validate-red-base`): each name, and the base sha
+where it failed too. The §3 preview shows that section like
 any other, and the person reading it is the check the run could not do.
 
 ## 1. Pre-flight
