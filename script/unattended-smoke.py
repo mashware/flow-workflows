@@ -115,8 +115,11 @@ def seed_repo(scratch, scenario, harness):
     """Build the throwaway repo parked at design, per the scenario, and return its path."""
     spec = SCENARIOS[scenario]
     repo = scratch / "repo"
-    (repo / "migrations").mkdir(parents=True)
-    (repo / "tests").mkdir(parents=True)
+    # A rerun into a kept scratch starts from a fresh seed, never on top of the last run.
+    shutil.rmtree(repo, ignore_errors=True)
+    shutil.rmtree(scratch / "origin.git", ignore_errors=True)
+    (repo / "migrations").mkdir(parents=True, exist_ok=True)
+    (repo / "tests").mkdir(parents=True, exist_ok=True)
     (repo / "tests" / "__init__.py").write_text("", encoding="utf-8")
 
     write_text(repo / "migrations" / "001_init.sql", """CREATE TABLE mails (
@@ -267,10 +270,13 @@ def working_tree_status(repo):
 NON_CODE = ("last-message.txt", ".domain-memory/", ".agents/", ".claude/", "store.db")
 
 
-def code_changes(repo, baseline):
+def code_changes(repo, baseline, seed_head):
+    """Code the run added: uncommitted changes plus everything committed since the seed,
+    because flow commits WIP before it stops on a question."""
     new = working_tree_status(repo) - baseline
-    return [line for line in sorted(new)
-            if not any(item in line for item in NON_CODE)]
+    committed = git_out(repo, "diff", "--name-only", seed_head, "HEAD").splitlines()
+    touched = sorted(new) + [f"committed: {path}" for path in committed]
+    return [line for line in touched if not any(item in line for item in NON_CODE)]
 
 
 def git_init(scratch, repo, branch):
@@ -282,6 +288,10 @@ def git_init(scratch, repo, branch):
     git("config", "user.name", "Unattended Smoke")
     git("add", "-A")
     git("commit", "-m", "init demo store", "--no-verify")
+    origin = scratch / "origin.git"
+    subprocess.run(["git", "init", "--bare", "-q", str(origin)], check=True,
+                   capture_output=True, env=scrubbed_env(scratch))
+    git("remote", "add", "origin", str(origin))
     git("switch", "-c", branch)
 
 
@@ -421,6 +431,19 @@ def count_question_calls(stream_path):
     return count, sorted(tool_names)
 
 
+def kill_group(proc):
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(proc.pid, sig)
+        except ProcessLookupError:
+            return
+        try:
+            proc.wait(timeout=10)
+            return
+        except subprocess.TimeoutExpired:
+            continue
+
+
 def run_cell(repo, harness, cli, timeout, oc_message=False):
     prompt = PROMPTS[harness]
     if harness == "codex":
@@ -438,13 +461,15 @@ def run_cell(repo, harness, cli, timeout, oc_message=False):
     say(f"  run: {' '.join(cmd)}")
 
     stream_path = repo.parent / stream_name
+    stderr_path = repo.parent / "stderr.txt"
     timeline = []
     stop_event = threading.Event()
     poller = threading.Thread(target=poll_stop, args=(repo, timeline, stop_event), daemon=True)
     started = time.monotonic()
     started_iso = now_iso()
-    with open(stream_path, "w", encoding="utf-8") as stream:
-        proc = subprocess.Popen(cmd, cwd=repo, stdout=stream, stderr=subprocess.PIPE,
+    with open(stream_path, "w", encoding="utf-8") as stream, \
+            open(stderr_path, "w", encoding="utf-8") as err:
+        proc = subprocess.Popen(cmd, cwd=repo, stdout=stream, stderr=err,
                                 stdin=subprocess.DEVNULL, text=True, env=scrubbed_env(repo),
                                 start_new_session=True)
         poller.start()
@@ -453,23 +478,18 @@ def run_cell(repo, harness, cli, timeout, oc_message=False):
             proc.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             timed_out = True
-            # The whole group: the Volta shim forwards nothing, so terminating it alone
-            # leaves the real CLI orphaned and holding stderr open.
-            os.killpg(proc.pid, signal.SIGTERM)
-            try:
-                proc.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                os.killpg(proc.pid, signal.SIGKILL)
-                proc.wait()
+        except BaseException:
+            # Ctrl-C never reaches a CLI in its own session: stop it before the paid run
+            # outlives the runner.
+            kill_group(proc)
+            raise
+        # The whole group, on every exit: the Volta shim forwards nothing, so ending it
+        # alone leaves the real CLI (or its MCP children) orphaned and still running.
+        kill_group(proc)
     stop_event.set()
     poller.join(timeout=10)
     duration = time.monotonic() - started
-    stderr = ""
-    if proc.stderr:
-        try:
-            stderr = proc.stderr.read()
-        except (ValueError, OSError):
-            stderr = ""
+    stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
     ended_iso = now_iso()
     say(f"  run: exited code={proc.returncode} after {duration:.0f}s"
         f"{' (TIMED OUT)' if timed_out else ''}")
@@ -481,13 +501,16 @@ def run_cell(repo, harness, cli, timeout, oc_message=False):
     }
 
 
-def verify_cell(repo, harness, scenario, run, baseline):
+def verify_cell(repo, harness, scenario, run, baseline, seed_head):
     spec = SCENARIOS[scenario]
     checks = []
     stop = read_stop(repo)
 
     stream_text = run["stream"].read_text(encoding="utf-8", errors="replace")
-    command_loaded = "flow-feat-build" in stream_text
+    # Neither marker is in the prompt: codex reads the skill file, and any harness that ran
+    # the command reads the seeded work folder.
+    command_loaded = ("skills/flow-feat-build" in stream_text
+                      or f".claude/work/{spec['work']}" in stream_text)
     if not command_loaded:
         checks.append(("command expansion visible in stream", False,
                        "the model never invoked the flow command — inconclusive, not a pass"))
@@ -533,15 +556,17 @@ def verify_cell(repo, harness, scenario, run, baseline):
                            f"unparsable at={stop['at']!r}"))
 
     if scenario == "a":
-        changes = code_changes(repo, baseline)
-        migration_written = (repo / "migrations" / "002_first_open.sql").exists()
+        changes = code_changes(repo, baseline, seed_head)
+        migration_written = (any((repo / "migrations").glob("002_*"))
+                             or any("migrations/002_" in line for line in changes))
         checks.append(("no code written", not changes and not migration_written,
-                       f"working-tree changes caused by the run outside .claude/ and the "
+                       f"changes (working tree + commits since the seed) outside .claude/ and the "
                        f"known runtime paths: {changes or 'none'}; "
                        f"002 migration written: {migration_written}"))
     else:
-        checks.append(("nothing pushed (no remote)", git("remote") == "",
-                       f"remotes: {git('remote') or 'none'}"))
+        pushed = git("ls-remote", "--heads", "origin")
+        checks.append(("nothing pushed to origin", pushed == "",
+                       f"origin heads: {pushed or 'none'}"))
         meta_path = repo / ".claude" / "work" / spec["work"] / "meta.json"
         try:
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -635,8 +660,9 @@ def run_one(harness, scenario, timeout, scratch_dir, keep, backup, oc_message=Fa
     if not install_plugin(repo, harness):
         return False
     baseline = working_tree_status(repo)
+    seed_head = git_out(repo, "rev-parse", "HEAD")
     run = run_cell(repo, harness, cli, timeout, oc_message)
-    verdict = verify_cell(repo, harness, scenario, run, baseline)
+    verdict = verify_cell(repo, harness, scenario, run, baseline, seed_head)
     record_cell(harness, scenario, run, verdict)
     if not keep:
         if verdict["ok"]:
@@ -677,8 +703,10 @@ def main():
         base = Path(args.scratch)
         base.mkdir(parents=True, exist_ok=True)
     else:
-        outer_tmp = tempfile.TemporaryDirectory(prefix="unattended-smoke-")
-        base = Path(outer_tmp.name)
+        # mkdtemp, not TemporaryDirectory: its finalizer would delete a failed cell's
+        # scratch at exit, the one thing kept for inspection.
+        outer_tmp = Path(tempfile.mkdtemp(prefix="unattended-smoke-"))
+        base = outer_tmp
 
     backup = snapshot_home_flow(base)
     results = []
@@ -695,9 +723,9 @@ def main():
         # outer temp dir — hand the path to the person instead.
         any_failed = any(not ok for _, ok in results)
         if outer_tmp is not None and not any_failed:
-            outer_tmp.cleanup()
+            shutil.rmtree(outer_tmp, ignore_errors=True)
         elif outer_tmp is not None:
-            say(f"  record: failed cells kept under {outer_tmp.name}")
+            say(f"  record: failed cells kept under {outer_tmp}")
 
     say("== summary ==")
     for (harness, scenario), ok in results:
