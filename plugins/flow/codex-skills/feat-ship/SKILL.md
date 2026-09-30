@@ -24,6 +24,8 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
 **In `unattended`** (flow-core §2.1) this command asks nothing, and it is the only place that run

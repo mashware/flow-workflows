@@ -561,6 +561,109 @@ def check_panel_reminder(files):
              "the trigger was reworded and this check is now guarding nothing")
 
 
+# The unattended pointer — the same pinned-sentence mechanism as `PANEL_REMINDER`, for the
+# phases an unattended run chains through. It is a pointer, not a restatement: it names a whole
+# section of the shared rules and carries no rule of its own, so it cannot disagree with them (a
+# paraphrase did, on its first draft: it dropped the runner-answer path). It says `flow-core §2.1`
+# like every other cross-reference, because a bare §2.1 is the phase's own section in five phases
+# (feat/start, feat/build, feat/review, bug/fix, bug/review), and a partial read is named as not
+# counting because a partial read is exactly what it corrects.
+#
+# Why the phases need it: the rule that every unattended phase writes `reason: "running"` first
+# lives in one paragraph deep in §2.1, and a harness that reads the core in slices can stop two
+# lines short of it. Observed on 2026-09-30: codex read CORE.codex.md 221–330, the rule sat on
+# 332, and build, review and validate all ran without writing it.
+UNATTENDED_SECTION = "### 2.1 `unattended`"
+UNATTENDED_FRAGMENT = "read flow-core §2.1 whole"
+UNATTENDED_START = (
+    f"**In `unattended`, before this phase's first step, {UNATTENDED_FRAGMENT} — from its heading "
+    "to the next section, unless it is already in your context whole; having read parts of it "
+    "does not count** — the `running` write, the pending question and the runner's answer are "
+    "all in it, and a phase that reads only part of it skips them."
+)
+# What the pointer promises §2.1 holds. Opening sentences, not titles, so a reworded title is
+# not a false alarm and a paragraph moved out of the section is a real one.
+UNATTENDED_SECTION_HOLDS = (
+    "**The stop file**",
+    "**Every phase that starts in this mode writes `reason: \"running\"` first**",
+    "**A runner answers, and the run continues.**",
+)
+UNATTENDED_PHASES = ("plugins/flow/commands/feat/", "plugins/flow/commands/bug/")
+
+
+def check_unattended_pointer(files):
+    """Every feat/bug phase opens with the pointer, byte-identical; §2.1 still holds what it names.
+
+    (a) a copy that differs fails wherever it sits, prefixed or not, so one improved copy cannot
+    drift from the thirteen others; (b) a phase without it fails, because that phase is the one a
+    slice-reading harness runs blind; (c) it must be the first thing after the panel-words line,
+    since a pointer read after the pre-flight steps has already been read too late; (d) each phase
+    directory must match files, or a moved tree goes green on nobody; (e) §2.1 of the skill must
+    still exist and still contain the paragraphs the pointer sends the reader to — the harness
+    cores are generated from it, and `check_adapters_generated` already fails a stale one.
+    """
+    owed = {prefix: 0 for prefix in UNATTENDED_PHASES}
+    for f in files:
+        if not (f.startswith(PLUGIN_COMMANDS) and f.endswith(".md")):
+            continue
+        lines = [ln.strip() for ln in read(f).splitlines()]
+        copies = [ln for ln in lines if UNATTENDED_FRAGMENT in ln]
+        for copy in copies:
+            if copy != UNATTENDED_START:
+                fail(f, "its unattended pointer differs from UNATTENDED_START — "
+                        "the sentence is frozen, edit the constant and rebuild")
+        prefix = next((p for p in UNATTENDED_PHASES if f.startswith(p)), None)
+        if prefix is None:
+            continue
+        owed[prefix] += 1
+        if len(copies) != 1:
+            fail(f, f"carries {len(copies)} unattended pointers, needs exactly one "
+                    "(the line that sends an unattended phase to flow-core §2.1)")
+            continue
+        panel = next((n for n, ln in enumerate(lines) if ln.startswith(PANEL_SENTINEL)), None)
+        if panel is None:
+            continue  # check_panel_reminder reports the missing panel line
+        after = next((ln for ln in lines[panel + 1:] if ln), None)
+        if after != UNATTENDED_START:
+            fail(f, "its unattended pointer is not the first line after the panel-words line — "
+                    "read after the pre-flight, it arrives too late")
+    for prefix, count in owed.items():
+        if not count:
+            fail("script/check.py", f"no file under {prefix} — the phase set matches nothing there")
+    check_unattended_section(CORE_SKILL)
+
+
+def check_unattended_section(path):
+    """§2.1 runs from its heading to the next heading *outside a code fence*, and the paragraphs it
+    must hold count only as prose — a heading or an opening sentence inside a fenced example is
+    an example, not the section's shape."""
+    try:
+        core = read(path).splitlines()
+    except FileNotFoundError:
+        return  # check_core_skill / check_adapters_generated already report it
+    start = next((n for n, ln in enumerate(core) if ln.startswith(UNATTENDED_SECTION)), None)
+    if start is None:
+        fail(path, f"no {UNATTENDED_SECTION!r} heading — the unattended pointer in every "
+                   "phase now names nothing")
+        return
+    prose, fence = [], None
+    for ln in core[start + 1:]:
+        mark = re.match(r"^(`{3,}|~{3,})", ln)
+        if fence is None and mark:
+            fence = mark.group(1)
+        elif fence is not None:
+            if ln.startswith(fence[0] * len(fence)) and not ln.strip(fence[0]).strip():
+                fence = None
+        elif ln.startswith("## ") or ln.startswith("### "):
+            break
+        else:
+            prose.append(ln)
+    for opening in UNATTENDED_SECTION_HOLDS:
+        if not any(ln.startswith(opening) for ln in prose):
+            fail(path, f"§2.1 no longer opens a paragraph with {opening} — the unattended "
+                       "pointer promises it is there")
+
+
 def check_adapters_generated():
     """The adapter mirrors are build output, not source.
 
@@ -921,6 +1024,7 @@ def run_checks(files):
     check_adapter_smoke()
     check_core_skill(files)
     check_panel_reminder(files)
+    check_unattended_pointer(files)
     check_config_keys()
     check_panel_vocabulary_prose(files)
     check_panel_vocabulary_lists(files)

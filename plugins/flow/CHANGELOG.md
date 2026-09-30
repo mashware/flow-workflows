@@ -5,6 +5,23 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.83.1 — Every unattended phase reads its stop-file rules whole  ·  2026-09-30
+
+**In short**
+- **An unattended phase no longer skips the `running` mark at its start.** On Codex, one run went
+  through build, review and validate without writing `reason: "running"` to
+  `.claude/work/stop.json`. It had read the shared rules in slices and stopped two lines short of
+  that rule, so a crash in any of those phases would have looked like an old question instead of a
+  crash.
+- **Each feat and bug phase now opens by sending an unattended run to read §2.1 whole**, from its
+  heading to the next section: the `running` write, the pending question and the runner's answer
+  are all there. The line points at the rules and repeats none of them, so it cannot contradict
+  them.
+- The preflight keeps the line identical in all fourteen phases and first after the panel line.
+  It fails if §2.1 loses its heading or one of the paragraphs the line sends the reader to.
+
+Found by the Codex smoke run of #171; tracked in #180. Nothing changes outside `unattended`.
+
 ## v0.83.0 — A runner can answer, and the run goes on  ·  2026-09-29
 
 **In short**
