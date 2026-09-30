@@ -66,7 +66,7 @@ def scrubbed_env(cwd=None):
 def run_env(repo, shim_dir):
     env = scrubbed_env(repo)
     path = env.get("PATH", "")
-    env["PATH"] = f"{shim_dir}{os.pathsep}{path}" if path else str(shim_dir)
+    env["PATH"] = f"{shim_dir}{os.pathsep}{path or os.defpath}"
     return env
 
 
@@ -124,6 +124,7 @@ def seed_repo(scratch, scenario, harness):
     repo = scratch / "repo"
     # A rerun into a kept scratch starts from a fresh seed, never on top of the last run.
     shutil.rmtree(repo, ignore_errors=True)
+    (scratch / PUSH_LOG).unlink(missing_ok=True)
     (repo / "migrations").mkdir(parents=True, exist_ok=True)
     (repo / "tests").mkdir(parents=True, exist_ok=True)
     (repo / "tests" / "__init__.py").write_text("", encoding="utf-8")
@@ -435,6 +436,10 @@ def count_question_calls(stream_path):
 
 
 PUSH_LOG = ".smoke-push-attempts"
+# `git [global options] push` at a command boundary: `git -C . push` and `/usr/bin/git push`
+# match; `git stash push`, `git config push.default`, `grep "git push"` do not.
+PUSH_COMMAND = re.compile(r"(?:^|[\s;&|(])(?:\S*/)?git"
+                          r"(?:\s+-\S+(?:\s+(?!push\b)[^-\s]\S*)?)*\s+push\b")
 COMMAND_HEADER = "adapter-build.py from plugins/flow/commands/feat/build.md"
 GIT_SHIM = """#!/bin/sh
 # Written by the smoke runner: logs and refuses every `git push`, from any process of the
@@ -461,8 +466,6 @@ def install_git_shim(scratch):
     """A `git` first on the run's PATH. No remote is added (a local path is no forge and
     would change what ship sees), so the attempt, not a ref, is what gets recorded."""
     real = shutil.which("git")
-    if real is None:
-        raise SystemExit("smoke runner: git is not on PATH")
     bin_dir = scratch / "bin"
     bin_dir.mkdir(exist_ok=True)
     shim = bin_dir / "git"
@@ -471,7 +474,7 @@ def install_git_shim(scratch):
     shim.write_text(GIT_SHIM.replace("{log}", str(scratch / PUSH_LOG)).replace("{git}", real),
                     encoding="utf-8")
     shim.chmod(0o755)
-    return bin_dir
+    return bin_dir, scratch / PUSH_LOG
 
 
 def commands_run(stream_path):
@@ -643,11 +646,10 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
                        f"known runtime paths: {changes or 'none'}; "
                        f"002 migration written: {migration_written}"))
     else:
-        log = repo.parent / PUSH_LOG
+        log = run["push_log"]
         pushes = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
         pushes += [c for c in commands_run(run["stream"])
-                   if re.search(r"\bgit\b[^\n;&|]*\bpush\b", c)
-                   and not re.search(r"\bstash\s+push\b", c)]
+                   if PUSH_COMMAND.search(c)]
         checks.append(("no push attempted, no remote added",
                        not pushes and git("remote") == "",
                        f"push attempts: {pushes or 'none'}; remotes: {git('remote') or 'none'}"))
@@ -745,8 +747,9 @@ def run_one(harness, scenario, timeout, scratch_dir, keep, backup, oc_message=Fa
         return False
     baseline = working_tree_status(repo)
     seed_head = git_out(repo, "rev-parse", "HEAD")
-    shim_dir = install_git_shim(scratch_dir)
+    shim_dir, push_log = install_git_shim(scratch_dir)
     run = run_cell(repo, harness, cli, timeout, shim_dir, oc_message)
+    run["push_log"] = push_log
     verdict = verify_cell(repo, harness, scenario, run, baseline, seed_head)
     record_cell(harness, scenario, run, verdict)
     if not keep:
@@ -774,6 +777,9 @@ def main():
         parser.error("give --harness and --scenario, or --all")
 
     say("== preflight ==")
+    if shutil.which("git") is None:
+        say("  preflight: FAIL — git is not on PATH")
+        return 2
     if not guard_checkout():
         return 2
     if not EVIDENCE.parent.is_dir():
@@ -785,7 +791,12 @@ def main():
 
     outer_tmp = None
     if args.scratch:
-        base = Path(args.scratch)
+        base = Path(args.scratch).resolve()
+        # codex's workspace-write sandbox can write the repo and the temp dir, nothing else:
+        # a scratch elsewhere leaves the push log beside the repo unwritable, and a push
+        # would be refused without a trace.
+        if not str(base).startswith(str(Path(tempfile.gettempdir()).resolve())):
+            parser.error(f"--scratch must live under {tempfile.gettempdir()}")
         base.mkdir(parents=True, exist_ok=True)
     else:
         # mkdtemp, not TemporaryDirectory: its finalizer would delete a failed cell's
