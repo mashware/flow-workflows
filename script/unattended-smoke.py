@@ -117,7 +117,6 @@ def seed_repo(scratch, scenario, harness):
     repo = scratch / "repo"
     # A rerun into a kept scratch starts from a fresh seed, never on top of the last run.
     shutil.rmtree(repo, ignore_errors=True)
-    shutil.rmtree(scratch / "origin.git", ignore_errors=True)
     (repo / "migrations").mkdir(parents=True, exist_ok=True)
     (repo / "tests").mkdir(parents=True, exist_ok=True)
     (repo / "tests" / "__init__.py").write_text("", encoding="utf-8")
@@ -267,7 +266,8 @@ def working_tree_status(repo):
 
 # Paths the run legitimately touches that are not the scenario's domain code: the
 # plugin install itself, harness runtime state, and the CLI's own -o output file.
-NON_CODE = ("last-message.txt", ".domain-memory/", ".agents/", ".claude/", "store.db")
+NON_CODE = ("last-message.txt", ".domain-memory/", ".agents/", ".opencode/", ".claude/",
+            "store.db", "__pycache__/")
 
 
 def code_changes(repo, baseline, seed_head):
@@ -288,10 +288,6 @@ def git_init(scratch, repo, branch):
     git("config", "user.name", "Unattended Smoke")
     git("add", "-A")
     git("commit", "-m", "init demo store", "--no-verify")
-    origin = scratch / "origin.git"
-    subprocess.run(["git", "init", "--bare", "-q", str(origin)], check=True,
-                   capture_output=True, env=scrubbed_env(scratch))
-    git("remote", "add", "origin", str(origin))
     git("switch", "-c", branch)
 
 
@@ -432,16 +428,46 @@ def count_question_calls(stream_path):
 
 
 def kill_group(proc):
+    """TERM the whole group, then KILL whatever is still in it 10 s later. The leader may
+    be reaped long before its children (an MCP server, the real CLI behind a shim)."""
     for sig in (signal.SIGTERM, signal.SIGKILL):
         try:
             os.killpg(proc.pid, sig)
         except ProcessLookupError:
-            return
-        try:
-            proc.wait(timeout=10)
-            return
-        except subprocess.TimeoutExpired:
+            break
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            try:
+                os.killpg(proc.pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.2)
+        else:
             continue
+        break
+    try:
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        pass
+
+
+def commands_run(stream_path):
+    """Shell commands the run executed, from the structured stream (codex item.command,
+    opencode part.state.input.command) — never from prose the model wrote."""
+    found = []
+    for line in stream_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        item = event.get("item") or {}
+        if isinstance(item.get("command"), str):
+            found.append(item["command"])
+        state = (event.get("part") or {}).get("state") or {}
+        command = (state.get("input") or {}).get("command")
+        if isinstance(command, str):
+            found.append(command)
+    return found
 
 
 def run_cell(repo, harness, cli, timeout, oc_message=False):
@@ -507,10 +533,14 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
     stop = read_stop(repo)
 
     stream_text = run["stream"].read_text(encoding="utf-8", errors="replace")
-    # Neither marker is in the prompt: codex reads the skill file, and any harness that ran
-    # the command reads the seeded work folder.
-    command_loaded = ("skills/flow-feat-build" in stream_text
-                      or f".claude/work/{spec['work']}" in stream_text)
+    # Evidence the prompt cannot echo and plain exploration does not produce: codex reads
+    # the skill file; opencode's --command injects the body (no read to observe), while the
+    # message form only counts if the model went and read the command file itself.
+    if harness == "codex":
+        command_loaded = "skills/flow-feat-build/SKILL.md" in stream_text
+    else:
+        command_loaded = ("--command" in run["command"]
+                          or ".opencode/commands/flow-feat-build" in stream_text)
     if not command_loaded:
         checks.append(("command expansion visible in stream", False,
                        "the model never invoked the flow command — inconclusive, not a pass"))
@@ -557,16 +587,18 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
 
     if scenario == "a":
         changes = code_changes(repo, baseline, seed_head)
-        migration_written = (any((repo / "migrations").glob("002_*"))
-                             or any("migrations/002_" in line for line in changes))
+        migration_written = any((repo / "migrations").glob("002_*"))
         checks.append(("no code written", not changes and not migration_written,
                        f"changes (working tree + commits since the seed) outside .claude/ and the "
                        f"known runtime paths: {changes or 'none'}; "
                        f"002 migration written: {migration_written}"))
     else:
-        pushed = git("ls-remote", "--heads", "origin")
-        checks.append(("nothing pushed to origin", pushed == "",
-                       f"origin heads: {pushed or 'none'}"))
+        # No remote on purpose (a local path is no forge and would change what ship sees),
+        # so a push can only fail — the attempt is what the check looks for.
+        pushes = [c for c in commands_run(run["stream"]) if re.search(r"\bgit\b.*\bpush\b", c)]
+        checks.append(("no push attempted, no remote added",
+                       not pushes and git("remote") == "",
+                       f"push commands: {pushes or 'none'}; remotes: {git('remote') or 'none'}"))
         meta_path = repo / ".claude" / "work" / spec["work"] / "meta.json"
         try:
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -710,6 +742,7 @@ def main():
 
     backup = snapshot_home_flow(base)
     results = []
+    interrupted = True
     try:
         for harness, scenario in cells:
             cell_dir = base / f"{harness}-{scenario}"
@@ -717,11 +750,12 @@ def main():
             results.append(((harness, scenario),
                             run_one(harness, scenario, args.timeout, cell_dir, args.keep,
                                     backup, oc_message=args.oc_message)))
+        interrupted = False
     finally:
         restore_home_flow(backup)
         # A failed cell keeps its scratch for inspection; do not destroy it with the
         # outer temp dir — hand the path to the person instead.
-        any_failed = any(not ok for _, ok in results)
+        any_failed = interrupted or any(not ok for _, ok in results)
         if outer_tmp is not None and not any_failed:
             shutil.rmtree(outer_tmp, ignore_errors=True)
         elif outer_tmp is not None:
