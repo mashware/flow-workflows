@@ -22,7 +22,7 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, read §2.1 of the shared rules loaded above whole, from its heading to the next section, before this phase's first step** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, even if you read parts of it earlier** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
 
 Implementation phase. Code is written here.
 
