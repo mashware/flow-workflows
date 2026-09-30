@@ -63,6 +63,12 @@ def scrubbed_env(cwd=None):
     return env
 
 
+def run_env(repo, shim_dir):
+    env = scrubbed_env(repo)
+    env["PATH"] = f"{shim_dir}{os.pathsep}{env.get('PATH', '')}"
+    return env
+
+
 def say(msg):
     print(msg, flush=True)
 
@@ -266,7 +272,7 @@ def working_tree_status(repo):
 
 # Paths the run legitimately touches that are not the scenario's domain code: the
 # plugin install itself, harness runtime state, and the CLI's own -o output file.
-NON_CODE = ("last-message.txt", ".domain-memory/", ".agents/", ".opencode/", ".claude/",
+NON_CODE = (".smoke-push-attempts", "last-message.txt", ".domain-memory/", ".agents/", ".opencode/", ".claude/",
             "store.db", "__pycache__/")
 
 
@@ -427,6 +433,42 @@ def count_question_calls(stream_path):
     return count, sorted(tool_names)
 
 
+PUSH_LOG = ".smoke-push-attempts"
+COMMAND_HEADER = "adapter-build.py from plugins/flow/commands/feat/build.md"
+GIT_SHIM = """#!/bin/sh
+# Written by the smoke runner: logs and refuses every `git push`, from any process of the
+# run (subagents, scripts, gh), then hands everything else to the real git.
+sub=""; skip=0
+for a in "$@"; do
+  if [ "$skip" = 1 ]; then skip=0; continue; fi
+  case "$a" in
+    -C|-c|--git-dir|--work-tree|--namespace|--exec-path) skip=1 ;;
+    -*) ;;
+    *) sub="$a"; break ;;
+  esac
+done
+if [ "$sub" = push ]; then
+  echo "git $*" >> "{log}"
+  echo "smoke runner: push refused" >&2
+  exit 1
+fi
+exec "{git}" "$@"
+"""
+
+
+def install_git_shim(scratch, repo):
+    """A `git` first on the run's PATH. No remote is added (a local path is no forge and
+    would change what ship sees), so the attempt, not a ref, is what gets recorded."""
+    real = shutil.which("git")
+    bin_dir = scratch / "bin"
+    bin_dir.mkdir(exist_ok=True)
+    shim = bin_dir / "git"
+    shim.write_text(GIT_SHIM.replace("{log}", str(repo / PUSH_LOG)).replace("{git}", real),
+                    encoding="utf-8")
+    shim.chmod(0o755)
+    return bin_dir
+
+
 def kill_group(proc):
     """TERM the whole group, then KILL whatever is still in it 10 s later. The leader may
     be reaped long before its children (an MCP server, the real CLI behind a shim)."""
@@ -437,6 +479,7 @@ def kill_group(proc):
             break
         deadline = time.monotonic() + 10
         while time.monotonic() < deadline:
+            proc.poll()  # a zombie leader keeps the group probe answering
             try:
                 os.killpg(proc.pid, 0)
             except ProcessLookupError:
@@ -451,26 +494,8 @@ def kill_group(proc):
         pass
 
 
-def commands_run(stream_path):
-    """Shell commands the run executed, from the structured stream (codex item.command,
-    opencode part.state.input.command) — never from prose the model wrote."""
-    found = []
-    for line in stream_path.read_text(encoding="utf-8", errors="replace").splitlines():
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        item = event.get("item") or {}
-        if isinstance(item.get("command"), str):
-            found.append(item["command"])
-        state = (event.get("part") or {}).get("state") or {}
-        command = (state.get("input") or {}).get("command")
-        if isinstance(command, str):
-            found.append(command)
-    return found
 
-
-def run_cell(repo, harness, cli, timeout, oc_message=False):
+def run_cell(repo, harness, cli, timeout, shim_dir, oc_message=False):
     prompt = PROMPTS[harness]
     if harness == "codex":
         cmd = [cli["bin"], "exec", "-C", str(repo), "-s", "workspace-write", "--json",
@@ -496,7 +521,8 @@ def run_cell(repo, harness, cli, timeout, oc_message=False):
     with open(stream_path, "w", encoding="utf-8") as stream, \
             open(stderr_path, "w", encoding="utf-8") as err:
         proc = subprocess.Popen(cmd, cwd=repo, stdout=stream, stderr=err,
-                                stdin=subprocess.DEVNULL, text=True, env=scrubbed_env(repo),
+                                stdin=subprocess.DEVNULL, text=True,
+                                env=run_env(repo, shim_dir),
                                 start_new_session=True)
         poller.start()
         timed_out = False
@@ -533,15 +559,15 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
     stop = read_stop(repo)
 
     stream_text = run["stream"].read_text(encoding="utf-8", errors="replace")
-    # Evidence the prompt cannot echo and plain exploration does not produce: codex reads
-    # the skill file; opencode's --command injects the body (no read to observe), while the
-    # message form only counts if the model went and read the command file itself.
-    if harness == "codex":
-        command_loaded = "skills/flow-feat-build/SKILL.md" in stream_text
+    # opencode quotes the injected command body in its stream, header included. codex
+    # injects a $skill without echoing it anywhere in --json, so there is nothing to see:
+    # recorded as not observable, never as loaded — a codex run without the skill fails the
+    # stop-file checks on its own.
+    if harness == "opencode":
+        command_loaded = COMMAND_HEADER in stream_text
     else:
-        command_loaded = ("--command" in run["command"]
-                          or ".opencode/commands/flow-feat-build" in stream_text)
-    if not command_loaded:
+        command_loaded = None
+    if command_loaded is False:
         checks.append(("command expansion visible in stream", False,
                        "the model never invoked the flow command — inconclusive, not a pass"))
 
@@ -593,12 +619,11 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
                        f"known runtime paths: {changes or 'none'}; "
                        f"002 migration written: {migration_written}"))
     else:
-        # No remote on purpose (a local path is no forge and would change what ship sees),
-        # so a push can only fail — the attempt is what the check looks for.
-        pushes = [c for c in commands_run(run["stream"]) if re.search(r"\bgit\b.*\bpush\b", c)]
+        log = repo / PUSH_LOG
+        pushes = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
         checks.append(("no push attempted, no remote added",
                        not pushes and git("remote") == "",
-                       f"push commands: {pushes or 'none'}; remotes: {git('remote') or 'none'}"))
+                       f"push attempts: {pushes or 'none'}; remotes: {git('remote') or 'none'}"))
         meta_path = repo / ".claude" / "work" / spec["work"] / "meta.json"
         try:
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -693,7 +718,8 @@ def run_one(harness, scenario, timeout, scratch_dir, keep, backup, oc_message=Fa
         return False
     baseline = working_tree_status(repo)
     seed_head = git_out(repo, "rev-parse", "HEAD")
-    run = run_cell(repo, harness, cli, timeout, oc_message)
+    shim_dir = install_git_shim(scratch_dir, repo)
+    run = run_cell(repo, harness, cli, timeout, shim_dir, oc_message)
     verdict = verify_cell(repo, harness, scenario, run, baseline, seed_head)
     record_cell(harness, scenario, run, verdict)
     if not keep:
@@ -759,7 +785,8 @@ def main():
         if outer_tmp is not None and not any_failed:
             shutil.rmtree(outer_tmp, ignore_errors=True)
         elif outer_tmp is not None:
-            say(f"  record: failed cells kept under {outer_tmp}")
+            what = "interrupted run" if interrupted else "failed cells"
+            say(f"  record: {what} kept under {outer_tmp}")
 
     say("== summary ==")
     for (harness, scenario), ok in results:
