@@ -65,7 +65,8 @@ def scrubbed_env(cwd=None):
 
 def run_env(repo, shim_dir):
     env = scrubbed_env(repo)
-    env["PATH"] = f"{shim_dir}{os.pathsep}{env.get('PATH', '')}"
+    path = env.get("PATH", "")
+    env["PATH"] = f"{shim_dir}{os.pathsep}{path}" if path else str(shim_dir)
     return env
 
 
@@ -271,8 +272,8 @@ def working_tree_status(repo):
 
 
 # Paths the run legitimately touches that are not the scenario's domain code: the
-# plugin install itself, harness runtime state, and the CLI's own -o output file.
-NON_CODE = (".smoke-push-attempts", "last-message.txt", ".domain-memory/", ".agents/", ".opencode/", ".claude/",
+# plugin install itself, harness runtime state, test caches, and the CLI's own -o output file.
+NON_CODE = ("last-message.txt", ".domain-memory/", ".agents/", ".opencode/", ".claude/",
             "store.db", "__pycache__/")
 
 
@@ -442,7 +443,7 @@ sub=""; skip=0
 for a in "$@"; do
   if [ "$skip" = 1 ]; then skip=0; continue; fi
   case "$a" in
-    -C|-c|--git-dir|--work-tree|--namespace|--exec-path) skip=1 ;;
+    -C|-c|--git-dir|--work-tree|--namespace|--attr-source|--super-prefix|--config-env) skip=1 ;;
     -*) ;;
     *) sub="$a"; break ;;
   esac
@@ -456,17 +457,41 @@ exec "{git}" "$@"
 """
 
 
-def install_git_shim(scratch, repo):
+def install_git_shim(scratch):
     """A `git` first on the run's PATH. No remote is added (a local path is no forge and
     would change what ship sees), so the attempt, not a ref, is what gets recorded."""
     real = shutil.which("git")
+    if real is None:
+        raise SystemExit("smoke runner: git is not on PATH")
     bin_dir = scratch / "bin"
     bin_dir.mkdir(exist_ok=True)
     shim = bin_dir / "git"
-    shim.write_text(GIT_SHIM.replace("{log}", str(repo / PUSH_LOG)).replace("{git}", real),
+    # The log lives beside the repo, not in it: nothing the run tidies (clean, stash -u)
+    # can erase it. Under /tmp, which codex's workspace-write sandbox leaves writable.
+    shim.write_text(GIT_SHIM.replace("{log}", str(scratch / PUSH_LOG)).replace("{git}", real),
                     encoding="utf-8")
     shim.chmod(0o755)
     return bin_dir
+
+
+def commands_run(stream_path):
+    """Shell commands the run executed, from the structured stream (codex item.completed,
+    opencode part.state.input.command) — the second push signal, for a git the shim
+    does not stand in front of (an absolute path, an alias)."""
+    found = []
+    for line in stream_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        item = event.get("item") or {}
+        if event.get("type") == "item.completed" and isinstance(item.get("command"), str):
+            found.append(item["command"])
+        state = (event.get("part") or {}).get("state") or {}
+        command = (state.get("input") or {}).get("command")
+        if isinstance(command, str):
+            found.append(command)
+    return found
 
 
 def kill_group(proc):
@@ -492,7 +517,6 @@ def kill_group(proc):
         proc.wait(timeout=10)
     except subprocess.TimeoutExpired:
         pass
-
 
 
 def run_cell(repo, harness, cli, timeout, shim_dir, oc_message=False):
@@ -560,13 +584,13 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
 
     stream_text = run["stream"].read_text(encoding="utf-8", errors="replace")
     # opencode quotes the injected command body in its stream, header included. codex
-    # injects a $skill without echoing it anywhere in --json, so there is nothing to see:
-    # recorded as not observable, never as loaded — a codex run without the skill fails the
-    # stop-file checks on its own.
-    if harness == "opencode":
-        command_loaded = COMMAND_HEADER in stream_text
+    # injects a $skill without echoing it in --json; the header shows only if the model
+    # reads the file itself. Absent there → not observable (None), never "loaded" — a codex
+    # run without the skill fails the stop-file checks on its own.
+    if COMMAND_HEADER in stream_text:
+        command_loaded = True
     else:
-        command_loaded = None
+        command_loaded = False if harness == "opencode" else None
     if command_loaded is False:
         checks.append(("command expansion visible in stream", False,
                        "the model never invoked the flow command — inconclusive, not a pass"))
@@ -619,8 +643,11 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
                        f"known runtime paths: {changes or 'none'}; "
                        f"002 migration written: {migration_written}"))
     else:
-        log = repo / PUSH_LOG
+        log = repo.parent / PUSH_LOG
         pushes = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+        pushes += [c for c in commands_run(run["stream"])
+                   if re.search(r"\bgit\b[^\n;&|]*\bpush\b", c)
+                   and not re.search(r"\bstash\s+push\b", c)]
         checks.append(("no push attempted, no remote added",
                        not pushes and git("remote") == "",
                        f"push attempts: {pushes or 'none'}; remotes: {git('remote') or 'none'}"))
@@ -718,7 +745,7 @@ def run_one(harness, scenario, timeout, scratch_dir, keep, backup, oc_message=Fa
         return False
     baseline = working_tree_status(repo)
     seed_head = git_out(repo, "rev-parse", "HEAD")
-    shim_dir = install_git_shim(scratch_dir, repo)
+    shim_dir = install_git_shim(scratch_dir)
     run = run_cell(repo, harness, cli, timeout, shim_dir, oc_message)
     verdict = verify_cell(repo, harness, scenario, run, baseline, seed_head)
     record_cell(harness, scenario, run, verdict)
@@ -768,7 +795,7 @@ def main():
 
     backup = snapshot_home_flow(base)
     results = []
-    interrupted = True
+    interrupted = None
     try:
         for harness, scenario in cells:
             cell_dir = base / f"{harness}-{scenario}"
@@ -776,16 +803,21 @@ def main():
             results.append(((harness, scenario),
                             run_one(harness, scenario, args.timeout, cell_dir, args.keep,
                                     backup, oc_message=args.oc_message)))
-        interrupted = False
+    except KeyboardInterrupt:
+        interrupted = "interrupted run"
+        raise
+    except BaseException:
+        interrupted = "crashed run"
+        raise
     finally:
         restore_home_flow(backup)
         # A failed cell keeps its scratch for inspection; do not destroy it with the
         # outer temp dir — hand the path to the person instead.
-        any_failed = interrupted or any(not ok for _, ok in results)
+        any_failed = interrupted is not None or any(not ok for _, ok in results)
         if outer_tmp is not None and not any_failed:
             shutil.rmtree(outer_tmp, ignore_errors=True)
         elif outer_tmp is not None:
-            what = "interrupted run" if interrupted else "failed cells"
+            what = interrupted or "failed cells"
             say(f"  record: {what} kept under {outer_tmp}")
 
     say("== summary ==")
