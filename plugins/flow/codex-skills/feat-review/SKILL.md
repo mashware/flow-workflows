@@ -24,6 +24,8 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
+**In `unattended`, read flow-core §2.1 from "The stop file" to the end of the section before this phase's first step** — the `running` write, the pending question and the runner's answer are all there, and a phase that reads only part of it skips them.
+
 Mandatory review phase. **`$flow:feat-ship` cannot run without passing through here and resolving blockers.**
 
 ## 1. Pre-flight

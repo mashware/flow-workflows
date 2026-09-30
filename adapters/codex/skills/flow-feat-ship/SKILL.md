@@ -22,6 +22,8 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
+**In `unattended`, read flow-core §2.1 from "The stop file" to the end of the section before this phase's first step** — the `running` write, the pending question and the runner's answer are all there, and a phase that reads only part of it skips them.
+
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
 **In `unattended`** (flow-core §2.1) this command asks nothing, and it is the only place that run

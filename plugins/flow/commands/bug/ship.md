@@ -26,6 +26,8 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
+**In `unattended`, read flow-core §2.1 from "The stop file" to the end of the section before this phase's first step** — the `running` write, the pending question and the runner's answer are all there, and a phase that reads only part of it skips them.
+
 - Read `meta.json` and `00-summary.md`; open in full only `04-fix.md` (the Brief), `06-review.md` (the verdict), `05-validation.md`, the §"Root cause identified" of `03-investigation.md`, and `99-postmortem.md` if it exists. (flow-core §5)
 - Require `review` in `phases_done`; also `validate` if `size` ≥ S, and `postmortem` if `size` is M or L (the same sizes `/flow:bug:review §8` routes to postmortem — one rule). Missing → refuse and redirect to the missing step.
 - **The review has to be about the tree you are about to push — `/flow:feat:ship` §1, in full and unchanged**, including its four newer cases: `reviewed_sha` is the revision the reviewers *read* (`/flow:bug:review` §1.5 froze it), so `fixed_sha` set alongside an equal sha is a mismatch and not a match; a dirty tree at this end is named and asked about rather than passed over; and a `reviewed_sha` that no longer resolves is reported, then treated as absent. Compare `meta.json.reviewed_sha` and `validated_sha` against `git rev-parse HEAD`:

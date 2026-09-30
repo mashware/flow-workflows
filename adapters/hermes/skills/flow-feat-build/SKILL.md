@@ -22,6 +22,8 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
+**In `unattended`, read flow-core §2.1 from "The stop file" to the end of the section before this phase's first step** — the `running` write, the pending question and the runner's answer are all there, and a phase that reads only part of it skips them.
+
 Implementation phase. Code is written here.
 
 ## 1. Pre-flight
