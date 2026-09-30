@@ -565,8 +565,9 @@ def check_panel_reminder(files):
 # phases an unattended run chains through. It is a pointer, not a restatement: it names a whole
 # section of the shared rules and carries no rule of its own, so it cannot disagree with them (a
 # paraphrase did, on its first draft: it dropped the runner-answer path). It says `flow-core §2.1`
-# like every other cross-reference, because a bare §2.1 is the phase's own section in three phases,
-# and "even if you read parts of it" is there because a partial read is exactly what it corrects.
+# like every other cross-reference, because a bare §2.1 is the phase's own section in five phases
+# (feat/start, feat/build, feat/review, bug/fix, bug/review), and a partial read is named as not
+# counting because a partial read is exactly what it corrects.
 #
 # Why the phases need it: the rule that every unattended phase writes `reason: "running"` first
 # lives in one paragraph deep in §2.1, and a harness that reads the core in slices can stop two
@@ -576,9 +577,9 @@ UNATTENDED_SECTION = "### 2.1 `unattended`"
 UNATTENDED_FRAGMENT = "read flow-core §2.1 whole"
 UNATTENDED_START = (
     f"**In `unattended`, before this phase's first step, {UNATTENDED_FRAGMENT} — from its heading "
-    "to the next section, even if you read parts of it earlier** — the `running` write, the "
-    "pending question and the runner's answer are all in it, and a phase that reads only part of "
-    "it skips them."
+    "to the next section, unless it is already in your context whole; having read parts of it "
+    "does not count** — the `running` write, the pending question and the runner's answer are "
+    "all in it, and a phase that reads only part of it skips them."
 )
 # What the pointer promises §2.1 holds. Opening sentences, not titles, so a reworded title is
 # not a false alarm and a paragraph moved out of the section is a real one.
@@ -588,9 +589,6 @@ UNATTENDED_SECTION_HOLDS = (
     "**A runner answers, and the run continues.**",
 )
 UNATTENDED_PHASES = ("plugins/flow/commands/feat/", "plugins/flow/commands/bug/")
-# Every copy of the core a pointer can land in: the skill, and each harness's generated core.
-UNATTENDED_CORES = (CORE_SKILL, "adapters/codex/CORE.md", "adapters/gemini/CORE.md",
-                    "adapters/hermes/CORE.md", "adapters/opencode/CORE.md")
 
 
 def check_unattended_pointer(files):
@@ -600,8 +598,9 @@ def check_unattended_pointer(files):
     drift from the thirteen others; (b) a phase without it fails, because that phase is the one a
     slice-reading harness runs blind; (c) it must be the first thing after the panel-words line,
     since a pointer read after the pre-flight steps has already been read too late; (d) each phase
-    directory must match files, or a moved tree goes green on nobody; (e) §2.1 must still exist
-    and still contain the paragraphs the pointer sends the reader to.
+    directory must match files, or a moved tree goes green on nobody; (e) §2.1 of the skill must
+    still exist and still contain the paragraphs the pointer sends the reader to — the harness
+    cores are generated from it, and `check_adapters_generated` already fails a stale one.
     """
     owed = {prefix: 0 for prefix in UNATTENDED_PHASES}
     for f in files:
@@ -619,7 +618,7 @@ def check_unattended_pointer(files):
         owed[prefix] += 1
         if len(copies) != 1:
             fail(f, f"carries {len(copies)} unattended pointers, needs exactly one "
-                    "(the line that sends an unattended phase to §2.1 of the shared rules)")
+                    "(the line that sends an unattended phase to flow-core §2.1)")
             continue
         panel = next((n for n, ln in enumerate(lines) if ln.startswith(PANEL_SENTINEL)), None)
         if panel is None:
@@ -631,11 +630,13 @@ def check_unattended_pointer(files):
     for prefix, count in owed.items():
         if not count:
             fail("script/check.py", f"no file under {prefix} — the phase set matches nothing there")
-    for path in UNATTENDED_CORES:
-        check_unattended_section(path)
+    check_unattended_section(CORE_SKILL)
 
 
 def check_unattended_section(path):
+    """§2.1 runs from its heading to the next heading *outside a code fence*, and the paragraphs it
+    must hold count only as prose — a heading or an opening sentence inside a fenced example is
+    an example, not the section's shape."""
     try:
         core = read(path).splitlines()
     except FileNotFoundError:
@@ -645,16 +646,20 @@ def check_unattended_section(path):
         fail(path, f"no {UNATTENDED_SECTION!r} heading — the unattended pointer in every "
                    "phase now names nothing")
         return
-    end, fenced = len(core), False
-    for n in range(start + 1, len(core)):
-        if core[n].startswith("```"):
-            fenced = not fenced
-        elif not fenced and (core[n].startswith("## ") or core[n].startswith("### ")):
-            end = n
+    prose, fence = [], None
+    for ln in core[start + 1:]:
+        mark = re.match(r"^(`{3,}|~{3,})", ln)
+        if fence is None and mark:
+            fence = mark.group(1)
+        elif fence is not None:
+            if ln.startswith(fence[0] * len(fence)) and not ln.strip(fence[0]).strip():
+                fence = None
+        elif ln.startswith("## ") or ln.startswith("### "):
             break
-    section = core[start:end]
+        else:
+            prose.append(ln)
     for opening in UNATTENDED_SECTION_HOLDS:
-        if not any(ln.startswith(opening) for ln in section):
+        if not any(ln.startswith(opening) for ln in prose):
             fail(path, f"§2.1 no longer opens a paragraph with {opening} — the unattended "
                        "pointer promises it is there")
 
