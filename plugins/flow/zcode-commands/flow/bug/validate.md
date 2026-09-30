@@ -18,7 +18,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, read flow-core §2.1 from "The stop file" to the end of the section before this phase's first step** — the `running` write, the pending question and the runner's answer are all there, and a phase that reads only part of it skips them.
+**In `unattended`, read §2.1 of the shared rules loaded above whole, from its heading to the next section, before this phase's first step** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (§3 areas with similar risk, and the minimal reproduction) — the testing agent reads it and `04-fix.md` itself. (flow-core §5)
 - Require `fix` in `phases_done`.

@@ -13,12 +13,12 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   `.claude/work/stop.json`. It had read the shared rules in slices and stopped two lines short of
   that rule, so a crash in any of those phases would have looked like an old question instead of a
   crash.
-- **Each feat and bug phase now opens by sending an unattended run to the whole stop-file part of
-  §2.1** (from "The stop file" to the end of the section): the `running` write, the pending
-  question and the runner's answer. The line points at the rules and repeats none of them, so it
-  cannot contradict them.
-- The preflight keeps the line identical in all fourteen phases, and fails if §2.1 renames the part
-  it points at.
+- **Each feat and bug phase now opens by sending an unattended run to read §2.1 whole**, from its
+  heading to the next section: the `running` write, the pending question and the runner's answer
+  are all there. The line points at the rules and repeats none of them, so it cannot contradict
+  them.
+- The preflight keeps the line identical in all fourteen phases and first after the panel line.
+  It fails if §2.1 loses its heading or one of the paragraphs the line sends the reader to.
 
 Found by the Codex smoke run of #171; tracked in #180. Nothing changes outside `unattended`.
 
