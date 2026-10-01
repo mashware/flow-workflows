@@ -51,7 +51,7 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 | `start` | exists, nothing pending | the work's branch first (below), then the phase after `meta.json.phase` on this work's route (`/flow-feat-start` §4 for a feature, `/flow-bug-start`'s routing for a bug, by `size`), or `phase` itself when its own Close never ran. A work folder the orchestrator restored from a study made elsewhere enters here, and is never started a second time |
 | `answer` | `pending` set | apply `<cmd> answer` as flow-core §2.1 "The answer comes back" says, then `pending.resume` at `pending.resume_at`. The order fails or prints nothing → `blocked` |
 | `answer` | nothing pending | `blocked` — there is no question for that answer to decide |
-| `merged` | exists, something published | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read; the next startable MR/PR → `/flow-feat-build`; none left, or a work with no `mrs` and `published` true (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
+| `merged` | exists, something published | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read (empty → `git.default_base`); the next startable MR/PR → `/flow-feat-build`; none left, or a work with no `mrs` and `published` true (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
 | `merged` | none, or nothing published | `blocked` — nothing of this ticket was published from here |
 | `review` | exists | `/flow-work-respond` — the threads come from `<cmd> events --json` |
 | `pipeline` | exists | `/flow-work-green` — the failed jobs come from `<cmd> events --json` |
@@ -64,18 +64,21 @@ closing order is relaunched there — then, in this order:
 1. Anything `git status --porcelain` lists outside `.claude/work/` — untracked files included, since
    the WIP commit before a closing order takes new files too → `blocked`: the orchestrator owns the
    checkout.
-2. `meta.json.worktree` names a directory that exists here → run the phase from there; that checkout
-   already holds the branch, and `git switch` would refuse it.
+2. `meta.json.base` is set and `meta.json.worktree` is a worktree of this checkout (`git worktree
+   list`) whose branch is `meta.json.branch` → run the phase from there: `git switch` would refuse a
+   branch checked out elsewhere. A path that is not such a worktree falls through to step 3.
 3. `meta.json.base` is set — the work was started or re-homed by an unattended run, so its branch is
    one this kind of run made — and `meta.json.branch` exists locally → `git switch` onto it, change
    nothing. It holds the commits a previous run left.
 4. `<number>-<slug>` (`slug` from `meta.json`), or `meta.json.branch` without `meta.json.base`,
    exists locally → `blocked`, naming it: a branch with the work's name that no run here recorded is
    history nobody can vouch for.
-5. Otherwise create it as `/flow-feat-start` does in this mode: `git switch --create
-   <number>-<slug> --no-track <base>` (`base` empty → `git.default_base`). Then `meta.json.branch` =
-   it, `meta.json.base` = that base, `worktree` and `stacked_on` = `null` — paths and parents from the
-   other machine mean nothing here — and record `{ "key": "unattended:rehomed", "default": "<old branch> → <number>-<slug> from <base>", "phase": "run" }`.
+5. Otherwise create it as `/flow-feat-start` does in this mode: `git switch --create <name>
+   --no-track <base>` (`base` empty → `git.default_base`), `<name>` being `<number>-<slug>`, or
+   `<number>-<slug>-<n>` when the `in_progress` entry of `meta.json.mrs` has `n` > 1 — the name
+   `/flow-feat-build` gives that part, since the first part's name is already published. Then
+   `meta.json.branch` = it, `meta.json.base` = that base, `worktree` and `stacked_on` = `null` — paths and parents from the
+   other machine mean nothing here — and record `{ "key": "unattended:rehomed", "default": "<old branch> → <name> from <base>", "phase": "run" }`.
 
 The phase you hand the run to is unattended too: it reads §2.1, chains as `auto` and makes the
 run's one closing order. This command makes none of its own except the re-sent `ask`, the `blocked`

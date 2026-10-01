@@ -101,7 +101,8 @@ elif case == "locate-in-the-real-phases":
 
 elif case == "locate-clause-dropped":
     # A reachable phase loses the clause, in two phrasings, and run.md loses its re-home step.
-    for rel in ("plugins/flow/commands/feat/build.md", "plugins/flow/commands/work/respond.md"):
+    for rel in ("plugins/flow/commands/feat/build.md", "plugins/flow/commands/work/respond.md",
+                "plugins/flow/commands/work/green.md"):
         src = real_text(rel).replace(" " + mod.LOCATE_UNATTENDED, "", 1)
         assert src != real_text(rel), f"the clause is not where this test thinks it is in {rel}"
         put(rel, src)
@@ -111,7 +112,8 @@ elif case == "locate-clause-dropped":
     put(rel, src)
     mod.ROOT = tree
     mod.check_unattended_locate(["plugins/flow/commands/feat/build.md",
-                                 "plugins/flow/commands/work/respond.md", rel])
+                                 "plugins/flow/commands/work/respond.md",
+                                 "plugins/flow/commands/work/green.md", rel])
     report()
 PY
 }
@@ -130,6 +132,7 @@ check "every reachable phase takes the work run found"  "$BASE/locate-in-the-rea
 drive locate-clause-dropped
 check "a pre-flight by current branch alone is named"    "$BASE/locate-clause-dropped.txt" hit 'feat/build.md: loads its work by the current branch'
 check "and the other phrasing too"                       "$BASE/locate-clause-dropped.txt" hit 'work/respond.md: loads its work by the current branch'
+check "and the third one"                                "$BASE/locate-clause-dropped.txt" hit 'work/green.md: loads its work by the current branch'
 check "a run.md with no re-home step is named"           "$BASE/locate-clause-dropped.txt" hit 'a study restored on the base never gets a branch'
 
 drive markers-in-the-real-skill
