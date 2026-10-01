@@ -94,6 +94,25 @@ elif case == "vocabulary-anchor-gone":
     mod.ROOT = tree
     mod.check_panel_vocabulary_lists([r for r, _, _ in mod.PROSE_VOCABULARY])
     report()
+
+elif case == "locate-in-the-real-phases":
+    mod.check_unattended_locate(mod.tracked_files())
+    report()
+
+elif case == "locate-clause-dropped":
+    # A reachable phase loses the clause, in two phrasings, and run.md loses its re-home step.
+    for rel in ("plugins/flow/commands/feat/build.md", "plugins/flow/commands/work/respond.md"):
+        src = real_text(rel).replace(" " + mod.LOCATE_UNATTENDED, "", 1)
+        assert src != real_text(rel), f"the clause is not where this test thinks it is in {rel}"
+        put(rel, src)
+    rel = "plugins/flow/commands/work/run.md"
+    src = real_text(rel).replace(mod.REHOME_STEP, "**A paragraph somebody renamed.**", 1)
+    assert src != real_text(rel), "the re-home step is not where this test thinks it is"
+    put(rel, src)
+    mod.ROOT = tree
+    mod.check_unattended_locate(["plugins/flow/commands/feat/build.md",
+                                 "plugins/flow/commands/work/respond.md", rel])
+    report()
 PY
 }
 
@@ -104,6 +123,14 @@ hook() {  # <label> <tree> <gitdir> → $BASE/<label>.txt with the output and th
   ( cd "$2" && GIT_DIR="$3" GIT_INDEX_FILE="$3/index" python3 "$CHECK" ) > "$BASE/$1.txt" 2>&1
   echo "exit=$?" >> "$BASE/$1.txt"
 }
+
+drive locate-in-the-real-phases
+check "every reachable phase takes the work run found"  "$BASE/locate-in-the-real-phases.txt" hit 'clean — the check found no problem'
+
+drive locate-clause-dropped
+check "a pre-flight by current branch alone is named"    "$BASE/locate-clause-dropped.txt" hit 'feat/build.md: loads its work by the current branch'
+check "and the other phrasing too"                       "$BASE/locate-clause-dropped.txt" hit 'work/respond.md: loads its work by the current branch'
+check "a run.md with no re-home step is named"           "$BASE/locate-clause-dropped.txt" hit 'a study restored on the base never gets a branch'
 
 drive markers-in-the-real-skill
 check "every marker binds to the real skill"      "$BASE/markers-in-the-real-skill.txt" hit 'clean — the check found no problem'
