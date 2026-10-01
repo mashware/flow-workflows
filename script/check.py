@@ -587,6 +587,7 @@ UNATTENDED_SECTION_HOLDS = (
     "**The orchestrator command.**",
     "**A question stop**",
     "**The answer comes back.**",
+    "- **The work is the one `/flow:work:run` found**",
 )
 UNATTENDED_PHASES = ("plugins/flow/commands/feat/", "plugins/flow/commands/bug/",
                      "plugins/flow/commands/work/run.md", "plugins/flow/commands/work/respond.md",
@@ -633,6 +634,31 @@ def check_unattended_pointer(files):
         if not count:
             fail("script/check.py", f"no file under {prefix} — the phase set matches nothing there")
     check_unattended_section(CORE_SKILL)
+
+
+# An unattended checkout names no work: it is the ticket's `base` when a study made elsewhere is
+# restored, an umbrella branch after a part merges. A phase that still loads its work by the
+# current branch finds nothing there, so every such line in a phase `run` can reach carries the
+# clause that sends it to the work `run` found — and `run` keeps the step that puts a work back on
+# its branch.
+LOCATE_BY_BRANCH = "by current branch"
+LOCATE_UNATTENDED = "— in `unattended`, the work `/flow:work:run` found (flow-core §2.1)"
+REHOME_STEP = "**The work's branch, on `start`.**"
+
+
+def check_unattended_locate(files):
+    """Every 'by current branch' line of a reachable phase carries the unattended clause; run.md
+    keeps its re-home step."""
+    for f in files:
+        if not any(f.startswith(p) for p in UNATTENDED_PHASES) or not f.endswith(".md"):
+            continue
+        text = read(f)
+        for ln in text.splitlines():
+            if LOCATE_BY_BRANCH in ln and LOCATE_UNATTENDED not in ln:
+                fail(f, f"loads its work {LOCATE_BY_BRANCH!r} with no unattended clause — "
+                        "on a base or umbrella checkout that finds nothing")
+        if f == "plugins/flow/commands/work/run.md" and REHOME_STEP not in text:
+            fail(f, f"no {REHOME_STEP!r} step — a study restored on the base never gets a branch")
 
 
 def check_unattended_section(path):
@@ -1027,6 +1053,7 @@ def run_checks(files):
     check_core_skill(files)
     check_panel_reminder(files)
     check_unattended_pointer(files)
+    check_unattended_locate(files)
     check_config_keys()
     check_panel_vocabulary_prose(files)
     check_panel_vocabulary_lists(files)
