@@ -26,7 +26,7 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (§3 areas with similar risk, and the minimal reproduction) — the testing agent reads it and `04-fix.md` itself. (flow-core §5)
 - Require `fix` in `phases_done`.
@@ -43,8 +43,8 @@ Then:
 1. Run only that test with `quality.test_one` from FLOW.md; it must pass.
 2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if slow; measured in tens of minutes → delegate it as a wait to a supervisor subagent on `models.supervisors`, flow-core §6.5 — it returns the exit code and the failing output, and the reading of them stays here).
 3. DB touched → verify the schema has no unexpected differences (`quality.db_update` or the FLOW.md equivalent, if defined; in `unattended` it is never run without an answer — a schema difference to apply is question
-`migration`, flow-core §2.1; a runner's *Apply it* relaunches this phase, this site takes the answer
-the pickup applied and runs it, and `05-validation.md` names that answer beside the migration).
+`migration`, flow-core §2.1; the orchestrator's *Apply it* relaunches this phase, this site takes the
+answer just applied and runs it, and `05-validation.md` names that answer beside the migration).
 4. Security or authentication touched → launch the `agents.security` agent from FLOW.md in parallel over the fix files (empty → `Agent general-purpose` with a security role).
 
 ## 2.5 Reproduce the original symptom against the running app

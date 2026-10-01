@@ -22,7 +22,7 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 Implementation phase. Code is written here.
 
@@ -33,9 +33,9 @@ Implementation phase. Code is written here.
 - `size` XS/S: may start without a design — ask the user for a 2-3 line note on what will be done and save it as a minimal `03-design.md`. No MR/PR plan (always 1 MR/PR).
 - **If `meta.json.mrs` has more than one entry**: pick the **startable** MR/PR — the `pending` one with the **lowest `n` whose `depends_on` are all `merged`**. Dependencies still `pending`/`in_progress` → not startable, even with a low `n`. (No `wave`/`depends_on` — an older plan — → "first pending by `n`".)
   - **Parallel siblings**: startable `pending` MRs/PRs in the **same `wave`** with no dependency between them can be built in parallel or as a train. `manual`: let the user choose which to take now (default: lowest `n`); `guided`/`auto`: take the lowest `n`, record the choice. Mark the chosen one `in_progress`.
-  - All `merged` → warn: feature is done, nothing to build (in `unattended`: `done`, `detail` saying so).
-  - Some `pending` but **none** startable → start nothing: tell the user which MR/PR must merge to unlock the next wave, and stop. In `unattended`: `blocked`, the detail naming it.
-  - **Train/stacked** (never in `unattended`: there the startable MR/PR gets a **new branch of its own** from `git.default_base`, created as `/flow-feat-start §5.2` (in place) or `§5.4` (worktree) says — `git.worktree: always` → worktree, `off`/empty/`ask` → in place; base `git.default_base`, already decided, so §5.1 asks nothing; `--no-track`, no linked remote branch — and never commits onto a previous MR/PR's branch; flow-core §2.1): this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/flow-feat-ship §6.2` creates and links it when it chains here; if you arrived directly and are still on the previous branch, create it now per `/flow-feat-start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow-feat-start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
+  - All `merged` → warn: feature is done, nothing to build (in `unattended`: `done`, the summary saying so).
+  - Some `pending` but **none** startable → start nothing: tell the user which MR/PR must merge to unlock the next wave, and stop. In `unattended`: `blocked`, the reason naming it.
+  - **Train/stacked** (never in `unattended`: there the startable MR/PR gets a **new branch of its own** from `meta.json.base` (empty → `git.default_base`) — the base the orchestrator gave the ticket, an umbrella branch once a split task's first part is merged — named `<ticket>-<slug>-<n>` and created as `/flow-feat-start §5.2` (in place) or `§5.4` (worktree) says — `git.worktree: always` → worktree, `off`/empty/`ask` → in place; that base is already decided, so §5.1 asks nothing; `--no-track`, no linked remote branch — and never commits onto a previous MR/PR's branch; flow-core §2.1): this MR/PR needs its own branch stacked on the previous one — do **not** keep committing on the previous MR/PR's branch. `/flow-feat-ship §6.2` creates and links it when it chains here; if you arrived directly and are still on the previous branch, create it now per `/flow-feat-start §5` (explicit base = the previous MR/PR's branch, `--no-track`, worktree per `git.worktree`) and, for `tracker.tool: gh`, the linked-branch step `/flow-feat-start §5.5`. Record `stacked_on` in `meta.json`. The train does **not** wait for the previous MR/PR to merge.
 
 ## 2. Business brief (before typing)
 
@@ -69,7 +69,7 @@ In `unattended` (flow-core §2.1) nobody is there to answer: write the brief, ma
 `recorded (unattended)` under its heading, record the site in `meta.json.defaults_used[]`, and build.
 The gate's purpose moves to the draft MR/PR, whose body carries the brief for the person who reads it.
 **A schema change or migration is still a question** (`migration`): before writing the first line
-of one → stop file, end the run. A person continues from there, or a runner's answer re-enters here
+of one → the question stop, end the run. The orchestrator's answer re-enters here
 (flow-core §2.1): the brief, the contracts and the plan are already written — keep them — and the
 MR/PR is the one already `in_progress`, not a new pick. *Write it and continue* → the first unticked
 step, the migration included · *Change the design first* → `blocked`. A plan step marked approved

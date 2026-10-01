@@ -194,8 +194,8 @@ also resolves the rest. Every decision a mode took alone is written to the artif
 *Now:* flow-core §2; CONFIGURATION "autonomy".
 
 **Hard gates stop in `manual`, `guided` and `auto`, each for a reason** (`unattended` resolves each
-one instead, never by approving it: a draft only when allowed, otherwise the run ends on the
-question — flow-core §2.1). *Push or MR/PR creation* — outward-facing; hence `validate`,
+one instead, never by approving it: the push and the MR/PR are handed to the orchestrator, the
+rest end the run on the question — flow-core §2.1). *Push or MR/PR creation* — outward-facing; hence `validate`,
 `bug:review` (XS/S) and `postmortem` never chain into `ship` in `auto`: that run "ends where it
 always should have: asking whether to publish" (v0.25.0). *A branch on an ambiguous
 base* — a real accidental deploy sits behind it (§9). *Schema changes*, including any DDL or database

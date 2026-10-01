@@ -8,8 +8,8 @@ Investigation phase: reproduce the failure, then find **why it happened** — no
 
 **In `unattended`** (flow-core §2.1) this command asks nothing. The hypothesis sweep runs as in
 `auto` · a size that no longer fits → record the new size · a `high` challenge with no response →
-question `investigation_challenge`, the findings and their options in the stop file, after
-`03-investigation.md` holds them; a runner's answer writes each Response and the phase continues
+question `investigation_challenge`, the findings and their options in the question, after
+`03-investigation.md` holds them; the orchestrator's answer writes each Response and the phase continues
 after the challenge, without running the sweep again (flow-core §2.1) · a bug that
 cannot be reproduced and needs a person to try → blocked.
 
@@ -19,7 +19,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
 - `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow:bug:fix` and stop.

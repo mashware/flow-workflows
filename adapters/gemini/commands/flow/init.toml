@@ -97,7 +97,8 @@ review, not a questionnaire. Then, and only then, five questions:
    `auto` — also resolves the rest with recorded defaults. Explain the hard gates that stop in these
    three modes and the list of what `guided`/`auto` never ask (both in the `~/.claude/flow/CORE.gemini.md` §2),
    so `auto` runs without a stop between the brief and `ship`. Do not offer `unattended`: it is for a
-   runner, written by hand where only the runner reads it. Editable any time. Empty = `manual`.
+   run an orchestrator launches, written by hand — with `autonomy.orchestrator_cmd` — where only that
+   run reads it. Editable any time. Empty = `manual`.
 4. **The quality commands as one block** (`quality.test`, `test_one`, `static_analysis`, `style_fix`,
    `db_update`, `db_diff`) — confirm or edit what §2 found, all in one question, each may stay empty
    (= auto-discover at the moment it is needed). Several suites chain into `test` with `&&`.

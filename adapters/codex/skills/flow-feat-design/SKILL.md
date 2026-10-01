@@ -22,7 +22,7 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 Technical design phase. **Still no production code is written.** Opens the option space first (M/L), then designs the approach that was chosen. Output: a plan the next step executes.
 
@@ -30,8 +30,8 @@ Technical design phase. **Still no production code is written.** Opens the optio
 `auto` · questions the options surfaced (§1.5.5) or an acceptance criterion that is ambiguous (§9) →
 question `clarify` · a size that no longer fits (§1.5.5, §7) → record the new size · a `high`
 challenge with no response (§6) → question `design_challenge`, the findings and their options in the
-stop file · the design review (§9) → recorded as accepted, as in `auto`. Each of these stops comes
-after `03-design.md` holds what the phase computed, and a runner's answer re-enters where flow-core
+question · the design review (§9) → recorded as accepted, as in `auto`. Each of these stops comes
+after `03-design.md` holds what the phase computed, and the orchestrator's answer re-enters where flow-core
 §2.1's table says: the approaches are not generated again, the design is not written again — the
 answer goes into its section, and the phase continues from the choice (§1.5.5), from §9, or from §7
 after writing each challenge's Response.

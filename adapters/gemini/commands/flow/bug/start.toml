@@ -20,15 +20,19 @@ Start a bug. `{{args}}` is **optional**:
 - **Empty** — *ticket-less mode*: do **not** stop. Synthesize the bug from the conversation just held with the user (§1.5). Ask for a one-line symptom only if there is no conversation to draft from.
 
 **In `unattended`** (flow-core §2.1) this command asks nothing; each place it would ask resolves as
-that table says. Here: a ticket is required — empty, or a tracker read that fails, ends the run
-`blocked` · uncommitted changes or a branch other than the main one (§3) → `blocked`: the runner
-owns the checkout · cross-repo scope (§1.6) → only the repos the ticket names · `git.worktree: ask`
-→ in place · a linked remote branch → skipped, nothing is pushed before `ship` · the tracker
-transition (§4.5) → as `auto`. **A thread that changes what the bug *is* (§1.1 precedence) waits
-until the branch and the work folder exist** — create them (§3, §4) first, write it into
-`01-context.md` as open, then question `clarify`; the next phase asks it first (flow-core §2.1). That
-phase is the stop's `resume` — `/flow:bug:fix` for XS, `/flow:bug:investigate` otherwise — so a
-runner's answer lands there and `start` is never relaunched.
+that table says. Here: **the ticket is `<cmd> ticket --json`**, not the tracker — `number` is the
+identifier, `title` and `body` replace §1's tracker read, and its `comments` (already limited to
+authorised authors) are the whole thread of §1.1; `{{args}}` that disagrees with `number` is
+ignored and named. The order failing or empty → `blocked` · **the base is the ticket's `base`**
+(empty → `git.default_base`), recorded as `meta.json.base` — the branch of §3 starts there, and asks
+nothing · uncommitted changes, or a checkout not on that base → `blocked`: the orchestrator owns the
+checkout · the branch is named `<number>-<slug>` whatever `git.branch_pattern` says · cross-repo
+scope (§1.6) → only the repos the ticket names · `git.worktree: ask` → in place · a linked remote
+branch and the tracker transition (§4.5) → skipped: nothing outside the checkout is written in this
+mode. **A thread that changes what the bug *is* (§1.1 precedence) waits until the branch and the
+work folder exist** — create them (§3, §4) first, write it into `01-context.md` as open, then
+question `clarify`. Its `resume` is `/flow:bug:fix` for XS, `/flow:bug:investigate` otherwise, so
+the answer lands there and `start` is never relaunched.
 
 ## 0. Pre-flight
 
@@ -36,7 +40,7 @@ Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, mode
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Verify you are in the correct repo.
 - **Determine the mode** from `{{args}}`: non-empty → *ticket mode* (identifier = `{{args}}`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
@@ -174,6 +178,8 @@ Create the work directory per §0: `.claude/work/<TICKET>-<slug>/` in ticket mod
 ```
 
 **Live panel**: publish it now (flow-core §4 — the panel tools, or `<work-dir>/panel.json`). A bug has no MR/PR train, so it is short: the title (the symptom, `style: title`), a `Now` line for what is starting, a `Next` line for the phase this size routes to, and any sibling repo from §1.6 as a `block` line. Every later phase updates it.
+
+In `unattended`, add `"base"`: the ticket's `base`, the branch the fix starts from and targets. Omit it in every other mode.
 
 Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the fix touches; `[]` for a single-repo fix. `pending` only when the fix **changes a surface that sibling consumes** (a payload key, an error code, a route, an event shape); otherwise `none`.
 

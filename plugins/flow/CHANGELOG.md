@@ -5,6 +5,31 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.84.0 — An unattended run talks to its orchestrator through one command  ·  2026-10-01
+
+**In short**
+- **Whoever launches an unattended run now names one command, and flow talks to it through that
+  command alone.** Set `autonomy.orchestrator_cmd` (for example `orch`): the run asks it why it was
+  launched, reads the ticket and the answer from it, and ends with exactly one order — `ask` a
+  question, `publish` the finished work, say it is `blocked`, or say it is `done`.
+- **flow no longer pushes or opens MR/PRs in this mode, and needs no forge credentials.** When the
+  work is ready it commits on its own branch and hands over a title and a body; the orchestrator
+  pushes the branch and opens the draft. A split task says which part it is (`--part 2 --of 3`).
+- **One entry for every run: `/flow:work:run`.** It starts a new feature or bug from the ticket the
+  orchestrator serves, continues after an answer exactly where the run stopped, or builds the next
+  part once the previous one merged. Review comments and red pipelines end the run as "not
+  supported yet" until the next version.
+- **The stop and answer files are gone** — `.claude/work/stop.json`, `.claude/work/answer.json`, the
+  `running` mark, the person pickup and `autonomy.unattended_ship`. A pending question is recorded
+  in `meta.json.pending`; every free text (question, options, title, body, reason) travels in a
+  file, never on a command line, so a backtick in a ticket title cannot reach a shell.
+- **`unattended` without `orchestrator_cmd` runs nothing** and says why; `/flow:doctor` flags it.
+- The Codex/OpenCode smoke runner now judges the call log of a fake orchestrator
+  (`script/tests/fixtures/fake-orchestrator.sh`) instead of the stop file.
+
+Breaking for anyone running `unattended` on 0.82/0.83: add `orchestrator_cmd` and launch
+`/flow:work:run`. Nothing changes in `manual`, `guided` or `auto`. Tracked in #177; makes #176 moot.
+
 ## v0.83.1 — Every unattended phase reads its stop-file rules whole  ·  2026-09-30
 
 **In short**

@@ -23,16 +23,16 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow-feat-ship`, wi
 1. If `99-postmortem.md` exists, **include the link or the executive summary** in the MR/PR description.
 2. The knowledge-consolidation offer was already made in `/flow-bug-postmortem` — do not ask again here.
 
-**In `unattended`** (flow-core §2.1) this command asks nothing — the same resolutions as
-`/flow-feat-ship`'s unattended paragraph, and its "In every mode" paragraph too, applied to the
-sections here: the MR/PR (§2–§3) is a draft only with `autonomy.unattended_ship: draft`, created as
-§3.1 says for a draft; otherwise question `ship` and the run ends; pre-deploy SQL → question
-`migration`. The tree check (§0) re-runs what is behind `HEAD` once per MR/PR, recorded as
-`/flow-feat-ship` says — here `validate` first, since it ran before the review, then the review on
-the delta — and is `blocked` after that. The
-performance comment (§3.3) is not posted; every offer and survey at Close (§4) — follow-ups,
-conventions, archiving — is `Later`; "was it merged?" is not merged; and Close writes the stop file
-with `reason: "done"` and `mr_url`.
+**In `unattended`** (flow-core §2.1) this command asks nothing, pushes nothing and opens nothing —
+the same resolutions as `/flow-feat-ship`'s unattended paragraph, and its "In every mode" paragraph
+too, applied to the sections here: the MR/PR (§2–§3) is not confirmed and not created — its title
+and description go to `publish-title.md` / `publish-body.md` in the work folder, §3.1–§3.3 do not
+run, and pre-deploy SQL → question `migration`. The tree check (§0) re-runs what is behind `HEAD`
+once per MR/PR, recorded as `/flow-feat-ship` says — here `validate` first, since it ran before the
+review, then the review on the delta — and is `blocked` after that. Every offer and survey at Close
+(§4) — follow-ups, conventions, archiving — is `Later`; "was it merged?" is not merged (`phase`
+stays `ship`); and Close ends with the run's closing order, on a clean tree:
+`<cmd> publish --title-file <work>/publish-title.md --body-file <work>/publish-body.md`.
 
 ## 0. Pre-flight
 
@@ -40,7 +40,7 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `04-fix.md` (the Brief), `06-review.md` (the verdict), `05-validation.md`, the §"Root cause identified" of `03-investigation.md`, and `99-postmortem.md` if it exists. (flow-core §5)
 - Require `review` in `phases_done`; also `validate` if `size` ≥ S, and `postmortem` if `size` is M or L (the same sizes `/flow-bug-review §8` routes to postmortem — one rule). Missing → refuse and redirect to the missing step.
@@ -169,9 +169,7 @@ Same as `/flow-feat-ship` §4.0: `git rev-parse --abbrev-ref HEAD` must not be t
 
 ### 3.1 Create MR/PR
 
-**A draft (`unattended`) — read this first:** exactly as `/flow-feat-ship §4.1` says for a draft — never `commit-push-pr`, never the plain CLI; the forge CLI with its draft flag; a refused draft → `blocked`.
-
-Otherwise, only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
+Only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
 
 Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.squash`.
 
