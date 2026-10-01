@@ -24,7 +24,7 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (root cause, constraints for the fix) (minimal reproduction, root cause, constraints for the fix). (flow-core §5)
 - `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix.
@@ -56,7 +56,7 @@ In `unattended` (flow-core §2.1) nobody is there to answer: write the brief, ma
 `recorded (unattended)` under its heading, record the site in `meta.json.defaults_used[]`, and fix.
 The gate's purpose moves to the draft MR/PR, whose body carries the brief for the person who reads it.
 **A schema change or migration is still a question** (`migration`): before writing the first line
-of one → stop file, end the run. A person continues from there, or a runner's answer re-enters here
+of one → the question stop, end the run. The orchestrator's answer re-enters here
 exactly as `/flow-feat-build §2` says, with `04-fix.md` for `05-implementation.md` and
 `/flow-bug-validate` as the phase it chains into after a review's *Fix them* (`/flow-bug-review`
 for XS, which has no validate).

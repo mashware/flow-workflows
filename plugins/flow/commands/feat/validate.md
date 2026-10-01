@@ -8,7 +8,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 Verify the feature is complete: test coverage, edge cases, performance, regressions.
 
@@ -152,7 +152,7 @@ If the feature has UI or critical flows:
 - Payments → test with the test cards or credentials the provider publishes for its sandbox (and the harness skill for that provider, if installed).
 - Workers/queues → make sure no jobs are stuck in dead-letter. Stuck jobs that are not yours: do not touch them here.
 - Migrations → run `quality.db_update` from `FLOW.md` (if defined; in `unattended`, never without an answer — a migration to apply is question `migration`, flow-core
-§2.1; a runner's *Apply it* relaunches this phase from §1, this site takes the answer the pickup
+§2.1; the orchestrator's *Apply it* relaunches this phase from §1, this site takes the answer just
 applied and runs it, and §6 names that answer beside the migration under "Edge cases verified"); verify no unexpected schema difference with the comparison command the project uses.
 
 ## 6. Output
@@ -214,7 +214,7 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Autonomy handoff — this one stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR: a hard gate in every mode, so do **not** chain into it. Stop here and propose `/flow:feat:ship` with a single `AskUserQuestion` (recommended option by default), invoking it only when the user confirms. This is the deliberate end of a run in `auto`.
   **In `unattended`** (flow-core §2.1): the phase advanced → chain into `/flow:feat:ship`, which
-  decides from `autonomy.unattended_ship` between a draft MR/PR and a question. It did not advance
+  hands the MR/PR to the orchestrator with `publish`. It did not advance
   (red suite, a criterion `unproven`) → `blocked`, naming what failed; never chain. A red suite
   advances only under the base exception of flow-core §2.1: run the failing tests on the base, and
   write each name, its result there and the base sha under "Suite results" in `07-validation.md`.

@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """Prove that `autonomy.mode: unattended` ends headless runs cleanly on Codex and OpenCode.
 
-Unattended flow runs forbid every question tool and must end at a stop file
-(`.claude/work/stop.json`) whose `reason` is one of question/blocked/done — never `running`.
-That contract was proven on Claude Code only; this script drives the remaining harnesses
-(`codex exec`, `opencode run`) over the same two scenarios:
+Unattended flow runs forbid every question tool and must end with exactly one closing order
+to the command `autonomy.orchestrator_cmd` names — `ask`, `publish`, `blocked` or `done`. This
+script stands a fake orchestrator in for that command (`script/tests/fixtures/fake-orchestrator.sh`,
+installed as `orch`, every call logged with the content of its files) and drives the harnesses
+(`codex exec`, `opencode run`) over two scenarios:
 
   A  throwaway repo parked at `design` with a migration in the design
-     → expect a `question` stop (gate `migration`) before any code is written;
+     → expect one `ask --gate migration` and `meta.json.pending` before any code is written;
   B  plain S change with no schema
-     → expect the run to chain through review/validate and stop at `ship`, pushing nothing.
+     → expect the run to chain through review/validate and end with one `publish`, pushing nothing.
 
 Each cell of the 2x2 matrix spends real API money and needs the harness CLI authenticated,
 so this tool is run deliberately by a person — never from CI or preflight. Evidence (the
-verbatim stop file per run plus a runs log) lands in the calling work's `evidence/` folder.
+closing call and the orchestrator's call log per run, plus a runs log) lands in the calling work's `evidence/` folder.
 
 The runner refuses to run from a checkout whose generated Codex core rules predate the
 unattended contract: a stale checkout "proves" nothing, expensively. It also snapshots the
@@ -37,18 +38,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-EVIDENCE = REPO / ".claude" / "work" / "171-verify-unattended-codex-opencode" / "evidence"
-GUARD_MARKERS = ("picked_up", "### 2.1")
+EVIDENCE = None  # set in main(): --evidence, or the work folder of the branch this checkout is on
+GUARD_MARKERS = ("**The orchestrator command.**",)
+FAKE_ORCHESTRATOR = REPO / "script" / "tests" / "fixtures" / "fake-orchestrator.sh"
+ORCH_DIR = "orch"
+CLOSING = ("ask", "publish", "blocked", "done")
 SCRUB_KEYS = ("APPIMAGE", "APPDIR", "ARGV0")
 POLL_SECONDS = 5
 PROMPTS = {"codex": "$flow-feat-build", "opencode": "/flow-feat-build"}
 SCENARIOS = {
     "a": {"work": "DEMO-1-first-open", "branch": "demo-1-first-open",
-          "slug": "first-open", "expect": {"reason": "question", "phase": "build", "gate": "migration"},
-          "stop_name": "migration-stop"},
+          "slug": "first-open", "expect": {"order": "ask", "phase": "build", "gate": "migration"},
+          "close_name": "migration-ask"},
     "b": {"work": "DEMO-2-unread-count", "branch": "demo-2-unread-count",
-          "slug": "unread-count", "expect": {"reason": "question", "phase": "ship", "gate": "ship"},
-          "stop_name": "ship-stop"},
+          "slug": "unread-count", "expect": {"order": "publish"},
+          "close_name": "publish"},
 }
 
 
@@ -65,6 +69,7 @@ def scrubbed_env(cwd=None):
 
 def run_env(repo, shim_dir):
     env = scrubbed_env(repo)
+    env["FAKE_ORCH_DIR"] = str(repo.parent / ORCH_DIR)
     path = env.get("PATH", "")
     env["PATH"] = f"{shim_dir}{os.pathsep}{path or os.defpath}"
     return env
@@ -80,6 +85,19 @@ def now_iso():
 
 # ---------------------------------------------------------------- stages
 
+def work_evidence_dir():
+    """The `evidence/` folder of the work whose `meta.json.branch` is the branch checked out here."""
+    branch = subprocess.run(["git", "branch", "--show-current"], cwd=REPO, capture_output=True,
+                            text=True).stdout.strip()
+    for meta in (REPO / ".claude" / "work").glob("*/meta.json"):
+        try:
+            if json.loads(meta.read_text(encoding="utf-8")).get("branch") == branch:
+                return meta.parent / "evidence"
+        except (json.JSONDecodeError, OSError):
+            continue
+    return None
+
+
 def guard_checkout():
     """Refuse to run from a checkout whose generated core rules predate the unattended contract."""
     core = REPO / "adapters" / "codex" / "CORE.md"
@@ -88,11 +106,11 @@ def guard_checkout():
         return False
     text = core.read_text(encoding="utf-8")
     if not any(marker in text for marker in GUARD_MARKERS):
-        say("  preflight: FAIL — generated core rules predate the unattended contract "
-            "(no §2.1-only marker: picked_up / '### 2.1'). Merge the current main and "
+        say("  preflight: FAIL — generated core rules predate the orchestrator contract "
+            "(no '**The orchestrator command.**' in §2.1). Merge the current main and "
             "regenerate the adapters; a stale checkout would prove nothing, expensively.")
         return False
-    say("  preflight: unattended contract present in generated core rules (§2.1 marker found)")
+    say("  preflight: orchestrator contract present in generated core rules (§2.1 marker found)")
     return True
 
 
@@ -125,6 +143,12 @@ def seed_repo(scratch, scenario, harness):
     # A rerun into a kept scratch starts from a fresh seed, never on top of the last run.
     shutil.rmtree(repo, ignore_errors=True)
     (scratch / PUSH_LOG).unlink(missing_ok=True)
+    orch = scratch / ORCH_DIR
+    shutil.rmtree(orch, ignore_errors=True)
+    orch.mkdir(parents=True)
+    # The run is launched straight into build, which reads nothing from the orchestrator; `why`
+    # is served anyway so a run that routes through /flow:work:run first gets a real answer.
+    write_text(orch / "why", "start\n")
     (repo / "migrations").mkdir(parents=True, exist_ok=True)
     (repo / "tests").mkdir(parents=True, exist_ok=True)
     (repo / "tests" / "__init__.py").write_text("", encoding="utf-8")
@@ -256,6 +280,7 @@ if __name__ == "__main__":
 
 ## autonomy
 - mode: unattended
+- orchestrator_cmd: orch
 """)
 
     git_init(scratch, repo, spec["branch"])
@@ -379,23 +404,28 @@ def install_plugin(repo, harness):
     return True
 
 
-def read_stop(repo):
-    stop = repo / ".claude" / "work" / "stop.json"
-    if not stop.is_file():
-        return None
-    try:
-        return json.loads(stop.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return None
+def read_calls(repo):
+    """Every call the fake orchestrator logged, in order; a line it could not parse is kept as
+    `{"order": "<unparsable>"}` so a corrupt log fails the checks instead of vanishing."""
+    log = repo.parent / ORCH_DIR / "calls.jsonl"
+    if not log.is_file():
+        return []
+    calls = []
+    text = log.read_text(encoding="utf-8")
+    # A line still being appended has no newline yet; it is read on the next poll, whole.
+    for line in text.split("\n")[:-1]:
+        try:
+            calls.append(json.loads(line))
+        except json.JSONDecodeError:
+            calls.append({"order": "<unparsable>", "raw": line})
+    return calls
 
 
-def poll_stop(repo, timeline, stop_event):
+def poll_calls(repo, timeline, stop_event):
     while not stop_event.is_set():
-        stop = read_stop(repo)
-        if stop is not None:
-            reason = stop.get("reason")
-            if not timeline or timeline[-1][1] != reason:
-                timeline.append((now_iso(), reason))
+        orders = [c.get("order") for c in read_calls(repo)]
+        if orders and (not timeline or timeline[-1][1] != orders[-1]):
+            timeline.append((now_iso(), orders[-1]))
         stop_event.wait(POLL_SECONDS)
 
 
@@ -474,6 +504,9 @@ def install_git_shim(scratch):
     shim.write_text(GIT_SHIM.replace("{log}", str(scratch / PUSH_LOG)).replace("{git}", real),
                     encoding="utf-8")
     shim.chmod(0o755)
+    orch = bin_dir / "orch"
+    shutil.copy2(FAKE_ORCHESTRATOR, orch)
+    orch.chmod(0o755)
     return bin_dir, scratch / PUSH_LOG
 
 
@@ -542,7 +575,7 @@ def run_cell(repo, harness, cli, timeout, shim_dir, oc_message=False):
     stderr_path = repo.parent / "stderr.txt"
     timeline = []
     stop_event = threading.Event()
-    poller = threading.Thread(target=poll_stop, args=(repo, timeline, stop_event), daemon=True)
+    poller = threading.Thread(target=poll_calls, args=(repo, timeline, stop_event), daemon=True)
     started = time.monotonic()
     started_iso = now_iso()
     with open(stream_path, "w", encoding="utf-8") as stream, \
@@ -583,13 +616,16 @@ def run_cell(repo, harness, cli, timeout, shim_dir, oc_message=False):
 def verify_cell(repo, harness, scenario, run, baseline, seed_head):
     spec = SCENARIOS[scenario]
     checks = []
-    stop = read_stop(repo)
+    calls = read_calls(repo)
+    closing = [c for c in calls if c.get("order") in CLOSING]
+    accepted = [c for c in closing if c.get("exit") == 0]
+    close = accepted[0] if accepted else None
 
     stream_text = run["stream"].read_text(encoding="utf-8", errors="replace")
     # opencode quotes the injected command body in its stream, header included. codex
     # injects a $skill without echoing it in --json; the header shows only if the model
     # reads the file itself. Absent there → not observable (None), never "loaded" — a codex
-    # run without the skill fails the stop-file checks on its own.
+    # run without the skill fails the closing-order checks on its own.
     if COMMAND_HEADER in stream_text:
         command_loaded = True
     else:
@@ -607,36 +643,62 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
                        f"killed after {run['duration_s']}s — the signature of a run blocked "
                        "on a question tool"))
 
-    if stop is None:
-        checks.append(("stop.json exists at exit", False, "no stop file was written"))
-    else:
-        reason = stop.get("reason")
-        checks.append(("stop.json reason is an ending (never running)",
-                       reason in ("question", "blocked", "done"), f"reason={reason!r}"))
-        expect = spec["expect"]
-        checks.append((f"reason={expect['reason']}", reason == expect["reason"],
-                       f"got reason={reason!r}"))
-        if reason == expect["reason"]:
-            checks.append((f"phase={expect['phase']}", stop.get("phase") == expect["phase"],
-                           f"got phase={stop.get('phase')!r}"))
-            if expect.get("gate"):
-                checks.append((f"gate={expect['gate']}", stop.get("gate") == expect["gate"],
-                               f"got gate={stop.get('gate')!r}"))
+    checks.append(("exactly one closing order, none refused",
+                   len(closing) == 1 and len(accepted) == 1,
+                   f"closing calls: {[(c.get('order'), c.get('exit')) for c in closing] or 'none'}"))
+    expect = spec["expect"]
+    if close is not None:
+        flags, files = close.get("flags", {}), close.get("files", {})
+        checks.append((f"order={expect['order']}", close.get("order") == expect["order"],
+                       f"got order={close.get('order')!r}"))
+        required = {"ask": ("--question-file", "--options-file"),
+                    "publish": ("--title-file", "--body-file"),
+                    "blocked": ("--reason-file",)}.get(close.get("order"), ())
+        missing = [k for k in required if k not in flags]
+        checks.append(("the order carries its required -file flags", not missing,
+                       f"missing: {missing or 'none'}"))
+        # The plugin install and the harness's own state are untracked by design, not the run's.
+        dirty = close.get("dirty")
+        if dirty is not None:
+            dirty = [ln for ln in dirty if not any(item in ln for item in NON_CODE)]
+        checks.append(("tree clean outside .claude/work/ at the closing order", dirty == [],
+                       f"dirty: {dirty!r}"))
+        file_flags = [k for k in flags if k.endswith("-file")]
+        checks.append(("free text only through -file flags, each one readable and non-empty",
+                       all(files.get(k, "").strip() and not files[k].startswith("<unreadable")
+                           for k in file_flags)
+                       and not any(k in flags for k in ("--question", "--option", "--title",
+                                                        "--body", "--reason", "--summary")),
+                       f"flags: {sorted(flags)}"))
+        if expect.get("gate"):
+            gate = (flags.get("--gate") or [None])[0]
+            checks.append((f"gate={expect['gate']}", gate == expect["gate"], f"got gate={gate!r}"))
+        if expect["order"] == "ask":
+            meta_path = repo / ".claude" / "work" / spec["work"] / "meta.json"
+            try:
+                pending = json.loads(meta_path.read_text(encoding="utf-8")).get("pending") or {}
+            except (json.JSONDecodeError, OSError):
+                pending = {}
+            checks.append((f"meta.json.pending names phase={expect['phase']} and the gate",
+                           pending.get("phase") == expect["phase"]
+                           and pending.get("gate") == expect.get("gate") and bool(pending.get("id")),
+                           f"pending={pending or 'missing'}"))
+        try:
+            at = datetime.fromisoformat(close["at"]).timestamp()
+            window_start = datetime.fromisoformat(run["started_at"]).timestamp()
+            window_end = datetime.fromisoformat(run["ended_at"]).timestamp()
+            checks.append(("closing order made inside the run window",
+                           window_start - 5 <= at <= window_end + 5,
+                           f"at={close['at']} vs run {run['started_at']}…{run['ended_at']}"))
+        except (KeyError, ValueError):
+            checks.append(("closing order made inside the run window", False,
+                           f"unparsable at={close.get('at')!r}"))
+    leftovers = [name for name in ("stop.json", "answer.json")
+                 if (repo / ".claude" / "work" / name).exists()]
+    checks.append(("no stop or answer file written", not leftovers, f"found: {leftovers or 'none'}"))
 
     def git(*args):
         return git_out(repo, *args)
-
-    if stop is not None and stop.get("at"):
-        try:
-            at = datetime.fromisoformat(stop["at"]).timestamp()
-            window_start = datetime.fromisoformat(run["started_at"]).timestamp()
-            window_end = datetime.fromisoformat(run["ended_at"]).timestamp()
-            checks.append(("stop.json written inside the run window",
-                           window_start - 5 <= at <= window_end + 5,
-                           f"at={stop['at']} vs run {run['started_at']}…{run['ended_at']}"))
-        except ValueError:
-            checks.append(("stop.json written inside the run window", False,
-                           f"unparsable at={stop['at']!r}"))
 
     if scenario == "a":
         changes = code_changes(repo, baseline, seed_head)
@@ -658,6 +720,14 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
             mr_url = (meta.get("mrs") or [{}])[0].get("url")
             checks.append(("no MR/PR created", mr_url in (None, ""), f"mr_url={mr_url!r}"))
+            checks.append(("ship recorded (phase=ship, ship in phases_done, published)",
+                           meta.get("phase") == "ship" and "ship" in meta.get("phases_done", [])
+                           and meta.get("published") is True,
+                           f"phase={meta.get('phase')!r}, phases_done={meta.get('phases_done')}, "
+                           f"published={meta.get('published')!r}"))
+            parts = (close or {}).get("flags", {}).get("--part")
+            checks.append(("a single-MR/PR work publishes without --part", not parts,
+                           f"--part={parts!r}"))
         except (json.JSONDecodeError, OSError):
             checks.append(("no MR/PR created", False, "work meta.json unreadable"))
 
@@ -667,7 +737,8 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
         "checks": [{"check": c, "passed": p, "detail": d} for c, p, d in checks],
         "question_calls": qcount,
         "tool_names": tool_names,
-        "stop": stop,
+        "close": close,
+        "calls": calls,
         "command_loaded": command_loaded,
     }
 
@@ -675,15 +746,15 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
 def record_cell(harness, scenario, run, verdict):
     spec = SCENARIOS[scenario]
     EVIDENCE.mkdir(parents=True, exist_ok=True)
-    stop = verdict["stop"]
+    close = verdict["close"]
     # A retried cell keeps its earlier sidecars: never overwrite an attempt's evidence.
     attempt = 1
     while (EVIDENCE / f"{harness}-{scenario}-run{'-retry' + str(attempt) if attempt > 1 else ''}.json").is_file():
         attempt += 1
     suffix = "" if attempt == 1 else f"-retry{attempt}"
-    if stop is not None:
-        write_text(EVIDENCE / f"{harness}-{scenario}-{spec['stop_name']}{suffix}.json",
-                   json.dumps(stop, indent=2, ensure_ascii=False) + "\n")
+    if close is not None:
+        write_text(EVIDENCE / f"{harness}-{scenario}-{spec['close_name']}{suffix}.json",
+                   json.dumps(close, indent=2, ensure_ascii=False) + "\n")
 
     tokens = "not reported"
     stream_text = run["stream"].read_text(encoding="utf-8", errors="replace")
@@ -704,9 +775,10 @@ def record_cell(harness, scenario, run, verdict):
         "exit_code": run["exit_code"], "timed_out": run["timed_out"],
         "question_calls": verdict["question_calls"], "tool_names": verdict["tool_names"],
         "command_loaded": verdict["command_loaded"],
-        "reason_timeline": run["timeline"],
+        "order_timeline": run["timeline"],
         "checks": verdict["checks"],
-        "stop": verdict["stop"],
+        "close": verdict["close"],
+        "orchestrator_calls": verdict["calls"],
         "tokens": tokens,
         "stderr_tail": run["stderr_tail"],
         "verdict": "pass" if verdict["ok"] else "fail",
@@ -772,6 +844,8 @@ def main():
                         help="seconds before a hung run is killed (default 1800)")
     parser.add_argument("--scratch", help="dir for the throwaway repo (default: fresh temp dir)")
     parser.add_argument("--keep", action="store_true", help="keep the throwaway repo")
+    parser.add_argument("--evidence", help="dir for the evidence (default: <work folder of the "
+                                           "current branch>/evidence)")
     args = parser.parse_args()
     if not args.all and not (args.harness and args.scenario):
         parser.error("give --harness and --scenario, or --all")
@@ -782,9 +856,12 @@ def main():
         return 2
     if not guard_checkout():
         return 2
-    if not EVIDENCE.parent.is_dir():
-        say(f"  preflight: FAIL — work folder {EVIDENCE.parent} missing")
+    global EVIDENCE
+    EVIDENCE = Path(args.evidence).resolve() if args.evidence else work_evidence_dir()
+    if EVIDENCE is None or not EVIDENCE.parent.is_dir():
+        say("  preflight: FAIL — no work folder for this branch; pass --evidence <dir>")
         return 2
+    say(f"  preflight: evidence → {EVIDENCE}")
 
     cells = ([("codex", "a"), ("opencode", "a"), ("codex", "b"), ("opencode", "b")]
              if args.all else [(args.harness, args.scenario)])

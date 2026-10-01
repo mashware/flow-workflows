@@ -26,7 +26,7 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full every previous artifact (`01-context.md` … `06-review.md`) — §2 needs the whole history. (flow-core §5)
 - Require `review` in `phases_done`.
@@ -97,4 +97,4 @@ Neither role set → skip this block silently.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Write every prevention action and similar-risk area to `meta.json.followups[]`** (flow-core §7), ids matching the tables above. This is the whole point of the phase: an action that lives only in `99-postmortem.md` is archived with the work and read by nobody, which is how the incident repeats.
 - Suggest `/flow-bug-ship`. Say how many follow-ups it will ask about at its Close — **do not triage them here**: mid-postmortem is the wrong moment to judge what is worth a ticket, and `ship` asks once with the whole set in view.
-- **Autonomy handoff — stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR, a hard gate in every mode: do **not** chain into it; stop here and propose `/flow-bug-ship` with a single `AskUserQuestion` (recommended option by default). In `unattended` (flow-core §2.1), chain into `/flow-bug-ship`: it decides between a draft and a question.
+- **Autonomy handoff — stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR, a hard gate in every mode: do **not** chain into it; stop here and propose `/flow-bug-ship` with a single `AskUserQuestion` (recommended option by default). In `unattended` (flow-core §2.1), chain into `/flow-bug-ship`: it hands the MR/PR to the orchestrator with `publish`.

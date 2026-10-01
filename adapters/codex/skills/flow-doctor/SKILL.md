@@ -170,12 +170,14 @@ base branch resolvable — is §2 below; flag the key here, check the world ther
   echo the mode and remind that the hard gates stop and ask in `manual`/`guided`/`auto` and that `guided`/`auto`
   never ask about the flow's own mechanics or anything already decided (both lists: `flow:flow-core`
   skill §2). Unrecognized value → flag, `manual` assumed. `unattended` → say what it does instead of
-  the gates (flow-core §2.1): nothing is asked, questions end the run in `.claude/work/stop.json` for a runner, whose answer in `.claude/work/answer.json` lets the relaunched run continue,
-  and `ship` is a draft only when `autonomy.unattended_ship` is `draft` — echo that value, or that it
-  is empty and ship will stop on a question. Say which file set it: every session that reads that file
-  — a person's included, when they share the checkout and the harness — stops asking too, so it
-  belongs in a FLOW file only the runner's environment has. `unattended_ship` set with any other mode → note it is ignored; a
-  value other than `draft`/`stop` → flag, `stop` assumed.
+  the gates (flow-core §2.1): nothing is asked, and every run ends with one order to the
+  orchestrator command — `ask`, `publish`, `blocked` or `done`; flow pushes nothing and opens no
+  MR/PR. Echo `autonomy.orchestrator_cmd` and the file it came from, and whether its first word
+  resolves on `PATH` (`command -v`) — **empty → flag it as an error**: no phase runs in
+  `unattended` without it. Say which file set the mode: every session that reads that file — a
+  person's included, when they share the checkout and the harness — stops asking too, so it belongs
+  in a FLOW file only the orchestrator's environment has. `orchestrator_cmd` set with any other mode
+  → note it is ignored.
 
 ## 2. Checks
 

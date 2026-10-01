@@ -14,22 +14,23 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the `running` write, the pending question and the runner's answer are all in it, and a phase that reads only part of it skips them.
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
 
-**In `unattended`** (flow-core §2.1) this command asks nothing, and it is the only place that run
-pushes. Each place it would ask:
+**In `unattended`** (flow-core §2.1) this command asks nothing, pushes nothing and opens nothing:
+it hands the finished MR/PR to the orchestrator, which pushes the branch and opens the draft. Each
+place it would ask:
 
-- **The MR/PR itself (§3–§4)** — `autonomy.unattended_ship: draft` → skip the confirmation and
-  create it **as draft** with the §2 content (§4.1 says how); never merge it, never mark it ready.
-  The body gains one line saying an unattended run opened it and nobody confirmed its brief.
-  Empty or `stop` → nothing is pushed: question `ship`, the §3 preview as the question, and the run
-  ends; a person ships it from a session of their own. Pre-deploy SQL in the branch → question
-  `migration`, whatever `unattended_ship` says. A runner's answer (flow-core §2.1) relaunches this
-  command from its pre-flight, since the draft lives only in context, and the site it was for takes
-  the answer the pickup applied — *Create it as draft* creates the draft as `draft` would,
-  *The SQL is complete — ship it* goes on to the MR/PR.
+- **The MR/PR itself (§3–§4)** — no confirmation and no forge. §2's title and description are
+  written to `publish-title.md` and `publish-body.md` in the work folder; the body gains one line
+  saying an unattended run prepared it and nobody confirmed its brief. §4.0's branch check still
+  runs (never the base; the name starts with `<ticket>-`) — and an upstream on the base is unset
+  (`git branch --unset-upstream`), with no push after it. §4.1–§4.3 do not: no push, no
+  pre-deploy thread, no performance comment — those numbers go in the body. Pre-deploy SQL in the
+  branch → question `migration` first; its answer relaunches this command from its pre-flight,
+  since the draft lives only in context, and the site takes the answer just applied
+  (*The SQL is complete — ship it*) and goes on.
 - **The §1 tree check** — `reviewed_sha` or `validated_sha` behind `HEAD` with more than tests →
   re-run what is behind, **once per MR/PR**: the review on the delta, then `validate`. First record
   `{ "key": "unattended:ship-recheck", "default": "mr <n>", "phase": "ship" }` in
@@ -37,21 +38,27 @@ pushes. Each place it would ask:
   MR/PR's `n` already there → `blocked`, whatever the sha. Tracked changes this run's own phases left uncommitted → commit them
   as WIP first (a WIP commit is `auto`'s to make) and check again · **blocking TODO/FIXME (§1)** →
   continue and list them in the body.
-- **Posting anything else** — the performance comment (§4.3), a contract handoff (§6.3) — → not
-  posted; the numbers go in the body, the handoff stays `pending`.
+- **Posting anything else** — a contract handoff (§6.3) — → not posted; the handoff stays
+  `pending`.
 - **The offers and surveys (§5, §5.1, §5.2, §5.5, §6.4, §6.4bis)** → `Later`; nothing written outside
   the work folder.
-- **"Was it merged?" (§6.1)** → not merged; `meta.json` as §6.1 says for an unmerged MR/PR. **The
-  parent merged first (§6.2.1)** → blocked, never force-push. **Train continuation (§6.2)** → not
-  started: one MR/PR per unattended run.
-- **At Close** write the stop file with `reason: "done"`, `mr_url`, and — with `mrs` still pending —
-  `detail` naming the next MR/PR and what it waits on (its `depends_on` merged, then
-  `/flow:feat:build`). It is the last thing the run does.
+- **"Was it merged?" (§6.1)** → not merged: the entry stays `in_progress` (a work with no `mrs`
+  keeps `phase = "ship"`) until `publish` succeeds, below. **The parent merged first (§6.2.1)** → blocked, never
+  force-push. **Train continuation (§6.2)** → not started: one MR/PR per unattended run.
+- **At Close**, after `meta.json` and `00-summary.md` are written: commit what is left outside
+  `.claude/work/` so the tree is clean, then the run's closing order — `<cmd> publish --title-file
+  <work>/publish-title.md --body-file <work>/publish-body.md`, plus `--part <n> --of <N>` when
+  `meta.json.mrs` has more than one entry (`n` this MR/PR's, `N` the number of entries). Exit 0 →
+  this MR/PR's `mrs[]` entry gets `status: "published"` (a work with no `mrs`: `meta.json.published:
+  true`) — what `/flow:work:run` turns into `merged` when the orchestrator relaunches with
+  `why = merged` — and nothing else runs. The summary and the panel written before it say the work
+  was *handed to the orchestrator*, never that it was published. Exit ≠ 0 → nothing
+  is marked; its stderr goes in the stop header (flow-core §2.1).
 
 **In every mode**, criteria `07-validation.md` marks `not-verified-unattended` go into the body under
 `## Not verified — needs a human`, with what to do for each — and so do the tests the suite left red
 because they also fail on the base (`unattended:validate-red-base`): each name, and the base sha
-where it failed too — and the review findings a runner's answer accepted unfixed
+where it failed too — and the review findings an orchestrator's answer accepted unfixed
 (`06-review.md` "Answered (unattended)"), one line each. The §3 preview shows that section like
 any other, and the person reading it is the check the run could not do.
 
@@ -207,14 +214,7 @@ git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null   # must NOT be
 - Train mode (`stacked_on` ≠ null) → the MR/PR must target that parent branch, not the main base.
 
 ### 4.1 Create MR/PR
-**A draft (`unattended`, flow-core §2.1) — read this first: it replaces the invocation below.** Do
-**not** invoke `commit-push-pr`, and do not use the plain CLI fallback below: both open a normal
-MR/PR. Commit, `git push -u origin HEAD`, and create it with the forge CLI and its draft flag
-(`gh pr create --draft`, `glab mr create --draft`, the equivalent elsewhere), assignee and squash as
-below. The forge refusing a draft → `blocked` with its message; never retried without the flag.
-Then record the URL, as the paragraph after the bullets says.
-
-Otherwise, only here — with the content approved in §3 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask for the content; if it does, answer with what was confirmed. Any push it does must be `git push -u origin HEAD` (own branch), never to the base branch.
+Only here — with the content approved in §3 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask for the content; if it does, answer with what was confirmed. Any push it does must be `git push -u origin HEAD` (own branch), never to the base branch.
 
 - `git.assignee` not empty → assign to that user. `git.squash` `true` → enable squash-before-merge.
 - `commit-push-pr` skill unavailable → commit and push manually and create the MR/PR with the `git.cli` CLI from `FLOW.md` — always with the content confirmed in §3.

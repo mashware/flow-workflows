@@ -100,11 +100,10 @@ How much the flow advances on its own vs. stopping to ask you.
                       #   auto   — as guided, plus auto-resolves the remaining decision points with sensible
                       #            (recorded) defaults, chaining phases without pausing.
                       #   unattended — as auto, for a run nobody watches (script, container, headless CLI):
-                      #            never asks; each hard gate is recorded, becomes a draft MR/PR, or ends
-                      #            the run with a question in .claude/work/stop.json for a runner to
-                      #            post; its answer comes back in .claude/work/answer.json and the run
-                      #            continues, or a person picks it up. One MR/PR per run. Only when set explicitly —
-                      #            in a FLOW file only the runner's environment reads.
+                      #            never asks; driven by `orchestrator_cmd`. Each hard gate is recorded or
+                      #            ends the run with one order to that command (ask · publish · blocked ·
+                      #            done); flow never pushes or opens an MR/PR. One MR/PR per run. Only when
+                      #            set explicitly — in a FLOW file only the orchestrator's environment reads.
                       # HARD GATES stop and ask in manual/guided/auto, no exceptions: any push or MR/PR (ship),
                       # branch creation with an ambiguous base, DB schema changes/migrations, a review
                       # with high-severity findings, and the business brief confirmed just before the
@@ -113,10 +112,10 @@ How much the flow advances on its own vs. stopping to ask you.
                       # (panels, challengers, how many reviewers), WIP commits, continuing a train when
                       # the train's next MR/PR in `guided`/`auto`, size confirmation, and anything already decided
                       # and recorded — only new contradicting evidence reopens a settled decision.
-- `unattended_ship:`  # What `ship` does in `unattended`: `draft` | `stop`. Empty = `stop`.
-                      #   draft — push the work branch and open the MR/PR as draft; never merge, never ready.
-                      #   stop  — nothing is pushed; ship ends the run with a question in stop.json.
-                      # Read only when mode is `unattended`.
+- `orchestrator_cmd:` # Required in `unattended`: the command that run talks to, e.g. `orch`.
+                      #   It says why the run was launched, serves the ticket and the answer, and takes
+                      #   the run's one closing order (`ask`, `publish`, `blocked`, `done`). Read only
+                      #   in that mode. The orders: flow-core §2.1.
 
 ## quality
 Repo commands for quality gates, whatever the stack — `make test`, `./gradlew test`, `dotnet test`,

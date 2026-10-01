@@ -564,31 +564,32 @@ def check_panel_reminder(files):
 # The unattended pointer — the same pinned-sentence mechanism as `PANEL_REMINDER`, for the
 # phases an unattended run chains through. It is a pointer, not a restatement: it names a whole
 # section of the shared rules and carries no rule of its own, so it cannot disagree with them (a
-# paraphrase did, on its first draft: it dropped the runner-answer path). It says `flow-core §2.1`
+# paraphrase did, on its first draft: it dropped the answer path). It says `flow-core §2.1`
 # like every other cross-reference, because a bare §2.1 is the phase's own section in five phases
 # (feat/start, feat/build, feat/review, bug/fix, bug/review), and a partial read is named as not
 # counting because a partial read is exactly what it corrects.
 #
-# Why the phases need it: the rule that every unattended phase writes `reason: "running"` first
-# lives in one paragraph deep in §2.1, and a harness that reads the core in slices can stop two
-# lines short of it. Observed on 2026-09-30: codex read CORE.codex.md 221–330, the rule sat on
-# 332, and build, review and validate all ran without writing it.
+# Why the phases need it: the rules an unattended phase must follow live in paragraphs deep in
+# §2.1, and a harness that reads the core in slices can stop two lines short of one. Observed on
+# 2026-09-30: codex read CORE.codex.md 221–330, the rule it needed sat on 332, and build, review
+# and validate all ran without it.
 UNATTENDED_SECTION = "### 2.1 `unattended`"
 UNATTENDED_FRAGMENT = "read flow-core §2.1 whole"
 UNATTENDED_START = (
     f"**In `unattended`, before this phase's first step, {UNATTENDED_FRAGMENT} — from its heading "
     "to the next section, unless it is already in your context whole; having read parts of it "
-    "does not count** — the `running` write, the pending question and the runner's answer are "
-    "all in it, and a phase that reads only part of it skips them."
+    "does not count** — the orchestrator command, the question stop and the way its answer "
+    "comes back are all in it, and a phase that reads only part of it skips them."
 )
 # What the pointer promises §2.1 holds. Opening sentences, not titles, so a reworded title is
 # not a false alarm and a paragraph moved out of the section is a real one.
 UNATTENDED_SECTION_HOLDS = (
-    "**The stop file**",
-    "**Every phase that starts in this mode writes `reason: \"running\"` first**",
-    "**A runner answers, and the run continues.**",
+    "**The orchestrator command.**",
+    "**A question stop**",
+    "**The answer comes back.**",
 )
-UNATTENDED_PHASES = ("plugins/flow/commands/feat/", "plugins/flow/commands/bug/")
+UNATTENDED_PHASES = ("plugins/flow/commands/feat/", "plugins/flow/commands/bug/",
+                     "plugins/flow/commands/work/run.md")
 
 
 def check_unattended_pointer(files):
