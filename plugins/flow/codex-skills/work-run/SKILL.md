@@ -40,7 +40,7 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 - Run `<cmd> why`. It fails, or prints anything but `start`, `answer`, `review`, `pipeline` or
   `merged` → print what it returned and its stderr in the §3 header and end. No closing order: an
   orchestrator that cannot say why it launched the run cannot take one either.
-- Run `<cmd> ticket --json` and keep `number`, `title`, `base` and `kind` (`kind` absent → `feat`).
+- Run `<cmd> ticket --json` and keep `number`, `title`, `base` and `kind` (`kind` absent or `null` → `feat`: the tracker could not tell, so flow decides). `kind` is re-read on every run; only `start` uses it — once the work exists, its folder says feat or bug.
   It fails or prints no `number` → `blocked` (flow-core §2.1).
 - Find the work: the `meta.json` under `.claude/work/` whose `ticket` equals `number` (archive
   excluded). None is not an error — it is the "none" of the table below.

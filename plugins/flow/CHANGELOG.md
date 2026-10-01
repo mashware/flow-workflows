@@ -5,6 +5,15 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.85.1 — An unattended run reads the orchestrator's answers as agent-runner sends them  ·  2026-10-01
+
+**In short**
+- **A ticket whose tracker cannot tell feat from bug starts as a feature.** agent-runner sends
+  `kind: null` in that case; `/flow:work:run` now reads it the same as a missing `kind`.
+- **The PR title goes to the orchestrator as one line.** agent-runner refuses a title file with two
+  lines; flow now says so where the run writes it.
+- Nothing changes in `manual`, `guided` or `auto`. Follows #177.
+
 ## v0.85.0 — An unattended run answers its reviewers and fixes its own pipeline  ·  2026-10-01
 
 **In short**

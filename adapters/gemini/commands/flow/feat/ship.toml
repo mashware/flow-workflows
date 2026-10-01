@@ -27,7 +27,7 @@ it hands the finished MR/PR to the orchestrator, which pushes the branch and ope
 place it would ask:
 
 - **The MR/PR itself (§3–§4)** — no confirmation and no forge. §2's title and description are
-  written to `publish-title.md` and `publish-body.md` in the work folder; the body gains one line
+  written to `publish-title.md` (one line, the title alone) and `publish-body.md` in the work folder; the body gains one line
   saying an unattended run prepared it and nobody confirmed its brief. §4.0's branch check still
   runs (never the base; the name starts with `<ticket>-`) — and an upstream on the base is unset
   (`git branch --unset-upstream`), with no push after it. §4.1–§4.3 do not: no push, no
