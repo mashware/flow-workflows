@@ -38,7 +38,7 @@ after writing each challenge's Response.
 
 ## 1. Pre-flight
 
-- Load `meta.json` by current branch. Missing → ask the user to start with `/flow-feat-start`.
+- Load `meta.json` by current branch — in `unattended`, the work `/flow-work-run` found (flow-core §2.1). Missing → ask the user to start with `/flow-feat-start`.
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received). (flow-core §5)
 - `size` is `XS` → suggest jumping to `/flow-feat-build` and stop unless the user insists.
 

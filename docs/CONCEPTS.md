@@ -74,6 +74,12 @@ forge: it pushes and opens the MR/PR, flow never does. → [flow-core §2.1][fc]
 the question's `id`, the commit it was asked on (`head`) and the phase to resume. Relaunched with
 the answer, `/flow:work:run` applies it where the run stopped and goes on. → [flow-core §2.1][fc]
 
+**A work whose branch is not here** — an `unattended` checkout is the ticket's `base` or an umbrella
+branch, so a phase takes the work `/flow:work:run` found by ticket, not by branch. A study made on
+another machine and restored as a folder arrives without its branch: `run` creates `<number>-<slug>`
+from `base` (or switches onto the work's branch when a previous run left it) and goes on to build.
+→ [flow-core §2.1][fc]
+
 **"Never a question" list** — the symmetric rule: what `guided`/`auto` decide, record and move past.
 Flow mechanics (panels, challengers, skeptics, how many), WIP commits, continuing a train when
 the train's next MR/PR, size confirmation, anything already recorded. Asking these is how a run

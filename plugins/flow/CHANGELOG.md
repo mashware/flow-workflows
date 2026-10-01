@@ -5,6 +5,19 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.86.0 — An unattended run builds a study made on another machine  ·  2026-10-01
+
+**In short**
+- **A study restored on a server is built there, not redone.** When the orchestrator copies a work
+  folder made on a laptop and launches `/flow:work:run` on the ticket's base branch, the run gives
+  the work a branch of its own (`<number>-<slug>`, from that base) and goes straight to the next
+  phase — `build` after a plan. It never designs or plans the ticket again.
+- **A run relaunched after a crash goes back to its branch** instead of failing to find its work.
+- **The next part of a split task finds its work** while the checkout stands on the umbrella branch.
+- **It stops instead of guessing** when the checkout has uncommitted changes, or holds a branch with
+  the work's name that the work never recorded.
+- Nothing changes in `manual`, `guided` or `auto`. Part of #186.
+
 ## v0.85.1 — An unattended run reads the orchestrator's answers as agent-runner sends them  ·  2026-10-01
 
 **In short**
