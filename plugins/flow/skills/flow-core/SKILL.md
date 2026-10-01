@@ -210,6 +210,16 @@ sensible default and record it.
 
 Asking these anyway is how a run in `guided`/`auto` degrades into a manual one.
 
+**A study made for handoff.** `git.handoff_branch` set and the mode not `unattended` → the study is
+built somewhere else, so wherever a study phase (`start`, `design`, `plan`, `investigate`) or
+`resume` would hand the work to `/flow:feat:build` or `/flow:bug:fix`, it hands it to
+`/flow:work:handoff` instead. Only the target changes: a Close that asks (`manual`) offers **Hand
+off the study** recommended and **Build here** second; a Close that chains (`guided`/`auto`) chains
+into handoff, whose push question is the one confirmation — no stop is added. In `unattended` the
+rule does not apply: the repo's `FLOW.md` reaches the server too, and a run that studies a ticket
+there goes on to build it. A repo that hands its studies off pairs the key with
+`autonomy.mode: auto`, and the study then runs on its own up to the push.
+
 ### 2.1 `unattended` — where a person would have been asked
 
 No person is there to answer a question in this mode. A question tool — `AskUserQuestion`, OpenCode's `question`,
