@@ -1,0 +1,123 @@
+---
+description: Hand a finished study to whoever builds it elsewhere — push only this work's folder to a branch of its own, then offer a summary for the ticket
+---
+
+# `/flow:work:handoff`
+
+Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
+
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+
+For a study made here and built somewhere else — a server running `/flow:work:run` unattended,
+another person, another machine. The builder gets the work folder at the same path and nothing
+else: no conversation, maybe a less capable model. So this command checks the study can stand on
+its own, pushes the folder to a branch that holds only it, and offers to put a summary in the
+ticket for the people who review it.
+
+## 1. Pre-flight
+
+- Effective FLOW configuration per flow-core §0. `autonomy.mode: unattended` → refuse in one line:
+  an unattended run never pushes (flow-core §2.1); handing off is a person's step.
+- Locate the active `meta.json` by current branch; not found → ask the user for the ticket.
+- `git.handoff_branch` empty → refuse, naming the key and an example
+  (`git.handoff_branch: study/{TICKET}`): where the study goes is the receiver's convention, never
+  flow's guess. `{TICKET}` = `meta.json.ticket`.
+- `origin` not configured → refuse; there is nowhere to push.
+
+## 2. Is the study finished?
+
+The builder can ask no one. Refuse — pushing nothing, naming every reason that holds — when:
+
+- **The study's last phase is not in `phases_done`.** A feature: `start` on XS, `design` on S,
+  `plan` on M/L. A bug: `start` on XS, `investigate` otherwise.
+- **`meta.json.pending` is set** — a question is still waiting for its answer.
+- **A clarification is still open** — a question under "Decisions clarified at start" in
+  `01-context.md` recorded without its answer.
+
+Then, **before anything is pushed**: decisions this session settled while talking that no artifact
+records yet → write them where they belong now (`01-context.md` "Decisions clarified at start",
+`03-design.md` "Decisions (ADR-light)", `04-mr-plan.md`), and say which. What was decided only in
+the chat does not travel.
+
+## 3. Build the commit, without touching the checkout
+
+`<work>` is the work folder relative to the repository root (`.claude/work/<work-dir>`), `<branch>`
+the resolved `git.handoff_branch`. A throwaway index holds only this folder, so the current branch,
+`HEAD`, the real index (staged work included) and the working tree are never read into it nor
+written to, and a git-ignored `.claude/work/` is no obstacle.
+
+First, the branch must not exist on `origin` — a second push would need a force, and this command
+never forces:
+
+```bash handoff-check
+git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; rc=$?
+# rc 0 → the branch exists: refuse · rc 2 → absent: continue · anything else → stop, say why
+```
+
+Exists → refuse, and say what the person does next: delete that branch on the forge (only when
+nothing still reads it), or set another name in `git.handoff_branch`. Then build the commit:
+
+```bash handoff-build
+cd "$(git rev-parse --show-toplevel)"
+tmp=$(mktemp -d)
+export GIT_INDEX_FILE="$tmp/index"   # a path that does not exist yet: git starts an empty index there
+git add -f -- "$WORK" ":(exclude)$WORK/panel.json"
+files=$(git ls-files)
+tree=$(git write-tree)
+commit=$(git commit-tree "$tree" -m "study $TICKET")
+unset GIT_INDEX_FILE
+rm -rf "$tmp"
+```
+
+`panel.json` stays out: it is this machine's terminal panel, and on another one it would show this
+session's last state as if it were theirs.
+
+## 4. Confirm, then push
+
+Show the branch, the remote and `$files` — every path, one per line — then ask with
+`AskUserQuestion` **in every `autonomy.mode`**: a push leaves the machine (flow-core §2).
+**Push** · **Cancel**. Nothing between the list and the question (flow-core §3).
+
+```bash handoff-push
+git push origin "$commit:refs/heads/$BRANCH"
+```
+
+A rejected push → its message, verbatim, and stop. Never retried with `--force`.
+
+## 5. The ticket summary (offer)
+
+Only after a successful push, and only in ticket mode with a real tracker id. The people reviewing
+the ticket read it there, never in the work folder; the receiver does not parse it.
+
+- **Read the body back** — the summary goes inside the ticket's own text, never over it:
+  `gh` → `gh issue view {TICKET} --json body -q .body` · `glab` → `glab issue view {TICKET} -F json`,
+  its `description`. Any other tracker → the offer is not made: one line saying flow cannot read that
+  body back to keep its text.
+- **The write command** — `tracker.edit_cmd`, `{TICKET}` and `{BODY_FILE}` substituted. Empty →
+  `gh issue edit {TICKET} --body-file {BODY_FILE}` for `gh`, `glab issue update {TICKET}
+  --description-file {BODY_FILE}` for `glab`.
+- **The block**, from the study's artifacts (`01-context.md`, `03-design.md` or
+  `03-investigation.md`, `04-mr-plan.md`), short, in the language of the ticket:
+
+  ```
+  <!-- flow:study -->
+  ## What and why
+  ## Acceptance criteria
+  ## Design in brief
+  ## MR/PR plan
+  ## Risks
+  <!-- /flow:study -->
+  ```
+
+  Criteria keep their literal values. The plan lists each MR/PR with what it covers and what it
+  waits on; a bug's plan is its single fix.
+- **The new body**: the body read above with the block between the two markers replaced — or, with
+  no markers yet, the block appended after a blank line. Written to `<work>/ticket-body.md`.
+- **Show the block and ask** with `AskUserQuestion`, **in every mode**: it writes to a shared
+  tracker. **Write it** · **Skip**. Failure → its message in one line; the push stands.
+
+## 6. Close
+
+Report following flow-core §3: the branch and the commit, the file count, whether the ticket
+summary was written. Refresh the panel: a `Now` line saying the study was handed off, no `Decision`
+line. `meta.json` gains nothing — the branch on `origin` is the record, and the §3 refusal reads it.
