@@ -53,7 +53,9 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 | `answer` | nothing pending | `blocked` — there is no question for that answer to decide |
 | `merged` | exists, something published | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read; the next startable MR/PR → `/flow-feat-build`; none left, or a work with no `mrs` and `published` true (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
 | `merged` | none, or nothing published | `blocked` — nothing of this ticket was published from here |
-| `review` · `pipeline` | any | `blocked` — not supported yet in `unattended`; the reason says so |
+| `review` | exists | `/flow-work-respond` — the threads come from `<cmd> events --json` |
+| `pipeline` | exists | `/flow-work-green` — the failed jobs come from `<cmd> events --json` |
+| `review` · `pipeline` | none | `blocked` — there is no work of this ticket to answer for |
 
 The phase you hand the run to is unattended too: it reads §2.1, chains as `auto` and makes the
 run's one closing order. This command makes none of its own except the re-sent `ask`, the `blocked`
