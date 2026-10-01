@@ -5,6 +5,19 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.88.0 — A study made for handoff ends at the handoff, not at build  ·  2026-10-02
+
+**In short**
+- **With `git.handoff_branch` set, finishing a study leads to handing it off.** The plan, the design
+  of a small task, a bug's investigation, an XS start — and `resume` — point at
+  `/flow:work:handoff` instead of building here. In `manual` the question recommends **Hand off the
+  study** and keeps **Build here** second; `guided` and `auto` go on to the handoff by themselves,
+  whose push question is the only one added.
+- **Pair the key with `autonomy.mode: auto`** and the whole study runs without launching each phase,
+  stopping only on a real doubt or a serious design finding, up to the push.
+- **A refused handoff names the way on**, building here included.
+- Nothing changes on the server (`unattended`) nor in repos without the key. Closes #189.
+
 ## v0.87.0 — A finished study is handed off from the laptop, and summarised in its ticket  ·  2026-10-01
 
 **In short**

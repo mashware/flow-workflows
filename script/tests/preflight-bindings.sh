@@ -115,6 +115,22 @@ elif case == "locate-clause-dropped":
                                  "plugins/flow/commands/work/respond.md",
                                  "plugins/flow/commands/work/green.md", rel])
     report()
+
+elif case == "handoff-route-dropped":
+    # plan loses one of its two clauses, and the rule loses its unattended exclusion.
+    rel = "plugins/flow/commands/feat/plan.md"
+    src = real_text(rel).replace(" — " + mod.HANDOFF_ROUTE, "", 1)
+    assert src != real_text(rel), "the handoff route is not where this test thinks it is"
+    put(rel, src)
+    core = real_text(mod.CORE_SKILL).replace("the mode not `unattended`", "any mode", 1)
+    assert core != real_text(mod.CORE_SKILL), "the rule's exclusion is not where this test thinks it is"
+    put(mod.CORE_SKILL, core)
+    for other in mod.HANDOFF_ROUTES:
+        if other != rel:
+            put(other, real_text(other))
+    mod.ROOT = tree
+    mod.check_handoff_route()
+    report()
 PY
 }
 
@@ -134,6 +150,10 @@ check "a pre-flight by current branch alone is named"    "$BASE/locate-clause-dr
 check "and the other phrasing too"                       "$BASE/locate-clause-dropped.txt" hit 'work/respond.md: loads its work by the current branch'
 check "and the third one"                                "$BASE/locate-clause-dropped.txt" hit 'work/green.md: loads its work by the current branch'
 check "a run.md with no re-home step is named"           "$BASE/locate-clause-dropped.txt" hit 'a study restored on the base never gets a branch'
+
+drive handoff-route-dropped
+check "a next step that lost its handoff route is named"  "$BASE/handoff-route-dropped.txt" hit 'feat/plan.md: carries the handoff route on 2'
+check "and a rule that lost its unattended exclusion"     "$BASE/handoff-route-dropped.txt" hit 'naming its `unattended` exclusion'
 
 drive markers-in-the-real-skill
 check "every marker binds to the real skill"      "$BASE/markers-in-the-real-skill.txt" hit 'clean — the check found no problem'

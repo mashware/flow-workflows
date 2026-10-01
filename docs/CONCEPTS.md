@@ -83,7 +83,9 @@ from `base` (or switches onto the work's branch when a previous run left it) and
 **Handoff** — `/flow:work:handoff`, the laptop side of that split: once the study is finished it
 pushes only this work's folder, as a parentless commit, to the branch `git.handoff_branch` names, and
 offers a summary for the ticket. The builder receives files, never the conversation, so it refuses
-a study with a phase unfinished, a question pending or a clarification open.
+a study with a phase unfinished, a question pending or a clarification open. With the key set, the
+study phases end there instead of at `build`; with `autonomy.mode: auto` too, the whole study runs
+on its own up to the push. → [flow-core §2][fc]
 
 **"Never a question" list** — the symmetric rule: what `guided`/`auto` decide, record and move past.
 Flow mechanics (panels, challengers, skeptics, how many), WIP commits, continuing a train when

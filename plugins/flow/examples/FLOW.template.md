@@ -87,7 +87,7 @@ Branch and Pull/Merge Request conventions.
                       #   - make database-update
                       #   - make frontend
 
-- `handoff_branch:`   # branch `/flow:work:handoff` pushes a finished study to, holding only that work's folder. `{TICKET}` substituted. Empty = the command refuses: where a study goes is the receiver's convention. e.g. `study/{TICKET}`.
+- `handoff_branch:`   # branch `/flow:work:handoff` pushes a finished study to, holding only that work's folder. `{TICKET}` substituted. Empty = the command refuses: where a study goes is the receiver's convention. e.g. `study/{TICKET}`. Set → the study phases end at `/flow:work:handoff` instead of `build`/`fix` (not in `unattended`); pair it with `autonomy.mode: auto` and the study runs on its own up to the push.
 
 ## autonomy
 How much the flow advances on its own vs. stopping to ask you.

@@ -689,6 +689,37 @@ def check_handoff():
             fail(HANDOFF, f"no longer carries {held!r}")
 
 
+# With `git.handoff_branch` set a study is built elsewhere, and every place a study phase names
+# `build`/`fix` as its next step must say the handoff comes first — one forgotten Close is the
+# run that builds locally, or in `auto` chains into a build nobody wanted here.
+HANDOFF_RULE = "**A study made for handoff.**"
+HANDOFF_ROUTE = ("`git.handoff_branch` set and not `unattended` → `/flow:work:handoff` in its place, "
+                 "**Hand off the study** recommended and **Build here** second where it asks "
+                 "(flow-core §2, a study made for handoff)")
+HANDOFF_ROUTES = {  # file → how many next-step lines carry the clause
+    "plugins/flow/commands/feat/start.md": 1, "plugins/flow/commands/feat/design.md": 3,
+    "plugins/flow/commands/feat/plan.md": 3, "plugins/flow/commands/bug/start.md": 1,
+    "plugins/flow/commands/bug/investigate.md": 3, "plugins/flow/commands/work/resume.md": 1,
+}
+
+
+def check_handoff_route():
+    core = read(CORE_SKILL)
+    if HANDOFF_RULE not in core or "not `unattended`" not in core.split(HANDOFF_RULE, 1)[-1][:400]:
+        fail(CORE_SKILL, f"no {HANDOFF_RULE!r} paragraph naming its `unattended` exclusion")
+    for rel, want in HANDOFF_ROUTES.items():
+        text = read(rel)
+        got = text.count(HANDOFF_ROUTE)
+        if got != want:
+            fail(rel, f"carries the handoff route on {got} next-step line(s), needs {want} — "
+                      "a study there would go on to build here")
+        for ln in text.splitlines():
+            if "Autonomy handoff" in ln and ("`/flow:feat:build`" in ln or "`/flow:bug:fix`" in ln
+                                             or "command for the size" in ln) and HANDOFF_ROUTE not in ln:
+                fail(rel, "its Autonomy handoff chains into build/fix with no handoff route — "
+                          "`auto` would build here")
+
+
 def check_unattended_section(path):
     """§2.1 runs from its heading to the next heading *outside a code fence*, and the paragraphs it
     must hold count only as prose — a heading or an opening sentence inside a fenced example is
@@ -1083,6 +1114,7 @@ def run_checks(files):
     check_unattended_pointer(files)
     check_unattended_locate(files)
     check_handoff()
+    check_handoff_route()
     check_config_keys()
     check_panel_vocabulary_prose(files)
     check_panel_vocabulary_lists(files)

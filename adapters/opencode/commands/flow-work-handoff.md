@@ -46,6 +46,10 @@ The builder can ask no one. Refuse — pushing nothing, naming every reason that
 - **A clarification is still open** — a question under "Decisions clarified at start" in
   `01-context.md` recorded without its answer.
 
+Any refusal names the way on: finish what is missing, or **build here** (`/flow-feat-build` /
+`/flow-bug-fix`) — a run that chained here (flow-core §2, a study made for handoff) must not end on
+a dead end.
+
 Then, **before anything is pushed**: decisions this session settled while talking that no artifact
 records yet → write them where they belong now (`01-context.md` "Decisions clarified at start",
 `03-design.md` "Decisions (ADR-light)", `04-mr-plan.md`), and say which. What was decided only in

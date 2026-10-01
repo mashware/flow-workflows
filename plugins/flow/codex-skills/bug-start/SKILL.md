@@ -230,6 +230,6 @@ Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket` and `{ASSIGNEE}` = 
 
 ## 5. Close
 
-- Suggest the next command by size: `$flow:bug-fix` for XS, `$flow:bug-investigate` for the rest.
+- Suggest the next command by size: `$flow:bug-fix` for XS (`git.handoff_branch` set and not `unattended` → `$flow:work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff)), `$flow:bug-investigate` for the rest.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Apply `autonomy.mode`: `manual` stops and recommends; `guided`/`auto` chain into that command automatically, subject to the hard gates.
