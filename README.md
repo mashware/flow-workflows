@@ -173,6 +173,7 @@ Symmetrically, `guided`/`auto` never ask about the flow's own machinery (panels,
 | `/flow:work:try` | Point the main checkout at a branch to test it, and print the manual test plan once it is up (then `--back`) |
 | `/flow:work:clean` | Sweep merged worktrees, dead branches, unarchived folders. Never deletes on a guess |
 | `/flow:work:abandon` | Close a work item without shipping |
+| `/flow:work:handoff` | Hand a finished study to whoever builds it elsewhere — pushes only its folder to a branch of its own, offers a summary for the ticket |
 | `/flow:news` | What changed in the plugin since the version you last saw |
 
 ## What a work looks like on disk
