@@ -80,6 +80,11 @@ another machine and restored as a folder arrives without its branch: `run` creat
 from `base` (or switches onto the work's branch when a previous run left it) and goes on to build.
 → [flow-core §2.1][fc]
 
+**Handoff** — `/flow:work:handoff`, the laptop side of that split: once the study is finished it
+pushes only this work's folder, as a parentless commit, to the branch `git.handoff_branch` names, and
+offers a summary for the ticket. The builder receives files, never the conversation, so it refuses
+a study with a phase unfinished, a question pending or a clarification open.
+
 **"Never a question" list** — the symmetric rule: what `guided`/`auto` decide, record and move past.
 Flow mechanics (panels, challengers, skeptics, how many), WIP commits, continuing a train when
 the train's next MR/PR, size confirmation, anything already recorded. Asking these is how a run

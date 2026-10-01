@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.87.0 — A finished study is handed off from the laptop, and summarised in its ticket  ·  2026-10-01
+
+**In short**
+- **`/flow:work:handoff` hands a study to whoever builds it elsewhere.** It pushes this work's
+  folder, and nothing else, as a commit with no history to the branch `git.handoff_branch` names
+  (e.g. `study/{TICKET}`). Your current branch, staged changes and other works are never touched,
+  even when `.claude/work/` is git-ignored.
+- **It refuses a study that cannot stand on its own** — its design or plan not closed, a question
+  pending, a clarification open — and writes down first what this session decided but no file says.
+- **It asks before the push, and never forces**: a branch that already exists is refused, with what
+  to do next.
+- **A summary for the ticket**, offered after the push: what and why, criteria, design in brief,
+  MR/PR plan and risks, in a marked block that keeps the ticket's own text and is replaced on a
+  second run. GitHub and GitLab out of the box; new key `tracker.edit_cmd`.
+- Completes #186.
+
 ## v0.86.0 — An unattended run builds a study made on another machine  ·  2026-10-01
 
 **In short**

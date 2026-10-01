@@ -661,6 +661,34 @@ def check_unattended_locate(files):
             fail(f, f"no {REHOME_STEP!r} step — a study restored on the base never gets a branch")
 
 
+# /flow:work:handoff is read by a person's agent and its result by another machine's. What must not
+# be reworded away: the three recipe blocks script/tests/handoff-recipe.sh executes, every reason
+# the study is refused, and the ticket block's literal markers and headings — the receiver's people
+# read those sections by name.
+HANDOFF = "plugins/flow/commands/work/handoff.md"
+HANDOFF_HOLDS = (
+    "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
+    'git ls-remote --exit-code origin "refs/heads/$BRANCH"',
+    ":(exclude)$WORK/panel.json", "with `--force`", "**in every `autonomy.mode`**",
+    "`meta.json.pending`", "`context` on XS", "`autonomy.mode: unattended` → refuse",
+    "<!-- flow-study -->", "## What and why", "## Acceptance criteria", "## Design in brief",
+    "## MR/PR plan", "## Risks", "<!-- end flow-study -->",
+    "`gh issue edit {TICKET} --body-file {BODY_FILE}`",
+    "`glab issue update {TICKET} --description-file {BODY_FILE}`",
+)
+
+
+def check_handoff():
+    try:
+        text = read(HANDOFF)
+    except FileNotFoundError:
+        fail(HANDOFF, "missing — the laptop side of an unattended study has no command")
+        return
+    for held in HANDOFF_HOLDS:
+        if held not in text:
+            fail(HANDOFF, f"no longer carries {held!r}")
+
+
 def check_unattended_section(path):
     """§2.1 runs from its heading to the next heading *outside a code fence*, and the paragraphs it
     must hold count only as prose — a heading or an opening sentence inside a fenced example is
@@ -1054,6 +1082,7 @@ def run_checks(files):
     check_panel_reminder(files)
     check_unattended_pointer(files)
     check_unattended_locate(files)
+    check_handoff()
     check_config_keys()
     check_panel_vocabulary_prose(files)
     check_panel_vocabulary_lists(files)
