@@ -720,9 +720,11 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
             mr_url = (meta.get("mrs") or [{}])[0].get("url")
             checks.append(("no MR/PR created", mr_url in (None, ""), f"mr_url={mr_url!r}"))
-            checks.append(("ship recorded (phase=ship, ship in phases_done)",
-                           meta.get("phase") == "ship" and "ship" in meta.get("phases_done", []),
-                           f"phase={meta.get('phase')!r}, phases_done={meta.get('phases_done')}"))
+            checks.append(("ship recorded (phase=ship, ship in phases_done, published)",
+                           meta.get("phase") == "ship" and "ship" in meta.get("phases_done", [])
+                           and meta.get("published") is True,
+                           f"phase={meta.get('phase')!r}, phases_done={meta.get('phases_done')}, "
+                           f"published={meta.get('published')!r}"))
             parts = (close or {}).get("flags", {}).get("--part")
             checks.append(("a single-MR/PR work publishes without --part", not parts,
                            f"--part={parts!r}"))
