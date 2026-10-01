@@ -31,7 +31,7 @@ Delivery planning phase. **No code is written.** Splits the feature into MRs/PRs
 - Load `meta.json` by current branch — in `unattended`, the work `$flow-work-run` found (flow-core §2.1). Missing → send the user to `$flow-feat-start`.
 - Require `design` in `phases_done`. Missing → send to `$flow-feat-design` and stop.
 - Read `meta.json` and `00-summary.md`; open in full only `03-design.md`. (flow-core §5)
-- **`size` `XS` or `S`** → warn that this phase does not apply (always 1 MR/PR), add `"plan:skipped"` to `phases_done`, suggest `$flow-feat-build` — `git.handoff_branch` set → `$flow-work-handoff` in its place (flow-core §2, a study made for handoff). Stop.
+- **`size` `XS` or `S`** → warn that this phase does not apply (always 1 MR/PR), add `"plan:skipped"` to `phases_done`, suggest `$flow-feat-build` — `git.handoff_branch` set and not `unattended` → `$flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff). Stop.
 
 ## 2. Work
 
@@ -165,5 +165,5 @@ A slice landing in **another repo** is not one of *this* repo's `mrs`: record it
 
   `∥` = no dependency between them, can be built in parallel or as a train; `→` = the next wave waits for the previous one to merge. Then the table with `#`, wave, `depends_on`, title and estimate. One line for the split rationale, and — when any pair was merged — one line saying how many were and what they would have cost (`merged #a into #b: would have been a wave of its own`). Nothing else — risks and discarded alternatives live in the artifact.
 - Changes requested → edit the artifact and `meta.json.mrs` before advancing.
-- Suggest `$flow-feat-build` to start the first MR/PR — `git.handoff_branch` set → `$flow-work-handoff` in its place (flow-core §2, a study made for handoff).
-- **Autonomy handoff.** Approving the split is a genuine decision point: in `manual` and `guided` ask before advancing. In `auto`, record the plan as accepted in `04-mr-plan.md` and **chain into `$flow-feat-build` automatically** in this same turn. In `manual`, propose it with a single `AskUserQuestion`.
+- Suggest `$flow-feat-build` to start the first MR/PR — `git.handoff_branch` set and not `unattended` → `$flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff).
+- **Autonomy handoff.** Approving the split is a genuine decision point: in `manual` and `guided` ask before advancing. In `auto`, record the plan as accepted in `04-mr-plan.md` and **chain into `$flow-feat-build` automatically** in this same turn. In `manual`, propose it with a single `AskUserQuestion`. Either way: `git.handoff_branch` set and not `unattended` → `$flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff).

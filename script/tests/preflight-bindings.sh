@@ -152,7 +152,7 @@ check "and the third one"                                "$BASE/locate-clause-dr
 check "a run.md with no re-home step is named"           "$BASE/locate-clause-dropped.txt" hit 'a study restored on the base never gets a branch'
 
 drive handoff-route-dropped
-check "a next step that lost its handoff route is named"  "$BASE/handoff-route-dropped.txt" hit 'feat/plan.md: carries the handoff route on 1'
+check "a next step that lost its handoff route is named"  "$BASE/handoff-route-dropped.txt" hit 'feat/plan.md: carries the handoff route on 2'
 check "and a rule that lost its unattended exclusion"     "$BASE/handoff-route-dropped.txt" hit 'naming its `unattended` exclusion'
 
 drive markers-in-the-real-skill

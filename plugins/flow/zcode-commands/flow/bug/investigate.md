@@ -28,7 +28,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
-- `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow:bug:fix` and stop.
+- `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow:bug:fix` — `git.handoff_branch` set and not `unattended` → `/flow:work:handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff) — and stop.
 - Require `context` in `phases_done`.
 
 ## 1.5 Reproduce — what is failing, before why
@@ -213,5 +213,5 @@ If `knowledge.stage` is set and the root cause reveals a **non-obvious "why"** a
 
 - Update `meta.json`: `phase = "investigate"`, add to `phases_done`.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Suggest `/flow:bug:fix` — `git.handoff_branch` set → `/flow:work:handoff` in its place (flow-core §2, a study made for handoff).
-- **Autonomy handoff** (`autonomy.mode`, flow-core §2): `manual` → propose `/flow:bug:fix` with a single `AskUserQuestion`, invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn.
+- Suggest `/flow:bug:fix` — `git.handoff_branch` set and not `unattended` → `/flow:work:handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff).
+- **Autonomy handoff** (`autonomy.mode`, flow-core §2): `manual` → propose `/flow:bug:fix` with a single `AskUserQuestion`, invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn. Either way: `git.handoff_branch` set and not `unattended` → `/flow:work:handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff).
