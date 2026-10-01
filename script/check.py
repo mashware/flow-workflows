@@ -668,9 +668,8 @@ def check_unattended_locate(files):
 HANDOFF = "plugins/flow/commands/work/handoff.md"
 HANDOFF_HOLDS = (
     "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
-    "**The study's last phase is not in `phases_done`.**", "**`meta.json.pending` is set**",
-    "**A clarification is still open**", "`git.handoff_branch` empty → refuse",
-    "`autonomy.mode: unattended` → refuse",
+    ":(exclude)$WORK/panel.json", "with `--force`", "**in every `autonomy.mode`**",
+    "`meta.json.pending`", "`context` on XS", "`autonomy.mode: unattended` → refuse",
     "<!-- flow-study -->", "## What and why", "## Acceptance criteria", "## Design in brief",
     "## MR/PR plan", "## Risks", "<!-- end flow-study -->",
     "`gh issue edit {TICKET} --body-file {BODY_FILE}`",

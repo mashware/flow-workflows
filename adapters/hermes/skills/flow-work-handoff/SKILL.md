@@ -42,8 +42,8 @@ ticket for the people who review it.
 
 The builder can ask no one. Refuse — pushing nothing, naming every reason that holds — when:
 
-- **The study's last phase is not in `phases_done`.** A feature: `start` on XS, `design` on S,
-  `plan` on M/L. A bug: `start` on XS, `investigate` otherwise.
+- **The study's last phase is not in `phases_done`.** A feature: `context` on XS (what `start`
+  records), `design` on S, `plan` on M/L. A bug: `context` on XS, `investigate` otherwise.
 - **`meta.json.pending` is set** — a question is still waiting for its answer.
 - **A clarification is still open** — a question under "Decisions clarified at start" in
   `01-context.md` recorded without its answer.
@@ -55,48 +55,64 @@ the chat does not travel.
 
 ## 3. Build the commit, without touching the checkout
 
-`<work>` is the work folder relative to the repository root (`.claude/work/<work-dir>`), `<branch>`
-the resolved `git.handoff_branch`. A throwaway index holds only this folder, so the current branch,
-`HEAD`, the real index (staged work included) and the working tree are never read into it nor
-written to, and a git-ignored `.claude/work/` is no obstacle.
+A throwaway index holds only this folder, so the current branch, `HEAD`, the real index (staged
+work included) and the working tree are never read into it nor written to, and a git-ignored
+`.claude/work/` is no obstacle.
+
+**Each block below is one shell call, run as it stands** — a harness need not keep variables from
+one call to the next, so every block sets its own. Replace each `@…@` with its literal value first:
+`@WORK@` the work folder relative to the repository root (`.claude/work/<work-dir>`, no trailing
+slash), `@BRANCH@` the resolved `git.handoff_branch`, `@TICKET@` `meta.json.ticket`, `@COMMIT@` the
+sha the build block printed.
 
 First, the branch must not exist on `origin` — a second push would need a force, and this command
 never forces:
 
 ```bash handoff-check
-git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; rc=$?
-# rc 0 → the branch exists: refuse · rc 2 → absent: continue · anything else → stop, say why
+BRANCH='@BRANCH@'
+git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; echo "rc=$?"
 ```
 
-Exists → refuse, and say what the person does next: delete that branch on the forge (only when
-nothing still reads it), or set another name in `git.handoff_branch`. Then build the commit:
+`rc=0` → the branch exists: refuse, and say what the person does next — delete it on the forge
+(only when nothing still reads it), or set another name in `git.handoff_branch`. `rc=2` → absent,
+continue. Anything else → stop and say why (no network, no access). Then build the commit:
 
 ```bash handoff-build
-cd "$(git rev-parse --show-toplevel)"
-tmp=$(mktemp -d)
-export GIT_INDEX_FILE="$tmp/index"   # a path that does not exist yet: git starts an empty index there
-git add -f -- "$WORK" ":(exclude)$WORK/panel.json"
-files=$(git ls-files)
-tree=$(git write-tree)
-commit=$(git commit-tree "$tree" -m "study $TICKET")
-unset GIT_INDEX_FILE
-rm -rf "$tmp"
+WORK='@WORK@'; TICKET='@TICKET@'
+cd "$(git rev-parse --show-toplevel)" || exit 1
+[ -d "$WORK" ] || { echo "no such folder: $WORK"; exit 1; }
+tmp=$(mktemp -d) || exit 1
+idx="$tmp/index"   # does not exist yet: git starts an empty index there
+GIT_INDEX_FILE="$idx" git add -f -- "$WORK" ":(exclude)$WORK/panel.json" &&
+  files=$(GIT_INDEX_FILE="$idx" git ls-files) &&
+  tree=$(GIT_INDEX_FILE="$idx" git write-tree) &&
+  commit=$(git commit-tree "$tree" -m "study $TICKET")
+rc=$?; rm -rf "$tmp"
+[ "$rc" -eq 0 ] && [ -n "$files" ] || { echo "nothing was built (rc=$rc)"; exit 1; }
+printf '%s\n' "$files"; echo "commit=$commit"
 ```
 
-`panel.json` stays out: it is this machine's terminal panel, and on another one it would show this
-session's last state as if it were theirs.
+`GIT_INDEX_FILE` is set per command, never exported, so a failure leaves no session pointing git
+at a deleted index. `panel.json` stays out: it is this machine's terminal panel, and on another one
+it would show this session's last state as if it were theirs. The block failing → its message, and
+stop: `commit-tree` with no git identity configured is the usual cause.
 
 ## 4. Confirm, then push
 
-Show the branch, the remote and `$files` — every path, one per line — then ask with
-`AskUserQuestion` **in every `autonomy.mode`**: a push leaves the machine (flow-core §2).
+Show the branch, the remote and the file list the build printed — every path, one per line — then
+ask with `AskUserQuestion` **in every `autonomy.mode`**: a push leaves the machine (flow-core §2).
 **Push** · **Cancel**. Nothing between the list and the question (flow-core §3).
 
 ```bash handoff-push
-git push origin "$commit:refs/heads/$BRANCH"
+BRANCH='@BRANCH@'; COMMIT='@COMMIT@'
+case "$COMMIT" in ''|*[!0-9a-f]*) echo "not a commit sha: $COMMIT"; exit 1 ;; esac
+git cat-file -e "$COMMIT^{commit}" || exit 1
+git push origin "$COMMIT:refs/heads/$BRANCH"
 ```
 
-A rejected push → its message, verbatim, and stop. Never retried with `--force`.
+The sha is checked first because `git push origin :refs/heads/<branch>` — an empty source —
+deletes the branch on the remote. A rejected push → its message, verbatim, and stop. Never retried
+with `--force`.
 
 ## 5. The ticket summary (offer)
 
@@ -110,8 +126,11 @@ the ticket read it there, never in the work folder; the receiver does not parse 
 - **The write command** — `tracker.edit_cmd`, `{TICKET}` and `{BODY_FILE}` substituted. Empty →
   `gh issue edit {TICKET} --body-file {BODY_FILE}` for `gh`,
   `glab issue update {TICKET} --description-file {BODY_FILE}` for `glab`.
-- **The block**, from the study's artifacts (`01-context.md`, `03-design.md` or
-  `03-investigation.md`, `04-mr-plan.md`), short, in the language of the ticket:
+- **The block**, short, in the language of the ticket. A feature takes it from `01-context.md`,
+  `03-design.md` and `04-mr-plan.md`; a bug from `01-context.md` and `03-investigation.md` — the
+  expected behaviour as its criteria, the root cause and the intended fix as its design, "Areas with
+  similar risk" as its risks. A section whose source does not exist (an XS study, an S feature with
+  no plan) says `none`:
 
   ```
   <!-- flow-study -->
@@ -126,7 +145,8 @@ the ticket read it there, never in the work folder; the receiver does not parse 
   Criteria keep their literal values. The plan lists each MR/PR with what it covers and what it
   waits on; a bug's plan is its single fix.
 - **The new body**: the body read above with the block between the two markers replaced — or, with
-  no markers yet, the block appended after a blank line. Written to `<work>/ticket-body.md`.
+  no markers yet, the block appended after a blank line. Written to a `mktemp` file outside the
+  tree — `{BODY_FILE}` — so nothing of it can be committed later.
 - **Show the block and ask** with `AskUserQuestion`, **in every mode**: it writes to a shared
   tracker. **Write it** · **Skip**. Failure → its message in one line; the push stands.
 
