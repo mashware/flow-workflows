@@ -51,25 +51,31 @@ back through it, and the hard gates above resolve this way:
   pipeline separately. The order failing → `blocked`; no comments → `done`, the summary saying so.
 - **§3–§4** — triage and stances as `auto` decides them, the table and the drafts written to
   `08-feedback.md` instead of shown. A thread only a person can settle — a product decision, or a
-  `D` the recorded rationale and the code do not decide — goes into **one** question for all of them
-  (`ask --gate decision`, free text `T<n>: <answer>` per thread), asked **before anything is replied
-  or committed**; its `resume_at` is the end of §4, so the answer relaunches this command there,
-  reading the threads and stances from `08-feedback.md` rather than from `events`. `§4.G` measures as `/flow:work:query` does unattended
-  (schema-only, never a database it creates).
+  `D` the recorded rationale and the code do not decide — goes into **one** question for all of them,
+  asked **before anything is replied or committed**: `ask --gate decision`, free text `T<n>: <answer>`
+  per thread, with `pending.phase: "respond"` and `pending.resume: "work:respond"` (never the work's
+  `meta.json.phase`), and the run ends there. The answer is written into this round's section of
+  `08-feedback.md`, and the relaunch re-enters at the end of §4, reading the threads and stances
+  from that file rather than from `events`. A reply that would repeat an earlier round's (§8's
+  repeated-answer rule) is caught here, before anything is posted → `blocked`, naming the thread.
+  `§4.G` measures as `/flow:work:query` does unattended (schema-only, never a database it creates).
 - **§5–§6** — a change adding behaviour gets its brief recorded (`recorded (unattended)`), not
   asked. A design invalidation that is more than a tweak, or an agreed change that needs a schema
-  change → `blocked` (flow-core §2.1): the run does not redesign.
-  Commits as `auto`. §6.1 runs whole; a high-severity finding the round cannot clear → `blocked`
-  with the findings. **§6.2 does not run**: nothing is pushed — the orchestrator pushes on `publish`.
+  change → `blocked` (flow-core §2.1): the run does not redesign. Commits as `auto`. §6.1 runs
+  whole; a high-severity finding the round cannot clear → `blocked` with the findings. **§6.2 does
+  not run**: nothing is pushed — the orchestrator pushes on `publish`.
+- **§8 before §7** — the round is logged and `respond_rounds` counted first, so every ending below
+  leaves it recorded. The agent-lessons offer is `Later`; re-posting the performance comment is not
+  done — a changed number goes into `publish-body.md` instead.
 - **§7** — one `<cmd> reply --thread <thread> --body-file <work>/reply-<thread>.md` per answered
-  thread, the reply naming the commit that changed the code. **Never resolve.** A `reply` that exits
-  ≠ 0 is recorded in `08-feedback.md` and the run ends `blocked` naming the threads left unanswered —
-  after the others are replied, never instead of them.
-- **§8** — logged and counted as written; the agent-lessons offer is `Later`. Then the run's
-  closing order, on a clean tree: code changed this round → `publish` with the work's
-  `publish-title.md` / `publish-body.md` (updated when the round changed what they say) and the
-  `--part/--of` `/flow:feat:ship` passed; replies only → `done`, the summary listing the threads
-  answered.
+  thread, the reply naming the commit that changes the code. **Never resolve.** A `reply` that exits
+  ≠ 0 is recorded in `08-feedback.md` and the remaining replies still go out.
+- **The one closing order**, after the WIP commit (flow-core §2.1): code changed this round →
+  `publish` with the work's `publish-title.md` / `publish-body.md` (updated when the round changed
+  what they say, and naming any thread whose reply failed) and the `--part/--of` `/flow:feat:ship`
+  passed — the commits the replies name must reach the branch; no code changed and every reply went
+  out → `done`, the summary listing the threads answered; no code changed and a reply failed →
+  `blocked`, naming those threads.
 
 ## 1. Pre-flight — locate the work and the MR/PR
 

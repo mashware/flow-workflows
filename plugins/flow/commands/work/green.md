@@ -47,11 +47,13 @@ resolve this way:
   scope, otherwise `blocked` with the justification.
 - **§5** — fixes and the local verification as written; a local gate it cannot get green →
   `blocked`. A fix adding behaviour gets its brief recorded, not asked; a fix that needs a schema
-  change → `blocked` (flow-core §2.1). Commits as `auto`.
-- **§6** — no push, no rerun, no watch. The closing order, on a clean tree: `publish` with the
+  change, a design invalidation that is more than a tweak, or a high-severity finding from the
+  review gate the round cannot clear → `blocked` (flow-core §2.1). Commits as `auto`.
+- **§7 before the closing order** — logged as written; offers are `Later`; re-posting the
+  performance comment is not done — a changed number goes into `publish-body.md`.
+- **§6** — no push, no rerun, no watch. The closing order, after the WIP commit (flow-core §2.1): `publish` with the
   work's `publish-title.md` / `publish-body.md` and the `--part/--of` `/flow:feat:ship` passed; the
   orchestrator pushes and the pipeline runs again.
-- **§7** — logged as written; offers are `Later`.
 
 ## 1. Pre-flight — locate the work and the MR/PR
 
