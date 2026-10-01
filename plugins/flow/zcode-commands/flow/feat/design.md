@@ -400,6 +400,6 @@ Never invoke `knowledge.save` here — the final save is in `/flow:feat:ship` af
 - **Confirm the acceptance criteria** within the design review: present the enumerated list. If every criterion is unambiguous and verifiable, the review covers them — no separate prompt. `AskUserQuestion` **only** when a criterion is ambiguous, not verifiable, or one is likely missing for today's ticket (same restraint as the challenger). Apply the user's edits to `03-design.md` before advancing.
 - **In `manual`/`guided`**, ask the user to review the design; edit the artifact on requested changes before advancing. **In `auto`, do not ask** — record it as accepted per the handoff below. Not an unconditional stop.
 - Next step by size:
-  - **XS / S**: suggest `/flow:feat:build` (1 single MR/PR, no planned split).
+  - **XS / S**: suggest `/flow:feat:build` (1 single MR/PR, no planned split) — `git.handoff_branch` set → `/flow:work:handoff` in its place (flow-core §2, a study made for handoff).
   - **M / L**: suggest `/flow:feat:plan` to split the work into independently mergeable MRs/PRs before implementing.
 - **Autonomy handoff.** Design review is a genuine decision point: `manual` and `guided` ask for it before advancing. `auto` records the design as accepted in the artifact and **chains into the command for the size** in this same turn. `manual` proposes that command with a single `AskUserQuestion` (recommended option by default), never a written suggestion. Unresolved `high`-severity findings (§6) stop the flow in **every** mode — do not chain over them.

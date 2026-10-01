@@ -221,5 +221,5 @@ If `knowledge.stage` is set and the root cause reveals a **non-obvious "why"** a
 
 - Update `meta.json`: `phase = "investigate"`, add to `phases_done`.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
-- Suggest `$flow-bug-fix`.
+- Suggest `$flow-bug-fix` — `git.handoff_branch` set → `$flow-work-handoff` in its place (flow-core §2, a study made for handoff).
 - **Autonomy handoff** (`autonomy.mode`, flow-core §2): `manual` → propose `$flow-bug-fix` with a single `AskUserQuestion`, invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn.

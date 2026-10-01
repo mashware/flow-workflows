@@ -88,7 +88,7 @@ With what is new (there is already work on disk):
 ## 4. Next step
 
 - An `Unattended:` line → the question is the orchestrator's to bring back: say so, and that answering it here instead means clearing `meta.json.pending` and continuing in this session's mode; the next step itself comes from `phase` as always.
-- Suggest the concrete command from `phase` and `size`. Interrupted phase (e.g. `build` with an empty artifact) → suggest rerunning it with `/flow:feat:build` or `/flow:bug:fix`.
+- Suggest the concrete command from `phase` and `size` — a study whose next step is `build` or `fix`: `git.handoff_branch` set → `/flow:work:handoff` in its place (flow-core §2, a study made for handoff). Interrupted phase (e.g. `build` with an empty artifact) → suggest rerunning it with `/flow:feat:build` or `/flow:bug:fix`.
 - §2.5 found something new → let it inform the suggestion (a contract that arrived after you left may mean rerunning `design` rather than continuing `build`); say why in one line.
 - `meta.json.related_repos` entries not `done` → remind that a **sibling repo still has a pending part** (`<repo>: <scope>`, plus `contract not handed over` when its `contract_handoff` is `pending`); suggest `/flow:feat:start <TICKET>` there. flow only reminds; it never scans or touches the other repo.
 - Do not advance on your own. The user decides.
