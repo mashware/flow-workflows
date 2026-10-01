@@ -25,7 +25,7 @@ Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow-feat-ship`, wi
 the same resolutions as `/flow-feat-ship`'s unattended paragraph, and its "In every mode" paragraph
 too, applied to the sections here: the MR/PR (§2–§3) is not confirmed and not created — its title
 and description go to `publish-title.md` / `publish-body.md` in the work folder, §3.1–§3.3 do not
-run, and pre-deploy SQL → question `migration`. The tree check (§0) re-runs what is behind `HEAD`
+run, and pre-deploy SQL → question `migration`; §3.0's upstream on the base is unset with no push. The tree check (§0) re-runs what is behind `HEAD`
 once per MR/PR, recorded as `/flow-feat-ship` says — here `validate` first, since it ran before the
 review, then the review on the delta — and is `blocked` after that. Every offer and survey at Close
 (§4) — follow-ups, conventions, archiving — is `Later`; "was it merged?" is not merged (`phase`

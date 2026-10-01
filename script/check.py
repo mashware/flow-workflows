@@ -588,7 +588,8 @@ UNATTENDED_SECTION_HOLDS = (
     "**A question stop**",
     "**The answer comes back.**",
 )
-UNATTENDED_PHASES = ("plugins/flow/commands/feat/", "plugins/flow/commands/bug/")
+UNATTENDED_PHASES = ("plugins/flow/commands/feat/", "plugins/flow/commands/bug/",
+                     "plugins/flow/commands/work/run.md")
 
 
 def check_unattended_pointer(files):

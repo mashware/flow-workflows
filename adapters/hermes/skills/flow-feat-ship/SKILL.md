@@ -33,7 +33,8 @@ place it would ask:
 - **The MR/PR itself (§3–§4)** — no confirmation and no forge. §2's title and description are
   written to `publish-title.md` and `publish-body.md` in the work folder; the body gains one line
   saying an unattended run prepared it and nobody confirmed its brief. §4.0's branch check still
-  runs (never the base; the name starts with `<ticket>-`). §4.1–§4.3 do not: no push, no
+  runs (never the base; the name starts with `<ticket>-`) — and an upstream on the base is unset
+  (`git branch --unset-upstream`), with no push after it. §4.1–§4.3 do not: no push, no
   pre-deploy thread, no performance comment — those numbers go in the body. Pre-deploy SQL in the
   branch → question `migration` first; its answer relaunches this command from its pre-flight,
   since the draft lives only in context, and the site takes the answer just applied
@@ -49,15 +50,16 @@ place it would ask:
   `pending`.
 - **The offers and surveys (§5, §5.1, §5.2, §5.5, §6.4, §6.4bis)** → `Later`; nothing written outside
   the work folder.
-- **"Was it merged?" (§6.1)** → not merged: this MR/PR's `mrs[]` entry gets `status: "published"`
-  (a work with no `mrs` keeps `phase = "ship"`), and `/flow-work-run` makes it `merged` when the
-  orchestrator relaunches with `why = merged`. **The parent merged first (§6.2.1)** → blocked, never
+- **"Was it merged?" (§6.1)** → not merged: the entry stays `in_progress` (a work with no `mrs`
+  keeps `phase = "ship"`) until `publish` succeeds, below. **The parent merged first (§6.2.1)** → blocked, never
   force-push. **Train continuation (§6.2)** → not started: one MR/PR per unattended run.
 - **At Close**, after `meta.json` and `00-summary.md` are written: commit what is left outside
   `.claude/work/` so the tree is clean, then the run's closing order — `<cmd> publish --title-file
   <work>/publish-title.md --body-file <work>/publish-body.md`, plus `--part <n> --of <N>` when
-  `meta.json.mrs` has more than one entry (`n` this MR/PR's, `N` the number of entries). It is the
-  last thing the run does.
+  `meta.json.mrs` has more than one entry (`n` this MR/PR's, `N` the number of entries). Exit 0 →
+  this MR/PR's `mrs[]` entry gets `status: "published"` — what `/flow-work-run` turns into `merged`
+  when the orchestrator relaunches with `why = merged` — and nothing else runs. Exit ≠ 0 → nothing
+  is marked; its stderr goes in the stop header (flow-core §2.1).
 
 **In every mode**, criteria `07-validation.md` marks `not-verified-unattended` go into the body under
 `## Not verified — needs a human`, with what to do for each — and so do the tests the suite left red

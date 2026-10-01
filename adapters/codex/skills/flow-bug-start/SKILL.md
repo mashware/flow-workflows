@@ -35,7 +35,7 @@ scope (§1.6) → only the repos the ticket names · `git.worktree: ask` → in 
 branch and the tracker transition (§4.5) → skipped: nothing outside the checkout is written in this
 mode. **A thread that changes what the bug *is* (§1.1 precedence) waits until the branch and the
 work folder exist** — create them (§3, §4) first, write it into `01-context.md` as open, then
-question `clarify`. Its `resume` is `$flow-bug-fix` for XS, `$flow-bug-investigate` otherwise, so
+question `clarify`. Its `resume` is `bug:fix` for XS, `bug:investigate` otherwise, so
 the answer lands there and `start` is never relaunched.
 
 ## 0. Pre-flight

@@ -37,19 +37,21 @@ of truth, and an argument that disagrees with it is ignored and named in the log
   `merged` → print what it returned and its stderr in the §3 header and end. No closing order: an
   orchestrator that cannot say why it launched the run cannot take one either.
 - Run `<cmd> ticket --json` and keep `number`, `title`, `base` and `kind` (`kind` absent → `feat`).
-  Find the work: the `meta.json` under `.claude/work/` whose `ticket` equals `number` (archive
-  excluded). It fails or is empty → `blocked` (flow-core §2.1).
+  It fails or prints no `number` → `blocked` (flow-core §2.1).
+- Find the work: the `meta.json` under `.claude/work/` whose `ticket` equals `number` (archive
+  excluded). None is not an error — it is the "none" of the table below.
 
 ## 2. Route
 
 | `why` | The work | Run |
 |---|---|---|
 | `start` | none for this ticket | `/flow-feat-start <number>` — `/flow-bug-start <number>` when `kind` is `bug` |
-| `start` | exists, `pending` set | a stop whose `ask` never landed, or a crash after it: set `pending` to `null` and run `pending.resume` from its pre-flight — the question is reached and asked again |
-| `start` | exists, nothing pending | the next phase its `phase` and `size` name — the same table `/flow-work-resume` §4 uses. A work folder the orchestrator restored from a study made elsewhere enters here, and is never started a second time |
-| `answer` | `pending` set | apply `<cmd> answer` as flow-core §2.1 "The answer comes back" says, then `pending.resume` at `pending.resume_at` |
+| `start` | exists, `pending` set | a stop whose `ask` never landed, or a crash after it: send the same question again — `ask` with `pending.question_file`, `pending.options_file`, `--recommended 1`, `--free-text` when `pending.free_text`, `--gate pending.gate` — and end. `pending` stays as it is; nothing is recomputed |
+| `start` | exists, an MR/PR `published` (or a work with no `mrs` at `phase = ship`) | `done` — the summary says it is waiting for that merge; the next launch for it is `merged` |
+| `start` | exists, nothing pending | the phase after `meta.json.phase` on this work's route (`/flow-feat-start` §4 for a feature, `/flow-bug-start`'s routing for a bug, by `size`), or `phase` itself when its own Close never ran. A work folder the orchestrator restored from a study made elsewhere enters here, and is never started a second time |
+| `answer` | `pending` set | apply `<cmd> answer` as flow-core §2.1 "The answer comes back" says, then `pending.resume` at `pending.resume_at`. The order fails or prints nothing → `blocked` |
 | `answer` | nothing pending | `blocked` — there is no question for that answer to decide |
-| `merged` | exists | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read; the next startable MR/PR → `/flow-feat-build` (`/flow-bug-fix` for a bug work, which has one); none left, or a work with no `mrs` (one MR/PR) → `done`, the summary naming the ticket as complete |
+| `merged` | exists | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read; the next startable MR/PR → `/flow-feat-build`; none left, or a work with no `mrs` (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
 | `merged` | none | `blocked` — nothing of this ticket was published from here |
 | `review` · `pipeline` | any | `blocked` — not supported yet in `unattended`; the reason says so |
 

@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-EVIDENCE = REPO / ".claude" / "work" / "171-verify-unattended-codex-opencode" / "evidence"
+EVIDENCE = None  # set in main(): --evidence, or the work folder of the branch this checkout is on
 GUARD_MARKERS = ("**The orchestrator command.**",)
 FAKE_ORCHESTRATOR = REPO / "script" / "tests" / "fixtures" / "fake-orchestrator.sh"
 ORCH_DIR = "orch"
@@ -84,6 +84,19 @@ def now_iso():
 
 
 # ---------------------------------------------------------------- stages
+
+def work_evidence_dir():
+    """The `evidence/` folder of the work whose `meta.json.branch` is the branch checked out here."""
+    branch = subprocess.run(["git", "branch", "--show-current"], cwd=REPO, capture_output=True,
+                            text=True).stdout.strip()
+    for meta in (REPO / ".claude" / "work").glob("*/meta.json"):
+        try:
+            if json.loads(meta.read_text(encoding="utf-8")).get("branch") == branch:
+                return meta.parent / "evidence"
+        except (json.JSONDecodeError, OSError):
+            continue
+    return None
+
 
 def guard_checkout():
     """Refuse to run from a checkout whose generated core rules predate the unattended contract."""
@@ -398,7 +411,9 @@ def read_calls(repo):
     if not log.is_file():
         return []
     calls = []
-    for line in log.read_text(encoding="utf-8").splitlines():
+    text = log.read_text(encoding="utf-8")
+    # A line still being appended has no newline yet; it is read on the next poll, whole.
+    for line in text.splitlines()[: text.count("\n")]:
         try:
             calls.append(json.loads(line))
         except json.JSONDecodeError:
@@ -636,6 +651,18 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
         flags, files = close.get("flags", {}), close.get("files", {})
         checks.append((f"order={expect['order']}", close.get("order") == expect["order"],
                        f"got order={close.get('order')!r}"))
+        required = {"ask": ("--question-file", "--options-file"),
+                    "publish": ("--title-file", "--body-file"),
+                    "blocked": ("--reason-file",)}.get(close.get("order"), ())
+        missing = [k for k in required if k not in flags]
+        checks.append(("the order carries its required -file flags", not missing,
+                       f"missing: {missing or 'none'}"))
+        # The plugin install and the harness's own state are untracked by design, not the run's.
+        dirty = close.get("dirty")
+        if dirty is not None:
+            dirty = [ln for ln in dirty if not any(item in ln for item in NON_CODE)]
+        checks.append(("tree clean outside .claude/work/ at the closing order", dirty == [],
+                       f"dirty: {dirty!r}"))
         file_flags = [k for k in flags if k.endswith("-file")]
         checks.append(("free text only through -file flags, each one readable and non-empty",
                        all(files.get(k, "").strip() and not files[k].startswith("<unreadable")
@@ -693,6 +720,9 @@ def verify_cell(repo, harness, scenario, run, baseline, seed_head):
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
             mr_url = (meta.get("mrs") or [{}])[0].get("url")
             checks.append(("no MR/PR created", mr_url in (None, ""), f"mr_url={mr_url!r}"))
+            checks.append(("ship recorded (phase=ship, ship in phases_done)",
+                           meta.get("phase") == "ship" and "ship" in meta.get("phases_done", []),
+                           f"phase={meta.get('phase')!r}, phases_done={meta.get('phases_done')}"))
             parts = (close or {}).get("flags", {}).get("--part")
             checks.append(("a single-MR/PR work publishes without --part", not parts,
                            f"--part={parts!r}"))
@@ -812,6 +842,8 @@ def main():
                         help="seconds before a hung run is killed (default 1800)")
     parser.add_argument("--scratch", help="dir for the throwaway repo (default: fresh temp dir)")
     parser.add_argument("--keep", action="store_true", help="keep the throwaway repo")
+    parser.add_argument("--evidence", help="dir for the evidence (default: <work folder of the "
+                                           "current branch>/evidence)")
     args = parser.parse_args()
     if not args.all and not (args.harness and args.scenario):
         parser.error("give --harness and --scenario, or --all")
@@ -822,9 +854,12 @@ def main():
         return 2
     if not guard_checkout():
         return 2
-    if not EVIDENCE.parent.is_dir():
-        say(f"  preflight: FAIL — work folder {EVIDENCE.parent} missing")
+    global EVIDENCE
+    EVIDENCE = Path(args.evidence).resolve() if args.evidence else work_evidence_dir()
+    if EVIDENCE is None or not EVIDENCE.parent.is_dir():
+        say("  preflight: FAIL — no work folder for this branch; pass --evidence <dir>")
         return 2
+    say(f"  preflight: evidence → {EVIDENCE}")
 
     cells = ([("codex", "a"), ("opencode", "a"), ("codex", "b"), ("opencode", "b")]
              if args.all else [(args.harness, args.scenario)])

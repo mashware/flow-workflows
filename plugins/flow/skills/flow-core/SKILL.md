@@ -255,7 +255,8 @@ assumed:
   stopped; the run trusts that and does not re-check it.
 - **Before any closing order, commit** what this run left uncommitted outside `.claude/work/`, new
   files included (`WIP <TICKET>: before <gate|order>` — `auto`'s WIP authority): the orchestrator
-  keeps only what is committed. A clean-tree check never counts `.claude/work/` — the flow's own
+  keeps only what is committed. **Only on the work branch**: before it exists (`start` refusing a
+  dirty checkout) nothing is committed — the dirt is the orchestrator's to clear. A clean-tree check never counts `.claude/work/` — the flow's own
   folder.
 
 Each place a command would have asked resolves one of these ways:
@@ -303,15 +304,16 @@ run has.
 A place where `auto` would still ask and this table does not name is a **question** — the
 conservative reading, never a guess dressed as a default.
 
-**A question stop**, in this order: the WIP commit above → `meta.json.pending` → the question and
-options files → `ask` → end.
+**A question stop**, in this order: the WIP commit above → the question and options files →
+`meta.json.pending` (its `id` hashes the question file, so the file comes first) → `ask` → end.
 
 ```json
 "pending": {"id": "168-unattended-autonomy-mode:build:migration:3f2a9c1:8d41e07",
             "gate": "migration", "phase": "build", "resume": "feat:build",
             "resume_at": "the unticked plan step that writes the migration",
             "head": "3f2a9c1e0b7d4a5c6f8e9d0a1b2c3d4e5f6a7b8c",
-            "question_file": "ask-question.md"}
+            "question_file": "ask-question.md", "options_file": "ask-options.md",
+            "free_text": false}
 ```
 
 - `head` = `git rev-parse HEAD` in the work's checkout, after the WIP commit; `id` =
@@ -325,6 +327,8 @@ options files → `ask` → end.
   the options file the options as `AskUserQuestion` would have carried them, the recommended one
   first and passed as `--recommended 1`. `--free-text` only where the table allows a free answer; a
   question with no options (`clarify`) writes an empty options file and passes `--free-text`.
+- `question_file`, `options_file` and `free_text` are what `ask` was called with, so a stop whose
+  `ask` never landed can send the same question again, unchanged (`/flow:work:run`).
 - `pending` is `null` whenever nothing is asked. It lives in `meta.json` because that file already
   travels with the work and is what every phase reads first.
 
@@ -339,7 +343,8 @@ authorised author is the orchestrator's guarantee, not a check the run repeats.
 
 Applying it: write the answer, quoted and with its `id`, where the table below says → add
 `{ "key": "unattended:answer:<gate>", "default": "<answer>", "id": "<id>", "phase": "<phase>", "head": "<head>" }` to
-`meta.json.defaults_used[]` → set `pending` to `null` → run `pending.resume` and go to `resume_at`,
+`meta.json.defaults_used[]` → keep `pending.resume` and `pending.resume_at` → set `pending` to
+`null` → run that `resume` and go to that `resume_at`,
 reading what the phase computed before the stop from its artifact instead of computing it again.
 **Which site takes it**:
 
