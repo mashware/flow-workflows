@@ -24,7 +24,7 @@ Every `$flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.85.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.85.1`.** Compare it once, at the start of the session, against
 `version` in `../../.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -265,7 +265,8 @@ assumed:
   recommended one first), title, body, reason and summary are written into the work folder
   (`ask-question.md`, `ask-options.md`, `publish-title.md`, `publish-body.md`, `blocked-reason.md`,
   `done-summary.md`) — or a `mktemp -d` directory before the folder exists — and passed by path. A
-  backtick or a quote in a ticket title must never meet a shell.
+  backtick or a quote in a ticket title must never meet a shell. `publish-title.md` holds **one
+  line**, the title alone — no `#`, no second line: the orchestrator refuses a title file with two.
 - **The orchestrator pushes and opens the MR/PR; the run never does.** No `git push`, no `gh`, no
   `glab`, no tracker write in this mode — not before `ship`, not in it. The orchestrator also keeps,
   between runs, the work folder as the run left it and the work branch at the commit where it
