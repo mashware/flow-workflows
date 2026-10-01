@@ -61,14 +61,15 @@ work included) and the working tree are never read into it nor written to, and a
 one call to the next, so every block sets its own. Replace each `@…@` with its literal value first:
 `@WORK@` the work folder relative to the repository root (`.claude/work/<work-dir>`, no trailing
 slash), `@BRANCH@` the resolved `git.handoff_branch`, `@TICKET@` `meta.json.ticket`, `@COMMIT@` the
-sha the build block printed.
+sha the build block printed. A value holding a `'` cannot go inside those quotes: refuse it and
+say which.
 
 First, the branch must not exist on `origin` — a second push would need a force, and this command
 never forces:
 
 ```bash handoff-check
 BRANCH='@BRANCH@'
-git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; echo "rc=$?"
+git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null; echo "rc=$?"
 ```
 
 `rc=0` → the branch exists: refuse, and say what the person does next — delete it on the forge

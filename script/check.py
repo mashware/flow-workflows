@@ -668,6 +668,7 @@ def check_unattended_locate(files):
 HANDOFF = "plugins/flow/commands/work/handoff.md"
 HANDOFF_HOLDS = (
     "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
+    'git ls-remote --exit-code origin "refs/heads/$BRANCH"',
     ":(exclude)$WORK/panel.json", "with `--force`", "**in every `autonomy.mode`**",
     "`meta.json.pending`", "`context` on XS", "`autonomy.mode: unattended` → refuse",
     "<!-- flow-study -->", "## What and why", "## Acceptance criteria", "## Design in brief",

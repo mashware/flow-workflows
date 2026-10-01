@@ -25,6 +25,7 @@ for tag in handoff-check handoff-build handoff-push; do
 done
 # Each block runs in a shell of its own, its @…@ replaced the way the command tells the model to:
 # a harness keeps no variables between calls, and a block that leaned on one would fail here.
+# The values below hold no `#`, `&` or `'` — the sed delimiter and the block's own quoting.
 run() {  # <tag> <work> <branch> <ticket> <commit> → stdout+stderr, exit code in $?
   block "$1" | sed -e "s#@WORK@#${2:-}#g" -e "s#@BRANCH@#${3:-}#g" -e "s#@TICKET@#${4:-}#g" \
                   -e "s#@COMMIT@#${5:-}#g" \
@@ -66,7 +67,10 @@ same "HEAD, branch, index and working tree are untouched" "$(state)" "$before"
 out="$(run handoff-build .claude/work/nope "" 18)"; rc=$?
 same "a folder that does not exist builds nothing" "$rc" "1"
 git config --unset user.email; git config --unset user.name
-out="$(HOME="$BASE" GIT_CONFIG_NOSYSTEM=1 EMAIL= run handoff-build "$W" "" 18)"; rc=$?
+out="$(env -u GIT_AUTHOR_NAME -u GIT_AUTHOR_EMAIL -u GIT_COMMITTER_NAME -u GIT_COMMITTER_EMAIL \
+  -u EMAIL HOME="$BASE" XDG_CONFIG_HOME="$BASE/xdg" GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null \
+  GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.useConfigOnly GIT_CONFIG_VALUE_0=true \
+  bash -c "$(declare -f block run); CMD='$CMD'; run handoff-build '$W' '' 18")"; rc=$?
 git config user.email t@example.com; git config user.name test
 same "no git identity: the build fails instead of printing a commit" "$rc" "1"
 same "and leaves the checkout as it was" "$(state)" "$before"
@@ -75,6 +79,8 @@ run handoff-push "" study/18 "" "$commit" >/dev/null
 same "the branch on origin holds exactly that tree" \
   "$(git --git-dir="$BASE/origin.git" ls-tree -r --name-only refs/heads/study/18)" "$expected"
 same "a branch that now exists reads as existing" "$(run handoff-check "" study/18)" "rc=0"
+git push -q origin "$commit:refs/heads/team/study/19" 2>/dev/null
+same "a branch whose name only ends the same is not this one" "$(run handoff-check "" study/19)" "rc=2"
 
 run handoff-push "" study/18 "" "" >/dev/null; rc=$?
 same "an empty sha is refused, not pushed as a delete" "$rc" "1"
