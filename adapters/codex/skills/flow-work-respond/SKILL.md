@@ -85,7 +85,7 @@ back through it, and the hard gates above resolve this way:
 
 ## 1. Pre-flight — locate the work and the MR/PR
 
-- Identify the current branch and its work folder `.claude/work/<TICKET>/` (the `meta.json` whose `branch` matches). Read `meta.json` and `00-summary.md`; open in full only `08-feedback.md` (spent rounds, below) and, in §3, the rationale artifacts a thread needs (`03-design.md`, `05-implementation.md`/`04-fix.md`). (flow-core §5)
+- Identify the current branch and its work folder `.claude/work/<TICKET>/` (the `meta.json` whose `branch` matches) — in `unattended`, the work `$flow-work-run` found (flow-core §2.1). Read `meta.json` and `00-summary.md`; open in full only `08-feedback.md` (spent rounds, below) and, in §3, the rationale artifacts a thread needs (`03-design.md`, `05-implementation.md`/`04-fix.md`). (flow-core §5)
 - **No** work folder (MR opened outside the flow) → **lightweight mode**: skip `meta.json`/artifact reads, warn once that there is no recorded design rationale to draw on, keep going — triage and reply loop still work.
 - Resolve the target MR/PR, in this order:
   1. `$ARGUMENTS` if given (IID or URL).

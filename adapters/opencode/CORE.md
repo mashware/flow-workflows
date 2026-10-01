@@ -302,7 +302,7 @@ run has.
 | Clarifying questions on the ticket (`start`) | question `clarify` — after the branch and the work folder exist, with the questions also written to `01-context.md` |
 | An unanswered high-severity challenge (`design`, `investigate`) | question `design_challenge` / `investigation_challenge` |
 | `<cmd> ticket` failing or empty, a checkout that is not clean on the ticket's `base` (`start`) | blocked — the orchestrator owns the checkout and the ticket |
-| A work whose branch is not checked out (`run`) | record — switch onto `meta.json.branch` when it exists locally, else create `<number>-<slug>` from `base`; blocked on a dirty checkout or a `<number>-<slug>` that is not the work's — `/flow-work-run` §2 |
+| A work whose branch is not checked out (`run`) | as `/flow-work-run` §2 says — switch onto a branch an unattended run made, or record `unattended:rehomed` and create `<number>-<slug>` from `base`; blocked on a dirty checkout or a branch with the work's name that no run here recorded |
 | Below-XS check (`start`) | record — open the work |
 | "Create the branch?" (`start`), the 2–3 line note an XS `build`/`fix` asks for, a contract the design left in prose (`build`) | record — create it · write the note from the ticket · convert it to literal and say so in the artifact |
 | `git.worktree: ask` | record — in place |

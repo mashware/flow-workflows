@@ -56,15 +56,21 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 not — a study made on another machine arrives on the ticket's `base`, a run that died before its
 closing order is relaunched there — then, in this order:
 
-1. A tracked change outside `.claude/work/` → `blocked`: the orchestrator owns the checkout.
-2. `meta.json.branch` exists locally → `git switch` onto it, change nothing in `meta.json`. It holds
-   the commits a previous run on this machine left.
-3. `<number>-<slug>` (`slug` from `meta.json`) exists locally → `blocked`, naming it: a branch with
-   the work's name that the work never recorded is history nobody can vouch for.
-4. Otherwise create it as `/flow:feat:start` does in this mode: `git switch --create
-   <number>-<slug> --no-track <base>`. Then `meta.json.branch` = it, `meta.json.base` = the `base`
-   just read, `worktree` and `stacked_on` = `null` — paths and parents from the other machine mean
-   nothing here — and record `{ "key": "unattended:rehomed", "default": "<old branch> → <number>-<slug> from <base>", "phase": "run" }`.
+1. Anything `git status --porcelain` lists outside `.claude/work/` — untracked files included, since
+   the WIP commit before a closing order takes new files too → `blocked`: the orchestrator owns the
+   checkout.
+2. `meta.json.worktree` names a directory that exists here → run the phase from there; that checkout
+   already holds the branch, and `git switch` would refuse it.
+3. `meta.json.base` is set — the work was started or re-homed by an unattended run, so its branch is
+   one this kind of run made — and `meta.json.branch` exists locally → `git switch` onto it, change
+   nothing. It holds the commits a previous run left.
+4. `<number>-<slug>` (`slug` from `meta.json`), or `meta.json.branch` without `meta.json.base`,
+   exists locally → `blocked`, naming it: a branch with the work's name that no run here recorded is
+   history nobody can vouch for.
+5. Otherwise create it as `/flow:feat:start` does in this mode: `git switch --create
+   <number>-<slug> --no-track <base>` (`base` empty → `git.default_base`). Then `meta.json.branch` =
+   it, `meta.json.base` = that base, `worktree` and `stacked_on` = `null` — paths and parents from the
+   other machine mean nothing here — and record `{ "key": "unattended:rehomed", "default": "<old branch> → <number>-<slug> from <base>", "phase": "run" }`.
 
 The phase you hand the run to is unattended too: it reads §2.1, chains as `auto` and makes the
 run's one closing order. This command makes none of its own except the re-sent `ask`, the `blocked`

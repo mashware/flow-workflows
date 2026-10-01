@@ -641,7 +641,7 @@ def check_unattended_pointer(files):
 # current branch finds nothing there, so every such line in a phase `run` can reach carries the
 # clause that sends it to the work `run` found — and `run` keeps the step that puts a work back on
 # its branch.
-LOCATE_BY_BRANCH = "by current branch"
+LOCATE_BY_BRANCH = ("by current branch", "whose `branch` matches", "matching `branch`")
 LOCATE_UNATTENDED = "— in `unattended`, the work `/flow:work:run` found (flow-core §2.1)"
 REHOME_STEP = "**The work's branch, on `start`.**"
 
@@ -654,8 +654,8 @@ def check_unattended_locate(files):
             continue
         text = read(f)
         for ln in text.splitlines():
-            if LOCATE_BY_BRANCH in ln and LOCATE_UNATTENDED not in ln:
-                fail(f, f"loads its work {LOCATE_BY_BRANCH!r} with no unattended clause — "
+            if any(p in ln for p in LOCATE_BY_BRANCH) and LOCATE_UNATTENDED not in ln:
+                fail(f, "loads its work by the current branch with no unattended clause — "
                         "on a base or umbrella checkout that finds nothing")
         if f == "plugins/flow/commands/work/run.md" and REHOME_STEP not in text:
             fail(f, f"no {REHOME_STEP!r} step — a study restored on the base never gets a branch")
