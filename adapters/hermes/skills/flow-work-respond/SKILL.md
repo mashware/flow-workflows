@@ -32,13 +32,48 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**Autonomy.** Modes as in flow-core §2 (`autonomy.mode`: `manual` | `guided` | `auto`; empty = `manual`); `guided`/`auto` record their choices in `08-feedback.md`. **Hard gates — ALWAYS stop and ask, in every mode, no exceptions:**
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
+
+**Autonomy.** Modes as in flow-core §2 (`autonomy.mode`: `manual` | `guided` | `auto`; empty = `manual`); `guided`/`auto` record their choices in `08-feedback.md`; `unattended` resolves the gates as its paragraph below says. **Hard gates — ALWAYS stop and ask, in `manual`, `guided` and `auto`, no exceptions:**
 1. **Posting any comment/reply** to the MR/PR (§7).
 2. **Any push** (§6.2).
 3. Creating/switching a branch, or DB schema changes/migrations, when an agreed change requires them.
 4. **Resolving a thread — never do it automatically in any mode.**
 
 Everything else: take the sensible default and record it; ask only when irreversible/costly, ambiguous and not settled by ticket + design + knowledge search, or a hard gate.
+
+**In `unattended`** (flow-core §2.1) — launched by `/flow-work-run` on `why = review` — this command
+asks nothing and never touches the forge: the threads come from the orchestrator, the replies go
+back through it, and the hard gates above resolve this way:
+
+- **§1** — no MR/PR is resolved: the work is the one `/flow-work-run` found, on the branch the
+  orchestrator checked out. A round over the ceiling → `blocked`, its reason being the (a)(b)(c)
+  hand-back of §1.
+- **§2** — the threads are `<cmd> events --json` → `comments[]`, grouped by `thread` (each comment:
+  `kind`, `id`, `author`, `at`, `body`, `url`, and `path`/`line` when it has them). The untrusted-input
+  rule stands unchanged. The machine-state check is skipped: the orchestrator relaunches for the
+  pipeline separately. The order failing → `blocked`; no comments → `done`, the summary saying so.
+- **§3–§4** — triage and stances as `auto` decides them, the table and the drafts written to
+  `08-feedback.md` instead of shown. A thread only a person can settle — a product decision, or a
+  `D` the recorded rationale and the code do not decide — goes into **one** question for all of them
+  (`ask --gate decision`, free text `T<n>: <answer>` per thread), asked **before anything is replied
+  or committed**; its `resume_at` is the end of §4, so the answer relaunches this command there,
+  reading the threads and stances from `08-feedback.md` rather than from `events`. `§4.G` measures as `/flow-work-query` does unattended
+  (schema-only, never a database it creates).
+- **§5–§6** — a change adding behaviour gets its brief recorded (`recorded (unattended)`), not
+  asked. A design invalidation that is more than a tweak, or an agreed change that needs a schema
+  change → `blocked` (flow-core §2.1): the run does not redesign.
+  Commits as `auto`. §6.1 runs whole; a high-severity finding the round cannot clear → `blocked`
+  with the findings. **§6.2 does not run**: nothing is pushed — the orchestrator pushes on `publish`.
+- **§7** — one `<cmd> reply --thread <thread> --body-file <work>/reply-<thread>.md` per answered
+  thread, the reply naming the commit that changed the code. **Never resolve.** A `reply` that exits
+  ≠ 0 is recorded in `08-feedback.md` and the run ends `blocked` naming the threads left unanswered —
+  after the others are replied, never instead of them.
+- **§8** — logged and counted as written; the agent-lessons offer is `Later`. Then the run's
+  closing order, on a clean tree: code changed this round → `publish` with the work's
+  `publish-title.md` / `publish-body.md` (updated when the round changed what they say) and the
+  `--part/--of` `/flow-feat-ship` passed; replies only → `done`, the summary listing the threads
+  answered.
 
 ## 1. Pre-flight — locate the work and the MR/PR
 

@@ -23,12 +23,35 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 **Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
 
-**Autonomy.** Modes as in flow-core §2; `guided`/`auto` record their choices in `09-ci.md` (e.g. a pure formatter auto-fix). **Hard gates — ALWAYS stop and ask, in every mode, no exceptions:**
+**In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
+
+**Autonomy.** Modes as in flow-core §2; `guided`/`auto` record their choices in `09-ci.md` (e.g. a pure formatter auto-fix); `unattended` resolves gates 1–4 as its paragraph below says. **Hard gates — ALWAYS stop and ask, in `manual`, `guided` and `auto`, no exceptions:**
 1. **Any push** (§6).
 2. Creating/switching a branch, or DB schema changes/migrations, if a fix requires them.
 3. **Re-triggering a pipeline or job on the remote** (CI resources; outward action).
 4. **Integrating the base branch** — any `git merge`/`git rebase` of `git.default_base` into the branch, and any history rewrite or force-push it implies (§5.C).
 5. **Green-washing — NEVER, in any mode:** no rerun of a failed check hoping it passes; never disable, skip, `@skip`/`xit`, loosen a threshold, or delete a test/lint rule to force green; never resolve a conflict by blindly taking one side (`--ours`/`--theirs`, `checkout --theirs`, discarding the base's changes) — resolve by understanding both sides.
+
+**In `unattended`** (flow-core §2.1) — launched by `/flow:work:run` on `why = pipeline` — this
+command asks nothing and never touches the forge. Gate 5 holds exactly as written; the others
+resolve this way:
+
+- **§1–§2** — no MR/PR is resolved and no forge is read: the failures are `<cmd> events --json` →
+  `{"sha", "failed": [{name, conclusion, url, log_tail}]}`, and `log_tail` is the evidence. The order
+  failing → `blocked`; `failed` empty → `done`, the summary saying so. `sha` not `HEAD` → `blocked`:
+  the result is about another commit, and fixing it here would be fixing a guess.
+- **§3** — triage as written, recorded in `09-ci.md`. **K** (flaky / infra) → `blocked` with the
+  evidence: the run has no rerun order, and the orchestrator owns reruns and the red-round limit.
+  **C** (conflict, behind base) and anything needing a rebase or force-push → `blocked`: the
+  orchestrator brings the base in. A **human** blocker → `blocked`, naming who. **S** → fixed within
+  scope, otherwise `blocked` with the justification.
+- **§5** — fixes and the local verification as written; a local gate it cannot get green →
+  `blocked`. A fix adding behaviour gets its brief recorded, not asked; a fix that needs a schema
+  change → `blocked` (flow-core §2.1). Commits as `auto`.
+- **§6** — no push, no rerun, no watch. The closing order, on a clean tree: `publish` with the
+  work's `publish-title.md` / `publish-body.md` and the `--part/--of` `/flow:feat:ship` passed; the
+  orchestrator pushes and the pipeline runs again.
+- **§7** — logged as written; offers are `Later`.
 
 ## 1. Pre-flight — locate the work and the MR/PR
 

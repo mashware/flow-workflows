@@ -5,6 +5,23 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.85.0 — An unattended run answers its reviewers and fixes its own pipeline  ·  2026-10-01
+
+**In short**
+- **Review comments on a draft no longer stop an unattended run.** Relaunched with `why = review`,
+  `/flow:work:run` hands the run to `/flow:work:respond`, which reads the threads from the
+  orchestrator (`events --json`), answers each one through it (`reply --thread … --body-file …`),
+  commits what was agreed and hands the work back with `publish` — or `done` when only replies were
+  needed. It still never resolves a thread.
+- **A red pipeline is fixed at the root, or named.** Relaunched with `why = pipeline`,
+  `/flow:work:green` reads the failed jobs and their log tails from the orchestrator, fixes and
+  verifies locally, and ends with `publish`. A flake, an infrastructure failure, a conflict, or
+  anything that needs a rebase or a force-push ends `blocked` with the reason: reruns and the
+  red-round limit belong to the orchestrator. Green-washing stays forbidden in every mode.
+- **What only a person can settle is asked once, before anything is posted**: one question for
+  every thread that needs a product decision or a call the recorded design does not make.
+- Nothing changes in `manual`, `guided` or `auto`. Completes #177.
+
 ## v0.84.0 — An unattended run talks to its orchestrator through one command  ·  2026-10-01
 
 **In short**

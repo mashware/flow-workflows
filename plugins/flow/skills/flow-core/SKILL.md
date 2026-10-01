@@ -9,7 +9,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.84.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.85.0`.** Compare it once, at the start of the session, against
 `version` in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -282,7 +282,7 @@ run has.
 |---|---|
 | Business brief before code (`build`, `fix`) | record — the brief is written to the phase artifact, marked `recorded (unattended)`, and travels in the MR/PR body |
 | Push and MR/PR creation (`ship`) | `publish` — the run commits on its own branch, writes title and body, and hands them over; the orchestrator pushes and opens the draft |
-| Writing a DB schema change, index or migration — in any phase, a review's own fixes included — or applying one (`validate`) | question `migration`, before the first line of it is written or run |
+| Writing a DB schema change, index or migration — in any phase, a review's own fixes included — or applying one (`validate`) | question `migration`, before the first line of it is written or run — except in `respond` and `green`, where it is blocked: a schema change agreed after the MR/PR exists goes back through `build` |
 | `review` with blockers or high-severity findings | question `high_findings` |
 | `validate` with a red suite or a criterion `unproven` | blocked — the phase does not advance and does not chain. **One exception, and it is measured, never judged**: every failing test also fails, under the same name, on the base (`git merge-base HEAD <git.default_base>`, run in a detached worktree), none of them lives in a file this diff touches, and none is the test that proves an acceptance criterion → record `{"key":"unattended:validate-red-base","default":"<n> red on HEAD and on base <short sha>: <test names>","phase":"validate"}` and advance; `ship` lists those tests under "Not verified — needs a human". Short of all three — a failure the base does not reproduce, a base that cannot be run, a test this diff touched — blocked |
 | A product decision (§7 `decision`) | question `decision` |
