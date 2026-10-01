@@ -9,7 +9,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.85.1`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.86.0`.** Compare it once, at the start of the session, against
 `version` in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -256,6 +256,11 @@ assumed:
   `glab`, no tracker write in this mode — not before `ship`, not in it. The orchestrator also keeps,
   between runs, the work folder as the run left it and the work branch at the commit where it
   stopped; the run trusts that and does not re-check it.
+- **The work is the one `/flow:work:run` found** — by the ticket's `number`, never by the current
+  branch. A phase whose pre-flight says "load `meta.json` by current branch" takes that work instead:
+  the checkout can be the ticket's `base` (a study restored from elsewhere) or an umbrella branch (a
+  part just merged), and neither names the work. `run` puts a work whose branch is not checked out
+  back on it before handing over (its §2).
 - **Before any closing order, commit** what this run left uncommitted outside `.claude/work/`, new
   files included (`WIP <TICKET>: before <gate|order>` — `auto`'s WIP authority): the orchestrator
   keeps only what is committed. **Only on the work branch**: before it exists (`start` refusing a
@@ -290,6 +295,7 @@ run has.
 | Clarifying questions on the ticket (`start`) | question `clarify` — after the branch and the work folder exist, with the questions also written to `01-context.md` |
 | An unanswered high-severity challenge (`design`, `investigate`) | question `design_challenge` / `investigation_challenge` |
 | `<cmd> ticket` failing or empty, a checkout that is not clean on the ticket's `base` (`start`) | blocked — the orchestrator owns the checkout and the ticket |
+| A work whose branch is not checked out (`run`) | as `/flow:work:run` §2 says — switch onto a branch an unattended run made, or record `unattended:rehomed` and create `<number>-<slug>` from `base`; blocked on a dirty checkout or a branch with the work's name that no run here recorded |
 | Below-XS check (`start`) | record — open the work |
 | "Create the branch?" (`start`), the 2–3 line note an XS `build`/`fix` asks for, a contract the design left in prose (`build`) | record — create it · write the note from the ticket · convert it to literal and say so in the artifact |
 | `git.worktree: ask` | record — in place |

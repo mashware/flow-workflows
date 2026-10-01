@@ -66,7 +66,7 @@ resolve this way:
 
 ## 1. Pre-flight — locate the work and the MR/PR
 
-- Identify the current branch and its work folder `.claude/work/<TICKET>/` (via `meta.json`, matching `branch`). Read `meta.json` and `00-summary.md`; open in full only `09-ci.md` (previous rounds) and, when §3/§5.C need the recorded "why", `03-design.md`, `05-implementation.md`/`04-fix.md`. (flow-core §5)
+- Identify the current branch and its work folder `.claude/work/<TICKET>/` (via `meta.json`, matching `branch`) — in `unattended`, the work `/flow:work:run` found (flow-core §2.1). Read `meta.json` and `00-summary.md`; open in full only `09-ci.md` (previous rounds) and, when §3/§5.C need the recorded "why", `03-design.md`, `05-implementation.md`/`04-fix.md`. (flow-core §5)
 - **No** work folder (MR opened outside the flow) → **lightweight mode**: skip `meta.json`/artifact reads, warn once that there is no recorded design rationale, keep going.
 - Resolve the target MR/PR, in this order:
   1. `{{args}}` if given (IID or URL).
