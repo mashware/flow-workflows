@@ -28,7 +28,8 @@ once per MR/PR, recorded as `/flow:feat:ship` says — here `validate` first, si
 review, then the review on the delta — and is `blocked` after that. Every offer and survey at Close
 (§4) — follow-ups, conventions, archiving — is `Later`; "was it merged?" is not merged (`phase`
 stays `ship`); and Close ends with the run's closing order, on a clean tree:
-`<cmd> publish --title-file <work>/publish-title.md --body-file <work>/publish-body.md`.
+`<cmd> publish --title-file <work>/publish-title.md --body-file <work>/publish-body.md`; exit 0 →
+`meta.json.published: true`, as `/flow:feat:ship` says.
 
 ## 0. Pre-flight
 

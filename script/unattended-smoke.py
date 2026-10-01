@@ -413,7 +413,7 @@ def read_calls(repo):
     calls = []
     text = log.read_text(encoding="utf-8")
     # A line still being appended has no newline yet; it is read on the next poll, whole.
-    for line in text.splitlines()[: text.count("\n")]:
+    for line in text.split("\n")[:-1]:
         try:
             calls.append(json.loads(line))
         except json.JSONDecodeError:

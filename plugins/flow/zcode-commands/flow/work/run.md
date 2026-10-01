@@ -41,21 +41,21 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 | `why` | The work | Run |
 |---|---|---|
 | `start` | none for this ticket | `/flow:feat:start <number>` — `/flow:bug:start <number>` when `kind` is `bug` |
-| `start` | exists, `pending` set | a stop whose `ask` never landed, or a crash after it: send the same question again — `ask` with `pending.question_file`, `pending.options_file`, `--recommended 1`, `--free-text` when `pending.free_text`, `--gate pending.gate` — and end. `pending` stays as it is; nothing is recomputed |
-| `start` | exists, an MR/PR `published` (or a work with no `mrs` at `phase = ship`) | `done` — the summary says it is waiting for that merge; the next launch for it is `merged` |
+| `start` | exists, `pending` set | a stop whose `ask` never landed, or a crash after it: send the same question again — `ask` with `<work>/<pending.question_file>`, `<work>/<pending.options_file>`, `--recommended 1` when that options file is not empty, `--free-text` when `pending.free_text`, `--gate pending.gate` — and end. `pending` stays as it is; nothing is recomputed |
+| `start` | exists, an `mrs[]` entry `published`, or `meta.json.published` true (a work with no `mrs`) | `done` — the summary says it is waiting for that merge; the next launch for it is `merged` |
 | `start` | exists, nothing pending | the phase after `meta.json.phase` on this work's route (`/flow:feat:start` §4 for a feature, `/flow:bug:start`'s routing for a bug, by `size`), or `phase` itself when its own Close never ran. A work folder the orchestrator restored from a study made elsewhere enters here, and is never started a second time |
 | `answer` | `pending` set | apply `<cmd> answer` as flow-core §2.1 "The answer comes back" says, then `pending.resume` at `pending.resume_at`. The order fails or prints nothing → `blocked` |
 | `answer` | nothing pending | `blocked` — there is no question for that answer to decide |
-| `merged` | exists | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read; the next startable MR/PR → `/flow:feat:build`; none left, or a work with no `mrs` (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
-| `merged` | none | `blocked` — nothing of this ticket was published from here |
+| `merged` | exists, something published | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read; the next startable MR/PR → `/flow:feat:build`; none left, or a work with no `mrs` and `published` true (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
+| `merged` | none, or nothing published | `blocked` — nothing of this ticket was published from here |
 | `review` · `pipeline` | any | `blocked` — not supported yet in `unattended`; the reason says so |
 
 The phase you hand the run to is unattended too: it reads §2.1, chains as `auto` and makes the
-run's one closing order. This command makes none of its own except the `blocked` and `done` of the
-table above.
+run's one closing order. This command makes none of its own except the re-sent `ask`, the `blocked`
+and the `done` of the table above.
 
 ## 3. Close
 
 Nothing to write here beyond the routing above — the phase it hands to owns the artifacts, the
-panel and the closing order. When the route ended the run itself (`blocked`, `done`), publish the
-panel with that `attention` (flow-core §4) and print the §3 header.
+panel and the closing order. When the route ended the run itself (`ask` → `wait`, `blocked` → `block`,
+`done` → `done`), publish the panel with that `attention` (flow-core §4) and print the §3 header.

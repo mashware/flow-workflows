@@ -57,8 +57,10 @@ place it would ask:
   `.claude/work/` so the tree is clean, then the run's closing order — `<cmd> publish --title-file
   <work>/publish-title.md --body-file <work>/publish-body.md`, plus `--part <n> --of <N>` when
   `meta.json.mrs` has more than one entry (`n` this MR/PR's, `N` the number of entries). Exit 0 →
-  this MR/PR's `mrs[]` entry gets `status: "published"` — what `$flow-work-run` turns into `merged`
-  when the orchestrator relaunches with `why = merged` — and nothing else runs. Exit ≠ 0 → nothing
+  this MR/PR's `mrs[]` entry gets `status: "published"` (a work with no `mrs`: `meta.json.published:
+  true`) — what `$flow-work-run` turns into `merged` when the orchestrator relaunches with
+  `why = merged` — and nothing else runs. The summary and the panel written before it say the work
+  was *handed to the orchestrator*, never that it was published. Exit ≠ 0 → nothing
   is marked; its stderr goes in the stop header (flow-core §2.1).
 
 **In every mode**, criteria `07-validation.md` marks `not-verified-unattended` go into the body under

@@ -241,7 +241,9 @@ assumed:
   ask without it, so a stop would be text nobody reads: print the §3 header with `I need:
   autonomy.orchestrator_cmd` and exit, writing nothing.
 - **Exactly one closing order per run** — `ask`, `publish`, `blocked` or `done` — and the run ends
-  right after it: no further phase starts. A closing order that exits ≠ 0 → print its stderr in the
+  right after it: no further phase starts. The one write that follows it is its own result in
+  `meta.json` — `publish` marking what it published (`/flow:feat:ship`) — inside the work folder,
+  never committed. A closing order that exits ≠ 0 → print its stderr in the
   stop header and end; **never try another closing order** in its place, and never retry a question
   as a different one.
 - **Free text travels in files, never on the command line.** Question, options (one per line, the
@@ -325,9 +327,11 @@ conservative reading, never a guess dressed as a default.
   command re-enters. Both come from the re-entry table below, never improvised.
 - The question file carries the whole question — whoever reads it has not seen this session — and
   the options file the options as `AskUserQuestion` would have carried them, the recommended one
-  first and passed as `--recommended 1`. `--free-text` only where the table allows a free answer; a
-  question with no options (`clarify`) writes an empty options file and passes `--free-text`.
-- `question_file`, `options_file` and `free_text` are what `ask` was called with, so a stop whose
+  first and passed as `--recommended 1` — only when there are options. `--free-text` only where the
+  table allows a free answer; a question with no options (`clarify`) writes an empty options file,
+  passes `--free-text` and no `--recommended`.
+- `question_file`, `options_file` (names inside the work folder) and `free_text` are what `ask` was
+  called with, so a stop whose
   `ask` never landed can send the same question again, unchanged (`/flow:work:run`).
 - `pending` is `null` whenever nothing is asked. It lives in `meta.json` because that file already
   travels with the work and is what every phase reads first.
