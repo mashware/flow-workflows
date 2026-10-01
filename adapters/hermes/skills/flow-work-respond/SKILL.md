@@ -57,19 +57,21 @@ back through it, and the hard gates above resolve this way:
   `08-feedback.md` instead of shown. A thread only a person can settle — a product decision, or a
   `D` the recorded rationale and the code do not decide — goes into **one** question for all of them,
   asked **before anything is replied or committed**: `ask --gate decision`, free text `T<n>: <answer>`
-  per thread, with `pending.phase: "respond"` and `pending.resume: "work:respond"` (never the work's
-  `meta.json.phase`), and the run ends there. The answer is written into this round's section of
-  `08-feedback.md`, and the relaunch re-enters at the end of §4, reading the threads and stances
-  from that file rather than from `events`. A reply that would repeat an earlier round's (§8's
-  repeated-answer rule) is caught here, before anything is posted → `blocked`, naming the thread.
+  per thread, with `pending.phase: "respond"`, `pending.resume: "work:respond"` (never the work's
+  `meta.json.phase`) and `pending.resume_at: "end of §4"`, and the run ends there. The answer is
+  written into this round's section of `08-feedback.md`, and the relaunch re-enters at the end of
+  §4, reading the threads and stances from that file rather than from `events`. **At the end of §4
+  — on a first run and on that re-entry alike** — a reply that would repeat an earlier round's
+  (§8's repeated-answer rule) is caught before anything is posted → `blocked`, naming the thread.
   `§4.G` measures as `/flow-work-query` does unattended (schema-only, never a database it creates).
 - **§5–§6** — a change adding behaviour gets its brief recorded (`recorded (unattended)`), not
   asked. A design invalidation that is more than a tweak, or an agreed change that needs a schema
   change → `blocked` (flow-core §2.1): the run does not redesign. Commits as `auto`. §6.1 runs
   whole; a high-severity finding the round cannot clear → `blocked` with the findings. **§6.2 does
   not run**: nothing is pushed — the orchestrator pushes on `publish`.
-- **§8 before §7** — the round is logged and `respond_rounds` counted first, so every ending below
-  leaves it recorded. The agent-lessons offer is `Later`; re-posting the performance comment is not
+- **§8 before §7** — §8 completes the round's section §3–§4 opened in `08-feedback.md` (never a
+  second one) and counts `respond_rounds`, before any reply and before any `blocked` from here on.
+  A `blocked` earlier than this point (the repeated answer, §6.1) also counts the round first. The agent-lessons offer is `Later`; re-posting the performance comment is not
   done — a changed number goes into `publish-body.md` instead.
 - **§7** — one `<cmd> reply --thread <thread> --body-file <work>/reply-<thread>.md` per answered
   thread, the reply naming the commit that changes the code. **Never resolve.** A `reply` that exits
