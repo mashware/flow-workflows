@@ -25,7 +25,16 @@ Read `~/.claude/flow/CORE.gemini.md` first (shared rules: `FLOW.md` step 0, mode
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (root cause, constraints for the fix) (minimal reproduction, root cause, constraints for the fix). (flow-core §5)
-- `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix.
+- **In `unattended`, the door to code comes next, before anything else here**: run `<cmd> why`
+  and act as flow-core §2.1 "A study run" says. On `study` → this run writes no code:
+  `03-investigation.md` has no `## Intended fix` (`investigate` never writes one; an XS has no
+  investigation, so create the file) → first write that section, 2–3 lines of the change the fix
+  would make — from the root cause and the constraints for the fix when the investigation has them,
+  the reproduction and the ticket otherwise, `## Study revisions` included — the person approves a
+  stated change, never `none`; then the summary, and
+  `<cmd> done --summary-file <work>/done-summary.md`. Nothing else in this command runs.
+- `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix — an `## Intended fix` in `03-investigation.md` is that description.
+- **An `## Intended fix` in `03-investigation.md` binds §2's brief at every size**: it is what a person approved at the end of a study (flow-core §2.1).
 - `size` ≥ S: require `investigate` in `phases_done` (on S it will have run its reproduction half only).
 
 ## 2. Fix brief (before touching code)

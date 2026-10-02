@@ -21,6 +21,12 @@ Implementation phase. Code is written here.
 ## 1. Pre-flight
 
 - Load `meta.json` by current branch — in `unattended`, the work `/flow:work:run` found (flow-core §2.1). Read `meta.json` and `00-summary.md`; open in full only `03-design.md` (§"External contracts", verbatim) and the current MR/PR entry of `04-mr-plan.md`. (flow-core §5)
+- **In `unattended`, the door to code comes next, before anything else here**: run `<cmd> why`
+  and act as flow-core §2.1 "A study run" says. On `study` → this run writes no code: `size` XS and
+  no `03-design.md` → first write the 2–3 line note below as that file, from `01-context.md` (its
+  `## Study revisions` included) — the person approves a stated change, never `none`; then the
+  summary, and `<cmd> done --summary-file <work>/done-summary.md`. Nothing else in this command
+  runs.
 - `size` M/L: require both `03-design.md` **and** `04-mr-plan.md`. Plan missing → send to `/flow:feat:plan`; design missing → send to `/flow:feat:design`.
 - `size` XS/S: may start without a design — ask the user for a 2-3 line note on what will be done and save it as a minimal `03-design.md`. No MR/PR plan (always 1 MR/PR).
 - **If `meta.json.mrs` has more than one entry**: pick the **startable** MR/PR — the `pending` one with the **lowest `n` whose `depends_on` are all `merged`**. Dependencies still `pending`/`in_progress` → not startable, even with a low `n`. (No `wave`/`depends_on` — an older plan — → "first pending by `n`".)

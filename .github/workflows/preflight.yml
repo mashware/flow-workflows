@@ -53,5 +53,7 @@ jobs:
         run: bash script/tests/preflight-bindings.sh
       - name: every unattended question has a way back
         run: bash script/tests/unattended-gates.sh
+      - name: the fake orchestrator refuses what a real one refuses
+        run: bash script/tests/fake-orchestrator.sh
       - name: the handoff recipe, run as the command prints it
         run: bash script/tests/handoff-recipe.sh

@@ -4,7 +4,9 @@
 #     FAKE_ORCH_DIR=<dir> fake-orchestrator.sh <order> [flags]
 #
 # Reading orders print what <dir> holds: `why` → <dir>/why, `ticket --json` → <dir>/ticket.json,
-# `answer` → <dir>/answer, `events --json` → <dir>/events.json. Closing orders (ask, publish,
+# `answer` → <dir>/answer, `events --json` → <dir>/events.json. With no <dir>/answer, `answer`
+# exits 2 — "no reply", as a real orchestrator says it. With `study` in <dir>/why, `publish` is
+# refused (exit 2): a study run never publishes, and its `done` needs a non-empty `--summary-file`. Closing orders (ask, publish,
 # blocked, done) are refused after the first one, as a real orchestrator refuses them. Every call
 # — refused ones included — is appended to <dir>/calls.jsonl with its flags and, for each `-file`
 # flag, the file's content at the moment of the call: the content is the evidence, because the
@@ -50,12 +52,24 @@ serve() {  # serve <file> <args…>
 case "$order" in
   why)    serve why "$@" ;;
   ticket) serve ticket.json "$@" ;;
-  answer) serve answer "$@" ;;
+  answer)
+    [ -f "$dir/answer" ] || { echo "fake orchestrator: no reply to answer with" >&2; log 2 "$@"; exit 2; }
+    serve answer "$@" ;;
   events) serve events.json "$@" ;;
   reply)
     case " $* " in *" --thread "*" --body-file "*|*" --body-file "*" --thread "*) log 0 "$@"; exit 0 ;; esac
     echo "fake orchestrator: reply needs --thread and --body-file" >&2; log 1 "$@"; exit 1 ;;
   ask|publish|blocked|done)
+    if [ "$(cat "$dir/why" 2>/dev/null)" = "study" ]; then
+      if [ "$order" = publish ]; then
+        echo "fake orchestrator: publish refused in a study run" >&2; log 2 "$@"; exit 2
+      fi
+      if [ "$order" = done ]; then
+        sf=""; prev=""; for a in "$@"; do [ "$prev" = --summary-file ] && sf="$a"; prev="$a"; done
+        [ -n "$sf" ] && [ -s "$sf" ] || {
+          echo "fake orchestrator: done in a study run needs a non-empty --summary-file" >&2; log 2 "$@"; exit 2; }
+      fi
+    fi
     # mkdir is the atomic test-and-set: two closing orders racing cannot both get through.
     if ! mkdir "$dir/closed" 2>/dev/null; then
       echo "fake orchestrator: '$(cat "$dir/closed/order" 2>/dev/null)' already closed this run" >&2

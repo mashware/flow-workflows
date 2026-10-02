@@ -643,7 +643,7 @@ def check_unattended_pointer(files):
 # its branch.
 LOCATE_BY_BRANCH = ("by current branch", "whose `branch` matches", "matching `branch`")
 LOCATE_UNATTENDED = "— in `unattended`, the work `/flow:work:run` found (flow-core §2.1)"
-REHOME_STEP = "**The work's branch, on `start`.**"
+REHOME_STEP = "**The work's branch, on `start` and `study`.**"
 
 
 def check_unattended_locate(files):

@@ -5,6 +5,24 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.89.0 — An unattended run can stop at the end of the study, for a person to approve it  ·  2026-10-02
+
+**In short**
+- **An orchestrator can ask for the study alone.** A new `why`, `study`, runs start, design and plan
+  (investigate for a bug) as any unattended run does, and stops where code would begin: `build` and
+  `fix` ask the orchestrator first why the run exists, and a study run hands back a summary — what
+  and why, criteria, design in brief, MR/PR plan, risks — with `done`. No code, no commit, no
+  `publish`.
+- **Approval is an ordinary `start`.** The orchestrator relaunches with `why = start` and the run
+  builds from the approved study without studying it again.
+- **A reply asking for changes redoes the study** with the reply as part of the ticket, and a new
+  summary goes back. The earlier study is kept aside, never read as input, and a run that dies
+  half-way is finished by the next launch.
+- **Guards**: a study on a ticket that already has code, an approval while a newer study has no
+  summary yet, and a study question answered as `answer` all end `blocked` instead of building.
+- CI now fails when a `why` has no route or the stop moves past the point where code starts. Nothing
+  changes outside `unattended`. Closes #191.
+
 ## v0.88.0 — A study made for handoff ends at the handoff, not at build  ·  2026-10-02
 
 **In short**

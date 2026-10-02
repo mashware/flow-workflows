@@ -30,7 +30,7 @@ Delivery planning phase. **No code is written.** Splits the feature into MRs/PRs
 
 - Load `meta.json` by current branch — in `unattended`, the work `$flow-work-run` found (flow-core §2.1). Missing → send the user to `$flow-feat-start`.
 - Require `design` in `phases_done`. Missing → send to `$flow-feat-design` and stop.
-- Read `meta.json` and `00-summary.md`; open in full only `03-design.md`. (flow-core §5)
+- Read `meta.json` and `00-summary.md`; open in full only `03-design.md` — and, when `01-context.md` has `## Study revisions` (a person's reply to an unattended study, flow-core §2.1), that section too: a request about the split is applied here, and goes into §2's brief. (flow-core §5)
 - **`size` `XS` or `S`** → warn that this phase does not apply (always 1 MR/PR), add `"plan:skipped"` to `phases_done`, suggest `$flow-feat-build` — `git.handoff_branch` set and not `unattended` → `$flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff). Stop.
 
 ## 2. Work

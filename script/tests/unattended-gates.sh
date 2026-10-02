@@ -55,4 +55,49 @@ row_gates=$(printf '%s\n' "$table" | cut -d'|' -f1 | sort -u)
 for g in $core_gates; do printf '%s\n' "$row_gates" | grep -qx "$g" && ok "flow-core gate $g has a row" || fail "flow-core gate $g has no re-entry row"; done
 for g in $row_gates; do printf '%s\n' "$core_gates" | grep -qx "$g" || fail "re-entry row $g is not a gate of the stop-site table"; done
 
+# Every `why` the orchestrator can print has a route in /flow:work:run, and run accepts no other.
+# A `why` with no row is a run that ends with no closing order; one run accepts and flow-core does
+# not list is an order no orchestrator was told it can give.
+RUN="$ROOT/commands/work/run.md"
+core_whys=$(grep -E '^<cmd> why ' "$CORE" | sed 's/.*→//' | tr '|' '\n' | tr -d ' ' | grep -v '^$' | sort -u)
+[ -n "$core_whys" ] || fail "no \`why\` line in flow-core §2.1's orders"
+route_whys=$(awk '/^\| `why` \| The work \| Run \|/{t=1; next} t && /^\|---/{next} t && /^\|/{print; next} t{exit}' "$RUN" \
+  | awk -F'|' '{print $2}' | grep -oE '`[a-z]+`' | tr -d '`' | sort -u)
+accepted=$(awk '/Run `<cmd> why`/{t=1} t{print} t && /→/{exit}' "$RUN" | tr '\n' ' ' | sed 's/→.*//' \
+  | grep -oE '`[a-z]+`' | tr -d '`' | sort -u)
+for w in $core_whys; do
+  printf '%s\n' "$route_whys" | grep -qx "$w" && ok "why $w has a route in run.md" || fail "why $w has no row in run.md's route table"
+  printf '%s\n' "$accepted" | grep -qx "$w" || fail "why $w is not accepted by run.md's pre-flight"
+done
+for w in $route_whys $accepted; do printf '%s\n' "$core_whys" | grep -qx "$w" || fail "run.md knows why $w, flow-core §2.1 does not list it"; done
+# The door lets through every `why` but `study`: a new one missing from its list ends every such
+# run blocked at build.
+door_go=$(tr '\n' ' ' < "$CORE" | grep -oE 're-reads `<cmd> why`: [^→]*→ go on' | grep -oE '`[a-z]+`' | tr -d '`' | grep -vx cmd | sort -u)
+[ -n "$door_go" ] || fail "flow-core §2.1 has no door list (\`… → go on\`)"
+for w in $core_whys; do
+  [ "$w" = study ] && continue
+  printf '%s\n' "$door_go" | grep -qx "$w" || fail "the door does not let why $w through"
+done
+printf '%s\n' "$door_go" | grep -qx study && fail "the door lets a study run through"
+
+# A study run is stopped at the door to code, and nowhere else: each command that writes code checks
+# `why` first, in its pre-flight, before the brief. A door missing from one of them — or moved past
+# the point where code starts — is a study that writes code nobody approved.
+for f in "$ROOT/commands/feat/build.md" "$ROOT/commands/bug/fix.md"; do
+  pre=$(awk '/^## 1\. Pre-flight/{t=1; next} t && /^## /{exit} t' "$f" | tr '\n' ' ' | tr -s ' ')
+  if printf '%s' "$pre" | grep -q 'In `unattended`, the door to code comes next' \
+     && printf '%s' "$pre" | grep -q '`study` → this run writes no code' \
+     && printf '%s' "$pre" | grep -q '<cmd> done --summary-file <work>/done-summary.md'; then
+    # Before anything that changes the work: in build, the MR/PR pick that marks one in_progress.
+    before=$(printf '%s' "$pre" | sed 's/In `unattended`, the door to code comes next.*//')
+    if printf '%s' "$before" | grep -q 'in_progress'; then
+      fail "$(basename "$f") changes the work before its door"
+    else
+      ok "$(basename "$f") keeps the door of a study run in its pre-flight, before any state change"
+    fi
+  else
+    fail "$(basename "$f") has no door for a study run in its pre-flight (flow-core §2.1)"
+  fi
+done
+
 [ "$fails" -eq 0 ] && echo "unattended gates: ok" || { echo "unattended gates: $fails failure(s)"; exit 1; }

@@ -137,7 +137,8 @@ the ticket read it there, never in the work folder; the receiver does not parse 
   `03-design.md` and `04-mr-plan.md`; a bug from `01-context.md` and `03-investigation.md` — the
   expected behaviour as its criteria, the root cause and the intended fix as its design, "Areas with
   similar risk" as its risks. A section whose source does not exist (an XS study, an S feature with
-  no plan) says `none`:
+  no plan) says `none`. An unattended study run writes this same block as its `done-summary.md`
+  (flow-core §2.1, a study run), so a change here changes both:
 
   ```
   <!-- flow-study -->
