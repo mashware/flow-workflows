@@ -40,14 +40,6 @@ after writing each challenge's Response.
 
 - Load `meta.json` by current branch — in `unattended`, the work `/flow-work-run` found (flow-core §2.1). Missing → ask the user to start with `/flow-feat-start`.
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md` (ticket, decisions, contracts received). (flow-core §5)
-- **A study revision** — `unattended`, and an id under `01-context.md`'s `## Study revisions` that
-  `03-design.md` does not name (`/flow-work-run` §2 wrote it from a person's reply to the study):
-  revise the design in place instead of designing it again. Skip §1.5–§4 — no approaches, no
-  inventory, no specialist round; edit the sections the request touches, criteria and contracts
-  included; add one ADR-light row per id — `<id> | <what the design said> | <the reviewer's reason>`.
-  Nothing changed (the request was about the plan, or already held) → the row says so and §6 is
-  skipped; otherwise §6 runs on the revised design. Then §7 onwards as usual: the summary at the door
-  is written from what this produces.
 - `size` is `XS` → suggest jumping to `/flow-feat-build` — `git.handoff_branch` set and not `unattended` → `/flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff) — and stop unless the user insists.
 
 ## 1.5 Approaches — open the option space first (M/L)
@@ -380,7 +372,7 @@ If what `03-design.md` reveals (migrations, cross-module, integrations) does not
 
 - Propose reclassifying (`AskUserQuestion`).
 - Confirmed → update `meta.json.size`, note in `meta.json.notes`.
-- **Consequences**: M → L activates the full flow; M → S removes `/flow-feat-plan` from the path — and a plan already written for it (a study revised below M) goes too: drop `meta.json.mrs` and `04-mr-plan.md` when every entry is still `pending`. Explicitly inform the user of the flow change.
+- **Consequences**: M → L activates the full flow; M → S removes `/flow-feat-plan` from the path. Explicitly inform the user of the flow change.
 
 ## 7.5 Cross-repo scope (refine)
 

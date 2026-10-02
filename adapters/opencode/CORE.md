@@ -224,7 +224,8 @@ built somewhere else, so wherever a study phase (`start`, `design`, `plan`, `inv
 off the study** recommended and **Build here** second; a Close that chains (`guided`/`auto`) chains
 into handoff, whose push question is the one confirmation — no stop is added. In `unattended` the
 rule does not apply: the repo's `FLOW.md` reaches the server too, and a run that studies a ticket
-there goes on to build it. A repo that hands its studies off pairs the key with
+there goes on to build it — unless the orchestrator launched it as a study run (§2.1), which stops
+at the door to code. A repo that hands its studies off pairs the key with
 `autonomy.mode: auto`, and the study then runs on its own up to the push.
 
 ### 2.1 `unattended` — where a person would have been asked
@@ -244,7 +245,7 @@ assumed:
 ```
 <cmd> why                                   → start | study | answer | review | pipeline | merged
 <cmd> ticket --json                         → {number, title, body, comments[{author, at, text}], base, kind}
-<cmd> answer                                → one option's exact text, or free text
+<cmd> answer                                → one option's exact text, or free text; exit 2 = no reply
 <cmd> events --json                         → {"comments":[{thread,kind,id,author,at,body,url,path?,line?}]}
                                                | {"sha":…, "failed":[{name,conclusion,url,log_tail}]}
 <cmd> ask --question-file F --options-file F [--recommended N] [--free-text] [--gate NAME]
@@ -299,20 +300,32 @@ Each place a command would have asked resolves one of these ways:
   `done --summary-file`, `attention: done`.
 
 `ship` is not one of them: it ends with `publish` (its own command says how), and that is the run's
-closing order.
+closing order. The §3 stop header is still printed at every ending — a log is the only screen that
+run has.
 
 **A study run** (`why` = `study`) produces a study for a person to approve and writes no code. It
-runs the study phases as any run does, and it ends at **the door to code** — the first step of
-`/flow-feat-build` and `/flow-bug-fix` pre-flight, which in `unattended` re-read `<cmd> why`. Every
-path from a study to code crosses that door, an answered question that resumes straight into `build`
-included, so the stop needs no clause in the phases before it. At the door, a study run writes
-`done-summary.md` — the `flow-study` block of `/flow-work-handoff` §5, the same five sections from
-the same sources — and closes with `done --summary-file`; nothing in the work moves, so
-`meta.json.phase` stays at the last study phase and approval is an ordinary `start`. The run kind is
-read from the orchestrator at the door, never stored: the approval reuses the same work folder with
-`why = start`. A study run never calls `publish`. How `study` is routed — a fresh ticket, an answered
-question, a person asking for changes, a ticket that already has code — is `/flow-work-run` §2. The §3 stop header is still printed at every ending — a log is the only screen that
-run has.
+runs the study phases as any run does, and three rules make it stop where it should:
+
+- **The door to code.** The first step of `/flow-feat-build` and `/flow-bug-fix` pre-flight, in
+  `unattended`, re-reads `<cmd> why`: `start`, `answer`, `merged`, `review` or `pipeline` → go on;
+  `study` → the study ends here; anything else, or the order failing → `blocked`. Every path from a
+  study to code crosses that door, an answered question that resumes straight into `build`
+  included, so the phases before it carry no clause. The run kind is read there, never stored: the
+  approval reuses the same work folder with `why = start`.
+- **At the door**, a study run first writes the statement of the change when the study holds none
+  (the command says which), then `done-summary.md` — the `flow-study` block of `/flow-work-handoff`
+  §5, the same sections from the same sources, and, when `01-context.md` lists `## Study revisions`,
+  the line `Revised at the reviewer's request: <n> reply(ies)` first under `## What and why`. It
+  overwrites `00-summary.md`, sets the panel's `attention` to `done` and closes with
+  `done --summary-file`. Nothing else moves — no `mrs[]` entry, no branch, no brief — so
+  `meta.json.phase` stays at the last study phase and approval is an ordinary `start`.
+- **A person's changes rewind the study.** `/flow-work-run` §2 adds the reply to the ticket in
+  `01-context.md` and sends the work back to `context`; the study phases then run again whole, the
+  reply part of their input. A study is never patched in place, so nothing has to remember which
+  reply reached which artifact.
+
+A study run never calls `publish`. How `study` is routed — a fresh ticket, an answered question, a
+person asking for changes, a ticket that already has code — is `/flow-work-run` §2.
 
 | Where | In `unattended` |
 |---|---|
@@ -352,7 +365,7 @@ conservative reading, never a guess dressed as a default.
             "gate": "migration", "phase": "build", "resume": "feat:build",
             "resume_at": "the unticked plan step that writes the migration",
             "head": "3f2a9c1e0b7d4a5c6f8e9d0a1b2c3d4e5f6a7b8c",
-            "question_file": "ask-question.md", "options_file": "ask-options.md",
+            "question_file": "ask-question.md", "options_file": "ask-options.md", "why": "start",
             "free_text": false}
 ```
 
@@ -368,6 +381,8 @@ conservative reading, never a guess dressed as a default.
   first and passed as `--recommended 1` — only when there are options. `--free-text` only where the
   table allows a free answer; a question with no options (`clarify`) writes an empty options file,
   passes `--free-text` and no `--recommended`.
+- `why` is the `<cmd> why` this run was launched with — read it again when writing `pending` —
+  so `/flow-work-run` can tell a question asked in a study run when its answer comes back.
 - `question_file`, `options_file` (names inside the work folder) and `free_text` are what `ask` was
   called with, so a stop whose
   `ask` never landed can send the same question again, unchanged (`/flow-work-run`).

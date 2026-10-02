@@ -29,20 +29,16 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Read `meta.json` and `00-summary.md`; open in full only `03-investigation.md` (root cause, constraints for the fix) (minimal reproduction, root cause, constraints for the fix). (flow-core §5)
-- **In `unattended`, the door to code comes next, before anything else here** (flow-core §2.1, a
-  study run): run `<cmd> why`. It fails → `blocked`. `study` → this run writes no code. No
-  `## Intended fix` in `03-investigation.md` (an XS with no investigation, an S whose investigation
-  only reproduced), or one that does not name every id under `01-context.md`'s
-  `## Study revisions` → first write that section, 2–3 lines of the change the fix would make, from
-  the reproduction and the ticket with its revisions applied, naming their ids — the person approves
-  a stated change, never `none`. Then
-  write `<work>/done-summary.md` — the `flow-study` block `$flow-work-handoff` §5 writes for the
-  ticket, same sections and sources, with one line under "What and why" saying how many changes the
-  reviewer asked for when `## Study revisions` lists any; overwrite `00-summary.md`, publish the
-  panel with `attention: done`, and close with `<cmd> done --summary-file <work>/done-summary.md`.
-  Nothing else in this command runs — no `mrs[]` entry moves, no branch, no brief, and
-  `meta.json.phase` stays where the study left it. Any other `why` → continue below.
-- `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix.
+- **In `unattended`, the door to code comes next, before anything else here**: run `<cmd> why`
+  and act as flow-core §2.1 "A study run" says. On `study` → this run writes no code:
+  `03-investigation.md` has no `## Intended fix` (`investigate` never writes one; an XS has no
+  investigation, so create the file) → first write that section, 2–3 lines of the change the fix
+  would make — from the root cause and the constraints for the fix when the investigation has them,
+  the reproduction and the ticket otherwise, `## Study revisions` included — the person approves a
+  stated change, never `none`; then the summary, and
+  `<cmd> done --summary-file <work>/done-summary.md`. Nothing else in this command runs.
+- `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix — an `## Intended fix` in `03-investigation.md` is that description.
+- **An `## Intended fix` in `03-investigation.md` binds §2's brief at every size**: it is what a person approved at the end of a study (flow-core §2.1).
 - `size` ≥ S: require `investigate` in `phases_done` (on S it will have run its reproduction half only).
 
 ## 2. Fix brief (before touching code)

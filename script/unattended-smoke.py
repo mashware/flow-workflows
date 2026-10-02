@@ -146,8 +146,7 @@ def seed_repo(scratch, scenario, harness):
     orch = scratch / ORCH_DIR
     shutil.rmtree(orch, ignore_errors=True)
     orch.mkdir(parents=True)
-    # The run is launched straight into build, which reads nothing from the orchestrator; `why`
-    # is served anyway so a run that routes through /flow:work:run first gets a real answer.
+    # The run is launched straight into build, whose door asks `why` first: `start` lets it build.
     write_text(orch / "why", "start\n")
     (repo / "migrations").mkdir(parents=True, exist_ok=True)
     (repo / "tests").mkdir(parents=True, exist_ok=True)

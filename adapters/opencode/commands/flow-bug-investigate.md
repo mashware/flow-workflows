@@ -36,13 +36,6 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 - Read `meta.json` and `00-summary.md`; open in full only `01-context.md`. (flow-core §5)
 - `type` is not `bug` → refuse. `size` is `XS` → suggest `/flow-bug-fix` — `git.handoff_branch` set and not `unattended` → `/flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff) — and stop.
 - Require `context` in `phases_done`.
-- **A study revision** — `unattended`, and an id under `01-context.md`'s `## Study revisions` that
-  `03-investigation.md` does not name (`/flow-work-run` §2 wrote it from a person's reply to the
-  study): revise the investigation in place instead of running it again. Edit the sections the
-  request touches and add one line per id under `## Study revisions applied` — `<id>: <what
-  changed>`, or that nothing here changed because the request is about the fix (the door in
-  `/flow-bug-fix` rewrites its intended fix). The root cause changed → §5 runs on it; otherwise it is
-  skipped. Then §6 onwards as usual.
 
 ## 1.5 Reproduce — what is failing, before why
 
