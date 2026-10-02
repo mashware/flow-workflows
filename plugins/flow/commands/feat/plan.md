@@ -102,7 +102,7 @@ A plan of 1 single MR/PR keeps the same artifact with that single entry and its 
 
 ## 4. Register in `meta.json`
 
-Add the `mrs` array with the agreed plan:
+Add the `mrs` array with the agreed plan. A plan already there whose entries are all still `pending` (a study revised before anything was built) is rewritten whole, `04-mr-plan.md` included — nothing was built from it, so nothing is `superseded`:
 
 ```json
 "mrs": [

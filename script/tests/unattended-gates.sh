@@ -55,4 +55,28 @@ row_gates=$(printf '%s\n' "$table" | cut -d'|' -f1 | sort -u)
 for g in $core_gates; do printf '%s\n' "$row_gates" | grep -qx "$g" && ok "flow-core gate $g has a row" || fail "flow-core gate $g has no re-entry row"; done
 for g in $row_gates; do printf '%s\n' "$core_gates" | grep -qx "$g" || fail "re-entry row $g is not a gate of the stop-site table"; done
 
+# Every `why` the orchestrator can print has a route in /flow:work:run, and run accepts no other.
+# A `why` with no row is a run that ends with no closing order; one run accepts and flow-core does
+# not list is an order no orchestrator was told it can give.
+RUN="$ROOT/commands/work/run.md"
+core_whys=$(grep -E '^<cmd> why ' "$CORE" | sed 's/.*→//' | tr '|' '\n' | tr -d ' ' | grep -v '^$' | sort -u)
+[ -n "$core_whys" ] || fail "no \`why\` line in flow-core §2.1's orders"
+route_whys=$(awk '/^\| `why` \| The work \| Run \|/{t=1; next} t && /^\|---/{next} t && /^\|/{print; next} t{exit}' "$RUN" \
+  | awk -F'|' '{print $2}' | grep -oE '`[a-z]+`' | tr -d '`' | sort -u)
+accepted=$(awk '/Run `<cmd> why`/{t=1} t{print} t && /→/{exit}' "$RUN" | tr '\n' ' ' | sed 's/→.*//' \
+  | grep -oE '`[a-z]+`' | tr -d '`' | sort -u)
+for w in $core_whys; do
+  printf '%s\n' "$route_whys" | grep -qx "$w" && ok "why $w has a route in run.md" || fail "why $w has no row in run.md's route table"
+  printf '%s\n' "$accepted" | grep -qx "$w" || fail "why $w is not accepted by run.md's pre-flight"
+done
+for w in $route_whys $accepted; do printf '%s\n' "$core_whys" | grep -qx "$w" || fail "run.md knows why $w, flow-core §2.1 does not list it"; done
+
+# A study run is stopped at the door to code, and nowhere else: each command that writes code checks
+# `why` first. A door missing from one of them is a study that writes code nobody approved.
+for f in "$ROOT/commands/feat/build.md" "$ROOT/commands/bug/fix.md"; do
+  grep -q 'the door to code comes next' "$f" && grep -q 'done --summary-file' "$f" \
+    && ok "$(basename "$f") keeps the door of a study run" \
+    || fail "$(basename "$f") has no door for a study run (flow-core §2.1)"
+done
+
 [ "$fails" -eq 0 ] && echo "unattended gates: ok" || { echo "unattended gates: $fails failure(s)"; exit 1; }
