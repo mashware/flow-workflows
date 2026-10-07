@@ -181,9 +181,9 @@ With an "all threads resolved before merge" policy, the MR/PR cannot be merged o
 
 ### 3.3 Performance comment
 
-`/flow:feat:ship` §4.3, unchanged: query rows from `06-review.md` and benchmark rows from
-`05-validation.md`, posted as a comment on the MR/PR, confirmed in every mode, nothing posted when
-nothing was measured. A slowness bug is the case where this comment *is* the proof the fix worked.
+`/flow:feat:ship` §4.3, unchanged: query rows from `06-review.md` — a modified query that was not
+measured included, as `not measured (<reason>)` — and benchmark rows from `05-validation.md`,
+posted as comments anchored on the changed lines of the MR/PR, confirmed in every mode. A slowness bug is the case where this comment *is* the proof the fix worked.
 
 ## 4. Close
 

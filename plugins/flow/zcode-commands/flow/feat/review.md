@@ -204,6 +204,8 @@ Judging rules: **no number, no win** (unresolved is recorded unresolved, never s
 
 **A modified query is judged against its own past, not only against its rivals.** For every query the diff *changes* (as opposed to adds), the duel carries the **base row** — the same query on `git merge-base HEAD <git.default_base>`, measured in the same sandbox with the same seed (`/flow:work:query` §4). Without it the table cannot say whether this diff made things better or worse, which is the one thing a reviewer wants from it.
 
+**A modified query with no plan behind its verdict is recorded `ok (plan not measured)` — and says what would measure it (`data.explain_cmd`, a data set) — never a bare `ok`.** Ship publishes that row on the MR/PR (`/flow:feat:ship` §4.3); a reviewer who finds a plain "ok" and no number has no way to know nobody looked.
+
 Verdicts as findings: **change** = blocker, through §6; **regressed** = blocker unless `03-design.md` justifies the trade, in which case it is stated and published; **schema / follow-up** → proposed ticket in the output **and a `followups[]` entry** (flow-core §7); **unresolved** → recorded literally with the open question (as §3.5). A `change` verdict resting on a measured plan is already confirmed — no §6 skeptic.
 
 ## 4. Over-engineering audit (fit + YAGNI)

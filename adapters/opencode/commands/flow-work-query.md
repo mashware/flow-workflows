@@ -147,6 +147,9 @@ Per query, exactly one of:
 
 - **ok** — access supported and bounded; state the index used and rows read. For a modified query,
   say how it compares to the base row: *improved*, *no measurable change*, or *regressed*.
+  **No plan was read → it is `ok (plan not measured)`**, with the reason, never a bare `ok`: a
+  modified query reaches the MR/PR through `/flow-feat-ship` §4.3 and the reviewer must be able to
+  tell it was never measured.
 - **regressed** — measurably worse than the base version, and the design does not justify it. A
   blocker, the same as `change`. Justified in `03-design.md` (a correctness fix that costs time, a
   deliberate trade) → not a blocker, but it is stated in the verdict and it reaches the MR/PR.

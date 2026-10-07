@@ -236,22 +236,40 @@ Thread body: the SQL block under "Pre-deploy: run this SQL on the server BEFORE 
 
 With the repo policy "all threads resolved before merge", the MR/PR cannot merge until the SQL is executed and the thread **resolved**. **One single thread even with multiple statements.** Tell the user it is left open on purpose.
 
-### 4.3 Performance comment (only when there are numbers)
+### 4.3 Performance comment (every modified query, measured or not)
 
-`06-review.md` §"Data-access duel" has rows for modified queries, or `07-validation.md` §3.7 has
-benchmark rows → post them as a **comment** on the MR/PR just created (`gh pr comment` /
-`glab mr note`). Nothing measured → post nothing; an empty performance comment is noise.
+Post one when `06-review.md` §"Data-access duel" has a row for a **modified** query — **whatever its
+verdict, measured or not** — or `07-validation.md` §3.7 has benchmark rows. New queries only, or
+renames and reformats only, and nothing benchmarked → post nothing.
 
-A comment, not a description section, because it is **re-posted on every push that changes a
-measured path** (`/flow:work:green`, `/flow:work:respond`), and a description rewritten each round
+**A modified query that was never measured is the case this comment exists for.** Silence reads as
+"nothing to see"; a reviewer cannot tell a query that was measured and is fine from one that nobody
+looked at. The row says `not measured (<reason>)` and what would settle it (`data.explain_cmd`, a
+data set, the entry point to run), so the reviewer knows what was *not* checked.
+
+**Where it goes: on the query, not under the title.** One **inline thread anchored to the changed
+lines of that query in the MR/PR diff** (a resolvable GitLab discussion with a `position`; a GitHub
+review comment on `path` + `line`), one per modified query. The entry-point rows anchor to the entry
+point's changed line the same way. Anchoring fails (the line is not in the diff, the forge refuses
+the position) → a general MR/PR comment that names the file and line, and say so. A general comment
+is the fallback, never the default: a number a reviewer meets on the line they are reading is read;
+one at the bottom of the page is not.
+
+Still a comment and not a description section, because it is **re-posted on every push that changes
+a measured path** (`/flow:work:green`, `/flow:work:respond`), and a description rewritten each round
 loses what the numbers were two rounds ago. The history is the point.
 
-```markdown
-## Performance — base `<sha>` → `<sha>`
+For each modified query the comment carries the **plan before and after** — the `data.explain_cmd`
+output on the merge base and on the branch, same data, trimmed to access type, index, rows read — next
+to the numbers:
 
-| Query | Rows read | Time (min–max, 3 runs) | Verdict |
-|---|---|---|---|
-| `FooRepository::findBar()` | 41k → 750 | 120–131 ms → 8–9 ms | improved |
+```markdown
+## Performance — `FooRepository::findBar()`, base `<sha>` → `<sha>`
+
+| | Plan (access · index · rows read) | Rows returned | Time (min–max, 3 runs) | Verdict |
+|---|---|---|---|---|
+| base | `ref` · `idx_a` · 41k | 15 | 120–131 ms | |
+| now | `range` · `idx_b` · 750 | 15 | 8–9 ms | improved |
 
 | Entry point | Time | Peak memory | Verdict |
 |---|---|---|---|
@@ -261,6 +279,9 @@ Measured on <data set>, <n> runs each. A difference inside the run-to-run spread
 no measurable change, not a percentage.
 ```
 
+- **Memory is the entry point's, not the query's.** A modified query also gets the entry-point row
+  that exercises it, through `quality.bench_cmd` on both sides (`/flow:*:validate` §3.7). No
+  `bench_cmd` → the entry-point row says `not measured (no quality.bench_cmd)`; never an estimate.
 - **Verdicts**: `improved` · `no measurable change` · `regressed` · `not measured (<reason>)`.
 - **A `regressed` row is a review blocker** unless `03-design.md` justifies the trade — in which
   case the justification goes in the comment, in one line, next to the row.
