@@ -775,6 +775,20 @@ argument about a scenario that does not exist — in either direction. One line 
 growth, worst key) is what makes the duel argue about this project. Fill it even if you never fill
 the commands.
 
+### What the MR/PR gets, with and without these keys
+
+Every **modified** query reaches the MR/PR as an inline comment on its changed lines
+(`/flow:feat:ship` §4.3). What the comment can say depends on what you filled in:
+
+| Set | The comment carries |
+|---|---|
+| nothing | `not measured`, the reason, and which key would measure it |
+| `explain_cmd` (+ `schema_cmd`) | the plan before and after, rows read, rows returned |
+| `explain_cmd` + `sandbox_cmd` + `seed_cmd` | the above, plus times `min–max` over three runs on a realistic data set |
+| `quality.bench_cmd` | the entry point's time and **peak memory**, before and after |
+
+Memory belongs to the entry point, not to the query — which is why `bench_cmd` is the key to fill for it.
+
 ### The gate on measuring
 
 `explain_cmd` and `schema_cmd` are reads: they run when a duel needs them. `sandbox_cmd` and

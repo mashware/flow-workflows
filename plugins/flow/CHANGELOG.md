@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.90.0 — A query that changed reaches the MR with its plan, or with the admission that nobody measured it  ·  2026-10-07
+
+**In short**
+- **A modified query always leaves a performance comment**, measured or not. Before, a repo without
+  `data.explain_cmd` closed the review with the query marked `ok` on the schema alone, the ship step
+  saw "nothing measured" and posted nothing — so the reviewer could not tell a query that had been
+  checked from one nobody looked at.
+- **The comment sits on the query**: an inline thread on the changed lines of the diff, one per
+  modified query, instead of a general note under the title. A general comment is only the fallback
+  when the forge refuses the anchor.
+- **Before and after, side by side**: plan (access, index, rows read), rows returned and time
+  `min–max` on the merge base and on the branch; peak memory comes from the entry point that runs the
+  query, through `quality.bench_cmd`. Missing pieces say `not measured (<reason>)` and which key
+  would measure them.
+- **The comment ends with the query and its read-only plan command**, ready to run on production or a
+  replica; the answer goes in the thread.
+- **A bare `ok` is gone for a modified query with no plan**: the review writes
+  `ok (plan not measured)`.
+- `docs/CONFIGURATION.md` now lists what the comment can say for each combination of `data.*` and
+  `quality.bench_cmd`.
+
 ## v0.89.0 — An unattended run can stop at the end of the study, for a person to approve it  ·  2026-10-02
 
 **In short**
