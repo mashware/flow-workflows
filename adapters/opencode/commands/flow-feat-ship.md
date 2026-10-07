@@ -281,6 +281,11 @@ Measured on <data set>, <n> runs each. A difference inside the run-to-run spread
 no measurable change, not a percentage.
 ```
 
+- **The query, ready to run where the data is real.** Every performance comment ends with the exact
+  query (as the engine receives it, parameters filled with representative values) and the read-only
+  plan command for it — `EXPLAIN`, never `EXPLAIN ANALYZE` on a write — in a code block, so the
+  author can run it on production or a replica and answer in the thread. This is a complement to the
+  sandbox measurement, never a substitute: the flow does not touch production.
 - **Memory is the entry point's, not the query's.** A modified query also gets the entry-point row
   that exercises it, through `quality.bench_cmd` on both sides (`/flow-*-validate` §3.7). No
   `bench_cmd` → the entry-point row says `not measured (no quality.bench_cmd)`; never an estimate.

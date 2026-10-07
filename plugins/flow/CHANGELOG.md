@@ -19,6 +19,8 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   `min–max` on the merge base and on the branch; peak memory comes from the entry point that runs the
   query, through `quality.bench_cmd`. Missing pieces say `not measured (<reason>)` and which key
   would measure them.
+- **The comment ends with the query and its read-only plan command**, ready to run on production or a
+  replica; the answer goes in the thread.
 - **A bare `ok` is gone for a modified query with no plan**: the review writes
   `ok (plan not measured)`.
 - `docs/CONFIGURATION.md` now lists what the comment can say for each combination of `data.*` and
