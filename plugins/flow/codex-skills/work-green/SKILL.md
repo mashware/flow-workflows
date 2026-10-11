@@ -47,19 +47,34 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 4. **Integrating the base branch** — any `git merge`/`git rebase` of `git.default_base` into the branch, and any history rewrite or force-push it implies (§5.C).
 5. **Green-washing — NEVER, in any mode:** no rerun of a failed check hoping it passes; never disable, skip, `@skip`/`xit`, loosen a threshold, or delete a test/lint rule to force green; never resolve a conflict by blindly taking one side (`--ours`/`--theirs`, `checkout --theirs`, discarding the base's changes) — resolve by understanding both sides.
 
-**In `unattended`** (flow-core §2.1) — launched by `$flow:work-run` on `why = pipeline` — this
-command asks nothing and never touches the forge. Gate 5 holds exactly as written; the others
-resolve this way:
+**In `unattended`** (flow-core §2.1) — launched by `$flow:work-run` on `why = pipeline` or
+`why = conflict` — this command never touches the forge. Gate 5 holds exactly as written; the
+others resolve this way:
 
 - **§1–§2** — no MR/PR is resolved and no forge is read: the failures are `<cmd> events --json` →
   `{"sha", "failed": [{name, conclusion, url, log_tail}]}`, and `log_tail` is the evidence. The order
   failing → `blocked`; `failed` empty → `done`, the summary saying so. `sha` not `HEAD` → `blocked`:
   the result is about another commit, and fixing it here would be fixing a guess.
+  On `why = conflict` the events are `{"conflict": {"base", "base_sha"}}` instead: the MR/PR
+  conflicts with `base`, which the orchestrator left in the checkout as `origin/<base>` at
+  `base_sha`. That is the only blocker of the round — category C, nothing to triage. `origin/<base>`
+  missing or not at `base_sha` → `blocked`: the run would merge a base nobody named.
 - **§3** — triage as written, recorded in `09-ci.md`. **K** (flaky / infra) → `blocked` with the
   evidence: the run has no rerun order, and the orchestrator owns reruns and the red-round limit.
-  **C** (conflict, behind base) and anything needing a rebase or force-push → `blocked`: the
-  orchestrator brings the base in. A **human** blocker → `blocked`, naming who. **S** → fixed within
+  **C** (conflict, behind base) on `why = pipeline`, and anything needing a rebase or force-push →
+  `blocked`: the orchestrator brings the base in, and relaunches with `why = conflict` when it
+  conflicts. A **human** blocker → `blocked`, naming who. **S** → fixed within
   scope, otherwise `blocked` with the justification.
+- **§5.C on `why = conflict`** — gate 4 is recorded (`unattended:integrate-base`), never asked:
+  the orchestrator launched the run for exactly this. No fetch: the base is `origin/<base>` as the
+  orchestrator left it, never `git.default_base` read from the config. Always `git merge
+  origin/<base>`, never a rebase. Each conflict is resolved on its merits as step 3 says; step 6's
+  "intent of either side unclear" → `git merge --abort`, then question `decision` when the two
+  sides want things that contradict each other (a product decision: which intent wins), `blocked`
+  otherwise. The base it merges goes into this round of `09-ci.md` before the merge starts; the
+  answer re-enters at §5.C, reads the base there, and merges again from `origin/<base>` — an
+  unfinished merge does not survive the run. Step 4's design change that is more than a tweak →
+  `blocked`. The merge commit, after the full local gate, is the round's commit.
 - **§5** — fixes and the local verification as written; a local gate it cannot get green →
   `blocked`. A fix adding behaviour gets its brief recorded, not asked; a fix that needs a schema
   change, a design invalidation that is more than a tweak, or a high-severity finding from the
