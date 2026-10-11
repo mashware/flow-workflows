@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.91.0 — An unattended run resolves the conflicts with its base when the orchestrator launches it for them  ·  2026-10-11
+
+**In short**
+- **A new `why`: `conflict`.** An orchestrator that sees the run's open MR/PR conflict with its base
+  launches it with `why = conflict`; `/flow:work:run` sends it to `/flow:work:green`. Before, an
+  unattended `green` turned any conflict into `blocked` and the draft waited for a person.
+- **`<cmd> events --json`** on such a run is `{"conflict": {"base", "base_sha"}}`, and the base is in
+  the checkout as `origin/<base>` at that commit — the orchestrator brings it in, the run never
+  fetches.
+- **`green` merges, never rebases**, and resolves each conflict on its merits, exactly as §5.C
+  already says (no `--ours`/`--theirs` wholesale, generated files regenerated, the full local gate
+  after), then publishes. Integrating the base is recorded, not asked: the run was launched for it.
+- **Two sides that want contradicting things are a product decision**: the merge is aborted and the
+  run asks (`decision`). The answer re-enters `green`, which merges again from `origin/<base>`.
+- On any other `why`, a conflict is still `blocked`.
+
 ## v0.90.0 — A query that changed reaches the MR with its plan, or with the admission that nobody measured it  ·  2026-10-07
 
 **In short**

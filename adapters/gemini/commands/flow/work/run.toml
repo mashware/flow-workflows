@@ -32,7 +32,7 @@ of truth, and an argument that disagrees with it is ignored and named in the log
   other mode a person is the router (`/flow:next`).
 - `autonomy.orchestrator_cmd` empty → flow-core §2.1: no phase runs.
 - Run `<cmd> why`. It fails, or prints anything but `start`, `study`, `answer`, `review`,
-  `pipeline` or `merged` → print what it returned and its stderr in the §3 header and end. No closing order: an
+  `pipeline`, `merged` or `conflict` → print what it returned and its stderr in the §3 header and end. No closing order: an
   orchestrator that cannot say why it launched the run cannot take one either.
 - Run `<cmd> ticket --json` and keep `number`, `title`, `base` and `kind` (`kind` absent or `null` → `feat`: the tracker could not tell, so flow decides). `kind` is re-read on every run; only a run that starts the work uses it — once the work exists, its folder says feat or bug.
   It fails or prints no `number` → `blocked` (flow-core §2.1).
@@ -60,7 +60,8 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 | `merged` | none, or nothing published | `blocked` — nothing of this ticket was published from here |
 | `review` | exists | `/flow:work:respond` — the threads come from `<cmd> events --json` |
 | `pipeline` | exists | `/flow:work:green` — the failed jobs come from `<cmd> events --json` |
-| `review` · `pipeline` | none | `blocked` — there is no work of this ticket to answer for |
+| `conflict` | exists | `/flow:work:green` — the MR/PR conflicts with its base; which base, and where it stands, come from `<cmd> events --json` |
+| `review` · `pipeline` · `conflict` | none | `blocked` — there is no work of this ticket to answer for |
 
 **The work's branch, on `start` and `study`.** The current branch is `meta.json.branch` → nothing to do. It is
 not — a study made on another machine arrives on the ticket's `base`, a run that died before its

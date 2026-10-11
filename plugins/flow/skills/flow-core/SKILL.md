@@ -9,7 +9,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.90.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.91.0`.** Compare it once, at the start of the session, against
 `version` in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -236,11 +236,12 @@ configuration; these orders are the whole interface, and nothing else about the 
 assumed:
 
 ```
-<cmd> why                                   → start | study | answer | review | pipeline | merged
+<cmd> why                                   → start | study | answer | review | pipeline | merged | conflict
 <cmd> ticket --json                         → {number, title, body, comments[{author, at, text}], base, kind}
 <cmd> answer                                → one option's exact text, or free text; exit 2 = no reply
 <cmd> events --json                         → {"comments":[{thread,kind,id,author,at,body,url,path?,line?}]}
                                                | {"sha":…, "failed":[{name,conclusion,url,log_tail}]}
+                                               | {"conflict":{"base":…, "base_sha":…}}
 <cmd> ask --question-file F --options-file F [--recommended N] [--free-text] [--gate NAME]
 <cmd> publish --title-file F --body-file F [--part N --of M]
 <cmd> blocked --reason-file F
@@ -300,7 +301,7 @@ run has.
 runs the study phases as any run does, and three rules make it stop where it should:
 
 - **The door to code.** The first step of `/flow:feat:build` and `/flow:bug:fix` pre-flight, in
-  `unattended`, re-reads `<cmd> why`: `start`, `answer`, `merged`, `review` or `pipeline` → go on;
+  `unattended`, re-reads `<cmd> why`: `start`, `answer`, `merged`, `review`, `pipeline` or `conflict` → go on;
   `study` → the study ends here; anything else, or the order failing → `blocked`. Every path from a
   study to code crosses that door, an answered question that resumes straight into `build`
   included, so the phases before it carry no clause. The run kind is read there, never stored: the
@@ -343,6 +344,7 @@ person asking for changes, a ticket that already has code — is `/flow:work:run
 | The next MR/PR of a train (`ship` close) | record — not started: one MR/PR per unattended run |
 | `build` with no startable MR/PR (its `depends_on` not `merged` in `meta.json`) | blocked — the reason names what must merge; an unattended `build` never stacks a branch on another, and never creates a remote branch |
 | The parent of a stacked MR/PR merged — rebase and force-push | blocked — never force-push unattended |
+| Integrating the base into the MR/PR's branch (`green`) | on `why = conflict`, record — `git merge origin/<base>` as the orchestrator left it, never rebase, each conflict resolved on its merits (`/flow:work:green` §5.C); on any other `why`, blocked — the orchestrator brings the base in |
 | Any offer about the work's own bookkeeping — a tracker issue, the first `KNOWLEDGE.md` or a knowledge save, a FLOW convention, an agent lesson or a saved specialist, the follow-up survey, carrying files over from the main checkout, a contract handoff, archiving the work | record — `Later`; nothing written outside the work folder |
 | A step the command cannot complete (a red suite it cannot fix, a tool missing, auth failing, the same check failing a second time) | blocked |
 | Anything `auto` already decides on its own (size, flow mechanics, WIP commits, the next command) | as `auto` |
