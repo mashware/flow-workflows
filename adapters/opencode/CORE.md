@@ -246,7 +246,7 @@ assumed:
 <cmd> why                                   → start | study | answer | review | pipeline | merged | conflict
 <cmd> ticket --json                         → {number, title, body, comments[{author, at, text}], base, kind}
 <cmd> answer                                → one option's exact text, or free text; exit 2 = no reply
-<cmd> events --json                         → {"comments":[{thread,kind,id,author,at,body,url,path?,line?}]}
+<cmd> events --json                         → {"comments":[{thread,kind,id,author,at,body,url,path?,line?,owner?}]}
                                                | {"sha":…, "failed":[{name,conclusion,url,log_tail}]}
                                                | {"conflict":{"base":…, "base_sha":…}}
 <cmd> ask --question-file F --options-file F [--recommended N] [--free-text] [--gate NAME]
