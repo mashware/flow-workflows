@@ -17,7 +17,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.91.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.92.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -247,7 +247,7 @@ assumed:
 <cmd> why                                   → start | study | answer | review | pipeline | merged | conflict
 <cmd> ticket --json                         → {number, title, body, comments[{author, at, text}], base, kind}
 <cmd> answer                                → one option's exact text, or free text; exit 2 = no reply
-<cmd> events --json                         → {"comments":[{thread,kind,id,author,at,body,url,path?,line?}]}
+<cmd> events --json                         → {"comments":[{thread,kind,id,author,at,body,url,path?,line?,owner?}]}
                                                | {"sha":…, "failed":[{name,conclusion,url,log_tail}]}
                                                | {"conflict":{"base":…, "base_sha":…}}
 <cmd> ask --question-file F --options-file F [--recommended N] [--free-text] [--gate NAME]

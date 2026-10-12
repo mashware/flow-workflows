@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.92.0 — In an unattended review round, only what the ticket's owner accepts reaches the code  ·  2026-10-12
+
+**In short**
+- **`<cmd> events --json` comments may carry `owner`** — `true` for the ticket's owner, `false` for
+  everyone else. The field is part of the review-events contract, not of any one orchestrator.
+- **Once any comment carries it, only `owner: true` orders or accepts.** Every other comment is a
+  proposal: `/flow:work:respond` implements it only when an owner comment accepts it — in the
+  proposal's own thread, by naming it, or with a bare `ai:implement`, which accepts the whole round.
+  A proposal the owner's words do not clearly name is not accepted.
+- **Every proposal is still answered in its own thread**; one not implemented says the owner did not
+  accept it. Saying so again in a later round does not trip the repeated-answer rule.
+- **Owner mode sticks**: a work whose earlier round was in owner mode stays in it, so a round where
+  only reviewers commented does not turn their comments back into orders. A later round may accept
+  a proposal an earlier one left out.
+- **No `owner` on any comment, and no earlier owner round** → exactly the previous behaviour.
+
 ## v0.91.0 — An unattended run resolves the conflicts with its base when the orchestrator launches it for them  ·  2026-10-11
 
 **In short**
