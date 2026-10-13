@@ -5,6 +5,34 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.93.0 — A study says which tickets it is waiting for, so whoever builds it waits for them too  ·  2026-10-13
+
+**In short**
+- **`design` and `investigate` detect a dependency on another ticket** before their challenger runs:
+  something the chosen solution needs that is not on the base this work builds from (fetched, not
+  assumed) and that another ticket brings. A premise that holds whichever ticket merges first is
+  listed as *not* a dependency, so nobody waits for it. Each one lands in a new
+  `## Depends on other tickets` section and in `meta.json.ticket_deps` (`{ticket, why}`); `plan`
+  appends what splitting reveals. It is not `mrs[].depends_on`, which still orders a work's own
+  MRs/PRs.
+- **`/flow:work:handoff` writes `Depends on #253`** into the ticket body, one line per dependency,
+  after the `flow-study` block so a rewrite of the block leaves it alone. A line already there is not
+  added again and none is ever removed; one a revised study dropped is named in the question.
+  `Design in brief` lists each dependency with its why for the person approving the study.
+- **An unattended study run tells the orchestrator**: its closing order becomes
+  `<cmd> done --summary-file F --depends-on 253 …`, one flag per dependency, the `#` dropped.
+  Each value is checked before anything is written; one that is not a plain identifier never
+  reaches a command line — the run ends `blocked`, naming it. A ticket in another repo is written in
+  the study for a person, not sent. What the orchestrator does with the flags is its call.
+- **An approved study's branch catches up with its base**: on `why = start`, a work branch with no
+  commit of its own is fast-forwarded to the current base, so a build that waited for its
+  dependencies actually has them. A branch with commits is left alone.
+- **A person building by hand is told too**: `build` and `fix` name the dependencies at the brief and
+  ask to confirm the piece is on the work's branch. Flow never checks whether a dependency closed.
+- **Orchestrators**: an orchestrator that rejects unknown flags on `done` must accept
+  `--depends-on` before running this version; otherwise every study with a dependency loses its
+  closing order.
+
 ## v0.92.0 — In an unattended review round, only what the ticket's owner accepts reaches the code  ·  2026-10-12
 
 **In short**

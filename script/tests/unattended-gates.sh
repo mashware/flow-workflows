@@ -100,4 +100,35 @@ for f in "$ROOT/commands/feat/build.md" "$ROOT/commands/bug/fix.md"; do
   fi
 done
 
+# The tickets a study depends on reach the orchestrator on its closing `done`: the flag is in the
+# interface, the study-run rule sends it with the `#` dropped, and both doors pass it. One of them
+# missing is a study that names its dependencies and an orchestrator that never hears them.
+grep -qF -- '<cmd> done [--summary-file F] [--depends-on N]…' "$CORE" \
+  && ok "flow-core's interface lists --depends-on on done" \
+  || fail "flow-core's interface has no --depends-on on done"
+door_rule=$(awk '/^\*\*A study run\*\*/{t=1} t && /^- \*\*A person.s changes/{exit} t' "$CORE" | tr '\n' ' ' | tr -s ' ')
+printf '%s' "$door_rule" | grep -q -- '--depends-on N` per `meta.json.ticket_deps` entry' \
+  && printf '%s' "$door_rule" | grep -q 'without a leading `#`' \
+  && ok "a study run's done carries one --depends-on per ticket_deps entry, # dropped" \
+  || fail "flow-core's study run does not pass ticket_deps on done, # dropped"
+for f in "$ROOT/commands/feat/build.md" "$ROOT/commands/bug/fix.md"; do
+  pre=$(awk '/^## 1\. Pre-flight/{t=1; next} t && /^## /{exit} t' "$f" | tr '\n' ' ' | tr -s ' ')
+  printf '%s' "$pre" | grep -q -- '--depends-on N` per `meta.json.ticket_deps` entry, `N` its `ticket` with the leading `#` dropped' \
+    && ok "$(basename "$f")'s door passes ticket_deps" \
+    || fail "$(basename "$f")'s door does not pass ticket_deps on done"
+done
+# A redone study finds its dependencies again; one that kept the old list would hold the ticket on
+# a dependency the new study dropped.
+rewind=$(awk '/^4\. \*\*Rewind\*\*/{t=1} t && /^5\. /{exit} t' "$ROOT/commands/work/run.md" | tr '\n' ' ' | tr -s ' ')
+printf '%s' "$rewind" | grep -q '`ticket_deps` removed' \
+  && ok "the study rewind clears ticket_deps" \
+  || fail "run.md's rewind does not clear ticket_deps"
+catchup=$(awk '/^\*\*On `start`, a study.s branch catches up/{t=1} t && /^$/{exit} t' "$ROOT/commands/work/run.md" | tr '\n' ' ' | tr -s ' ')
+printf '%s' "$catchup" | grep -q 'git merge-base --is-ancestor HEAD <ref>' && printf '%s' "$catchup" | grep -q 'git merge --ff-only <ref>' \
+  && ok "an approved study's branch is fast-forwarded to its base" \
+  || fail "run.md does not bring an approved study's branch up to its base"
+grep -q '"ticket_deps": \[' "$ROOT/commands/work/README.md" && grep -q '^- \*\*`ticket_deps`\*\*' "$ROOT/commands/work/README.md" \
+  && ok "the meta.json schema documents ticket_deps" \
+  || fail "work/README.md does not document ticket_deps"
+
 [ "$fails" -eq 0 ] && echo "unattended gates: ok" || { echo "unattended gates: $fails failure(s)"; exit 1; }

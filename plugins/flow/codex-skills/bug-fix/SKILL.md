@@ -38,7 +38,15 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
   would make — from the root cause and the constraints for the fix when the investigation has them,
   the reproduction and the ticket otherwise, `## Study revisions` included — the person approves a
   stated change, never `none`; then the summary, and
-  `<cmd> done --summary-file <work>/done-summary.md`. Nothing else in this command runs.
+  `<cmd> done --summary-file <work>/done-summary.md`, plus `--depends-on N` per
+  `meta.json.ticket_deps` entry, `N` its `ticket` with the leading `#` dropped — a bare `#` starts a
+  shell comment — and checked against `[A-Za-z0-9][A-Za-z0-9._-]*` before anything is written, else
+  `blocked` (flow-core §2.1). Nothing else in this command runs.
+- **`meta.json.ticket_deps` not empty, and not `unattended`** → the study rests on other tickets
+  (`$flow:feat-design` §5.1): name each — `<ticket> — <why>` — in the brief's stop (§2), one line,
+  so whoever builds confirms the piece is on **this work's branch**, not only on its base — the
+  branch was cut when the study began, and a piece that merged since needs the base brought in
+  before writing against it. Nothing is checked; waiting is the builder's call.
 - `size` `XS`: may start without `investigate`, but require a 2-3 line description of the fix — an `## Intended fix` in `03-investigation.md` is that description.
 - **An `## Intended fix` in `03-investigation.md` binds §2's brief at every size**: it is what a person approved at the end of a study (flow-core §2.1).
 - `size` ≥ S: require `investigate` in `phases_done` (on S it will have run its reproduction half only).
