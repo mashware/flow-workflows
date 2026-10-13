@@ -53,6 +53,8 @@ jobs:
         run: bash script/tests/preflight-bindings.sh
       - name: every unattended question has a way back
         run: bash script/tests/unattended-gates.sh
+      - name: a study's dependencies on other tickets are detected and written
+        run: bash script/tests/ticket-deps.sh
       - name: the fake orchestrator refuses what a real one refuses
         run: bash script/tests/fake-orchestrator.sh
       - name: the handoff recipe, run as the command prints it

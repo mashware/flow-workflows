@@ -282,6 +282,9 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 - **Invariant**: <e.g. "after assignTo(user), ticket.assignee == user AND ticket.status != 'unassigned'">
 - **Edge / boundary**: <e.g. "empty input list → returns 0, does not throw">
 
+## Depends on other tickets
+<§5.1: one line per ticket this design cannot be built without — `- <ticket> — <what it brings that the base branch lacks>` — then, under "Not dependencies (either order works)", each premise on another ticket that holds whichever merges first, with one line why. Neither → "none".>
+
 ## Defensive mechanisms and their justification
 <One row per validation, guard, retry, lock, fallback, cache, idempotency, queue, or flag the design introduces. If you cannot name a REAL and PRESENT scenario that justifies it, the piece is unnecessary — remove it from the design.>
 
@@ -309,6 +312,33 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 ```
 
 **"Acceptance criteria"**: start from the provisional list in `01-context.md` (pinned from the ticket in `/flow:feat:start`), fold in the clarifications and the internal/external contracts decided here, and promote it to the canonical enumerated list `/flow:feat:validate` gates against — observable, verifiable, proportional to size.
+
+### 5.1 Tickets this design depends on
+
+Fill `## Depends on other tickets` now, before the challenger of §6 reads the design. The study is
+often built by someone who never saw it made — another person, an unattended server — and who
+starts from the base. A design that rests on what another ticket has not delivered yet leaves that
+builder to find the piece missing and either ask or redo it.
+
+- **A dependency** is a piece, contract or decision the chosen design needs, that is **not on the
+  base this work builds from** (`meta.json.base`, empty → `git.default_base`) — checked there, after
+  a best-effort `git fetch origin <base>`, never assumed from a local ref — and that **another
+  ticket** of this tracker brings. Missing from the base with no ticket bringing it → it is scope
+  or an open question, not a dependency. A ticket in another repo is not a `ticket_deps` entry —
+  the orchestrator only resolves this tracker's numbers — so write it in the section as a
+  cross-repo dependency, for a person, and leave it out of the list.
+- **Not a dependency**: a premise that holds whichever ticket merges first. Say so under "Not
+  dependencies (either order works)", so nobody waits for it.
+- **Record each one** in that section and in `meta.json.ticket_deps` —
+  `{ "ticket": "<the reference as a ticket body writes it: #253, MT-123>", "why": "<one line>" }`,
+  never one twice. `ticket_deps` is the record the exits read (`/flow:work:handoff` §5, the door to
+  code of an unattended study run, flow-core §2.1); the section is the study's prose. Each run of
+  this phase writes the list whole from the design it closes; `plan`, which runs after it, appends
+  its own again. A §6 response or a §9 edit that changes what the design needs changes
+  the section and the list together. None → `[]` and "none".
+
+`ticket_deps` is not `mrs[].depends_on`: that one orders this work's own MRs/PRs, this one names
+other tickets. Flow never checks whether a dependency has closed — whoever builds waits for it.
 
 ## 6. Design challenge (challenger)
 

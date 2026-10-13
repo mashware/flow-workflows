@@ -54,7 +54,7 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 | `conflict` | exists | `/flow:work:green` — the MR/PR conflicts with its base; which base, and where it stands, come from `<cmd> events --json` |
 | `review` · `pipeline` · `conflict` | none | `blocked` — there is no work of this ticket to answer for |
 
-**The work's branch, on `start` and `study`.** The current branch is `meta.json.branch` → nothing to do. It is
+**The work's branch, on `start` and `study`.** The current branch is `meta.json.branch` → no switch. It is
 not — a study made on another machine arrives on the ticket's `base`, a run that died before its
 closing order is relaunched there — then, in this order:
 
@@ -76,6 +76,21 @@ closing order is relaunched there — then, in this order:
    `/flow:feat:build` gives that part, since the first part's name is already published. Then
    `meta.json.branch` = it, `meta.json.base` = that base, `worktree` and `stacked_on` = `null` — paths and parents from the
    other machine mean nothing here — and record `{ "key": "unattended:rehomed", "default": "<old branch> → <name> from <base>", "phase": "run" }`.
+
+**On `start`, a study's branch catches up with its base** — once on the work's branch, the "no
+switch" case included, and only while no build or fix has begun (neither `05-implementation.md` nor
+`04-fix.md` exists). Every command below runs in the work's own checkout — step 2's worktree when
+that is where it lives. A study writes no code, so its branch still sits where the base was when the
+study began; an approval that waited for the tickets the study depends on (`meta.json.ticket_deps`)
+would otherwise build on a base that lacks them. `<base>` = `meta.json.base`, empty →
+`git.default_base`: `git fetch origin <base>`, then `<ref>` = `origin/<base>`; the fetch failing
+with a remote configured → `blocked`, since a stale ref would leave the build on the old base
+unnoticed. No remote → the local `<base>`. `git merge-base --is-ancestor HEAD <ref>` and `HEAD` is not
+`<ref>` → the branch holds no commit of its own and the base moved: `git merge --ff-only <ref>`, and
+record `{ "key": "unattended:base-caught-up", "default": "<old short sha> → <new short sha> on
+<base>", "phase": "run" }`. The fast-forward fails → `blocked`, its message as the reason. Not an
+ancestor → it holds commits a previous run made: leave it as it is — bringing the base into work in
+progress is the orchestrator's (flow-core §2.1).
 
 **A person's changes to a study, on `study`** (flow-core §2.1: they rewind it). The work's branch
 first, as above. `<work>/study-revision.md` holds the reply, as the row above wrote it. Each step
@@ -100,7 +115,8 @@ can be run again: a run that dies part-way is finished by the next relaunch, wha
    `study-revision.md` and earlier `before-*/` folders into `<work>/before-<id7>/` — never
    overwriting a name already there — so no artifact, summary or agent answer of the discarded study
    leaks into the next. Then `meta.json`: `phase` = `context`, `phases_done` = `["context"]`, `mrs`
-   removed (the row that blocks a work past the study guarantees nothing was built), `notes`
+   removed (the row that blocks a work past the study guarantees nothing was built), `ticket_deps`
+   removed (the redone study finds its dependencies again), `notes`
    emptied, and every `followups[]` entry a study phase wrote (`source` `design`, `plan` or
    `investigate`) removed.
 5. **Re-size**: estimate the size again with `/flow:feat:start` §4's table (`/flow:bug:start`'s for

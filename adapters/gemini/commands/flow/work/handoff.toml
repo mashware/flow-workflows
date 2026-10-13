@@ -144,13 +144,27 @@ the ticket read it there, never in the work folder; the receiver does not parse 
   <!-- end flow-study -->
   ```
 
-  Criteria keep their literal values. The plan lists each MR/PR with what it covers and what it
-  waits on; a bug's plan is its single fix.
+  Criteria keep their literal values. `## Design in brief` ends with each `meta.json.ticket_deps`
+  entry and its why — `Depends on #253: <why>` — so whoever approves the study sees what it waits
+  for; an unattended study's `done-summary.md` is this block, so it carries them too. The plan
+  lists each MR/PR with what it covers and what it waits on; a bug's plan is its single fix.
 - **The new body**: the body read above with the block between the two markers replaced — or, with
-  no markers yet, the block appended after a blank line. Written to a `mktemp` file outside the
+  no markers yet, the block appended after a blank line. Then, for each `meta.json.ticket_deps`
+  entry (`/flow:feat:design` §5.1) whose line is not already a line of that body — same text,
+  ignoring case and surrounding whitespace — one line after the end marker, in `ticket_deps` order:
+
+  ```
+  Depends on #253
+  ```
+
+  `#253` being the entry's `ticket` as it stands. Outside the markers so a later rewrite of the
+  block leaves it alone, and never removed: a line a person wrote by hand looks exactly like one
+  flow wrote, and the convention is theirs too. Written to a `mktemp` file outside the
   tree — `{BODY_FILE}` — so nothing of it can be committed later.
-- **Show the block and ask** with `AskUserQuestion`, **in every mode**: it writes to a shared
-  tracker. **Write it** · **Skip**. Failure → its message in one line; the push stands.
+- **Show the block, and the `Depends on` lines it adds, and ask** with `AskUserQuestion`, **in
+  every mode**: it writes to a shared tracker. A `Depends on` line already in the body, outside the
+  markers, that no entry names — a dependency a revised study dropped, or one a person added — is named in the same
+  question and left in place: whether it still holds is theirs to say. **Write it** · **Skip**. Failure → its message in one line; the push stands.
 
 ## 6. Close
 

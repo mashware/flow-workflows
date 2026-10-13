@@ -176,9 +176,20 @@ If `agents.fanout_tool` is set in `FLOW.md`, run the sweep through that tool; br
 - Do not touch X because…
 - Consider Y because…
 
+## Depends on other tickets
+<§4.1: `- <ticket> — <what it brings that the base branch lacks>`, then "Not dependencies (either order works)", or "none".>
+
 ## Investigation challenges
 <filled in by §5 with the challenger table>
 ```
+
+### 4.1 Tickets this fix depends on
+
+A fix can rest on another ticket the same way a design can — a corrected contract, a migration, a
+decision that lands only when that ticket merges. Detect and record it before the challenger, exactly
+as `$flow:feat-design` §5.1 says: the same rule, the same "Not dependencies (either order works)"
+line, the same `meta.json.ticket_deps` entries, written under `## Depends on other tickets` in
+`03-investigation.md`.
 
 ## 5. Root cause challenge (challenger)
 

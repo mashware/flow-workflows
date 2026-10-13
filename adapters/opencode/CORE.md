@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.92.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.93.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -252,7 +252,7 @@ assumed:
 <cmd> ask --question-file F --options-file F [--recommended N] [--free-text] [--gate NAME]
 <cmd> publish --title-file F --body-file F [--part N --of M]
 <cmd> blocked --reason-file F
-<cmd> done [--summary-file F]
+<cmd> done [--summary-file F] [--depends-on N]…
 <cmd> reply --thread ID --body-file F
 ```
 
@@ -313,12 +313,18 @@ runs the study phases as any run does, and three rules make it stop where it sho
   study to code crosses that door, an answered question that resumes straight into `build`
   included, so the phases before it carry no clause. The run kind is read there, never stored: the
   approval reuses the same work folder with `why = start`.
-- **At the door**, a study run first writes the statement of the change when the study holds none
+- **At the door**, a study run first checks each `meta.json.ticket_deps` entry: `N` = its `ticket`
+  without a leading `#`, the form `ticket --json` prints `number`, and it must match
+  `[A-Za-z0-9][A-Za-z0-9._-]*` — an `N` that does not (a space, a shell character, a leading `-`)
+  is never put on a command line: `blocked`, naming the entry, before anything below is written.
+  Then it writes the statement of the change when the study holds none
   (the command says which), then `done-summary.md` — the `flow-study` block of `/flow-work-handoff`
   §5, the same sections from the same sources, and, when `01-context.md` lists `## Study revisions`,
   the line `Revised at the reviewer's request: <n> reply(ies)` first under `## What and why`. It
   overwrites `00-summary.md`, sets the panel's `attention` to `done` and closes with
-  `done --summary-file`. Nothing else moves — no `mrs[]` entry, no branch, no brief — so
+  `done --summary-file`, plus one `--depends-on N` per `meta.json.ticket_deps` entry, in its order —
+  so the orchestrator can hold the ticket until those land; what it does with them is its call.
+  Nothing else moves — no `mrs[]` entry, no branch, no brief — so
   `meta.json.phase` stays at the last study phase and approval is an ordinary `start`.
 - **A person's changes rewind the study.** `/flow-work-run` §2 adds the reply to the ticket in
   `01-context.md` and sends the work back to `context`; the study phases then run again whole, the
@@ -331,7 +337,7 @@ person asking for changes, a ticket that already has code — is `/flow-work-run
 | Where | In `unattended` |
 |---|---|
 | Business brief before code (`build`, `fix`) | record — the brief is written to the phase artifact, marked `recorded (unattended)`, and travels in the MR/PR body |
-| The door to code in a study run (`build`, `fix` pre-flight) | done — `done-summary.md`, the study as `/flow-work-handoff` §5 writes it for the ticket |
+| The door to code in a study run (`build`, `fix` pre-flight) | done — `done-summary.md`, the study as `/flow-work-handoff` §5 writes it for the ticket, and one `--depends-on` per `meta.json.ticket_deps` entry |
 | Push and MR/PR creation (`ship`) | `publish` — the run commits on its own branch, writes title and body, and hands them over; the orchestrator pushes and opens the draft |
 | Writing a DB schema change, index or migration — in any phase, a review's own fixes included — or applying one (`validate`) | question `migration`, before the first line of it is written or run — except in `respond` and `green`, where it is blocked: a schema change agreed after the MR/PR exists goes back through `build` |
 | `review` with blockers or high-severity findings | question `high_findings` |
@@ -351,6 +357,7 @@ person asking for changes, a ticket that already has code — is `/flow-work-run
 | The next MR/PR of a train (`ship` close) | record — not started: one MR/PR per unattended run |
 | `build` with no startable MR/PR (its `depends_on` not `merged` in `meta.json`) | blocked — the reason names what must merge; an unattended `build` never stacks a branch on another, and never creates a remote branch |
 | The parent of a stacked MR/PR merged — rebase and force-push | blocked — never force-push unattended |
+| An approved study's branch (`run`, `why = start`, no build or fix begun) | record — fast-forwarded to its base when it holds no commit of its own (`/flow-work-run` §2); the base unreadable or the fast-forward failing → blocked. Not integrating: nothing of the run's is merged |
 | Integrating the base into the MR/PR's branch (`green`) | on `why = conflict`, record — `git merge origin/<base>` as the orchestrator left it, never rebase, each conflict resolved on its merits (`/flow-work-green` §5.C); on any other `why`, blocked — the orchestrator brings the base in |
 | Any offer about the work's own bookkeeping — a tracker issue, the first `KNOWLEDGE.md` or a knowledge save, a FLOW convention, an agent lesson or a saved specialist, the follow-up survey, carrying files over from the main checkout, a contract handoff, archiving the work | record — `Later`; nothing written outside the work folder |
 | A step the command cannot complete (a red suite it cannot fix, a tool missing, auth failing, the same check failing a second time) | blocked |
