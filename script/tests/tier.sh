@@ -6,6 +6,9 @@
 # derived: a round that eyeballed the diff and a round that measured it wrote a byte-identical
 # artifact, on the one number the section itself says carries an incentive.
 set -u
+# The context layer is chosen by the environment; a caller that exports FLOW_CONTEXT must not
+# change what these cases read.
+unset FLOW_CONTEXT
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI="$HERE/../../bin/cli.mjs"
 BASE="${TMPDIR:-/tmp}/flow-tier-test"

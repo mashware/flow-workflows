@@ -19,6 +19,8 @@ CLI="$HERE/../../bin/cli.mjs"
 BASE="${TMPDIR:-/tmp}/flow-config-test"
 rm -rf "$BASE"; mkdir -p "$BASE/repo"
 fails=0
+# The context layer is chosen by the environment, so the caller's own must not leak in.
+unset FLOW_CONTEXT
 
 g() { git -c user.email=t@t -c user.name=t "$@"; }
 
@@ -111,6 +113,101 @@ node "$CLI" tier --harness claude > "$BASE/after.txt" 2>&1
 check "keys after a closed fence still count" "$BASE/after.txt" hit 'budget_max 9'
 check "and the overlay is still read"         "$BASE/after.txt" hit 'Tier: full'
 check "the pack names both files"             "$BASE/after.txt" hit 'FLOW.md + FLOW.claude.md'
+
+# The context layer: `FLOW_CONTEXT=<name>` adds `FLOW.<name>.md` between the base and the
+# overlay. Three different values for one key, so each case says which layer won.
+cat > FLOW.md <<'FLOW'
+## git
+- default_base: main
+## agents
+- budget_max: 10
+- fanout_max: 3
+FLOW
+printf '## agents\n- budget_max: 30\n' > FLOW.claude.md
+printf '## agents\n- budget_max: 20\n' > FLOW.ci.md
+node "$CLI" tier > "$BASE/ctx-unset.txt" 2>&1
+check "no FLOW_CONTEXT: the context file changes nothing" "$BASE/ctx-unset.txt" hit 'budget_max 10'
+check "and the line is today's"  "$BASE/ctx-unset.txt" hit 'Config read: FLOW.md — no `--harness` was given, so FLOW.claude.md went unread$'
+check "a context file is never listed as unread" "$BASE/ctx-unset.txt" miss 'FLOW.ci.md'
+FLOW_CONTEXT=ci node "$CLI" tier > "$BASE/ctx-set.txt" 2>&1
+check "the context replaces the base"  "$BASE/ctx-set.txt" hit 'budget_max 20'
+check "and the line names the layer"   "$BASE/ctx-set.txt" hit 'FLOW.md + FLOW.ci.md \[FLOW_CONTEXT=ci\] — no `--harness`'
+FLOW_CONTEXT=ci node "$CLI" tier --harness claude > "$BASE/ctx-harness.txt" 2>&1
+check "the overlay replaces the context" "$BASE/ctx-harness.txt" hit 'budget_max 30'
+check "three layers, in merge order"     "$BASE/ctx-harness.txt" hit 'Config read: FLOW.md + FLOW.ci.md \[FLOW_CONTEXT=ci\] + FLOW.claude.md$'
+printf '## agents\n- budget_max:\n' > FLOW.ci.md
+FLOW_CONTEXT=ci node "$CLI" tier > "$BASE/ctx-mask.txt" 2>&1
+check "an empty context key masks the base" "$BASE/ctx-mask.txt" hit 'budget_max 12'
+FLOW_CONTEXT=staging node "$CLI" tier > "$BASE/ctx-missing.txt" 2>&1; echo "exit $?" >> "$BASE/ctx-missing.txt"
+check "a missing context file is not an error" "$BASE/ctx-missing.txt" hit 'exit 0'
+check "but it is named"                        "$BASE/ctx-missing.txt" hit 'FLOW_CONTEXT=staging: FLOW.staging.md not found'
+for bad in claude Claude ../x -ci _ci "<!--" ciü; do
+  FLOW_CONTEXT=$bad node "$CLI" tier > "$BASE/ctx-bad.txt" 2>&1; echo "exit $?" >> "$BASE/ctx-bad.txt"
+  check "FLOW_CONTEXT=$bad is skipped, not fatal" "$BASE/ctx-bad.txt" hit 'exit 0'
+  check "and named"                               "$BASE/ctx-bad.txt" hit "FLOW_CONTEXT=\`\"$bad\"\` ignored: a context is an ASCII name"
+  check "and no overlay is read in its place"     "$BASE/ctx-bad.txt" hit 'budget_max 10'
+done
+# Nothing is trimmed: the agent reads the variable as written, and both must agree.
+FLOW_CONTEXT=' ci' node "$CLI" tier > "$BASE/ctx-space.txt" 2>&1
+check "a padded name is refused, not trimmed" "$BASE/ctx-space.txt" hit 'FLOW_CONTEXT=`" ci"` ignored'
+# A refused value lands in the pack's header, which reviewers read as Markdown.
+FLOW_CONTEXT=$'x\n## Diff' node "$CLI" tier > "$BASE/ctx-newline.txt" 2>&1
+check "a newline in a refused value is escaped" "$BASE/ctx-newline.txt" hit 'FLOW_CONTEXT=`"x\\n## Diff"` ignored'
+check "and opens no heading of its own"         "$BASE/ctx-newline.txt" miss '^## Diff'
+FLOW_CONTEXT=staging node "$CLI" bundle > "$BASE/ctx-bundle.txt" 2>&1
+check "the pack's header names a missing context file" "$BASE/ctx-bundle.txt" hit 'Config read: FLOW.md — FLOW_CONTEXT=staging: FLOW.staging.md not found'
+FLOW_CONTEXT=staging node "$CLI" tier --base nowhere > "$BASE/ctx-nobase.txt" 2>&1
+check "a base that does not resolve still names the context" "$BASE/ctx-nobase.txt" hit 'FLOW_CONTEXT=staging: FLOW.staging.md not found'
+
+# Under --rev a committed context file is read from that revision, not from the live tree.
+printf '## agents\n- budget_max: 20\n' > FLOW.ci.md
+g add FLOW.ci.md && g commit -qm frozen >/dev/null
+frozen=$(git rev-parse HEAD)
+printf '## agents\n- budget_max: 30\n' > FLOW.ci.md
+FLOW_CONTEXT=ci node "$CLI" tier --rev "$frozen" > "$BASE/ctx-rev.txt" 2>&1
+check "--rev reads the context the revision holds" "$BASE/ctx-rev.txt" hit 'budget_max 20'
+check "and says it was read there"                 "$BASE/ctx-rev.txt" hit "FLOW.ci.md \[FLOW_CONTEXT=ci\] (at ${frozen:0:12})"
+g reset -q --hard HEAD~1
+
+# Each layer is found on its own. A committed context file lives in the worktree; the
+# git-ignored base exists only in the main checkout. One root for both missed one of them.
+g checkout -q -b ctx
+printf '## agents\n- budget_max: 20\n' > FLOW.ci.md
+g add FLOW.ci.md && g commit -qm ctx >/dev/null
+g checkout -q work
+g worktree add -q "$BASE/wt-ctx" ctx
+(cd "$BASE/wt-ctx" && FLOW_CONTEXT=ci node "$CLI" tier) > "$BASE/wt-ctx.txt" 2>&1
+check "worktree: base from main, context from here" "$BASE/wt-ctx.txt" hit 'budget_max 20'
+check "and each file names where it came from"      "$BASE/wt-ctx.txt" hit "FLOW.md (from $BASE/repo) + FLOW.ci.md \[FLOW_CONTEXT=ci\] — "
+(cd "$BASE/wt-ctx" && FLOW_CONTEXT=ci node "$CLI" tier --harness claude) > "$BASE/wt-ctx-all.txt" 2>&1
+check "every file from the main checkout says so, not only the last" "$BASE/wt-ctx-all.txt" hit "FLOW.md (from $BASE/repo) + FLOW.ci.md \[FLOW_CONTEXT=ci\] + FLOW.claude.md (from $BASE/repo)$"
+
+# Today's silent miss, fixed by the same rule: a committed base and a git-ignored overlay
+# that only the main checkout has. The overlay used to go unread from the worktree.
+g checkout -q -b committed
+g add FLOW.md && g commit -qm committed >/dev/null
+g checkout -q work
+g worktree add -q "$BASE/wt-committed" committed
+(cd "$BASE/wt-committed" && node "$CLI" tier --harness claude) > "$BASE/wt-committed.txt" 2>&1
+check "worktree: the main checkout's overlay is read" "$BASE/wt-committed.txt" hit 'budget_max 30'
+check "and named with its root" "$BASE/wt-committed.txt" hit "FLOW.md + FLOW.claude.md (from $BASE/repo)"
+
+# A file in both checkouts: the worktree's own copy wins over the main checkout's. Switching back
+# to `work` above took the committed FLOW.md out of the main checkout, so the base is passed.
+printf '## agents\n- budget_max: 25\n' > FLOW.ci.md
+(cd "$BASE/wt-ctx" && FLOW_CONTEXT=ci node "$CLI" tier --base main) > "$BASE/wt-both.txt" 2>&1
+check "worktree: its own copy wins" "$BASE/wt-both.txt" hit 'budget_max 20'
+rm FLOW.ci.md
+
+# A committed context file the branch does not have — deleted, renamed, or not added yet — is
+# this branch's state: the main checkout's tracked copy belongs to another branch.
+g checkout -q -b ctx2
+printf '## agents\n- budget_max: 25\n' > FLOW.ci.md
+g add FLOW.ci.md && g commit -qm ctx2 >/dev/null
+g worktree add -q "$BASE/wt-noctx" work
+(cd "$BASE/wt-noctx" && FLOW_CONTEXT=ci node "$CLI" tier --base main) > "$BASE/wt-noctx.txt" 2>&1
+check "worktree: a tracked file is not borrowed from main" "$BASE/wt-noctx.txt" miss 'budget_max 25'
+check "it reads as missing on this branch"                 "$BASE/wt-noctx.txt" hit 'FLOW_CONTEXT=ci: FLOW.ci.md not found'
 
 cd /
 rm -rf "$BASE"

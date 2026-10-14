@@ -30,15 +30,19 @@ changing machines, after `/flow-init`, or when a command failed the way an envir
 ## 1. Load
 
 - Identify the active harness and read the effective configuration exactly as flow-core §0: base
-  `FLOW.md`, then its `FLOW.<harness>.md` overlay. Never read another harness's overlay. Both absent
+  `FLOW.md`, then the context layer `FLOW.<FLOW_CONTEXT>.md` when the variable is set, then its
+  `FLOW.<harness>.md` overlay. Never read another harness's overlay. **Name the active context** —
+  its value and the file it selects, `none` when the variable is unset, and the reason when the name
+  was refused or the file is missing (flow-core §0): a context set on a server and lost on the way
+  reads here as `none`, and nowhere else. No layer present
   is **not** an error: say so in one line, check what needs no config (git, hooks, harness, base
   branch, plugin files), and note that `/flow-init` would let this command check the rest.
   **Say which checkout the configuration came from** whenever it is not the directory you are in
   (flow-core §0: a worktree does not carry a git-ignored `FLOW.md`). A diagnosis run from a
   worktree that quietly read nothing is the one that certifies a repo as unconfigured.
-- Parse both files by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`,
+- Parse each layer by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`,
   `conventions`, `notes`, `knowledge`, `observability`; merge keys and empty masks per flow-core §0.
-  Keep the source of every effective value. Both absent → §1.5 runs with **every** key empty (all
+  Keep the source of every effective value. No layer present → §1.5 runs with **every** key empty (all
   fallbacks), which is a legitimate and complete answer.
 
 ## 1.5 What the configuration says
@@ -52,14 +56,14 @@ documented keys absent from the effective configuration (the "empty → fallback
 For **every** documented key in `examples/FLOW.template.md`, one row:
 
 - **set** → the value and source file (list keys like `git.worktree_resync` or
-  `quality.reviewers`: the items). A value overridden by the active overlay names only the active
-  value here; do not make the user mentally merge two tables.
+  `quality.reviewers`: the items). A value overridden by a later layer names only the winning
+  value and its file here; do not make the user mentally merge two tables.
 - **empty / absent** → `(empty → <what happens>)`, taken from the key's comment in the template
   (e.g. `quality.test` → "auto-discover from Makefile/npm/composer/Gradle/dotnet/Xcode/Flutter"; `tracker.tool` → "manual paste";
   `agents.security` → "general-purpose with the role"; `git.worktree` → "off / in-place";
   `git.worktree_resync` → "`/flow-work-try` only switches, no re-sync"; `quality.review_depth` →
-  "proportional" — the other depths are `light` and `full`). An empty overlay mask says
-  `(masked by FLOW.<harness>.md → <what happens>)`. Never leave a reader guessing what an empty key
+  "proportional" — the other depths are `light` and `full`). An empty mask says
+  `(masked by FLOW.<context or harness>.md → <what happens>)`. Never leave a reader guessing what an empty key
   does.
 
 For `knowledge`, print the four roles resolved with who decided each: the `knowledge` key, or empty with its fallback (`search` → no lookups; `stage` → artifact only; `read_staging` → artifacts; `save` → `KNOWLEDGE.md`). A `domain_memory` section still in the file → one line: *"`domain_memory` is no longer read; name the tools you want under `knowledge`"* — it is retired configuration, not an error.
@@ -73,7 +77,7 @@ print one informational line: those values currently apply to every harness with
 override. This is valid configuration, not a warning and never a claim that a free-text model name
 is invalid.
 
-#### 1.5.2 Resolved models (only if either file has a `models` key)
+#### 1.5.2 Resolved models (only if any layer has a `models` key)
 
 Three keys, all about subagents. Print what each one actually reaches:
 
@@ -123,10 +127,23 @@ data.volumes         (none — duel ran schema-only)  2 works   last: query
 
 ### 1.5.4 Problems in the configuration files (flag, do not fix)
 
-Report problems, change nothing. Validate the base and active overlay separately, name the file
-that owns each problem, and ignore inactive overlays. An unknown root `FLOW.*.md` file gets one
-warning listing the supported harness names because no command will read it. **Scope: these files.**
-Whether the world they describe exists —
+Report problems, change nothing. Validate the base, the active context file and the active
+overlay separately, name the file that owns each problem, and ignore inactive overlays. Any other
+root `FLOW.<name>.md` is a context file this run did not select: list it once, as inactive, with the
+`FLOW_CONTEXT=<name>` that would select it and the six harness overlay names beside it — a
+misspelled overlay (`FLOW.cluade.md`) reads exactly like a context, and only the reader can tell —
+never as unknown, and its keys are not validated. Only a name the context rule refuses (flow-core
+§0) gets a warning, because nothing will ever read it.
+- **A context file git would swallow**: run `git check-ignore -v --no-index FLOW.flow-probe.md` at
+  the repo root — a name no repo tracks, so a context file that was force-added does not hide the
+  rule, and `--no-index` asks the ignore rules rather than the index. It prints a rule that does not
+  start with `!` → one warning naming that rule and its file (`.gitignore`, `.git/info/exclude`, a
+  global excludes file): a `FLOW.*.md` written by an older `/flow-init` hides every new context file
+  from `git add`, and the run that needs it reports it `not found` somewhere else, long after.
+  Replace the glob with the names `/flow-init` §5 lists. A `!` rule, or nothing printed → no
+  warning.
+
+**Scope: these files.** Whether the world they describe exists —
 CLIs installed *and authenticated*, agents discoverable, hooks executable, the MCP reachable, the
 base branch resolvable — is §2 below; flag the key here, check the world there, never both.
 
@@ -266,10 +283,11 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
 ## 3. Output
 
 §1.5 always prints — it is the answer to half the question. Start it with one line naming the files
-that produced the effective configuration (`FLOW.md + FLOW.codex.md`, `FLOW.md only`, active
-overlay only, or defaults only). **The checks are quiet on success**:
+that produced the effective configuration, in merge order and with the checkout each came from
+when it is not this one (`FLOW.md + FLOW.ci.md [FLOW_CONTEXT=ci] + FLOW.codex.md`, `FLOW.md only`,
+active overlay only, or defaults only), and the active context on the next line. **The checks are quiet on success**:
 one line per check that is *not* ok, grouped by the six areas above, plus a summary line. Close with
-`N effective keys set (O from overlay), M using fallbacks, K warnings` from §1.5 next to the
+`N effective keys set (C from the context layer, O from overlay), M using fallbacks, K warnings` from §1.5 next to the
 findings count.
 
 

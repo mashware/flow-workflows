@@ -1,6 +1,6 @@
 ---
 description: Summary of all open works in .claude/work/
-allowed-tools: Read, Glob, Grep, Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(git diff:*), Bash(git rev-parse:*), Bash(ls:*), Bash(cat:*)
+allowed-tools: Read, Glob, Grep, Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(git diff:*), Bash(git rev-parse:*), Bash(git worktree list:*), Bash(git ls-tree:*), Bash(ls:*), Bash(find:*), Bash(printf:*), Bash(cat:*)
 ---
 
 # `/flow:work:status`

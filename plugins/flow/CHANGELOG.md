@@ -5,6 +5,39 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.94.0 — A repo commits the FLOW config for where flow runs, and whoever launches flow picks it  ·  2026-10-14
+
+**In short**
+- **A context layer.** Whoever launches flow sets `FLOW_CONTEXT=<name>` and `FLOW.<name>.md` is read
+  between `FLOW.md` and the harness overlay, with the overlay's merge rules. The repo commits it, so
+  what only makes sense on a server, in CI or under an orchestrator — how to drive the app in a
+  container, a convention for unattended MRs/PRs — is versioned with the code and reaches no laptop
+  that does not set the variable. No variable → nothing changes. The name is an ASCII letter or
+  digit, then letters, digits, `-` or `_`, taken as written and never a harness name; anything
+  else, and a variable naming a file that is not there, is named in the config line and never stops
+  a run.
+- **Each FLOW file is found on its own.** From a worktree, a file is read from the worktree, and
+  from the main checkout only when that checkout does not track it — the git-ignored personal file
+  a worktree never carries. This also fixes a silent miss: a git-ignored overlay beside a committed
+  `FLOW.md` used to go unread from a worktree. A committed file the branch deleted is no longer
+  borrowed from another branch.
+- **`flow bundle` and `flow tier` say which layers they read**, and where: `FLOW.md (from <main>) +
+  FLOW.ci.md [FLOW_CONTEXT=ci] + FLOW.claude.md`. Under `--rev`, a FLOW file the revision holds is
+  read from it, so a frozen review reads frozen config too. A base that does not resolve still
+  names the config it read.
+- **`/flow:doctor` shows the active context**, the layer each value came from, the context files no
+  variable selected (beside the overlay names, so a misspelled overlay is visible), and warns when
+  an ignore rule — such as an older `FLOW.*.md` — would keep a context file out of git.
+- **The setup advice ignores the personal files by name** (`/FLOW.md` and the six overlays), never
+  `/FLOW.*.md`, which would hide a context file. Existing repos keep their rule until they change it;
+  doctor points at it.
+- **The phases read the variable safely**: the look step is a quoted `find` (a zsh glob with no
+  match aborted the whole listing) and `printf %q` (a `\r` or a trailing space shows instead of
+  passing as a clean name). A value from the context layer is a tracked file of the branch, never a
+  quick config line written after the MR/PR.
+- **A committed context file is code**: a branch can change what flow runs under it, as it can its
+  Makefile. A runner that must not take that from a branch masks those keys in its overlay.
+
 ## v0.93.0 — A study says which tickets it is waiting for, so whoever builds it waits for them too  ·  2026-10-13
 
 **In short**

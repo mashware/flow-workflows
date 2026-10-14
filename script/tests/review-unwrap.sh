@@ -8,6 +8,9 @@
 # envelope · a command that reads no stdin · unparseable output · `{SCHEMA}` in single
 # quotes · an empty `exec_cmd`.
 set -u
+# The context layer is chosen by the environment; a caller that exports FLOW_CONTEXT must not
+# change what these cases read.
+unset FLOW_CONTEXT
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI="$HERE/../../bin/cli.mjs"
 BASE="${TMPDIR:-/tmp}/flow-review-unwrap-test"

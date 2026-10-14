@@ -9,6 +9,9 @@
 #      runs in a worktree, a git-ignored config exists only in the main checkout, and the
 #      pack came back with every key resolved to its fallback and nothing saying so.
 set -u
+# The context layer is chosen by the environment; a caller that exports FLOW_CONTEXT must not
+# change what these cases read.
+unset FLOW_CONTEXT
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI="$HERE/../../bin/cli.mjs"
 BASE="${TMPDIR:-/tmp}/flow-bundle-limits-test"
@@ -31,7 +34,8 @@ cat > FLOW.md <<'EOF'
 - diff_exclude:
   - 'deps.lock'
 EOF
-g add FLOW.md && g commit -qm config >/dev/null
+# Personal config, git-ignored as the template advises: the main checkout has it, a worktree never.
+printf '/FLOW.md\n' >> .git/info/exclude
 
 g checkout -q -b feature
 printf 'x = 2\n' >> big.py
@@ -58,9 +62,7 @@ check "and named in the worklist, not the end" "$BASE/pack.txt" hit  'Not in the
 check "the worklist shows every changed file"  "$BASE/pack.txt" hit  '3 files changed'
 
 # The config lives in the main checkout only; the phase runs in a worktree.
-g update-index --skip-worktree FLOW.md 2>/dev/null
 g worktree add -q --detach "$BASE/wt" feature 2>/dev/null
-rm -f "$BASE/wt/FLOW.md"                      # a git-ignored config never reaches a worktree
 (cd "$BASE/wt" && node "$CLI" bundle > "$BASE/pack-wt.txt" 2>&1)
 check "FLOW.md is found from a worktree"       "$BASE/pack-wt.txt" hit  "Left out by .git.diff_exclude"
 check "so the base resolves there too"         "$BASE/pack-wt.txt" miss 'does not resolve'

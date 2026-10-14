@@ -48,7 +48,7 @@ its reason file in a `mktemp -d` directory (flow-core §2.1).
 
 ## 1. Pre-flight
 
-- Read the effective FLOW configuration per flow-core §0; neither base nor active overlay → each
+- Read the effective FLOW configuration per flow-core §0; no FLOW layer present → each
   step's default. This command **creates** `00-summary.md` (§6) instead of reading it (flow-core §5).
 - No recognizable project structure → warn and stop.
 - **Determine the mode**: `$ARGUMENTS` non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less* (identifier = the §2.5 slug).

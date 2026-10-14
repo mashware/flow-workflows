@@ -13,7 +13,8 @@ base branch, test commands, whether migrations exist, which knowledge MCPs are e
 writes `FLOW.md` asking you only for what cannot be inferred. It creates
 `FLOW.claude.md`, `FLOW.codex.md`, `FLOW.opencode.md`, or `FLOW.gemini.md` only when the active
 harness has values of its own. Manual path: copy `examples/FLOW.template.md` to the repo root for
-either shape. Commands read the base and active overlay in their step 0. It covers:
+either shape. An optional `FLOW.<context>.md`, selected by `FLOW_CONTEXT=<name>` in the environment, sits between the two: a layer the repo commits for where flow runs (CI, a server, an orchestrator). Commands read the base, the context layer and the active overlay in
+their step 0. It covers:
 
 - **tracker**: ticket prefix, how to read a ticket (description **and** comment thread), and the optional start/done/abandon transitions.
 - **git**: host and CLI (`github` or `gitlab`), term (MR/PR), default base, branch pattern, assignee, squash, description sections, pre-deploy gate, train chaining (multi-PR stacked branches), worktrees.
@@ -32,13 +33,14 @@ either shape. Commands read the base and active overlay in their step 0. It cove
 
 The FLOW files are **personal config, not team config** — they mix repo facts with your own
 preferences and may point at agents another machine does not have — so `/flow:init` offers to
-git-ignore `/FLOW.md` and `/FLOW.*.md`.
+git-ignore `/FLOW.md` and each harness overlay by name — never `/FLOW.*.md`, which would also hide a
+committed context file.
 Full reference: [`docs/CONFIGURATION.md`](https://github.com/mashware/flow-workflows/blob/main/docs/CONFIGURATION.md);
 every key is also documented inline in `examples/FLOW.template.md`, which ships with the plugin.
 
 **Empty or absent effective keys degrade gracefully**: each command states what it does when a
 value is missing (auto-discover, use default, or ask you). An overlay key wins even when empty, so
-it can mask a legacy base value; absent overlay keys inherit the base. A repo without either file
+it can mask a legacy base value; absent overlay keys inherit the base. A repo with no FLOW layer
 still works, just with more questions and auto-discovery.
 
 ## What ships
