@@ -96,9 +96,11 @@ switch" case included, and only while no build or fix has begun (neither `05-imp
 that is where it lives. A study writes no code, so its branch still sits where the base was when the
 study began; an approval that waited for the tickets the study depends on (`meta.json.ticket_deps`)
 would otherwise build on a base that lacks them. `<base>` = `meta.json.base`, empty →
-`git.default_base`: `git fetch origin <base>`, then `<ref>` = `origin/<base>`; the fetch failing
-with a remote configured → `blocked`, since a stale ref would leave the build on the old base
-unnoticed. No remote → the local `<base>`. `git merge-base --is-ancestor HEAD <ref>` and `HEAD` is not
+`git.default_base`: `git fetch origin <base>` when a remote is configured (best-effort, as
+`$flow-feat-build` does — a fetch the container cannot make is not an error: the orchestrator left
+`origin/<base>` where the forge had it when it launched the run, and a container is given no git
+credentials), then `<ref>` = `origin/<base>` when it resolves, the local `<base>` otherwise. Neither
+resolves → `blocked`. `git merge-base --is-ancestor HEAD <ref>` and `HEAD` is not
 `<ref>` → the branch holds no commit of its own and the base moved: `git merge --ff-only <ref>`, and
 record `{ "key": "unattended:base-caught-up", "default": "<old short sha> → <new short sha> on
 <base>", "phase": "run" }`. The fast-forward fails → `blocked`, its message as the reason. Not an

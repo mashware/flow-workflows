@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.94.1 — An unattended start with a study no longer stops because the container cannot fetch  ·  2026-10-14
+
+**In short**
+- **`/flow:work:run` on `start` takes the base the orchestrator left** when `git fetch origin <base>`
+  fails, as `/flow:feat:build` already did. A container is given no git credentials, so that fetch
+  could never succeed there, and every handed-off study stopped as `blocked` before building.
+- Nothing changes on a laptop or outside `unattended`: the fetch still runs first, and a fetch that
+  works still decides the base.
+
+The catch-up of a study's branch with its base fetched `origin/<base>` and treated a failed fetch as
+`blocked`, to avoid building on a stale ref. Under an orchestrator that ref is not stale: the
+contract has it leave `origin/<base>` where the forge had it when the run was launched, and gives the
+container no credentials to fetch with. The fetch is now best-effort; `origin/<base>` is used when it
+resolves, the local `<base>` otherwise, and the run is `blocked` only when neither does.
+
 ## v0.94.0 — A repo commits the FLOW config for where flow runs, and whoever launches flow picks it  ·  2026-10-14
 
 **In short**
