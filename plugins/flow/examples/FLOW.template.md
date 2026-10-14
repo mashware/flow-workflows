@@ -17,7 +17,8 @@ flow sets `FLOW_CONTEXT=<name>` (`ci`, `server`, `unattended`…) and `FLOW.<nam
 between the base and the harness overlay, with the same rules. The repo commits it, so what only
 makes sense on a server or in CI — how to drive the app in a container, a convention for unattended
 MRs/PRs — is versioned with the code and never reaches a laptop that does not set the variable. The
-name is letters, digits, `-` and `_`, never a harness name.
+name is an ASCII letter or digit, then ASCII letters, digits, `-` or `_`, taken as written, and
+never a harness name.
 
 Place it at the repo root. This is **personal config, not team config** — it mixes repo facts
 (tracker, quality commands, conventions) with your own flow preferences (autonomy mode, the

@@ -533,7 +533,9 @@ Read `meta.json.conventions_candidates[]` (flow-core §8). **No entries with `st
    decision — the FLOW config is personal — so it is one question, never a negotiation.
 4. **Add / Replace** → append a `conventions` line to the base `FLOW.md`. For a `quality.<key>`,
    update the file its effective value came from, or the base when it was absent; otherwise an
-   overlay would immediately hide the correction. Show the old value and source in the result.
+   overlay would immediately hide the correction. A value from the context layer (flow-core §0) is
+   not edited here: that file is committed and the MR/PR is already out, so record the candidate as
+   a `followups[]` entry (`kind: "tooling"`) naming the file and the line instead. Show the old value and source in the result.
    Then `status: "added"`. **Not a rule** → `declined`, never offered again in any work.
    **Later** → stays `proposed` and is offered again by the next `ship` of a work that has it.
 5. **One line on screen**: how many rules were added and where, never a list of the texts —

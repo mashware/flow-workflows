@@ -27,8 +27,11 @@ a command relies on is simply absent in that session, and nothing else will repo
 ## 0. Effective FLOW config — base, context layer and harness overlay
 
 - **Look before you read.** The first thing a phase does about configuration is list what is there:
-  `ls <root>/FLOW*.md; printenv FLOW_CONTEXT` (the roots being the ones the bullets below resolve —
-  in a worktree, list both). One call, and it is not
+  `find <root> -maxdepth 1 -name 'FLOW*.md'; printf 'FLOW_CONTEXT=%q\n' "${FLOW_CONTEXT-}"` (the roots
+  being the ones the bullets below resolve — in a worktree, name both in the same `find`). A quoted
+  `-name`, not a shell glob: in zsh a glob that matches nothing aborts the whole command, so the
+  root that has no FLOW file would hide the one that does; and `%q`, not `echo`, so a trailing
+  space or a `\r` from a CRLF `.env` shows instead of reading as a clean name. One call, and it is not
   optional — **an overlay you did not list is an overlay you did not read**, and nothing downstream
   will notice. Every command and artifact calls the effective configuration "`FLOW.md`", a file that
   exists, so reading it and stopping feels finished — and a missed overlay reports its keys as unset,
@@ -53,9 +56,11 @@ a command relies on is simply absent in that session, and nothing else will repo
   who set it. Unset or empty → no context layer, and nothing else changes. Set, and the file is
   not there → not an error; say so beside the files you name (`FLOW_CONTEXT=ci: FLOW.ci.md not
   found`), because a typo in the variable is otherwise a repo with no context file. **The name is
-  one plain segment**: letters, digits, `-` and `_`, starting with a letter or digit, and not a
-  harness name in any case (`FLOW_CONTEXT=Claude` would read an overlay as the wrong layer). A name
-  that fails → read no context layer, say so in the same place, and carry on — never a stop.
+  one plain segment, taken exactly as written**: an ASCII letter or digit, then ASCII letters,
+  digits, `-` or `_` — nothing trimmed, so a padded `" ci"` fails — and not a harness name in any case
+  (`FLOW_CONTEXT=Claude` would read an overlay as the wrong layer). A name that fails → read no
+  context layer, say so in the same place, and carry on — never a stop. `flow-workflows` applies
+  the same rule, so the two of you resolve the same layers.
   Any other `FLOW.<name>.md` at the root is a context file this run did not select: unread, by
   design.
 - **"The repo root" is the main checkout's, not the worktree's.** With `git.worktree` set, every
@@ -68,9 +73,14 @@ a command relies on is simply absent in that session, and nothing else will repo
   the copy in the directory you are in — a repo that commits its config has one in every worktree,
   and it may legitimately differ — and otherwise read it from the main checkout, which
   `git rev-parse --path-format=absolute --git-common-dir` locates from anywhere (its parent
-  directory). One root for all of them misses a file whenever they live apart: a committed context
-  file is in the worktree while the git-ignored base exists only in the main checkout, and the main
-  checkout's copy of a committed file is another branch's version of it. Name the file you actually
+  directory) — **unless that checkout tracks it**: the main checkout's HEAD is the first `HEAD`
+  line of `git worktree list --porcelain`, and `git ls-tree --name-only <that sha> -- <file>`
+  printing the name means it is tracked. A tracked file missing here is this branch's own state,
+  deleted, renamed or not added yet, and the main checkout's copy is another branch's version.
+  Either command failing → do not borrow the file, and say so where you name the files you read.
+  The file name matches exactly, case included, even where the filesystem would not care. One root for all of them misses a file whenever
+  they live apart: a committed context file is in the worktree while the git-ignored base exists
+  only in the main checkout. Name the file you actually
   read, and where, when a stop reports configuration.
   **This is a rule about reading a git-ignored config, and it inverts for anything a phase
   writes into the repo.** A tracked file belongs to the branch, and the branch is the worktree:
@@ -119,7 +129,10 @@ a command relies on is simply absent in that session, and nothing else will repo
   The FLOW config is personal, so writing a line is not a team decision; it is still an edit to the
   tree, so the option is an explicit choice the user makes, never a default action (same bar as
   flow-core §8's convention offer, and the two share their wording). Update a value in the file it
-  came from. A new repo fact or shared preference goes to `FLOW.md`; a new harness-owned model,
+  came from — **except that the context layer is not personal**: it is committed, a value it holds
+  is the repo's, and changing it is a change to a tracked file of this branch, written here (the
+  inversion above) and shipped in the MR/PR like code, never offered as a quick config line. A new
+  key never goes to the context layer by this route. A new repo fact or shared preference goes to `FLOW.md`; a new harness-owned model,
   agent, skill, orchestration tool, or knowledge-tool name goes to the active overlay. Never edit an
   inactive harness's overlay.
 - **Knowledge sources, by role** (`knowledge` section): `search` (one or more tools or commands
@@ -1097,7 +1110,10 @@ learned during `build` is enforced in the review of that same MR/PR, not of the 
 **`ship` offers them once, at Close** — one `AskUserQuestion`, batched up to 4, options **Add to
 FLOW.md** · **Not a rule** · **Later**, the `text` being the whole prompt. *Add* appends a convention
 to the base `FLOW.md`. A `quality` correction updates the file its effective value came from, or the
-base when the key was absent: otherwise an overlay would immediately hide the correction. The FLOW
+base when the key was absent: otherwise an overlay would immediately hide the correction. A value
+that came from the context layer is the exception (§0): that file is committed, so the correction
+is a change to this branch, made before the MR/PR is created or offered as a follow-up — never a
+config line written after it. The FLOW
 config is personal, but this is still an edit to a file in the tree, so **it is asked in every
 mode**, like `KNOWLEDGE.md`'s first creation. No candidates → the step does not exist and says
 nothing.

@@ -49,45 +49,6 @@ both the `/flow:`-prefixed mirror generated for it (which resolves `FLOW.zcode.m
 plugin's own Claude pages, unprefixed — `/feat:start`, `/bug:fix`, `/init`. Those resolve
 `FLOW.claude.md`, so on zcode type the `/flow:` names.
 
-### Context layer
-
-Some configuration depends on **where flow runs**, not on who runs it or with which harness. On a
-laptop a person runs flow with their own `FLOW.md`; on a server, in CI or under an orchestrator the
-repo may want things that only make sense there — how to drive the app in a container
-(`quality.functional_check`), a convention for unattended MRs/PRs. Put those in the base and they
-reach every laptop; have the orchestrator write a harness overlay and the repo cannot own them.
-
-So whoever launches flow sets **`FLOW_CONTEXT=<name>`** in the environment, and `FLOW.<name>.md`
-at the repo root is read **between the base and the harness overlay**:
-
-```
-FLOW.md  →  FLOW.<FLOW_CONTEXT>.md  →  FLOW.<harness>.md
-```
-
-- Same rules as the overlay (below): a present key replaces, a present-but-empty key masks,
-  `conventions` lines add up. The harness overlay still has the last word, because it holds the
-  harness-owned names (models, agents).
-- The repo **commits** it. The name is free — `ci`, `server`, `unattended` — and flow does not need
-  to know who set it.
-- No variable → no context layer and nothing changes. The variable set and the file missing → not
-  an error; the config line says `FLOW_CONTEXT=ci: FLOW.ci.md not found`.
-- The name is letters, digits, `-` and `_`, starting with a letter or digit, and never a harness
-  name (in any case). Anything else is skipped and named — never a stop.
-- `/flow:doctor` shows the active context, the layer each value came from, and the context files no
-  variable selected.
-
-```markdown
-# FLOW.ci.md — committed; read only where FLOW_CONTEXT=ci
-## quality
-- functional_check: docker compose up -d app && ./script/smoke.sh
-```
-
-### Where each file is read from
-
-Each layer is found **on its own**: the copy in the checkout you are in, and otherwise the main
-checkout's. A committed context file is in every worktree, while a git-ignored `FLOW.md` or overlay
-exists only in the main checkout; reading them from one place would miss one of them.
-
 A `- key:` line **inside a fenced block is an example**, not configuration. These files are prose
 with keys in them, and what makes a key a key is its shape — a `- key:` line under a `## section`
 — so a block written to be pasted used to be read as the config it illustrates, by the CLI and by
@@ -140,6 +101,50 @@ with your own preferences (autonomy mode, the agents and MCPs *you* have install
 your assignee name). The same files on a teammate's machine may point at agents that are not there.
 They hold no secrets — those stay in your credential store. A team that wants to share only the
 repo-fact subset can commit it deliberately.
+
+### Context layer
+
+Some configuration depends on **where flow runs**, not on who runs it or with which harness. On a
+laptop a person runs flow with their own `FLOW.md`; on a server, in CI or under an orchestrator the
+repo may want things that only make sense there — how to drive the app in a container
+(`quality.functional_check`), a convention for unattended MRs/PRs. Put those in the base and they
+reach every laptop; have the orchestrator write a harness overlay and the repo cannot own them.
+
+So whoever launches flow sets **`FLOW_CONTEXT=<name>`** in the environment, and `FLOW.<name>.md`
+at the repo root is read **between the base and the harness overlay**:
+
+```
+FLOW.md  →  FLOW.<FLOW_CONTEXT>.md  →  FLOW.<harness>.md
+```
+
+- Same rules as the overlay (above): a present key replaces, a present-but-empty key masks,
+  `conventions` lines add up. The harness overlay still has the last word, because it holds the
+  harness-owned names (models, agents).
+- The repo **commits** it. The name is free — `ci`, `server`, `unattended` — and flow does not need
+  to know who set it. Being committed, it is code: a branch can change what flow runs under that
+  context (`quality.*`, `agents.exec_cmd`), exactly as it can change its own Makefile. A runner that
+  must not take that from a branch masks those keys in the harness overlay it writes.
+- No variable → no context layer and nothing changes. The variable set and the file missing → not
+  an error; the config line says `FLOW_CONTEXT=ci: FLOW.ci.md not found`.
+- The name is an ASCII letter or digit, then ASCII letters, digits, `-` or `_`, taken exactly as written
+  (nothing trimmed), and never a harness name in any case. Anything else is skipped and named —
+  never a stop.
+- `/flow:doctor` shows the active context, the layer each value came from, and the context files no
+  variable selected.
+
+```markdown
+# FLOW.ci.md — committed; read only where FLOW_CONTEXT=ci
+## quality
+- functional_check: docker compose up -d app && ./script/smoke.sh
+```
+
+### Where each file is read from
+
+Each layer is found **on its own**: the copy in the checkout you are in, and otherwise the main
+checkout's — unless the main checkout tracks it, because then its absence here is this branch's own
+state (deleted, renamed, not added yet) and the main checkout's copy belongs to another branch. A
+committed context file is in every worktree, while a git-ignored `FLOW.md` or overlay exists only in
+the main checkout; reading them from one place would miss one of them.
 
 ## Sections at a glance
 

@@ -95,8 +95,8 @@ authorization, payments, personal data, a public contract, a migration):
 Each advisor gets this brief, with its lens substituted:
 
 > Propose ONE approach to solve ticket `<TICKET>`, from this lens: `<lens brief>`. Read
-> `.claude/work/<TICKET>/01-context.md` for context and the effective FLOW configuration (base plus
-> active harness overlay) for project conventions. What already exists in the repository:
+> `.claude/work/<TICKET>/01-context.md` for context and the effective FLOW configuration (base, the
+> context layer `FLOW_CONTEXT` selects, and the active harness overlay) for project conventions. What already exists in the repository:
 > `<the §1.5.1 inventory>` — propose a new piece only where nothing there fits. Do not
 > write code. Be specific about real modules and layers of this project. Report: name, what it is
 > (one sentence), modules/layers affected, main risk, and why it could be a bad idea. Under 250 words.

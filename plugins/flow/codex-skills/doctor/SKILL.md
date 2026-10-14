@@ -42,7 +42,7 @@ changing machines, after `$flow:init`, or when a command failed the way an envir
   **Say which checkout the configuration came from** whenever it is not the directory you are in
   (flow-core §0: a worktree does not carry a git-ignored `FLOW.md`). A diagnosis run from a
   worktree that quietly read nothing is the one that certifies a repo as unconfigured.
-- Parse both files by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`,
+- Parse each layer by section: `tracker`, `git`, `autonomy`, `quality`, `agents`, `models`, `data`,
   `conventions`, `notes`, `knowledge`, `observability`; merge keys and empty masks per flow-core §0.
   Keep the source of every effective value. No layer present → §1.5 runs with **every** key empty (all
   fallbacks), which is a legitimate and complete answer.
@@ -79,7 +79,7 @@ print one informational line: those values currently apply to every harness with
 override. This is valid configuration, not a warning and never a claim that a free-text model name
 is invalid.
 
-#### 1.5.2 Resolved models (only if either file has a `models` key)
+#### 1.5.2 Resolved models (only if any layer has a `models` key)
 
 Three keys, all about subagents. Print what each one actually reaches:
 
@@ -132,10 +132,20 @@ data.volumes         (none — duel ran schema-only)  2 works   last: query
 Report problems, change nothing. Validate the base, the active context file and the active
 overlay separately, name the file that owns each problem, and ignore inactive overlays. Any other
 root `FLOW.<name>.md` is a context file this run did not select: list it once, as inactive, with the
-`FLOW_CONTEXT=<name>` that would select it — never as unknown, and its keys are not validated.
-Only a name the context rule refuses (flow-core §0) gets a warning, because nothing will ever read
-it. **Scope: these files.**
-Whether the world they describe exists —
+`FLOW_CONTEXT=<name>` that would select it and the six harness overlay names beside it — a
+misspelled overlay (`FLOW.cluade.md`) reads exactly like a context, and only the reader can tell —
+never as unknown, and its keys are not validated. Only a name the context rule refuses (flow-core
+§0) gets a warning, because nothing will ever read it.
+- **A context file git would swallow**: run `git check-ignore -v --no-index FLOW.flow-probe.md` at
+  the repo root — a name no repo tracks, so a context file that was force-added does not hide the
+  rule, and `--no-index` asks the ignore rules rather than the index. It prints a rule that does not
+  start with `!` → one warning naming that rule and its file (`.gitignore`, `.git/info/exclude`, a
+  global excludes file): a `FLOW.*.md` written by an older `$flow:init` hides every new context file
+  from `git add`, and the run that needs it reports it `not found` somewhere else, long after.
+  Replace the glob with the names `$flow:init` §5 lists. A `!` rule, or nothing printed → no
+  warning.
+
+**Scope: these files.** Whether the world they describe exists —
 CLIs installed *and authenticated*, agents discoverable, hooks executable, the MCP reachable, the
 base branch resolvable — is §2 below; flag the key here, check the world there, never both.
 

@@ -16,14 +16,17 @@ and optional harness-owned values in the active `FLOW.<harness>.md`. The active 
 `FLOW.zcode.md`; identify it from the
 product executing this command, never from the selected model (zcode runs the Claude pages too, so
 the page you are reading does not name the harness). Every other `/flow:*` command reads
-the base and then that overlay. The user answers the **minimum**: what the repo can tell is
+the base, then the context layer `FLOW_CONTEXT` selects (flow-core §0), then that overlay. A
+context file is the repo's, committed for where flow runs: `init` writes neither it nor its key. The user answers the **minimum**: what the repo can tell is
 auto-detected and only confirmed.
 
 Key names and contract: `examples/FLOW.template.md` from the plugin. Do not invent keys that are not there.
 
 ## 1. If either configuration file already exists
 
-Show `FLOW.md` and the active overlay when each exists, then show their effective merged values.
+Show `FLOW.md` and the active overlay when each exists, then show their effective merged values —
+with the context layer `FLOW_CONTEXT` selects merged in and named when it is set (flow-core §0), so
+a value it masks is not offered as if the base still decided it.
 Ask: **update** (re-detect and re-ask, preserving what the user keeps) or **cancel**. Never read,
 change, or display another harness's overlay. Never overwrite either file without confirmation.
 Label harness-sensitive values that currently come from the base as **shared across harnesses**;
@@ -117,7 +120,7 @@ overlay, never the base.
 
 ## 4. Write the base and, only when needed, the active overlay
 
-Write compact files at the repo root — every command reads the base and active overlay in every
+Write compact files at the repo root — every command reads every FLOW layer in every
 phase, so their size is paid on every step:
 
 - `FLOW.md` holds repo facts and shared preferences: tracker, git, autonomy, quality commands, cost

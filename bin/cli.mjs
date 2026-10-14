@@ -289,12 +289,46 @@ function parseFlow(text) {
 // every key to its fallback and say nothing. Prefer the root we are in (a repo that commits its
 // config gets it in every worktree, and a worktree may legitimately differ), and fall back to the
 // main checkout, which `--git-common-dir` points into from anywhere.
+// The main checkout is asked of git once per run: every FLOW layer and overlay probe needs it.
+const mainCheckouts = new Map()
+function mainCheckout(repo) {
+  if (!mainCheckouts.has(repo)) {
+    const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], repo).trim()
+    mainCheckouts.set(repo, common ? dirname(common) : repo)
+  }
+  return mainCheckouts.get(repo)
+}
+
 function rootHolding(repo, probe) {
   if (existsSync(join(repo, probe))) return repo
-  const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], repo).trim()
-  if (!common) return repo
-  const main = dirname(common)
+  const main = mainCheckout(repo)
   return main !== repo && existsSync(join(main, probe)) ? main : repo
+}
+
+// Exactly this name, case included. A case-insensitive filesystem answers `existsSync` for
+// `FLOW.CI.md` with `FLOW.ci.md`, which neither the agent's listing nor a Linux CI would read.
+function hasFile(root, name) {
+  try { return readdirSync(root).includes(name) } catch { return false }
+}
+
+// A FLOW file is taken from the main checkout only when that checkout's HEAD does not track it —
+// the git-ignored personal file a worktree never carries. One it tracks is committed, so its
+// absence here is this branch's own state (deleted, renamed, not added yet), and the main
+// checkout's copy would be another branch's version. When git cannot answer, nothing is borrowed:
+// a guess here reads another branch's config, and the note says why the file was not read.
+function flowRoot(repo, name) {
+  if (hasFile(repo, name)) return { root: repo, note: '' }
+  const main = mainCheckout(repo)
+  if (main === repo || !hasFile(main, name)) return { root: repo, note: '' }
+  let tracked
+  try {
+    tracked = execFileSync('git', ['ls-tree', '--name-only', 'HEAD', '--', name], {
+      cwd: main, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+  } catch {
+    return { root: repo, note: `${name} in ${main} not read: git could not say whether that checkout tracks it` }
+  }
+  return { root: tracked ? repo : main, note: '' }
 }
 
 // The overlay names flow-core §0 recognises. A `--harness` outside this set reads no
@@ -303,22 +337,27 @@ function rootHolding(repo, probe) {
 const OVERLAY_HARNESSES = ['claude', 'codex', 'gemini', 'hermes', 'opencode', 'zcode']
 
 // The context layer, `FLOW.<FLOW_CONTEXT>.md`, is chosen by whoever launches flow. The name
-// becomes part of a path, so it is held to one plain segment, and a harness name would read an
+// becomes part of a path, so it is held to one plain ASCII segment, and a harness name would read an
 // overlay as the wrong layer — compared ignoring case, because `FLOW.Claude.md` opens
-// `FLOW.claude.md` on a case-insensitive filesystem. A name that fails is skipped and named,
-// never fatal: the phases calling this must not stop on configuration (flow-core §0).
+// `FLOW.claude.md` on a case-insensitive filesystem. Nothing is trimmed: the agent reading the
+// same variable by flow-core §0 takes it as written, and the two must resolve the same layer. A
+// name that fails is skipped and named, never fatal: the phases calling this must not stop on
+// configuration.
 const CONTEXT_NAME = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 
 function flowContext() {
-  const value = (process.env.FLOW_CONTEXT ?? '').trim()
-  if (!value) return { name: null, note: '' }
+  const value = process.env.FLOW_CONTEXT ?? ''
+  if (value === '') return { name: null, note: '' }
   if (CONTEXT_NAME.test(value) && !OVERLAY_HARNESSES.includes(value.toLowerCase())) {
     return { name: value, note: '' }
   }
+  // Echoed into the pack's header, which reviewers read as Markdown: a refused value is shown as
+  // inline code, escaped so that no newline, backtick or `<!--` in it can open anything there.
+  const shown = JSON.stringify(value).replace(/`/g, '\\u0060')
   return {
     name: null,
-    note: `FLOW_CONTEXT=${value} ignored: a context is a name matching [A-Za-z0-9][A-Za-z0-9_-]*`
-      + ` other than a harness (${OVERLAY_HARNESSES.join(', ')})`,
+    note: `FLOW_CONTEXT=\`${shown}\` ignored: a context is an ASCII name matching`
+      + ` [A-Za-z0-9][A-Za-z0-9_-]* other than a harness (${OVERLAY_HARNESSES.join(', ')})`,
   }
 }
 
@@ -326,14 +365,34 @@ function flowContext() {
 // them misses one whenever they live apart: a committed `FLOW.<context>.md` is in the worktree
 // while a git-ignored `FLOW.md` or overlay exists only in the main checkout — and reading the
 // main checkout's copy of a committed file reads another branch's version of it.
-function flowLayers(repo, harness) {
+//
+// Under `--rev` a layer the frozen revision holds is read from it: the context file is tracked,
+// so it belongs to the revision being reviewed as much as the diff does, and a round editing it
+// mid-flight must not hand each reader a different exclude list. An untracked layer is in no
+// revision and is read live, as before.
+function flowLayers(repo, harness, rev = null) {
   const context = flowContext()
   const contextFile = context.name && `FLOW.${context.name}.md`
   const layers = ['FLOW.md', contextFile, harness && `FLOW.${harness}.md`].filter(Boolean).map((name) => {
-    const root = rootHolding(repo, name)
-    return { name, root, found: existsSync(join(root, name)), context: name === contextFile }
+    const layer = { name, context: name === contextFile, note: '' }
+    if (rev) {
+      const text = gitBlob(repo, rev, name)
+      if (text !== null) return { ...layer, root: repo, at: rev, text, found: true }
+    }
+    const { root, note } = flowRoot(repo, name)
+    return { ...layer, root, note, found: hasFile(root, name) }
   })
   return { layers, context }
+}
+
+function gitBlob(repo, rev, name) {
+  try {
+    return execFileSync('git', ['show', `${rev}:${name}`], {
+      cwd: repo, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
+    })
+  } catch {
+    return null
+  }
 }
 
 // Which config files a run actually read. The pack says so out loud because the failure it
@@ -346,31 +405,29 @@ function flowLayers(repo, harness) {
 // the file it skipped, because that file is where `agents.exec_cmd` and a harness's models
 // live and their absence is indistinguishable from a decision not to set them. A context file
 // left unread is not in that list: no `FLOW_CONTEXT` is how a laptop leaves it out on purpose.
-function configFiles(repo, harness) {
-  const { layers, context } = flowLayers(repo, harness)
+function configFiles(repo, harness, rev = null) {
+  const { layers, context } = flowLayers(repo, harness, rev)
   const found = layers.filter((l) => l.found)
-  const roots = new Set(found.map((l) => l.root))
-  const from = (root) => (root === repo ? '' : ` (from ${root})`)
   const label = (l) => l.name + (l.context ? ` [FLOW_CONTEXT=${context.name}]` : '')
-    + (roots.size > 1 ? from(l.root) : '')
-  const notes = [found.length
-    ? found.map(label).join(' + ') + (roots.size === 1 ? from([...roots][0]) : '')
-    : `none found in ${repo}`]
+    + (l.at ? ` (at ${l.at.slice(0, 12)})` : l.root === repo ? '' : ` (from ${l.root})`)
+  const notes = [found.length ? found.map(label).join(' + ') : `none found in ${repo}`]
   if (context.note) notes.push(context.note)
+  for (const l of layers) if (l.note) notes.push(l.note)
   for (const l of layers) if (l.context && !l.found) notes.push(`FLOW_CONTEXT=${context.name}: ${l.name} not found`)
   const skipped = harness ? []
-    : OVERLAY_HARNESSES.map((h) => `FLOW.${h}.md`).filter((n) => existsSync(join(rootHolding(repo, n), n)))
+    : OVERLAY_HARNESSES.map((h) => `FLOW.${h}.md`).filter((n) => hasFile(flowRoot(repo, n).root, n))
   if (skipped.length) notes.push(`no \`--harness\` was given, so ${skipped.join(', ')} went unread`)
   return notes.join(' — ')
 }
 
 // Base, then the context layer, then the overlay of the harness running this, exactly as
 // flow-core §0 resolves it: a key present in a later layer replaces the earlier value.
-function flowConfig(repo, harness) {
+function flowConfig(repo, harness, rev = null) {
   const merged = {}
-  for (const l of flowLayers(repo, harness).layers) {
+  for (const l of flowLayers(repo, harness, rev).layers) {
     if (!l.found) continue
-    for (const [section, keys] of Object.entries(parseFlow(readFileSync(join(l.root, l.name), 'utf8')))) {
+    const text = l.text ?? readFileSync(join(l.root, l.name), 'utf8')
+    for (const [section, keys] of Object.entries(parseFlow(text))) {
       merged[section] = { ...(merged[section] ?? {}), ...keys }
     }
   }
@@ -420,12 +477,28 @@ function buildBundle(argv) {
     console.error(`recognise. One of: ${OVERLAY_HARNESSES.join(', ')}.`)
     process.exit(1)
   }
-  const cfg = flowConfig(repo, harness)
+  const resolves = (ref) => Boolean(git(['rev-parse', '--verify', '--quiet', ref], repo).trim())
+  // `--rev` freezes what is read. Without it the pack is the live checkout, which is the
+  // right answer for a phase that is about to edit it and the wrong one for a review: the
+  // round applies its own fixes while its reviewers are still reading, so "the tree" is a
+  // different tree for each of them and for the sha recorded at the end. A caller that has
+  // resolved a candidate — a commit, or a `git stash create` object holding a dirty tree —
+  // passes it here and every section below reads that one revision, the config it commits
+  // included.
+  const rev = flag('--rev')
+  if (rev && !resolves(rev)) {
+    console.error(`flow bundle: --rev \`${rev}\` does not resolve in this checkout.`)
+    console.error('Pass a commit, a tag, or the object `git stash create` printed. A pack')
+    console.error('built from a revision nobody can name is evidence about nothing.')
+    process.exit(1)
+  }
+  const to = rev ? git(['rev-parse', rev], repo).trim() : null
+  const cfg = flowConfig(repo, harness, to)
+  const configs = configFiles(repo, harness, to)
   const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
   const maxFile = Number(flag('--max-file-bytes', MAX_FILE_BYTES)) || MAX_FILE_BYTES
   const maxDiffLines = Number(flag('--max-diff-lines', MAX_DIFF_LINES)) || MAX_DIFF_LINES
 
-  const resolves = (ref) => Boolean(git(['rev-parse', '--verify', '--quiet', ref], repo).trim())
   let base = flag('--base') || cfg.git?.default_base || ''
   if (!base) {
     // What the remote says it defaults to, then the usual names — remote first, but a repo
@@ -441,22 +514,9 @@ function buildBundle(argv) {
     console.error(`flow bundle: base \`${base}\` does not resolve in this checkout.`)
     console.error('Set `git.default_base` in FLOW.md, or pass --base. A silently empty bundle')
     console.error('reads exactly like a branch with no changes, which is worse than this error.')
+    console.error(`Config read: ${configs}.`)
     process.exit(1)
   }
-  // `--rev` freezes what is read. Without it the pack is the live checkout, which is the
-  // right answer for a phase that is about to edit it and the wrong one for a review: the
-  // round applies its own fixes while its reviewers are still reading, so "the tree" is a
-  // different tree for each of them and for the sha recorded at the end. A caller that has
-  // resolved a candidate — a commit, or a `git stash create` object holding a dirty tree —
-  // passes it here and every section below reads that one revision.
-  const rev = flag('--rev')
-  if (rev && !resolves(rev)) {
-    console.error(`flow bundle: --rev \`${rev}\` does not resolve in this checkout.`)
-    console.error('Pass a commit, a tag, or the object `git stash create` printed. A pack')
-    console.error('built from a revision nobody can name is evidence about nothing.')
-    process.exit(1)
-  }
-  const to = rev ? git(['rev-parse', rev], repo).trim() : null
   const from = git(['merge-base', base, to ?? 'HEAD'], repo).trim() || base
   // Every diff below runs `from` → `ends`, and an empty `ends` means the working tree.
   const ends = to ? [to] : []
@@ -526,7 +586,7 @@ function buildBundle(argv) {
   out.push(`# flow bundle — ${branch}`)
   out.push('')
   out.push(`Base \`${base}\` · merge base \`${from.slice(0, 12)}\` · generated by \`flow bundle\`.`)
-  out.push(`Config read: ${configFiles(repo, harness)}.`)
+  out.push(`Config read: ${configs}.`)
   if (to) {
     out.push(`Revision \`${to.slice(0, 12)}\` (\`--rev ${rev}\`) — **frozen**. Every diff and every`)
     out.push('file below is that one revision, not the checkout, which may have moved since.')
@@ -638,7 +698,7 @@ function buildBundle(argv) {
     }
   }
 
-  return { text: out.join('\n'), repo, cfg, branch, work, configs: configFiles(repo, harness) }
+  return { text: out.join('\n'), repo, cfg, branch, work, configs }
 }
 
 // --- tier -------------------------------------------------------------------------------
@@ -693,21 +753,23 @@ function tier(argv) {
     console.error(`flow tier: unknown harness \`${harness}\`. One of: ${OVERLAY_HARNESSES.join(', ')}.`)
     process.exit(1)
   }
-  const cfg = flowConfig(repo, harness)
   const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
   const resolves = (ref) => Boolean(git(['rev-parse', '--verify', '--quiet', ref], repo).trim())
-
-  const base = flag('--base') || cfg.git?.default_base || 'origin/main'
-  if (!resolves(base)) {
-    console.error(`flow tier: base \`${base}\` does not resolve. Set git.default_base or pass --base.`)
-    process.exit(1)
-  }
   const rev = flag('--rev')
   if (rev && !resolves(rev)) {
     console.error(`flow tier: --rev \`${rev}\` does not resolve in this checkout.`)
     process.exit(1)
   }
   const to = rev ? git(['rev-parse', rev], repo).trim() : null
+  const cfg = flowConfig(repo, harness, to)
+  const configs = configFiles(repo, harness, to)
+
+  const base = flag('--base') || cfg.git?.default_base || 'origin/main'
+  if (!resolves(base)) {
+    console.error(`flow tier: base \`${base}\` does not resolve. Set git.default_base or pass --base.`)
+    console.error(`Config read: ${configs}`)
+    process.exit(1)
+  }
   const from = git(['merge-base', base, to ?? 'HEAD'], repo).trim() || base
   const ends = to ? [to] : []
 
@@ -750,7 +812,7 @@ function tier(argv) {
   const out = []
   out.push(`Changed lines: ${changedLines} over ${files.length} file(s), \`${from.slice(0, 12)}\`..`
     + `${to ? `\`${to.slice(0, 12)}\`` : 'working tree'} (base \`${base}\`)`)
-  out.push(`Config read: ${configFiles(repo, harness)}`)
+  out.push(`Config read: ${configs}`)
   out.push(`review_depth: ${depth}`)
   out.push(`Diff size: ${diffSize}   ·   meta.json.size: ${recorded ?? 'not recorded'}`
     + `   ·   Effective size: ${effective}`)
@@ -1172,7 +1234,8 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   --max-diff-lines what is too big to read as a diff. A large file with a small change
   keeps its diff; the worklist always shows the whole change, and anything held back is
   named there rather than at the end. Each FLOW file is read from the main checkout when
-  this runs inside a worktree that does not carry it.
+  this runs inside a worktree that does not carry it — unless the main checkout tracks it,
+  since a committed file missing here is this branch's own state.
   --rev freezes what is read: the diff and the files come from that one revision instead
   of the live checkout, so every reader of the pack reads the same bytes however long
   they take. Pass a commit, or the object "git stash create" prints for a dirty tree.
@@ -1182,8 +1245,10 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   Without it no overlay is read at all, which the pack's header says out loud: a key set
   only there — agents.exec_cmd, a harness's models — would otherwise read as unset.
   FLOW_CONTEXT=<name> in the environment adds FLOW.<name>.md between FLOW.md and the
-  overlay — a layer the repo commits for where flow runs (ci, server…). A harness name, or
-  anything but letters, digits, - and _, is skipped and named in the pack's header.
+  overlay — a layer the repo commits for where flow runs (ci, server…). The name is an ASCII
+  letter or digit, then ASCII letters, digits, - or _, and never a harness name; anything
+  else, spaces included, is skipped and named in the pack's header. Under --rev, a FLOW file
+  the revision holds is read from it.
 
 "tier" resolves the review depth from the same config: changed lines against the base,
   diff size, meta.json.size, effective size, the built-in effort with and without the

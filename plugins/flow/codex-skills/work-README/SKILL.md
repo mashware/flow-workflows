@@ -28,7 +28,8 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
   commands, code conventions, and observability profile.
 - The active `FLOW.<harness>.md` is an optional sparse overlay (`claude`, `codex`, `opencode`,
   `gemini`, `hermes`, or `zcode`) for model names, agents, skills, orchestration, knowledge tools, or any other value that
-  differs on that harness. Every command reads the base and then the active overlay in step 0;
+  differs on that harness. Every command reads the base, the context layer below, and then the
+  active overlay in step 0;
   existing repos with only `FLOW.md` behave exactly as before.
 - `FLOW_CONTEXT=<name>` in the environment adds `FLOW.<name>.md` between the two: a layer the repo
   commits for where flow runs (CI, a server, an orchestrator), with the overlay's merge rules.
@@ -252,7 +253,7 @@ Two signals arrive on an open MR/PR, each with its own cross-cutting loop (feat 
 
 ## Cross-cutting commands
 
-- `$flow:next` — the entry point: no base or active overlay → init; work on the current branch →
+- `$flow:next` — the entry point: no FLOW layer → init; work on the current branch →
   resume; otherwise status.
 - `$flow:work-daily [question]` — the **work assistant** (daily standup), read-only. **Local** (`.claude/work/` + git) + **forge** (open MRs/PRs, reviews awaiting you, red CI, unmergeable, unresolved threads via `git.cli`) + **tracker** (assigned tickets, priority changes via `tracker.tool`); where they cross, concrete commands (`$flow:feat-start`, `$flow:work-green`, `$flow:work-respond`). No argument → *yesterday · today · blockers*; a question → just that. External sources best-effort, never blocking; the only write is a "last seen" marker, like `$flow:news`.
 - `$flow:work-status` — all works in `.claude/work/`, current phase, divergence with git.
