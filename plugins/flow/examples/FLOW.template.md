@@ -10,15 +10,23 @@ Use this shape for the shared base `FLOW.md` and for an optional sparse harness 
 read after the base. A key present in it replaces the base value; a present-but-empty key masks the
 base and selects the normal empty fallback; an absent key inherits the base. Lists replace whole
 lists. `conventions` is additive: overlay lines follow the base lines and both apply. Existing repos
-with only `FLOW.md` behave exactly as before. Unknown `FLOW.*.md` names are ignored.
+with only `FLOW.md` behave exactly as before.
+
+A third, optional layer depends on **where flow runs** rather than on who runs it: whoever launches
+flow sets `FLOW_CONTEXT=<name>` (`ci`, `server`, `unattended`…) and `FLOW.<name>.md` is read
+between the base and the harness overlay, with the same rules. The repo commits it, so what only
+makes sense on a server or in CI — how to drive the app in a container, a convention for unattended
+MRs/PRs — is versioned with the code and never reaches a laptop that does not set the variable. The
+name is letters, digits, `-` and `_`, never a harness name.
 
 Place it at the repo root. This is **personal config, not team config** — it mixes repo facts
 (tracker, quality commands, conventions) with your own flow preferences (autonomy mode, the
 tools/agents you have installed, review depth, assignee), so what one developer wants differs from
 the next and the same file on another machine may point at agents or an MCP that isn't there. It
-holds **no secrets** (those stay in your credential store), but **add `/FLOW.md` and
-`/FLOW.*.md` to your `.gitignore`** — `/flow:init` offers to do this for you. A team that wants to
-share the repo-fact subset can still commit it deliberately.
+holds **no secrets** (those stay in your credential store), but **add `/FLOW.md`, `/FLOW.claude.md`, `/FLOW.codex.md`, `/FLOW.gemini.md`, `/FLOW.hermes.md`, `/FLOW.opencode.md` and `/FLOW.zcode.md` to your
+`.gitignore`**, each by name — `/flow:init` offers to do this for you. Not `/FLOW.*.md`: that would
+also hide a context file the repo means to commit. A team that wants to share the repo-fact subset
+can still commit it deliberately.
 
 ## tracker
 How tickets are identified and read.

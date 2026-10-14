@@ -17,8 +17,9 @@ runs a phase on its own and never advances `meta.json`.
 
 ## 1. Look
 
-1. Identify the active harness. Does `FLOW.md` or its active `FLOW.<harness>.md` exist at the repo
-   root? An inactive harness's overlay does not configure this session.
+1. Identify the active harness. Does `FLOW.md`, the context file `FLOW_CONTEXT` selects, or the
+   active `FLOW.<harness>.md` exist (flow-core §0)? An inactive harness's overlay, or a context file
+   no variable selects, does not configure this session.
 2. `git branch --show-current`, and whether `.claude/work/*/meta.json` has a `branch` equal to it (also check `worktree` entries, and `.claude/work/_archive/` is ignored).
 3. `.claude/work/` — how many open works, and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
 3b. `followups[]` across those works **and** `.claude/work/_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
@@ -28,7 +29,7 @@ runs a phase on its own and never advances `meta.json`.
 
 | Situation | Say | Propose |
 |---|---|---|
-| Neither base nor active overlay | "This repo is not configured for flow on this harness yet." One line on what the FLOW config is (personal config, auto-detected). | `/flow:init` |
+| No FLOW layer present | "This repo is not configured for flow on this harness yet." One line on what the FLOW config is (personal config, auto-detected). | `/flow:init` |
 | A work matches the current branch | Its stop header (flow-core §3: ticket · size · phase · MR #n of N) and the next phase for its size. | `/flow:work:resume` |
 | No match, but open works exist | Count, and the two most recently updated with their phase. | `/flow:work:status`, or `/flow:feat:start` / `/flow:bug:start` if the user said what they want to do |
 | No works at all, but an accepted follow-up is waiting | "Nothing in flight — but `<TICKET>` F1 was accepted and never started: `<title>`." | `/flow:feat:start <ticket>` (or `/flow:bug:start`) for that follow-up · `/flow:feat:start` for something else |
@@ -37,7 +38,7 @@ runs a phase on its own and never advances `meta.json`.
 - The SessionStart hook (`hooks/session-start.sh`) has already printed the first two rows of this table's second case — the header and what the last session was doing — off disk, without reading a ticket or an artifact. Say them again anyway: `next` is where the user asked, and a line they scrolled past is not an answer.
 - An `accepted` follow-up exists **and** other works are open → do not reroute; add one line naming it after the options. It is a standing commitment, not an interruption.
 - Dirty tree and no matching work → mention it in one line ("uncommitted changes on `<branch>`, no work is tracking them") before the options; `start` will warn again.
-- A base or active overlay is present but `/flow:doctor` has never been run in this session and the
+- A FLOW layer is present but `/flow:doctor` has never been run in this session and the
   git host CLI is not on `PATH` → add `/flow:doctor` as a secondary option.
 - In `autonomy.mode: guided`/`auto`, the route is still asked: `next` is where a session begins, and the mode governs what happens *inside* a phase, not which work the user wants to pick up.
 

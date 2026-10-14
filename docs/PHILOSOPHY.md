@@ -149,6 +149,8 @@ The FLOW files mix repo facts (tracker, quality commands) with your own preferen
 the agents and MCPs *you* have installed, review depth, your assignee name). An overlay makes the
 harness-specific half explicit, but neither file becomes team config: a teammate may still lack
 those agents or prefer another mode. So they are personal by default — `/flow:init` offers to
-git-ignore `/FLOW.md`, `/FLOW.*.md`, and `.claude/work/` — and they hold no secrets, which stay in
-your credential store. A team that wants to share the repo-fact subset can commit the base
-deliberately; the default just refuses to make one person's preferences everyone's.
+git-ignore `/FLOW.md`, each harness overlay by name, and `.claude/work/` — and they hold no
+secrets, which stay in your credential store. A team that wants to share the repo-fact subset can
+commit the base deliberately; the default just refuses to make one person's preferences everyone's.
+The context layer (`FLOW.<context>.md`, chosen by `FLOW_CONTEXT`) is the one committed on purpose:
+it describes a place flow runs, not a person.

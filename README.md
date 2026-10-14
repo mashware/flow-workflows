@@ -204,8 +204,8 @@ Artifacts are **hand-editable**: rewrite `03-design.md` and the next phase respe
 
 `FLOW.md` at the repo root is the shared base. `FLOW.claude.md`, `FLOW.codex.md`,
 `FLOW.opencode.md`, `FLOW.gemini.md`, `FLOW.hermes.md`, or `FLOW.zcode.md` can sparsely override values for the product executing the
-command. Existing repos with only `FLOW.md` behave exactly as before; anything effectively empty
-is auto-detected or asked for.
+command. An optional `FLOW.<context>.md`, selected by `FLOW_CONTEXT=<name>` in the environment, sits between the two: a layer the repo commits for where flow runs (CI, a server, an orchestrator). Existing repos with only `FLOW.md` behave exactly as
+before; anything effectively empty is auto-detected or asked for.
 
 | Section | What it configures |
 |---|---|
@@ -222,8 +222,8 @@ is auto-detected or asked for.
 | `observability` | The profile `/flow:work:watch` monitors after a deploy |
 
 `/flow:init` writes a compact base and creates the active overlay only when it has a
-harness-specific value. It offers to git-ignore `/FLOW.md`, `/FLOW.*.md`, and `.claude/work/`.
-Both files are personal config, not team config
+harness-specific value. It offers to git-ignore `/FLOW.md`, each harness overlay by name, and
+`.claude/work/`. The base and overlays are personal config, not team config
 ([why](docs/PHILOSOPHY.md#personal-config-not-team-config)). Resolution and examples:
 [CONFIGURATION](docs/CONFIGURATION.md#harness-overlays).
 

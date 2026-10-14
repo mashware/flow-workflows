@@ -284,11 +284,11 @@ function parseFlow(text) {
   return out
 }
 
-// Where the FLOW files actually are. A phase run inside a linked worktree has its own root,
-// and a `FLOW.md` the repo git-ignores exists only in the main checkout — so a worktree would
-// resolve every key to its fallback and say nothing. Prefer the root we are in (a repo that
-// commits its config gets it in every worktree, and a worktree may legitimately differ), and
-// fall back to the main checkout, which `--git-common-dir` points into from anywhere.
+// Where a FLOW file actually is. A phase run inside a linked worktree has its own root, and a
+// `FLOW.md` the repo git-ignores exists only in the main checkout — so a worktree would resolve
+// every key to its fallback and say nothing. Prefer the root we are in (a repo that commits its
+// config gets it in every worktree, and a worktree may legitimately differ), and fall back to the
+// main checkout, which `--git-common-dir` points into from anywhere.
 function rootHolding(repo, probe) {
   if (existsSync(join(repo, probe))) return repo
   const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], repo).trim()
@@ -297,20 +297,43 @@ function rootHolding(repo, probe) {
   return main !== repo && existsSync(join(main, probe)) ? main : repo
 }
 
-const configRoot = (repo) => rootHolding(repo, 'FLOW.md')
-
 // The overlay names flow-core §0 recognises. A `--harness` outside this set reads no
 // overlay and looks exactly like a repo that has none, so it stops the run instead: a typo
 // here is worth one error message and never worth a review round nobody can trust.
 const OVERLAY_HARNESSES = ['claude', 'codex', 'gemini', 'hermes', 'opencode', 'zcode']
 
-// Every overlay sitting next to the base, whether or not this run reads one.
-function overlaysPresent(root) {
-  try {
-    return readdirSync(root).filter((n) => /^FLOW\.[^.]+\.md$/.test(n)).sort()
-  } catch {
-    return []
+// The context layer, `FLOW.<FLOW_CONTEXT>.md`, is chosen by whoever launches flow. The name
+// becomes part of a path, so it is held to one plain segment, and a harness name would read an
+// overlay as the wrong layer — compared ignoring case, because `FLOW.Claude.md` opens
+// `FLOW.claude.md` on a case-insensitive filesystem. A name that fails is skipped and named,
+// never fatal: the phases calling this must not stop on configuration (flow-core §0).
+const CONTEXT_NAME = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
+
+function flowContext() {
+  const value = (process.env.FLOW_CONTEXT ?? '').trim()
+  if (!value) return { name: null, note: '' }
+  if (CONTEXT_NAME.test(value) && !OVERLAY_HARNESSES.includes(value.toLowerCase())) {
+    return { name: value, note: '' }
   }
+  return {
+    name: null,
+    note: `FLOW_CONTEXT=${value} ignored: a context is a name matching [A-Za-z0-9][A-Za-z0-9_-]*`
+      + ` other than a harness (${OVERLAY_HARNESSES.join(', ')})`,
+  }
+}
+
+// The layers this run reads, in merge order, each located on its own. One root for all of
+// them misses one whenever they live apart: a committed `FLOW.<context>.md` is in the worktree
+// while a git-ignored `FLOW.md` or overlay exists only in the main checkout — and reading the
+// main checkout's copy of a committed file reads another branch's version of it.
+function flowLayers(repo, harness) {
+  const context = flowContext()
+  const contextFile = context.name && `FLOW.${context.name}.md`
+  const layers = ['FLOW.md', contextFile, harness && `FLOW.${harness}.md`].filter(Boolean).map((name) => {
+    const root = rootHolding(repo, name)
+    return { name, root, found: existsSync(join(root, name)), context: name === contextFile }
+  })
+  return { layers, context }
 }
 
 // Which config files a run actually read. The pack says so out loud because the failure it
@@ -321,33 +344,37 @@ function overlaysPresent(root) {
 // header then says `FLOW.md`, which is what a repo with no overlay prints — the same silence
 // one level down, and the one the line exists to break. So a run that skipped an overlay names
 // the file it skipped, because that file is where `agents.exec_cmd` and a harness's models
-// live and their absence is indistinguishable from a decision not to set them.
+// live and their absence is indistinguishable from a decision not to set them. A context file
+// left unread is not in that list: no `FLOW_CONTEXT` is how a laptop leaves it out on purpose.
 function configFiles(repo, harness) {
-  const root = configRoot(repo)
-  const names = ['FLOW.md', harness && `FLOW.${harness}.md`].filter(Boolean)
-  const found = names.filter((n) => existsSync(join(root, n)))
-  const where = root === repo ? '' : ` (from ${root})`
-  const read = found.length ? found.join(' + ') + where : `none found${where || ` in ${repo}`}`
-  const skipped = harness ? [] : overlaysPresent(root)
-  return skipped.length
-    ? `${read} — no \`--harness\` was given, so ${skipped.join(', ')} went unread`
-    : read
+  const { layers, context } = flowLayers(repo, harness)
+  const found = layers.filter((l) => l.found)
+  const roots = new Set(found.map((l) => l.root))
+  const from = (root) => (root === repo ? '' : ` (from ${root})`)
+  const label = (l) => l.name + (l.context ? ` [FLOW_CONTEXT=${context.name}]` : '')
+    + (roots.size > 1 ? from(l.root) : '')
+  const notes = [found.length
+    ? found.map(label).join(' + ') + (roots.size === 1 ? from([...roots][0]) : '')
+    : `none found in ${repo}`]
+  if (context.note) notes.push(context.note)
+  for (const l of layers) if (l.context && !l.found) notes.push(`FLOW_CONTEXT=${context.name}: ${l.name} not found`)
+  const skipped = harness ? []
+    : OVERLAY_HARNESSES.map((h) => `FLOW.${h}.md`).filter((n) => existsSync(join(rootHolding(repo, n), n)))
+  if (skipped.length) notes.push(`no \`--harness\` was given, so ${skipped.join(', ')} went unread`)
+  return notes.join(' — ')
 }
 
-// Base file plus the overlay of the harness running this, exactly as flow-core §0 resolves
-// it: a key present in the overlay replaces the base value.
+// Base, then the context layer, then the overlay of the harness running this, exactly as
+// flow-core §0 resolves it: a key present in a later layer replaces the earlier value.
 function flowConfig(repo, harness) {
-  const root = configRoot(repo)
-  const read = (name) => {
-    const p = join(root, name)
-    return existsSync(p) ? parseFlow(readFileSync(p, 'utf8')) : {}
+  const merged = {}
+  for (const l of flowLayers(repo, harness).layers) {
+    if (!l.found) continue
+    for (const [section, keys] of Object.entries(parseFlow(readFileSync(join(l.root, l.name), 'utf8')))) {
+      merged[section] = { ...(merged[section] ?? {}), ...keys }
+    }
   }
-  const base = read('FLOW.md')
-  const overlay = harness ? read(`FLOW.${harness}.md`) : {}
-  for (const [section, keys] of Object.entries(overlay)) {
-    base[section] = { ...(base[section] ?? {}), ...keys }
-  }
-  return base
+  return merged
 }
 
 // `.claude/work` is git-ignored like the FLOW files, so a worktree does not carry it either — and
@@ -1144,8 +1171,8 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   Two limits, two questions: --max-file-bytes decides what is too big to print in full,
   --max-diff-lines what is too big to read as a diff. A large file with a small change
   keeps its diff; the worklist always shows the whole change, and anything held back is
-  named there rather than at the end. FLOW.md is read from the main checkout when this
-  runs inside a worktree that does not carry one.
+  named there rather than at the end. Each FLOW file is read from the main checkout when
+  this runs inside a worktree that does not carry it.
   --rev freezes what is read: the diff and the files come from that one revision instead
   of the live checkout, so every reader of the pack reads the same bytes however long
   they take. Pass a commit, or the object "git stash create" prints for a dirty tree.
@@ -1154,6 +1181,9 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   --harness names the overlay to merge on top of it (${OVERLAY_HARNESSES.join(' · ')}).
   Without it no overlay is read at all, which the pack's header says out loud: a key set
   only there — agents.exec_cmd, a harness's models — would otherwise read as unset.
+  FLOW_CONTEXT=<name> in the environment adds FLOW.<name>.md between FLOW.md and the
+  overlay — a layer the repo commits for where flow runs (ci, server…). A harness name, or
+  anything but letters, digits, - and _, is skipped and named in the pack's header.
 
 "tier" resolves the review depth from the same config: changed lines against the base,
   diff size, meta.json.size, effective size, the built-in effort with and without the

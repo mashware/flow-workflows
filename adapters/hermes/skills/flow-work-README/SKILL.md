@@ -28,6 +28,8 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
   `gemini`, `hermes`, or `zcode`) for model names, agents, skills, orchestration, knowledge tools, or any other value that
   differs on that harness. Every command reads the base and then the active overlay in step 0;
   existing repos with only `FLOW.md` behave exactly as before.
+- `FLOW_CONTEXT=<name>` in the environment adds `FLOW.<name>.md` between the two: a layer the repo
+  commits for where flow runs (CI, a server, an orchestrator), with the overlay's merge rules.
 - An overlay key replaces the base even when explicitly empty; an absent key inherits it. Lists
   replace whole lists. Overlay `conventions` are added after base conventions. In the rest of this
   document, `FLOW.md` means the effective merged configuration unless a write target is explicit.

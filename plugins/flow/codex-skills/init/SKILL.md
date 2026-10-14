@@ -108,7 +108,7 @@ review, not a questionnaire. Then, and only then, five questions:
 4. **The quality commands as one block** (`quality.test`, `test_one`, `static_analysis`, `style_fix`,
    `db_update`, `db_diff`) — confirm or edit what §2 found, all in one question, each may stay empty
    (= auto-discover at the moment it is needed). Several suites chain into `test` with `&&`.
-5. **Git-ignore** `FLOW.md`, `FLOW.*.md`, and `.claude/work/` — see §5.
+5. **Git-ignore** `FLOW.md`, the six harness overlays by name, and `.claude/work/` — see §5.
 
 **Two keys are written without being asked**: `agents.fanout_max` (`4`) and `agents.budget_max`
 (`12`), with their default values, because they are the only brake on what a review costs and a key
@@ -160,9 +160,10 @@ phase, so their size is paid on every step:
 - The base and overlays are **personal config, not team config** (repo facts mixed with one
   developer's flow preferences, tools and agents; **no secrets**) — they should not be committed.
   One `AskUserQuestion`, both parts in the same question:
-  - The root files not already git-ignored → **offer to add `/FLOW.md` and `/FLOW.*.md` to
-    `.gitignore`**. This edits a tracked file — confirm before writing. A team wanting the repo-fact
-    subset can still commit it deliberately. Do not use a recursive pattern: examples under the
-    plugin must remain visible.
+  - The root files not already git-ignored → **offer to add `/FLOW.md`, `/FLOW.claude.md`, `/FLOW.codex.md`, `/FLOW.gemini.md`, `/FLOW.hermes.md`, `/FLOW.opencode.md` and `/FLOW.zcode.md` to `.gitignore`**,
+    each by name. This edits a tracked file — confirm before writing. A team wanting the repo-fact
+    subset can still commit it deliberately. Never `/FLOW.*.md`: it also hides a context layer
+    (`FLOW.<context>.md`, flow-core §0), which a repo commits on purpose. Do not use a recursive
+    pattern either: examples under the plugin must remain visible.
   - Git-ignore `.claude/work/` too — recommended default: ignore it (artifacts are personal working state; teams that want to share them commit deliberately). `git.worktree` not `off` → offer `.worktrees/` in the same gesture.
 - Suggest `$flow:next` as the next step (it routes to `$flow:feat-start`, `$flow:work-resume` or `$flow:work-status`).

@@ -1,13 +1,14 @@
-# Configuring flow: base plus harness overlay
+# Configuring flow: base, context layer and harness overlay
 
 `FLOW.md` is the shared configuration at your repo root. An optional sparse
 `FLOW.<harness>.md` overrides the values that differ between Claude Code, Codex, opencode,
-Gemini CLI, and Hermes Agent. Together they tell the `/flow:*` commands how tickets are read, branches and MR/PRs are
+Gemini CLI, and Hermes Agent, and an optional `FLOW.<context>.md` the repo commits for where
+flow runs (CI, a server). Together they tell the `/flow:*` commands how tickets are read, branches and MR/PRs are
 made, tests run, review is staffed, models are selected, and deploys are watched. Every command
-resolves the base plus the active overlay in its step 0.
+resolves the base, the context layer and the active overlay in its step 0.
 
-**Anything effectively empty is auto-detected or asked for.** A repo with neither the base nor its
-active overlay still works, just with more questions and fewer shortcuts. Nothing here is required.
+**Anything effectively empty is auto-detected or asked for.** A repo with no FLOW layer at all
+still works, just with more questions and fewer shortcuts. Nothing here is required.
 
 Four things surround this file, each with one job — if the template and this document ever
 disagree, the template wins:
@@ -40,13 +41,52 @@ The supported overlay names are:
 | Hermes Agent | `FLOW.hermes.md` |
 | zcode | `FLOW.zcode.md` |
 
-The product executing the command chooses the overlay; a model name never does. Unknown
-`FLOW.*.md` files are ignored. The base is optional too, so an overlay-only configuration is valid.
+The product executing the command chooses the overlay; a model name never does. The base is
+optional too, so an overlay-only configuration is valid.
 
 One caveat, and it is zcode's: zcode reads the same plugin package as Claude Code, so it lists
 both the `/flow:`-prefixed mirror generated for it (which resolves `FLOW.zcode.md`) and the
 plugin's own Claude pages, unprefixed — `/feat:start`, `/bug:fix`, `/init`. Those resolve
 `FLOW.claude.md`, so on zcode type the `/flow:` names.
+
+### Context layer
+
+Some configuration depends on **where flow runs**, not on who runs it or with which harness. On a
+laptop a person runs flow with their own `FLOW.md`; on a server, in CI or under an orchestrator the
+repo may want things that only make sense there — how to drive the app in a container
+(`quality.functional_check`), a convention for unattended MRs/PRs. Put those in the base and they
+reach every laptop; have the orchestrator write a harness overlay and the repo cannot own them.
+
+So whoever launches flow sets **`FLOW_CONTEXT=<name>`** in the environment, and `FLOW.<name>.md`
+at the repo root is read **between the base and the harness overlay**:
+
+```
+FLOW.md  →  FLOW.<FLOW_CONTEXT>.md  →  FLOW.<harness>.md
+```
+
+- Same rules as the overlay (below): a present key replaces, a present-but-empty key masks,
+  `conventions` lines add up. The harness overlay still has the last word, because it holds the
+  harness-owned names (models, agents).
+- The repo **commits** it. The name is free — `ci`, `server`, `unattended` — and flow does not need
+  to know who set it.
+- No variable → no context layer and nothing changes. The variable set and the file missing → not
+  an error; the config line says `FLOW_CONTEXT=ci: FLOW.ci.md not found`.
+- The name is letters, digits, `-` and `_`, starting with a letter or digit, and never a harness
+  name (in any case). Anything else is skipped and named — never a stop.
+- `/flow:doctor` shows the active context, the layer each value came from, and the context files no
+  variable selected.
+
+```markdown
+# FLOW.ci.md — committed; read only where FLOW_CONTEXT=ci
+## quality
+- functional_check: docker compose up -d app && ./script/smoke.sh
+```
+
+### Where each file is read from
+
+Each layer is found **on its own**: the copy in the checkout you are in, and otherwise the main
+checkout's. A committed context file is in every worktree, while a git-ignored `FLOW.md` or overlay
+exists only in the main checkout; reading them from one place would miss one of them.
 
 A `- key:` line **inside a fenced block is an example**, not configuration. These files are prose
 with keys in them, and what makes a key a key is its shape — a `- key:` line under a `## section`
@@ -54,13 +94,13 @@ with keys in them, and what makes a key a key is its shape — a `- key:` line u
 the agent alike. Both now skip fenced regions, and `/flow:doctor` reports the keys it found inside
 one. To enable an example, move the line out of the fence.
 
-Resolution is per section and key:
+Resolution is per section and key, in the order base → context layer → active overlay:
 
-1. A key present in the active overlay wins, even when its value is empty.
-2. An explicitly empty overlay value masks the base and selects the documented empty fallback.
-3. A key absent from the overlay inherits `FLOW.md`.
-4. A list-valued key replaces the complete base list.
-5. `conventions` has no keys, so its overlay lines are appended after the base and both apply.
+1. A key present in a later layer wins, even when its value is empty.
+2. An explicitly empty value masks what came before and selects the documented empty fallback.
+3. A key absent from a layer inherits the earlier value.
+4. A list-valued key replaces the complete earlier list.
+5. `conventions` has no keys, so each layer's lines are appended after the previous ones and all apply.
 
 ```markdown
 # FLOW.md
@@ -92,7 +132,9 @@ This is backward-compatible in the upgrade direction: a new flow version reads e
 know the overlay filenames and therefore ignore them; keep all common values in the base if the
 same checkout must also run an older installation.
 
-**Then add `/FLOW.md` and `/FLOW.*.md` to your `.gitignore`** — `/flow:init` offers to do it. These
+**Then add `/FLOW.md`, `/FLOW.claude.md`, `/FLOW.codex.md`, `/FLOW.gemini.md`, `/FLOW.hermes.md`,
+`/FLOW.opencode.md` and `/FLOW.zcode.md` to your `.gitignore`**, each by name — `/flow:init`
+offers to do it. Not `/FLOW.*.md`: that also hides a context file the repo means to commit. These
 files are **personal config, not team config**: they mix repo facts (tracker, quality commands)
 with your own preferences (autonomy mode, the agents and MCPs *you* have installed, review depth,
 your assignee name). The same files on a teammate's machine may point at agents that are not there.
@@ -908,7 +950,7 @@ what you know instead of guessing.
 
 ---
 
-## With neither base nor active overlay
+## With no FLOW layer at all
 
 Everything still runs. Each command auto-discovers what it can and asks about the rest:
 autonomy is `manual`, review is `proportional`, quality commands come from your Makefile or
