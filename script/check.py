@@ -689,11 +689,11 @@ def check_handoff():
             fail(HANDOFF, f"no longer carries {held!r}")
 
 
-# With `git.handoff_branch` set a study is built elsewhere, and every place a study phase names
+# A work started with `--study` is built elsewhere, and every place a study phase names
 # `build`/`fix` as its next step must say the handoff comes first — one forgotten Close is the
 # run that builds locally, or in `auto` chains into a build nobody wanted here.
 HANDOFF_RULE = "**A study made for handoff.**"
-HANDOFF_ROUTE = ("`git.handoff_branch` set and not `unattended` → `/flow:work:handoff` in its place, "
+HANDOFF_ROUTE = ("`meta.json.handoff` set and not `unattended` → `/flow:work:handoff` in its place, "
                  "**Hand off the study** recommended and **Build here** second where it asks "
                  "(flow-core §2, a study made for handoff)")
 HANDOFF_ROUTES = {  # file → how many next-step lines carry the clause
