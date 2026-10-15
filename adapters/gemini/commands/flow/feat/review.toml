@@ -298,7 +298,7 @@ Not run for XS/S, small diffs, or fewer than 4 ambiguous findings. When skipped,
 
 Read `quality.*` from `FLOW.md`. Empty → auto-discover equivalent commands (Makefile, npm/composer scripts, Gradle, dotnet, Xcode, Flutter…) and note what you use.
 
-Launch in parallel (background if slow):
+Launch in parallel (background if slow; in `unattended`, waited on in this turn, flow-core §6.5):
 - `quality.style_fix`
 - `quality.static_analysis`
 - `quality.test_one` (if there are new tests, with the appropriate filter)

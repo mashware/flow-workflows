@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.95.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.95.1`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -393,6 +393,7 @@ person asking for changes, a ticket that already has code — is `/flow:work:run
 | An approved study's branch (`run`, `why = start`, no build or fix begun) | record — fast-forwarded to its base when it holds no commit of its own (`/flow:work:run` §2); the base unreadable or the fast-forward failing → blocked. Not integrating: nothing of the run's is merged |
 | Integrating the base into the MR/PR's branch (`green`) | on `why = conflict`, record — `git merge origin/<base>` as the orchestrator left it, never rebase, each conflict resolved on its merits (`/flow:work:green` §5.C); on any other `why`, blocked — the orchestrator brings the base in |
 | Any offer about the work's own bookkeeping — a tracker issue, the first `KNOWLEDGE.md` or a knowledge save, a FLOW convention, an agent lesson or a saved specialist, the follow-up survey, carrying files over from the main checkout, a contract handoff, archiving the work | record — `Later`; nothing written outside the work folder |
+| A wait — a suite, a quality gate, anything run in the background (`validate`, `review`) | in the turn, on its condition, with a deadline (§6.5) — never a supervisor, never a fixed-length sleep, never ending the turn to be woken |
 | A step the command cannot complete (a red suite it cannot fix, a tool missing, auth failing, the same check failing a second time) | blocked |
 | Anything `auto` already decides on its own (size, flow mechanics, WIP commits, the next command) | as `auto` |
 
@@ -801,7 +802,7 @@ merge now. Delegating that judgement is how a pipeline ends up declared green by
 cheapest to ask, which is the one thing `/flow:work:green` exists to forbid. Delegate the waiting
 and the evidence; the verdict stays here.
 
-**Then end the turn.** Dispatching a supervisor and staying in a poll loop of your own pays both
+**Then end the turn** — except in `unattended`, below. Dispatching a supervisor and staying in a poll loop of your own pays both
 bills and saves nothing. What wakes you is whatever the harness offers — a background task that
 re-invokes you when it finishes, a scheduled wake-up, a message back to this thread; where it offers
 none, the supervisor's evidence file is read at your next stop, and **you say that** rather than
@@ -817,6 +818,21 @@ moving.
 **Not every wait is worth a brief.** A suite that finishes in ninety seconds costs more to delegate
 than to run — the brief, the round trip and the report are the whole of the saving. And anything you
 must *react to* mid-wait is not a wait at all: it is the work, and it stays here.
+
+**In `unattended`, the wait stays in the turn** (§2.1). Nobody can bring back a run whose turn
+ended, and whether a headless harness re-invokes a run when its background task finishes is not
+something the run can count on. So no supervisor and no ending the turn: the wait is sat through
+here, on the condition it waits for, with a deadline —
+
+- **In the foreground**, when the command fits the harness's own limit for one call.
+- **Otherwise launched with its exit code written to a file**, then waited on by a loop that checks
+  for that file every few seconds and stops at the deadline — one tool call per stretch, each under
+  that same limit, repeated until the file appears or the deadline passes. The loop runs inside the
+  call, so its cycles cost nothing on this thread.
+- **Never a fixed-length sleep.** A guessed duration pays the whole sleep when the suite finished in
+  a fraction of it, and wakes before the suite when the guess is short.
+
+The deadline reached with nothing back → `blocked`, naming the command and how long it ran.
 
 ### 6.6 — Which agent a role resolves to
 
