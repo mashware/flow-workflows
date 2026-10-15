@@ -41,7 +41,7 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 
 Then:
 1. Run only that test with `quality.test_one` from FLOW.md; it must pass.
-2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if slow; measured in tens of minutes → delegate it as a wait to a supervisor subagent on `models.supervisors`, flow-core §6.5 — it returns the exit code and the failing output, and the reading of them stays here).
+2. Run the full suite with `quality.test` to rule out collateral regressions (in the background if slow — in `unattended`, waited on in this turn, flow-core §6.5; otherwise, measured in tens of minutes → delegate it as a wait to a supervisor subagent on `models.supervisors`, flow-core §6.5 — it returns the exit code and the failing output, and the reading of them stays here).
 3. DB touched → verify the schema has no unexpected differences (`quality.db_update` or the FLOW.md equivalent, if defined; in `unattended` it is never run without an answer — a schema difference to apply is question
 `migration`, flow-core §2.1; the orchestrator's *Apply it* relaunches this phase, this site takes the
 answer just applied and runs it, and `05-validation.md` names that answer beside the migration).

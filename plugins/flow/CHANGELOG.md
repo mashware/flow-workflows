@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.95.1 — An unattended run waits for its tests instead of sleeping a guess  ·  2026-10-15
+
+**In short**
+- **In `unattended`, a wait happens in the turn.** A suite or a quality gate run in the background
+  is waited on by a loop that ends when it finishes, with a deadline. No supervisor, and the turn
+  does not end to be woken.
+- **Never a fixed-length sleep.** Unattended runs were guessing one — seven minutes for a suite
+  that took three — and losing up to half an hour per run.
+- Nothing changes outside `unattended`.
+
+The rule for waits told every run to hand the wait off and end the turn, trusting the harness to
+wake it. A headless run cannot rely on that, so the model kept itself alive with a sleep of its
+own choosing. flow-core §6.5 now says how an unattended run waits, the §2.1 table names the case,
+and `validate` and `review` point to it where they launch something in the background. The
+deadline reached with nothing back ends the run as `blocked`.
+
 ## v0.95.0 — One repo can study some works for handoff and build others here  ·  2026-10-15
 
 **In short**
