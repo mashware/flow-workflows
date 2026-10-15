@@ -9,7 +9,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.94.1`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.95.0`.** Compare it once, at the start of the session, against
 `version` in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -241,16 +241,18 @@ sensible default and record it.
 
 Asking these anyway is how a run in `guided`/`auto` degrades into a manual one.
 
-**A study made for handoff.** `git.handoff_branch` set and the mode not `unattended` → the study is
-built somewhere else, so wherever a study phase (`start`, `design`, `plan`, `investigate`) or
-`resume` would hand the work to `/flow:feat:build` or `/flow:bug:fix`, it hands it to
-`/flow:work:handoff` instead. Only the target changes: a Close that asks (`manual`) offers **Hand
+**A study made for handoff.** A work started with `--study` (`/flow:feat:start`,
+`/flow:bug:start`) records `meta.json.handoff: true`: it is studied here and built somewhere else.
+That field set and the mode not `unattended` → wherever a study phase (`start`, `design`, `plan`,
+`investigate`) or `resume` would hand the work to `/flow:feat:build` or `/flow:bug:fix`, it hands it
+to `/flow:work:handoff` instead. Only the target changes: a Close that asks (`manual`) offers **Hand
 off the study** recommended and **Build here** second; a Close that chains (`guided`/`auto`) chains
-into handoff, whose push question is the one confirmation — no stop is added. In `unattended` the
-rule does not apply: the repo's `FLOW.md` reaches the server too, and a run that studies a ticket
-there goes on to build it — unless the orchestrator launched it as a study run (§2.1), which stops
-at the door to code. A repo that hands its studies off pairs the key with
-`autonomy.mode: auto`, and the study then runs on its own up to the push.
+into handoff, whose push question is the one confirmation — no stop is added. A work started without
+`--study` is built here, whatever `git.handoff_branch` says: the key only names where a study is
+pushed, so one repo can hold both kinds of work. In `unattended` the rule does not apply: a run that
+studies a ticket there goes on to build it — unless the orchestrator launched it as a study run
+(§2.1), which stops at the door to code. With `autonomy.mode: auto`, a `--study` work runs on its
+own up to the push.
 
 ### 2.1 `unattended` — where a person would have been asked
 

@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.95.0 — One repo can study some works for handoff and build others here  ·  2026-10-15
+
+**In short**
+- **`--study` on `/flow:feat:start` and `/flow:bug:start`** makes a work a study for someone else to
+  build: its last study phase hands it to `/flow:work:handoff`, as the key alone did until now.
+- **Without the flag, a work is built here**, even in a repo with `git.handoff_branch` set. The key
+  only says where a study is pushed.
+- **Change in behaviour:** a repo that set the key to send every study off now passes `--study` on
+  the works it hands off. Nothing changes in `unattended`.
+
+The key was repo-wide, so a repo whose tickets are sometimes studied for a server and sometimes
+built on the laptop had no way to say "build this one here": in `auto` every plan chained into the
+handoff. The choice now belongs to the work. `start` records it as `meta.json.handoff`, and `design`,
+`plan`, `investigate` and `resume` read the field instead of the key. `--study` with the key empty
+says so in one line and goes on as a work built here.
+
 ## v0.94.1 — An unattended start with a study no longer stops because the container cannot fetch  ·  2026-10-14
 
 **In short**

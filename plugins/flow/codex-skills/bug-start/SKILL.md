@@ -24,12 +24,13 @@ Start a bug. `$ARGUMENTS` is **optional**:
 
 - **Given** — a ticket (format `tracker.prefix` from FLOW.md) → *ticket mode*: start from it (§1 reads it).
 - **Empty** — *ticket-less mode*: do **not** stop. Synthesize the bug from the conversation just held with the user (§1.5). Ask for a one-line symptom only if there is no conversation to draft from.
+- **`--study`**, anywhere in `$ARGUMENTS` — a flag, not part of the identifier: take it out before deciding the mode. The bug is studied here and fixed somewhere else: §4 records `meta.json.handoff: true`, and the study ends at `$flow:work-handoff` instead of `fix` (flow-core §2, a study made for handoff). `git.handoff_branch` empty → say in one line that `--study` needs that key, and go on as a work fixed here. Without the flag the bug is fixed here, whatever `git.handoff_branch` says.
 
 **In `unattended`** (flow-core §2.1) this command asks nothing; each place it would ask resolves as
 that table says. Here: **the ticket is `<cmd> ticket --json`**, not the tracker — `number` is the
 identifier, `title` and `body` replace §1's tracker read, and its `comments` (already limited to
 authorised authors) are the whole thread of §1.1; `$ARGUMENTS` that disagrees with `number` is
-ignored and named. The order failing or empty → `blocked` · **the base is the ticket's `base`**
+ignored and named, and `--study` is ignored (the orchestrator says why it launched the run). The order failing or empty → `blocked` · **the base is the ticket's `base`**
 (empty → `git.default_base`), recorded as `meta.json.base` — the branch of §3 starts there, and asks
 nothing · uncommitted changes, or a checkout not on that base → `blocked`: the orchestrator owns the
 checkout · the branch is named `<number>-<slug>` whatever `git.branch_pattern` says · cross-repo
@@ -49,7 +50,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Verify you are in the correct repo.
-- **Determine the mode** from `$ARGUMENTS`: non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
+- **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
 - Once the identifier is known, check whether the work already exists: ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `$flow:work-resume`.
 - This command **creates** `00-summary.md` (§4); there is nothing to read yet.
 
@@ -187,6 +188,8 @@ Create the work directory per §0: `.claude/work/<TICKET>-<slug>/` in ticket mod
 
 In `unattended`, add `"base"`: the ticket's `base`, or `git.default_base` when it is empty — never empty; the branch the fix starts from and targets. Omit it in every other mode.
 
+Add `"handoff": true` only when `--study` was given and `git.handoff_branch` is set; omit it otherwise.
+
 Populate `related_repos` from §1.6 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo the fix touches; `[]` for a single-repo fix. `pending` only when the fix **changes a surface that sibling consumes** (a payload key, an error code, a route, an event shape); otherwise `none`.
 
 **This fix *is* an accepted follow-up** (the ticket came from another work's `followups[]` — typically a prevention action or a neighbouring bug, flow-core §7) → set `origin: { "work": "<originating work dir>", "followup": "F<n>" }`, carry that entry's recorded `why` into `01-context.md` verbatim rather than re-deriving it, and move the originating entry to `in_progress` with `work` naming this folder. Not a follow-up → omit `origin`.
@@ -230,6 +233,6 @@ Run `tracker.start_cmd` with `{TICKET}` = `meta.json.ticket` and `{ASSIGNEE}` = 
 
 ## 5. Close
 
-- Suggest the next command by size: `$flow:bug-fix` for XS (`git.handoff_branch` set and not `unattended` → `$flow:work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff)), `$flow:bug-investigate` for the rest.
+- Suggest the next command by size: `$flow:bug-fix` for XS (`meta.json.handoff` set and not `unattended` → `$flow:work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff)), `$flow:bug-investigate` for the rest.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Apply `autonomy.mode`: `manual` stops and recommends; `guided`/`auto` chain into that command automatically, subject to the hard gates.
