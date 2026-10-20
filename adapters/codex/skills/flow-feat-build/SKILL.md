@@ -93,8 +93,8 @@ by an answer's `id` (a review wrote it) is that migration already answered **whe
 there → it is a question like any other.
 Chained from a review's `high_findings` *Fix them* → the findings are unticked steps at the end of
 this MR/PR's plan: build them in order, then chain into `$flow-feat-review`. Chained from a red
-suite at validate (flow-core §2.1) → the same, under the plan's `### Red suite at validate
-(unattended)`: one step per failing test, and a test reaches green by fixing the code or by an
+suite at validate (flow-core §2.1) → the same, under the plan's latest `### Red suite at validate
+(unattended), round <k>` heading: one step per failing test, and a test reaches green by fixing the code or by an
 assertion this MR/PR's design changed — never by deleting, skipping or loosening it. Run each
 step's test with `quality.test_one` before ticking it.
 

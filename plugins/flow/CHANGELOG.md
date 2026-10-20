@@ -5,6 +5,18 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.97.1 — Repair rounds go on while the red count drops  ·  2026-10-20
+
+**In short**
+- **An unattended run keeps repairing a red suite while it makes progress.** Each round must leave
+  fewer tests red than the one before; three rounds at most per MR/PR.
+- **It blocks as soon as a round does not lower the count**, or after a third round still red,
+  naming the tests left and the count each round left.
+
+The first run under v0.97.0 took 11 red tests down to 1 in its single round, then blocked on a
+fixture the round's own fix had exposed. One round was too tight for a run that was converging;
+the count is what tells converging from going in circles.
+
 ## v0.97.0 — An unattended run fixes a red suite once before it blocks  ·  2026-10-20
 
 **In short**
