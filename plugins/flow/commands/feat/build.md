@@ -78,7 +78,11 @@ by an answer's `id` (a review wrote it) is that migration already answered **whe
 `meta.json.defaults_used[]` with gate `migration` and phase `review`**: write it, do not stop. Not
 there → it is a question like any other.
 Chained from a review's `high_findings` *Fix them* → the findings are unticked steps at the end of
-this MR/PR's plan: build them in order, then chain into `/flow:feat:review`.
+this MR/PR's plan: build them in order, then chain into `/flow:feat:review`. Chained from a red
+suite at validate (flow-core §2.1) → the same, under the plan's `### Red suite at validate
+(unattended)`: one step per failing test, and a test reaches green by fixing the code or by an
+assertion this MR/PR's design changed — never by deleting, skipping or loosening it. Run each
+step's test with `quality.test_one` before ticking it.
 
 **The brief travels inside the question** (flow-core §3): the user reads it in the prompt they are answering, never by opening `05-implementation.md`. Write the file, run whatever you need, and *then* open the gate — **nothing runs between the brief and the question**, because a tool call after it is what lets a terminal fold the brief into one collapsed line, and the gate is answered blind. Options:
 - **Yes, proceed** → start building.
@@ -375,6 +379,7 @@ As larger pieces are completed:
 
 - Run `quality.style_fix` from `FLOW.md` to fix style; if empty, auto-discover (Makefile, npm scripts, Gradle, dotnet, Xcode, Flutter…).
 - Run `quality.static_analysis` from `FLOW.md` when a piece is stable; if empty, auto-discover.
+- **Before closing, the tests this diff can break:** the existing tests of the modules, classes or files the diff changed, with `quality.test_one` (a filter per module or file) — not the full suite, which `/flow:feat:validate` runs. A test asserting the old behaviour that the design changes is updated now, and named under "Decisions made during implementation"; one that fails for any other reason is a bug in this build. Leaving them to validate costs a whole round.
 - If tests were added, run them individually with `quality.test_one` from `FLOW.md` (substituting `{FILTER}`); if empty, auto-discover. **A filtered run is judged by how many tests it executed, never by its exit code** — most runners exit `0` when the filter matches nothing (`OK, 0 tests`, `No tests ran`, `no tests to run`, `0 passed`). Read the executed count **and** test names: count `0`, or your new tests missing from the names → **the run did not happen**; treat as failure, fix the filter, run again. No count reported → drop the filter and run the whole test file. In "Relevant commands executed", record the count you saw, not just the command — "green" without a number is not evidence.
 
 Do not do code review here — that is `/flow:feat:review`.
