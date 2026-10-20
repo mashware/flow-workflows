@@ -93,8 +93,8 @@ back through it, and the hard gates above resolve this way:
   ≠ 0 is recorded in `08-feedback.md` and the remaining replies still go out.
 - **The one closing order**, after the WIP commit (flow-core §2.1): code changed this round →
   `publish` with the work's `publish-title.md` / `publish-body.md` (updated when the round changed
-  what they say, and naming any thread whose reply failed) and the `--part/--of` `/flow:feat:ship`
-  passed — the commits the replies name must reach the branch; no code changed and every reply went
+  what they say, and naming any thread whose reply failed) and no `--part/--of` — the MR/PR is
+  already open (flow-core §2.1) — so the commits the replies name reach the branch; no code changed and every reply went
   out → `done`, the summary listing the threads answered; no code changed and a reply failed →
   `blocked`, naming those threads.
 
