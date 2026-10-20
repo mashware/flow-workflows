@@ -77,7 +77,9 @@ In `unattended` (flow-core §2.1) nobody is there to answer: write the brief, ma
 `recorded (unattended)` under its heading, record the site in `meta.json.defaults_used[]`, and fix.
 The gate's purpose moves to the draft MR/PR, whose body carries the brief for the person who reads it.
 **A schema change or migration is still a question** (`migration`): before writing the first line
-of one → the question stop, end the run. The orchestrator's answer re-enters here
+of one → the question stop, end the run — unless `approved-schema.md` lists every object it
+creates, alters or drops (flow-core §2, a schema approved with the study): then write it, record
+it there, do not stop. The orchestrator's answer re-enters here
 exactly as `$flow:feat-build §2` says, with `04-fix.md` for `05-implementation.md` and
 `$flow:bug-validate` as the phase it chains into after a review's *Fix them* (`$flow:bug-review`
 for XS, which has no validate).

@@ -5,6 +5,26 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.96.0 — A schema approved with the study is not asked again at build  ·  2026-10-20
+
+**In short**
+- **A study that changes the schema now lists it, object by object.** The study summary — the one
+  a handoff writes to the ticket and a study run sends to the orchestrator — gains
+  `## Schema changes`: every table, column, index, constraint and data copy, by name, or `none`.
+- **Approving the study approves that list.** The handoff push question offers **Push — schema
+  approved**; a study run approved with `why = start` takes its list from the summary. Either way
+  the approval is written to `approved-schema.md` in the work folder.
+- **Build no longer asks for a migration that is on the list.** It writes it and records it. One
+  more column, an index or a drop the list does not name is still the `migration` question, which
+  now names only what lies beyond the list.
+- **Applying a migration and the pre-deploy SQL are still asked.** The study approved what the
+  schema becomes, not when a database changes.
+
+An unattended build stopped before writing a migration the study had already designed in full and
+a person had already approved, and the question repeated that design almost word for word. Nothing
+recorded the approval in a form build could check. A study revision moves the approval aside with
+the rest of the study, so a changed study is approved again. Closes #206.
+
 ## v0.95.1 — An unattended run waits for its tests instead of sleeping a guess  ·  2026-10-15
 
 **In short**

@@ -17,7 +17,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.95.1`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.96.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -225,7 +225,8 @@ the value someone wrote in the FLOW config, or it is not in effect.
 each one resolves as §2.1's table says — never approved in silence):
 1. Any push or MR/PR creation (all of `ship`).
 2. Creating or switching a branch when the base is ambiguous (not on a clean main, or a possible train/stacked branch).
-3. DB schema changes or migrations.
+3. DB schema changes or migrations — writing one a schema approved with the study already lists is
+   not asked again (below); applying one always is.
 4. A `review` that surfaced high-severity findings — never chain into `ship` on those.
 5. The business brief written before touching code (`build`, `fix`).
 
@@ -261,6 +262,30 @@ pushed, so one repo can hold both kinds of work. In `unattended` the rule does n
 studies a ticket there goes on to build it — unless the orchestrator launched it as a study run
 (§2.1), which stops at the door to code. With `autonomy.mode: auto`, a `--study` work runs on its
 own up to the push.
+
+**A schema approved with the study.** A study that changes the schema says so literally: the
+`## Schema changes` section of the `flow-study` block (`/flow-work-handoff` §5) lists, one line
+each and by name, every table, column, index, constraint and data copy its migrations create,
+alter or drop — from `03-design.md` "Data model", the intended fix of `03-investigation.md` for a
+bug — or says `none`. Approving the study approves that list, and the approval is a file in the
+work folder, `approved-schema.md`: a first line saying where it was approved (`Approved at
+handoff, <date>` · `Approved with the study run, <date>`), then the section verbatim. Two places
+write it and nothing else does — the handoff push answered **Push — schema approved**
+(`/flow-work-handoff` §4), and `/flow-work-run` §2 when the orchestrator approves a study run with
+`why = start`. Then, in every mode:
+
+- **Writing** a migration — in `build`, in `fix`, or for a fix a review asks for — whose every
+  object created, altered or dropped is on that list is not asked: write it, add
+  `{ "key": "study:approved-schema", "default": "<the objects it writes>", "phase": "<phase>" }` to
+  `meta.json.defaults_used[]`, and one line under "Decisions made during implementation" naming
+  `approved-schema.md`.
+- **Anything the list does not name** — one more column, an index, a drop, a type beyond what its
+  line says — is hard gate 3 as always, and the question names what lies beyond the list, so the
+  person decides on the difference alone.
+- **Applying** a migration (`validate`) and the pre-deploy SQL (`ship`) are asked as before: the
+  study approved what the schema becomes, not when a database changes.
+- A study revision (`/flow-work-run` §2) moves `approved-schema.md` aside with the rest of the
+  study; the new summary is approved anew.
 
 ### 2.1 `unattended` — where a person would have been asked
 
@@ -373,7 +398,7 @@ person asking for changes, a ticket that already has code — is `/flow-work-run
 | Business brief before code (`build`, `fix`) | record — the brief is written to the phase artifact, marked `recorded (unattended)`, and travels in the MR/PR body |
 | The door to code in a study run (`build`, `fix` pre-flight) | done — `done-summary.md`, the study as `/flow-work-handoff` §5 writes it for the ticket, and one `--depends-on` per `meta.json.ticket_deps` entry |
 | Push and MR/PR creation (`ship`) | `publish` — the run commits on its own branch, writes title and body, and hands them over; the orchestrator pushes and opens the draft |
-| Writing a DB schema change, index or migration — in any phase, a review's own fixes included — or applying one (`validate`) | question `migration`, before the first line of it is written or run — except in `respond` and `green`, where it is blocked: a schema change agreed after the MR/PR exists goes back through `build` |
+| Writing a DB schema change, index or migration — in any phase, a review's own fixes included — or applying one (`validate`) | question `migration`, before the first line of it is written or run — except in `respond` and `green`, where it is blocked: a schema change agreed after the MR/PR exists goes back through `build`. Writing one whose every object `approved-schema.md` lists is not asked (§2, a schema approved with the study) |
 | `review` with blockers or high-severity findings | question `high_findings` |
 | `validate` with a red suite or a criterion `unproven` | blocked — the phase does not advance and does not chain. **One exception, and it is measured, never judged**: every failing test also fails, under the same name, on the base (`git merge-base HEAD <git.default_base>`, run in a detached worktree), none of them lives in a file this diff touches, and none is the test that proves an acceptance criterion → record `{"key":"unattended:validate-red-base","default":"<n> red on HEAD and on base <short sha>: <test names>","phase":"validate"}` and advance; `ship` lists those tests under "Not verified — needs a human". Short of all three — a failure the base does not reproduce, a base that cannot be run, a test this diff touched — blocked |
 | A product decision (§7 `decision`) | question `decision` |

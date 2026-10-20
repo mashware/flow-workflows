@@ -108,6 +108,15 @@ Show the branch, the remote and the file list the build printed — every path, 
 ask with `AskUserQuestion` **in every `autonomy.mode`**: a push leaves the machine (flow-core §2).
 **Push** · **Cancel**. Nothing between the list and the question (flow-core §3).
 
+**A study that changes the schema** — its `## Schema changes` section (§5) is not `none` — shows
+that section too, under the file list, and the same question carries the approval: **Push — schema
+approved** · **Push — build asks first** · **Cancel**. Whoever builds it can ask no one about what
+the person here already read. *Push — schema approved* → write `approved-schema.md` in the work
+folder (flow-core §2, a schema approved with the study: `Approved at handoff, <date>`, then the
+section verbatim), run the build block again, check its file list is the one shown plus that file,
+and push that commit. *Push — build asks first* → push as it stands: build will ask `migration`
+before writing the first line of it.
+
 ```bash handoff-push
 BRANCH='@BRANCH@'; COMMIT='@COMMIT@'
 case "$COMMIT" in ''|*[!0-9a-f]*) echo "not a commit sha: $COMMIT"; exit 1 ;; esac
@@ -144,6 +153,7 @@ the ticket read it there, never in the work folder; the receiver does not parse 
   ## Acceptance criteria
   ## Design in brief
   ## MR/PR plan
+  ## Schema changes
   ## Risks
   <!-- end flow-study -->
   ```
@@ -152,6 +162,9 @@ the ticket read it there, never in the work folder; the receiver does not parse 
   entry and its why — `Depends on #253: <why>` — so whoever approves the study sees what it waits
   for; an unattended study's `done-summary.md` is this block, so it carries them too. The plan
   lists each MR/PR with what it covers and what it waits on; a bug's plan is its single fix.
+  `## Schema changes` lists, one line each and by name, every table, column, index, constraint and
+  data copy the study's migrations create, alter or drop (flow-core §2, a schema approved with the
+  study), or says `none` — it is what approving the study approves, so nothing there is prose.
 - **The new body**: the body read above with the block between the two markers replaced — or, with
   no markers yet, the block appended after a blank line. Then, for each `meta.json.ticket_deps`
   entry (`$flow-feat-design` §5.1) whose line is not already a line of that body — same text,

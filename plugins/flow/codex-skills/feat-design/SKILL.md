@@ -230,7 +230,7 @@ Consolidate outputs into `.claude/work/<TICKET>/03-design.md`:
 
 ## Data model
 - New / modified entities: <for each new one, indicate "no equivalent found" or "knowingly duplicated because...">
-- Migrations:
+- Migrations: <each table, column, index, constraint and data copy created, altered or dropped, by name — approving the study approves exactly this list (flow-core §2, a schema approved with the study)>
 - Indexes:
 
 ### Access paths
