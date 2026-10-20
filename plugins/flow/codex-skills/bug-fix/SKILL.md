@@ -82,7 +82,7 @@ creates, alters or drops (flow-core §2, a schema approved with the study): then
 it there, do not stop. The orchestrator's answer re-enters here
 exactly as `$flow:feat-build §2` says, with `04-fix.md` for `05-implementation.md` and
 `$flow:bug-validate` as the phase it chains into after a review's *Fix them* (`$flow:bug-review`
-for XS, which has no validate).
+for XS, which has no validate), and after a red suite at validate (flow-core §2.1).
 
 **The brief travels inside the question** (flow-core §3) — read in the prompt being answered, not by opening `04-fix.md` — and **nothing runs between the brief and the question**: a tool call after it is what lets a terminal fold it away. Options:
 - **Yes, go ahead** → apply the fix.
@@ -217,6 +217,7 @@ A **product decision** the fix turns out to need is neither of these — not sco
 - `quality.style_fix`
 - `quality.static_analysis`
 - The test that covers the fix: `quality.test_one` (if none exists, `$flow:bug-validate` adds it).
+- The existing tests of the modules or files the fix changed, with `quality.test_one` — the cheap catch before `$flow:bug-validate` runs the full suite. One asserting the behaviour this fix corrects is updated and named in `04-fix.md`; any other failure is a bug in the fix.
 
 ## 4.1 Is the investigation still valid?
 

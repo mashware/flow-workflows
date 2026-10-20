@@ -5,6 +5,26 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.97.0 — An unattended run fixes a red suite once before it blocks  ·  2026-10-20
+
+**In short**
+- **A red suite at validate gets one repair round.** In an unattended run, each failing test
+  becomes a step of the MR/PR's plan and the run goes back to build — or fix, for a bug — then
+  through review and validate again, as a review's *Fix them* already did.
+- **Only one.** Red a second time, the run blocks and names the tests still red.
+- **Green is never bought.** A test reaches green by fixing the code, or by updating an assertion
+  this MR/PR's own design changed. A test deleted, skipped or loosened in that round is a review
+  blocker.
+- **The base exception comes first.** Failures the base also has still advance, as before.
+- **Build and fix now run the existing tests of what they changed** before closing. A test still
+  asserting the old format turns red there, not a whole round later in validate.
+
+An unattended run stopped with 2,683 tests green and 11 red, all of them work the agent could do:
+an invalid name that answered 500, tests asserting the previous format, incomplete fixtures. The
+validate row blocked on any red suite, while the same table blocked only on "a red suite it cannot
+fix". Build ran only the tests it wrote, so fallout in other test files surfaced only at validate.
+An unproven acceptance criterion still blocks. Closes #208.
+
 ## v0.96.0 — A schema approved with the study is not asked again at build  ·  2026-10-20
 
 **In short**

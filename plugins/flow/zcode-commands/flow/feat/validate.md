@@ -220,10 +220,13 @@ Write `.claude/work/<TICKET>/07-validation.md`:
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Autonomy handoff — this one stops in every mode, `auto` included.** `ship` pushes and opens the MR/PR: a hard gate in every mode, so do **not** chain into it. Stop here and propose `/flow:feat:ship` with a single `AskUserQuestion` (recommended option by default), invoking it only when the user confirms. This is the deliberate end of a run in `auto`.
   **In `unattended`** (flow-core §2.1): the phase advanced → chain into `/flow:feat:ship`, which
-  hands the MR/PR to the orchestrator with `publish`. It did not advance
-  (red suite, a criterion `unproven`) → `blocked`, naming what failed; never chain. A red suite
-  advances only under the base exception of flow-core §2.1: run the failing tests on the base, and
-  write each name, its result there and the base sha under "Suite results" in `07-validation.md`.
-  Calling a failure "pre-existing" without that run is not the exception — it is a red suite.
+  hands the MR/PR to the orchestrator with `publish`. A criterion `unproven` → `blocked`, naming
+  it; never chain. A red suite advances only under the base exception of flow-core §2.1: run the
+  failing tests on the base, and write each name, its result there and the base sha under "Suite
+  results" in `07-validation.md`. Calling a failure "pre-existing" without that run is not the
+  exception — it is a red suite. Short of it, the red suite gets its one repair round (the same
+  row): the failing tests become unticked steps of this MR/PR's plan, `phase = build`, and the run
+  chains into `/flow:feat:build`, then review and this phase again. Red a second time → `blocked`,
+  naming the tests still red.
 
 In `guided`/`auto` this is, together with the brief in `/flow:feat:build §2`, **the only stop of the whole MR/PR** — everything between them ran without a person. It carries the **full stop header** and the body answers, in this order: what is green, what this MR/PR proves and what it does not, and what shipping it takes. Assume the user has read none of the build and review.
