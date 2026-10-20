@@ -94,6 +94,13 @@ record `{ "key": "unattended:base-caught-up", "default": "<old short sha> → <n
 ancestor → it holds commits a previous run made: leave it as it is — bringing the base into work in
 progress is the orchestrator's (flow-core §2.1).
 
+**On `start`, an approved study run approves its schema** — only while no build or fix has begun,
+`done-summary.md` exists (the summary a person approved) and `approved-schema.md` does not. Its
+`## Schema changes` section names something → write `approved-schema.md` (flow-core §2, a schema
+approved with the study: `Approved with the study run, <date>`, then the section verbatim) and
+record `{ "key": "unattended:schema-approved", "default": "<n> object(s)", "phase": "run" }`. The
+section says `none`, or is missing → nothing is written, and build asks as it always did.
+
 **A person's changes to a study, on `study`** (flow-core §2.1: they rewind it). The work's branch
 first, as above. `<work>/study-revision.md` holds the reply, as the row above wrote it. Each step
 can be run again: a run that dies part-way is finished by the next relaunch, whatever it serves.
