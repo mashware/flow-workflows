@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.97.1`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.97.2`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -320,9 +320,15 @@ assumed:
 - **Exactly one closing order per run** — `ask`, `publish`, `blocked` or `done` — and the run ends
   right after it: no further phase starts. The one write that follows it is its own result in
   `meta.json` — `publish` marking what it published (`/flow:feat:ship`) — inside the work folder,
-  never committed. A closing order that exits ≠ 0 → print its stderr in the
-  stop header and end; **never try another closing order** in its place, and never retry a question
-  as a different one.
+  never committed. A closing order that exits ≠ 0 closed nothing — the orchestrator records an
+  order only when it accepts it. When its stderr names something this run wrote — an argument, a
+  file, an uncommitted tree — fix that and send **the same order once more**; a second refusal, or
+  one about something the run cannot change → print its stderr in the stop header and end.
+  **Never try another closing order** in its place, and never retry a question as a different one.
+- **`--part N --of M` belongs to the publish that opens an MR/PR** of a split work
+  (`/flow:feat:ship`). A publish that updates one already open — `/flow:work:green`,
+  `/flow:work:respond` — carries neither: the MR/PR is already that part, and an orchestrator may
+  refuse a part declared on a run launched for `pipeline`, `conflict` or `review`.
 - **Free text travels in files, never on the command line.** Question, options (one per line, the
   recommended one first), title, body, reason and summary are written into the work folder
   (`ask-question.md`, `ask-options.md`, `publish-title.md`, `publish-body.md`, `blocked-reason.md`,

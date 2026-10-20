@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.97.2 — An update to an open MR/PR no longer declares a part  ·  2026-10-20
+
+**In short**
+- **Updating an MR/PR that is already open publishes without `--part/--of`.** `/flow:work:green`
+  and `/flow:work:respond` used to repeat the part `ship` declared; an orchestrator may refuse a
+  part on a run launched for a pipeline, a conflict or a review.
+- **A refused closing order can be corrected once.** An order that exits ≠ 0 closed nothing: when
+  its error names something the run wrote — an argument, a file, an uncommitted tree — the run
+  fixes it and sends the same order again. A second refusal still ends the run.
+
+A conflict run merged the base, got its suite green and then sent `publish --part 1 --of 2`; the
+orchestrator refused the part, and the rule against a second closing order left the run nothing
+to do but exit — the work was done and never handed over.
+
 ## v0.97.1 — Repair rounds go on while the red count drops  ·  2026-10-20
 
 **In short**

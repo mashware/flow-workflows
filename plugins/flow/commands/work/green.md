@@ -67,8 +67,8 @@ others resolve this way:
 - **§7 before the closing order** — logged as written; offers are `Later`; re-posting the
   performance comment is not done — a changed number goes into `publish-body.md`.
 - **§6** — no push, no rerun, no watch. The closing order, after the WIP commit (flow-core §2.1): `publish` with the
-  work's `publish-title.md` / `publish-body.md` and the `--part/--of` `/flow:feat:ship` passed; the
-  orchestrator pushes and the pipeline runs again.
+  work's `publish-title.md` / `publish-body.md` and no `--part/--of` — the MR/PR is already open
+  (flow-core §2.1); the orchestrator pushes and the pipeline runs again.
 
 ## 1. Pre-flight — locate the work and the MR/PR
 
