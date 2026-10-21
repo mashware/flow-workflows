@@ -12,9 +12,9 @@ this folder.
 - tool: acli
 - view_cmd: acli jira workitem view {TICKET}
 - comments_cmd: acli jira workitem view {TICKET} --comments
-- assignee: a.dev
-- start_cmd: acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}
-- abandon_cmd: acli jira workitem transition {TICKET} "Won't Do"
+- assignee: a.dev@example.com
+- start_cmd: acli jira workitem transition --key {TICKET} --status "In Progress" --yes && acli jira workitem assign --key {TICKET} --assignee {ASSIGNEE}
+- abandon_cmd: acli jira workitem transition --key {TICKET} --status "Won't Do" --yes
 
 ## git
 - host: gitlab

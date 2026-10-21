@@ -1,7 +1,7 @@
 # `flow` workflow adapter for Codex CLI
 
 Brings the `feat`, `bug` and `work` workflows from the `flow` plugin to the **Codex CLI** (OpenAI)
-format: one **skill** per command, invoked as `$flow-feat-start`, `$flow-bug-fix`, `$flow-work-status`.
+format: one **skill** per command, invoked as `$flow-feat-start`, `$flow-bug-fix`, `$flow-work-daily`.
 
 ## Adapter contents
 
@@ -28,7 +28,7 @@ codex plugin marketplace upgrade      # later, to update
 ```
 
 Codex namespaces a plugin's skills, so those are invoked `$flow:feat-start`, `$flow:bug-fix`,
-`$flow:work-status`, and the shared rules are the sibling skill `$flow:flow-core`. They are
+`$flow:work-daily`, and the shared rules are the sibling skill `$flow:flow-core`. They are
 generated into `plugins/flow/codex-skills/` and declared by `plugins/flow/.codex-plugin/plugin.json`;
 Claude Code never reads either. One cosmetic wart: Codex's own importer also adds
 `$flow:source-command-next`, a duplicate of `$flow:next`, and there is no way to turn it off.
@@ -54,7 +54,7 @@ mkdir -p ~/.claude/flow && cp CORE.md ~/.claude/flow/CORE.codex.md
 cp -r skills/. /root/of/your/repo/.agents/skills/   # or: this repo only
 ```
 
-Skills are invoked with `$flow-feat-start {TICKET}`, `$flow-bug-investigate`, `$flow-work-status`. A running session does not pick up new skills — start a new one.
+Skills are invoked with `$flow-feat-start {TICKET}`, `$flow-bug-investigate`, `$flow-work-daily`. A running session does not pick up new skills — start a new one.
 
 ### 2. MCP and subagent configuration
 
@@ -99,9 +99,6 @@ $flow-work-resume
 
 # Morning standup across all your work (local + forge + tracker)
 $flow-work-daily
-
-# See all open work
-$flow-work-status
 
 # Start a bug
 $flow-bug-start PROJ-99999

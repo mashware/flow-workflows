@@ -112,13 +112,13 @@ meta "$R/.claude/work/_archive/PROJ-4" '{
   ]
 }'
 want "accepted follow-up, no work on this branch: one line" "$(run "$R")" \
-  "Also: F2 from PROJ-4 accepted and never started — /flow:work:status"
+  "Also: F2 from PROJ-4 accepted and never started — /flow:work:daily"
 
 meta "$R/.claude/work/_archive/PROJ-5" '{
   "ticket": "PROJ-5", "phase": "done",
   "followups": [ { "id": "F1", "title": "x", "status": "accepted", "work": null } ]
 }'
-contains "several accepted follow-ups: still one line, with a count" "$(run "$R")" "more) — /flow:work:status"
+contains "several accepted follow-ups: still one line, with a count" "$(run "$R")" "more) — /flow:work:daily"
 
 # --- a worktree: the branch is here, the work folder is in the main checkout ---------------------
 R=$(newrepo repo-worktree main)

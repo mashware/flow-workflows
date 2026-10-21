@@ -12,7 +12,7 @@ You get named phases, an artifact on disk after each one, hard gates the agent n
 /plugin marketplace add mashware/flow-workflows
 /plugin install flow@flow-plugins
 /flow:init      # writes FLOW.md for this repo — auto-detects, asks the minimum
-/flow:next      # routes you to init, resume or status, depending on where you are
+/flow:next      # routes you to init, resume or daily, depending on where you are
 ```
 
 **Codex CLI** — same plugin, and its skills are invoked with `$flow:`
@@ -141,14 +141,14 @@ Symmetrically, `guided`/`auto` never ask about the flow's own machinery (panels,
 
 | Command | What it does |
 |---|---|
-| `/flow:next` | Entry point — routes to init, resume or status depending on where you are |
+| `/flow:next` | Entry point — routes to init, resume or daily depending on where you are |
 | `/flow:feat:start` | Read the tracker, classify size, create the branch and initial artifact |
 | `/flow:feat:build` | Implement following the approved design, keeping a log |
 | `/flow:feat:review` | Mandatory multi-agent code review before shipping |
 | `/flow:feat:ship` | Commit, push, open the MR/PR, offer to save domain knowledge |
 | `/flow:bug:start` | Start the incident flow (tracker, size, branch, initial artifact) |
 | `/flow:bug:fix` | Implement the minimal fix and keep a log |
-| `/flow:work:status` | All open work items and their next step |
+| `/flow:work:daily` | Every open work, what the forge and tracker ask of you, and the next step |
 | `/flow:work:resume` | Resume the work tied to the current branch |
 | `/flow:work:green` | Mergeable loop — the MR/PR cannot merge: triage, fix at the root, push. Never green-washes |
 | `/flow:work:respond` | Review loop — triage the threads, debate, implement what you agreed, reply. Never resolves threads |
@@ -169,7 +169,6 @@ Symmetrically, `guided`/`auto` never ask about the flow's own machinery (panels,
 | `/flow:doctor` | What `FLOW.md` resolves to — set vs empty and its fallback — then whether the environment honours it: CLIs installed *and authenticated*, agents, hooks, MCP |
 | `/flow:work:query` | Query duel — fact sheet, blinded challenger, verdict by execution plan against the base version |
 | `/flow:work:watch` | Post-deploy watcher — monitors observability, flags regressions |
-| `/flow:work:daily` | Standup across local + forge + tracker; ask a question or get the briefing |
 | `/flow:work:try` | Point the main checkout at a branch to test it, and print the manual test plan once it is up (then `--back`) |
 | `/flow:work:clean` | Sweep merged worktrees, dead branches, unarchived folders. Never deletes on a guess |
 | `/flow:work:abandon` | Close a work item without shipping |
@@ -232,7 +231,7 @@ harness-specific value. It offers to git-ignore `/FLOW.md`, each harness overlay
 Two mechanisms that are easy to miss in the command list and are most of what makes the flow
 usable on real work.
 
-**Work you decide not to do does not evaporate.** Every "idea for a separate ticket", out-of-scope piece, unmitigated risk, unchecked edge case and postmortem prevention action becomes a record in `meta.json`, not just a line in an artifact that gets archived unread. The phases that park them ask nothing. `ship` triages the whole set **once**, at the end, with one question per item: *do it* (which opens the tracker issue and offers to start it), *not worth it*, or *later*. Whatever is still open when the MR/PR is created is named in its description, so a reviewer can see what was consciously left out. `status`, `daily` and `next` keep surfacing the undecided ones — including from `_archive/`, because a finished work is exactly when its deferrals become invisible. Two things are deliberately **not** deferred work: a **product decision** the current diff depends on is asked the moment it surfaces, in every mode, because parking it makes the diff guess; and a gap in the repo's own **tooling** is recorded in the work and never asked about, because a tracker where those outnumber the product's defects makes the number lie.
+**Work you decide not to do does not evaporate.** Every "idea for a separate ticket", out-of-scope piece, unmitigated risk, unchecked edge case and postmortem prevention action becomes a record in `meta.json`, not just a line in an artifact that gets archived unread. The phases that park them ask nothing. `ship` triages the whole set **once**, at the end, with one question per item: *do it* (which opens the tracker issue and offers to start it), *not worth it*, or *later*. Whatever is still open when the MR/PR is created is named in its description, so a reviewer can see what was consciously left out. `daily` and `next` keep surfacing the undecided ones — including from `_archive/`, because a finished work is exactly when its deferrals become invisible. Two things are deliberately **not** deferred work: a **product decision** the current diff depends on is asked the moment it surfaces, in every mode, because parking it makes the diff guess; and a gap in the repo's own **tooling** is recorded in the work and never asked about, because a tracker where those outnumber the product's defects makes the number lie.
 
 **The live panel** makes the work readable from outside the chat: every stop is published there too, so a pane or dashboard can show the MR/PR train with links, what runs now, what comes next, whether it waits on you, and any blocker. Each line says *what it is* (`mark`: `done` `current` `pending` `wait` `block` `info`); the reader owns symbols and colours. Published *before* a long stretch, so a step that died halfway never shows as finished, and carrying the phase *running*, not the one `meta.json` records. A terminal that offers the `panel_set` / `panel_patch` tools takes the panel through them — the first publication claims the pane, every change after it is a patch; anywhere else the same document is `.claude/work/<work>/panel.json`, overwritten whole with an honest `updated_at`. Document and transports: [work/README](plugins/flow/commands/work/README.md#the-panel-document).
 

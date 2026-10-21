@@ -5,6 +5,29 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.98.0 — One overview, and it knows what you merged  ·  2026-10-21
+
+**In short**
+- **`/flow:work:status` is gone; `/flow:work:daily` is the one overview.** Everything only `status`
+  showed moved in: one block per open work (phase, MR/PR states, size against the estimate,
+  measured cost), log against git on the current branch, orphaned branches and folders, residue.
+  With forge and tracker unavailable it is still the full local picture.
+- **An MR/PR merged outside flow no longer looks in progress.** `daily` asks the forge for the real
+  state of every MR/PR a work recorded as open; merged or closed there → *merged on the forge, work
+  still says in progress*, pointing at `/flow:work:clean` (last part) or `/flow:work:resume` (more
+  parts planned). Read-only: `clean` still writes the verdict.
+- **"You" is the authenticated account, never a name.** Tickets assigned to you come from
+  `assignee = currentUser()` on Jira and `@me` on GitHub/GitLab; review threads compare your login
+  to the author's username. `tracker.assignee` overrides it only as an exact id or email, and
+  `{ASSIGNEE}` no longer falls back to `git.assignee` — a forge username is not a tracker account.
+- **The Jira examples now run.** `start_cmd`, `done_cmd` and `abandon_cmd` use `--key`/`--status`/
+  `--yes` and `--assignee`, the syntax `acli` accepts; the positional form they showed was refused.
+
+Two developers sharing a first name ran `daily`, and one got the other's tickets: the tracker
+query was left to the model, which matched by name. The same user had been using `status` to see
+what was in flight after a busy day — it read only `meta.json`, so every MR merged on the forge
+still showed as in progress until each work was resumed one by one.
+
 ## v0.97.2 — An update to an open MR/PR no longer declares a part  ·  2026-10-20
 
 **In short**

@@ -672,7 +672,7 @@ identifier rather than a description.
 **Estimates are a thermometer; the hot cut never rewrites history.** At +50% lines or +2 files:
 cut, continue and record, or reopen the plan; a cut inserts a fresh entry with `phases_done: []` and
 moves work by `cherry-pick`. A second overrun means the plan is wrong, not the estimate.
-*Now:* feat:build §2.3; feat:plan §4; work:status §2.
+*Now:* feat:build §2.3; feat:plan §4; work:daily §1.
 
 **Worktrees coexist; `try` tests in detached HEAD.** Detached "prevents accidental commits onto the
 branch you are only testing"; `worktree_resync` runs after each switch, confirmed because it is
@@ -693,7 +693,7 @@ git-ignored config, and the opposite for a tracked file, which belongs to the br
 **`clean` sweeps what `ship` never gets to ask about.** v0.27.0: 22 and 14 worktrees, thirteen of
 fourteen merged, sixteen work folders and zero archived. Every offer was "a prompt at the end of a long
 command, easy to answer past — and in a train it never fires at all". Evidence, never age.
-*Now:* work:clean; work:status §4; work:daily §4; feat:ship §6.3.
+*Now:* work:clean; work:daily §1, §4; feat:ship §6.3.
 
 **The forge is the evidence, asked exactly twice; squashes need patch equivalence.** Two list calls
 joined locally. `git branch --merged` misses every squash (8 of 13 were invisible), so `clean` replays

@@ -86,7 +86,7 @@ Ask the user what to do with the branch — do not decide alone:
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - **Tracker: move to won't-do** (never "done" — this work did not ship). Only if `tracker.tool` is not `none`/empty, `tracker.abandon_cmd` is set, and `meta.json.ticket` is a **real tracker id** (skip for local-only slugs). Run `tracker.abandon_cmd` substituting `{TICKET}` = `meta.json.ticket`. Same contract as `/flow:feat:start §6.5`: **best-effort, idempotent, gated** (ask once in `autonomy.mode: manual`; automatic in `guided`/`auto`); failure or already-in-state ticket → warn and continue, never block. `tracker.abandon_cmd` empty → do nothing (the user closes the ticket by hand if they want).
 - Panel published for this work (flow-core §4) → publish a terminal state before archiving: the title, one `block` line saying the work was abandoned and why, no `Decision` line, and `attention` cleared where the panel tools carry it — nothing is waiting on anyone any more.
-- Move the folder to `.claude/work/_archive/` **keeping its directory name** (`_archive/<work-dir>/`, the folder located in §1 — e.g. `<TICKET>-<slug>`) so `/flow:work:status` no longer lists it.
+- Move the folder to `.claude/work/_archive/` **keeping its directory name** (`_archive/<work-dir>/`, the folder located in §1 — e.g. `<TICKET>-<slug>`) so `/flow:work:daily` no longer lists it.
 - Report to the user: ticket abandoned, reason, what was done with the branch.
 
 ## Recovery

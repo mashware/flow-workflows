@@ -488,7 +488,7 @@ phases that parked it asked nothing, deliberately.
    **`tooling` entries are not asked at all** — they go straight to 4b (flow-core §7).
 2. **Not worth it** → `status: "declined"`, the reason in `note` if the user gave one. Never asked
    again, in this work or any later one.
-3. **Later** → stays `proposed`. `/flow-work-status`, `/flow-work-daily` and `/flow-next` surface it
+3. **Later** → stays `proposed`. `/flow-work-daily` and `/flow-next` surface it
    until it is decided; nothing else happens now.
 4. **Do it** → `status: "accepted"`, then **create the tracker issue**, exactly as
    `/flow-feat-start` §2.5.4 creates one from a ticket-less draft — the tool's native command

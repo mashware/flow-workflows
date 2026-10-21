@@ -167,4 +167,4 @@ phase, so their size is paid on every step:
     (`FLOW.<context>.md`, flow-core §0), which a repo commits on purpose. Do not use a recursive
     pattern either: examples under the plugin must remain visible.
   - Git-ignore `.claude/work/` too — recommended default: ignore it (artifacts are personal working state; teams that want to share them commit deliberately). `git.worktree` not `off` → offer `.worktrees/` in the same gesture.
-- Suggest `$flow-next` as the next step (it routes to `$flow-feat-start`, `$flow-work-resume` or `$flow-work-status`).
+- Suggest `$flow-next` as the next step (it routes to `$flow-feat-start`, `$flow-work-resume` or `$flow-work-daily`).

@@ -52,7 +52,7 @@ Ticket thread:  <new since <updated_at>: <n> comment(s) that change the work —
 Unattended:     <from `meta.json.pending` when it is set: the gate, `resume` and the question file's first line — the orchestrator holds the question and will relaunch with its answer>   (line only when `pending` is set)
 ```
 
-- `MR/PRs:` and `Waves:` from `meta.json.mrs` (same format as `/flow-work-status §2`). `∥` = can run in parallel, `→` = waits for the previous wave to merge.
+- `MR/PRs:` and `Waves:` from `meta.json.mrs` (same format as `/flow-work-daily §5`). `∥` = can run in parallel, `→` = waits for the previous wave to merge.
 - Ticket format follows `tracker.prefix`; empty → as it appears in `meta.json`.
 
 Then a **5-line summary** — what is being done and why, decisions made so far, what was still pending:
