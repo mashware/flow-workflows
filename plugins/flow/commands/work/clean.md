@@ -212,6 +212,6 @@ Then at most three lines of body, only what could change a decision: failed rows
 ## Notes
 
 - **Read the forge, not the calendar.** Age is never evidence — except in §8, where the entry is already archived and in git.
-- **`/flow:work:status` §4 and `/flow:work:daily` §4 surface the same residue** as a count and point here; they never delete.
+- **`/flow:work:daily` §1 and §4 surface the same residue** as a count and point here; they never delete.
 - **It does not advance `meta.json.phase`** — except the individually confirmed §6.C reconciliation (sets `done` when all MRs/PRs merged).
 - **Safe to run often.** `--dry-run` is read-only; a clean repo produces one line.

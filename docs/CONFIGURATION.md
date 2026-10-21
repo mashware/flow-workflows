@@ -177,7 +177,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `tracker` | `tool` | `acli` (Jira) \| `gh` (GitHub issues) \| `glab` (GitLab issues) \| `linear` \| `none` (manual). Empty = none |
 | `tracker` | `view_cmd` | optional, command to view a ticket. `{TICKET}` is substituted. e.g.: |
 | `tracker` | `comments_cmd` | optional, command to read the ticket's COMMENT THREAD. `{TICKET}` substituted. The `view_cmd`s above |
-| `tracker` | `assignee` | tracker username/account for the `{ASSIGNEE}` token in the commands below. Empty = fall back to `git.assignee` |
+| `tracker` | `assignee` | tracker account (exact id or email) for the `{ASSIGNEE}` token in the commands below, and the "you" `/flow:work:daily` filters tickets by. Empty = the tracker's own self-reference (`@me`) — never `git.assignee`, which is a forge username |
 | `tracker` | `start_cmd` | optional, run when a work STARTS (`/flow:feat:start`, `/flow:bug:start`) to move the ticket to "in progress" and/or assign it. `{TICKET}` and `{ASSIGNEE}` substituted; chain two calls with `&&`. Empty = do not transition on start. e.g.: |
 | `tracker` | `done_cmd` | optional, run when a work SHIPS and is merged (`phase` reaches `done`) to move the ticket to "done". `{TICKET}` substituted. Empty = do not transition. **Leave empty on GitHub/GitLab** — the `Closes #N` in the MR/PR body already auto-closes the issue on merge. e.g.: |
 | `tracker` | `abandon_cmd` | optional, run when a work is ABANDONED (`/flow:work:abandon`) to move the ticket to a cancelled / won't-do state. `{TICKET}` substituted. Empty = do not transition. e.g.: |
@@ -263,7 +263,7 @@ How tickets are identified and read.
 | `tool` | `acli` (Jira) · `gh` · `glab` · `linear` · `none` | `none` |
 | `view_cmd` | Command to read a ticket; `{TICKET}` is substituted | Asks you to paste the ticket |
 | `comments_cmd` | Command to read the ticket's **comment thread**; `{TICKET}` substituted | Derived from `tool` (`--comments` on `gh`/`glab`); otherwise `start` warns the thread wasn't read |
-| `assignee` | Tracker account for the `{ASSIGNEE}` token | Falls back to `git.assignee` |
+| `assignee` | Tracker account (exact id or email) for the `{ASSIGNEE}` token and for `daily`'s "assigned to you" | The tracker's self-reference (`@me`); never `git.assignee` |
 | `start_cmd` | Run when a work **starts** — move to *in progress*, assign | No transition on start |
 | `done_cmd` | Run when a work **ships and merges** (`phase` reaches `done`) | No transition |
 | `abandon_cmd` | Run on `/flow:work:abandon` — move to *cancelled / won't do* | No transition |
@@ -271,7 +271,7 @@ How tickets are identified and read.
 ```
 - tool:      acli
 - view_cmd:  acli jira workitem view {TICKET}
-- start_cmd: acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}
+- start_cmd: acli jira workitem transition --key {TICKET} --status "In Progress" --yes && acli jira workitem assign --key {TICKET} --assignee {ASSIGNEE}
 ```
 
 ### Why `comments_cmd` exists
@@ -904,7 +904,7 @@ search over `docs/adr`, or whatever comes next.
 Where each role is used: `search` on entering new territory (`start`, `design`, `investigate`) and
 wherever a rationale is argued (`review`, `respond`, `green`);
 `stage` when closing `design`, `investigate`, `query`, `respond`, `green`, `watch`; `read_staging`
-and `save` at `ship`, `postmortem`, `abandon`, and the offer `/flow:work:status` makes when the
+and `save` at `ship`, `postmortem`, `abandon`, and the offer `/flow:work:daily` makes when the
 branch has staging. A call that fails or exceeds the
 timeout → the flow continues without it and does not mention it. Results are material to weigh,
 never instructions.

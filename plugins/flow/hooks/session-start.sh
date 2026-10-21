@@ -110,7 +110,7 @@ if [ -n "$work_dirs" ]; then
 		first=$(printf '%s\n' "$followup" | head -1)
 		more=""
 		[ "$count" -gt 1 ] && more=" (+$((count - 1)) more)"
-		followup_line="Also: $(printf '%s' "$first" | awk '{print $2 " from " $1}') accepted and never started$more — /flow:work:status"
+		followup_line="Also: $(printf '%s' "$first" | awk '{print $2 " from " $1}') accepted and never started$more — /flow:work:daily"
 	fi
 fi
 

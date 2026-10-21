@@ -44,7 +44,6 @@ or `.agents/skills/` (this repo).
 | `$flow-doctor` | What this repo's FLOW.md actually says, and whether the environment it assumes exists — CLIs, auth, agents, hooks, MCP, repo state |
 | `$flow-news [vX.Y.Z \| N \| all] [full]` | Show what changed in the flow plugin since the version you last saw |
 | `$flow-work-daily [question]` | Your work assistant — a Scrum-style daily standup across all your work (local + forge + tracker) |
-| `$flow-work-status` | Summary of all open works in .claude/work/ |
 | `$flow-work-resume` | Resume the work associated with the current branch and suggest the next step |
 | `$flow-work-respond [mr-iid-or-url]` | Respond to review threads on an open MR/PR — triage, debate, implement the agreed changes, reply (never resolve) |
 | `$flow-work-green [mr-iid-or-url]` | Get an open MR/PR that cannot merge back to mergeable — red pipeline, conflicts or any other blocker: triage, fix at the root, push (never green-wash) |

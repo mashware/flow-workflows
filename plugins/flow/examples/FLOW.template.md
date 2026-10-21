@@ -45,13 +45,13 @@ How tickets are identified and read.
                       #   GitLab: `glab issue view {TICKET} --comments`
                       # Empty = derived from `tool` for `gh`/`glab`; for Jira/`linear` the commands try the native way once
                       # and, if there is none, warn in one line that the thread was not read (never silently assume it was empty).
-- `assignee:`         # tracker username/account for the `{ASSIGNEE}` token in the commands below. Empty = fall back to `git.assignee`.
+- `assignee:`         # tracker account (exact id or email) for the `{ASSIGNEE}` token in the commands below, and the "you" `/flow:work:daily` filters tickets by. Empty = the tracker's own self-reference (`@me`) — never `git.assignee`, which is a forge username.
 - `start_cmd:`        # optional, run when a work STARTS (`/flow:feat:start`, `/flow:bug:start`) to move the ticket to "in progress" and/or assign it. `{TICKET}` and `{ASSIGNEE}` substituted; chain two calls with `&&`. Empty = do not transition on start. e.g.:
-                      #   Jira: `acli jira workitem transition {TICKET} "In Progress" && acli jira workitem assign {TICKET} {ASSIGNEE}`
+                      #   Jira: `acli jira workitem transition --key {TICKET} --status "In Progress" --yes && acli jira workitem assign --key {TICKET} --assignee {ASSIGNEE}`
 - `done_cmd:`         # optional, run when a work SHIPS and is merged (`phase` reaches `done`) to move the ticket to "done". `{TICKET}` substituted. Empty = do not transition. **Leave empty on GitHub/GitLab** — the `Closes #N` in the MR/PR body already auto-closes the issue on merge. e.g.:
-                      #   Jira: `acli jira workitem transition {TICKET} "Done"`
+                      #   Jira: `acli jira workitem transition --key {TICKET} --status "Done" --yes`
 - `abandon_cmd:`      # optional, run when a work is ABANDONED (`/flow:work:abandon`) to move the ticket to a cancelled / won't-do state. `{TICKET}` substituted. Empty = do not transition. e.g.:
-                      #   Jira: `acli jira workitem transition {TICKET} "Won't Do"`
+                      #   Jira: `acli jira workitem transition --key {TICKET} --status "Won't Do" --yes`
                       #
                       # The three `*_cmd` transitions are **best-effort, idempotent, and gated**: outward-facing, so
                       # they are asked before running in `autonomy.mode: manual` and run automatically in `guided`/`auto`;
@@ -366,7 +366,7 @@ command or skill fits. Section empty or absent = every knowledge step is skipped
                     # Empty = the finding is written to the phase artifact only (no staging).
 - `read_staging:`   # optional. Tool that returns what this branch has staged. Empty = the phase artifacts are the staging.
 - `save:`           # optional. Tool that consolidates one finding into the store (`ship`, `postmortem`, `abandon`, and the
-                    # offer in `/flow:work:status` when there is staging). Empty = the consolidation appends the findings to
+                    # offer in `/flow:work:daily` when there is staging). Empty = the consolidation appends the findings to
                     # `KNOWLEDGE.md` at the repo root instead.
 - `timeout_s:`      # per call. Empty = 2. A call that fails or takes longer → continue without it, silently.
 

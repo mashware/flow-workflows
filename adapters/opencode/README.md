@@ -16,7 +16,7 @@ flattened to a hyphenated name. When following the docs or the main README, tran
 | `/flow:config` | `/flow-config` |
 | `/flow:feat:start` | `/flow-feat-start` |
 | `/flow:bug:diagnose` | `/flow-bug-diagnose` |
-| `/flow:work:status` | `/flow-work-status` |
+| `/flow:work:daily` | `/flow-work-daily` |
 
 The logic and prose of each command are identical; only the invocation name changes.
 

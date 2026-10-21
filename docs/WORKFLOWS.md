@@ -201,8 +201,8 @@ it combines **three sources** and, crucially, reasons about where they *cross*.
 | Source | What it reads |
 |---|---|
 | **Local** | `.claude/work/` + git — your work folders, phases, branch divergence |
-| **Forge** | Your open MRs/PRs, the ones awaiting your review, red CI, MRs/PRs that cannot merge, unresolved threads (via `git.cli`) |
-| **Tracker** | Tickets assigned to you, priority changes (via `tracker.tool`) |
+| **Forge** | Your open MRs/PRs, the ones awaiting your review, red CI, MRs/PRs that cannot merge, unresolved threads, and the real state of every MR/PR your works recorded (via `git.cli`) |
+| **Tracker** | Tickets assigned to you — the authenticated account, never a name match — and priority changes (via `tracker.tool`) |
 
 Crossings become concrete suggested commands: a ticket assigned to you with no local work →
 `/flow:feat:start`; a red pipeline or a conflicted branch → `/flow:work:green`; open threads →
@@ -215,8 +215,9 @@ question, it answers just that.
 **best-effort**: if a CLI is missing or unauthenticated it degrades with a one-line note about
 what it couldn't check, and never blocks.
 
-Unlike `/flow:work:status` (a technical control table) and `/flow:work:resume` (one branch),
-`daily` is cross-cutting and narrative. It complements them; it doesn't replace them.
+It is the one overview of every open work — phase, MR/PR states, size against the estimate, log
+against git, orphans and residue — and `/flow:work:resume` is the one-branch view. MRs/PRs
+merged on the forge but still recorded as in progress are flagged, pointing at `/flow:work:clean`.
 
 ---
 

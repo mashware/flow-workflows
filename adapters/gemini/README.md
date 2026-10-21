@@ -130,8 +130,8 @@ State between cycles (monitored surface, baseline, approved plan) is persisted i
 /flow:bug:review
 /flow:bug:ship
 
-# Status of all open work
-/flow:work:status
+# Every open work, plus what the forge and tracker ask of you
+/flow:work:daily
 
 # Resume work after a break
 /flow:work:resume

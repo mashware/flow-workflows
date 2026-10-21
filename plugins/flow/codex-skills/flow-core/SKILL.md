@@ -24,7 +24,7 @@ Every `$flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.97.2`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.98.0`.** Compare it once, at the start of the session, against
 `version` in `../../.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -151,7 +151,7 @@ a command relies on is simply absent in that session, and nothing else will repo
   artifact only; no `read_staging` → the artifacts are the staging; no `save` →
   the consolidation appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
   `knowledge.timeout_s` (empty = 2 s); a failure or timeout → continue without it, silently.
-**How a consolidation runs** (`ship`, `postmortem`, `abandon`, and the offer in `$flow:work-status`
+**How a consolidation runs** (`ship`, `postmortem`, `abandon`, and the offer in `$flow:work-daily`
 when `read_staging` has entries). No role set at all → say so in one line and stop:
 
 1. **Read the staging** for this branch with `knowledge.read_staging`; the role empty → the "why"

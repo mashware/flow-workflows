@@ -2,7 +2,7 @@
 
 Brings the `feat`, `bug` and `work` workflows from the `flow` plugin to **Hermes Agent**
 (Nous Research) format: one **skill** per command, invoked as `/flow-feat-start`, `/flow-bug-fix`,
-`/flow-work-status`.
+`/flow-work-daily`.
 
 ## Adapter contents
 
@@ -101,9 +101,6 @@ cp ../codex/AGENTS.md /root/of/your/repo/AGENTS.md
 
 # Morning standup across all your work (local + forge + tracker)
 /flow-work-daily
-
-# See all open work
-/flow-work-status
 
 # Start a bug
 /flow-bug-start PROJ-99999

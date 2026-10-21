@@ -167,7 +167,7 @@ base branch resolvable — is §2 below; flag the key here, check the world ther
   commands, agents and MCP exist here is §2.1-§2.3.
 - **Tracker transitions**: any of `tracker.start_cmd` / `done_cmd` / `abandon_cmd` set while
   `tracker.tool` is `none`/empty → flag (no ticket to move). `start_cmd` references `{ASSIGNEE}` with
-  both `tracker.assignee` and `git.assignee` empty → note the token won't substitute. `git.host` is
+  `tracker.assignee` empty → note it substitutes the tracker's `@me`, which only `acli`, `gh` and `glab` accept. `git.host` is
   `github`/`gitlab` and `done_cmd` is set → note it is usually redundant with `Closes #N` auto-close
   (harmless). These `*_cmd` run best-effort and never block.
 - **Data access**: `data.explain_cmd` / `schema_cmd` / `sandbox_cmd` / `seed_cmd` are commands, not

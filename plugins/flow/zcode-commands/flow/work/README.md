@@ -245,9 +245,8 @@ Two signals arrive on an open MR/PR, each with its own cross-cutting loop (feat 
 ## Cross-cutting commands
 
 - `/flow:next` — the entry point: no FLOW layer → init; work on the current branch →
-  resume; otherwise status.
-- `/flow:work:daily [question]` — the **work assistant** (daily standup), read-only. **Local** (`.claude/work/` + git) + **forge** (open MRs/PRs, reviews awaiting you, red CI, unmergeable, unresolved threads via `git.cli`) + **tracker** (assigned tickets, priority changes via `tracker.tool`); where they cross, concrete commands (`/flow:feat:start`, `/flow:work:green`, `/flow:work:respond`). No argument → *yesterday · today · blockers*; a question → just that. External sources best-effort, never blocking; the only write is a "last seen" marker, like `/flow:news`.
-- `/flow:work:status` — all works in `.claude/work/`, current phase, divergence with git.
+  resume; otherwise daily.
+- `/flow:work:daily [question]` — the **work assistant** (daily standup), read-only. **Local** (`.claude/work/` + git) + **forge** (open MRs/PRs, reviews awaiting you, red CI, unmergeable, unresolved threads via `git.cli`) + **tracker** (assigned tickets, priority changes via `tracker.tool`), each matched to the authenticated account, never a name; MRs/PRs merged outside flow are caught against what the works recorded; where they cross, concrete commands (`/flow:feat:start`, `/flow:work:green`, `/flow:work:respond`). No argument → *yesterday · today · blockers*; a question → just that. External sources best-effort, never blocking; the only write is a "last seen" marker, like `/flow:news`.
 - `/flow:work:run [ticket]` — the **entry an orchestrator launches** for an `unattended` run: asks it `why` (start · study · answer · merged · review · pipeline), routes to the phase that answers it — a `study` run stops at the door to code with a summary for a person to approve — and makes no decision of its own. Refuses to run in any other mode.
 - `/flow:work:handoff` — hands a **finished study** to whoever builds it elsewhere (an unattended server, another machine): refuses an unfinished one, pushes only this work's folder as a parentless commit to `git.handoff_branch` without touching the checkout, asks before the push, then offers a marked summary for the ticket body (`tracker.edit_cmd`). A work started with `/flow:feat:start --study` (or `/flow:bug:start --study`) ends its study here on its own; one started without the flag is built here, even with the key set.
 - `/flow:work:resume` — detects the branch, reads `meta.json`, recaps, suggests the next step. **Re-reads the ticket's comment thread** (§2.5), reports only what is new since `01-context.md`, appends it to the artifact; never amends the design on its own.
@@ -264,7 +263,7 @@ Two signals arrive on an open MR/PR, each with its own cross-cutting loop (feat 
 ## Golden rules
 
 1. **Never skip `review`.** If the previous phase is not in `phases_done`, the command refuses.
-2. **If you edit code outside the flow**, `/flow:work:status` will flag the divergence.
+2. **If you edit code outside the flow**, `/flow:work:daily` will flag the divergence.
 3. **Artifacts are hand-editable**. If you rewrite `03-design.md`, the next step will respect it.
 4. **A query never passes on prose.** If the diff touches a query and no plan was read, the review says "not measured" — it does not say "looks fine".
 5. **A premise the change depends on is not settled by being small.** A belief about code outside the diff that nothing verifies, and whose being wrong costs data, money or a silent wrong result, gets one skeptic at any size (`build` §2.1bis, `fix` §2.2). Unsettled is recorded unsettled.
