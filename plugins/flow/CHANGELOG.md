@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.99.0 — After an approved study, an unattended run answers its own questions  ·  2026-10-22
+
+**In short**
+- **New key `autonomy.after_study: recommended`**, read only in `unattended`. Once the work holds a
+  study a person approved — a study run approved with `why = start`, or a study handed off from
+  elsewhere — a question in `build`, `fix`, `review`, `validate` or `ship` no longer ends the run:
+  it takes the recommended option and goes on in the same turn.
+- **Every question still reaches you, in the draft MR/PR.** Each one goes to `auto-answers.md` and
+  from there into the body under `## Decided without asking`: the question, its options, the one
+  taken checked. Disagree → ask for the change on the MR/PR.
+- **Three cases still ask:** a question with no recommended option, a third high-findings round on
+  the same MR/PR, and anything outside those five phases — the study itself, `respond` and `green`.
+- Empty or `ask` → nothing changes.
+
+An unattended build stopped on a question whose recommended option was the one the person would
+have picked, and the answer came hours later — a relaunch that started cold, without the context or
+the cache of the run that asked. With the study approved, the person had already decided what
+mattered; the rest can wait for the MR/PR.
+
 ## v0.98.0 — One overview, and it knows what you merged  ·  2026-10-21
 
 **In short**

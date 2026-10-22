@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.98.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.99.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -434,6 +434,8 @@ conservative reading, never a guess dressed as a default.
 
 **A question stop**, in this order: the WIP commit above → the question and options files →
 `meta.json.pending` (its `id` hashes the question file, so the file comes first) → `ask` → end.
+With `autonomy.after_study: recommended` and an approved study, the recommended answer below may
+take the question in its place.
 
 ```json
 "pending": {"id": "168-unattended-autonomy-mode:build:migration:3f2a9c1:8d41e07",
@@ -514,6 +516,46 @@ An option that sends the work back to a person's judgement (*Change the design f
 by writing it and ending the run `blocked`, its reason naming what a person must do: the run
 cannot redesign on its own. A gate this table does not name has no answer path — it stays a
 question for a person.
+
+**The recommended answer, after an approved study** — `autonomy.after_study: recommended`, read
+only in `unattended` (empty or `ask` → every question stops as above). It applies once the work
+holds a study a person approved: `done-summary.md` in the work folder (a study run, approved with
+`why = start`) or `meta.json.handoff` true (a study handed off from elsewhere). Then a question
+stop in `build`, `fix`, `review`, `validate` or `ship` is not sent, and the run answers it with its
+own recommended option, in the same turn:
+
+1. Write the question and options files as the stop would, and compute its `id` the same way.
+2. Append one entry to `auto-answers.md` in the work folder — whoever reads it later has not seen
+   this session:
+
+   ```markdown
+   ### <gate> · <phase> · MR/PR <n>
+   <the question file, whole>
+
+   - [x] <the recommended option> — taken without asking
+   - [ ] <each other option, in its order>
+   ```
+
+   `MR/PR <n>` is this MR/PR's `mrs[]` entry, left out for a work with no `mrs`.
+3. Apply that option as an orchestrator's answer is applied (above): written where the re-entry
+   table says, with every effect its row names — *Fix them* writes the plan steps and chains into
+   `build` / `fix` — and `{ "key": "unattended:answer:<gate>", "default": "<option>", "id": "<id>",
+   "phase": "<phase>", "head": "<head>", "mr": <n>, "source": "recommended" }` in
+   `meta.json.defaults_used[]`, so "Which site takes it" reads it as it reads any answer.
+4. `pending` stays `null`: no `ask`, no end of the run. The phase goes on from that site.
+
+Still a question stop, as above:
+
+- **No recommended option** — a question with no options, or a `decision` whose options came
+  without one. Free text is never written on a person's behalf.
+- **A third `high_findings` on the same MR/PR** — two `source: "recommended"` answers to that gate
+  with this `mr` already in `defaults_used[]`: two rounds of fixes that left high findings behind
+  are for a person to judge.
+- **Outside those five phases** — the study phases, and `respond` and `green`, ask or block as
+  they always do: a review round answers a reviewer, and the ticket's owner decides that one.
+
+`ship` puts this MR/PR's entries in the body (its "In every mode" paragraph), so the person who
+reads the draft sees each question, its options and the one taken, and asks for a change there.
 
 ## 3. Reporting — how every stop reads
 
