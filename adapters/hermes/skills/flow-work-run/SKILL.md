@@ -61,7 +61,8 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 | `answer` | `pending` set | apply `<cmd> answer` as flow-core §2.1 "The answer comes back" says, then `pending.resume` at `pending.resume_at`. The order fails or prints nothing → `blocked` |
 | `answer` | nothing pending | `blocked` — there is no question for that answer to decide |
 | `merged` | exists, something published | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read (empty → `git.default_base`); the next startable MR/PR → `/flow-feat-build`; none left, or a work with no `mrs` and `published` true (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
-| `merged` | none, or nothing published | `blocked` — nothing of this ticket was published from here |
+| `merged` | exists, nothing published, its last `mrs[]` entry with a number `merged` | the same merge again: a run that recorded it and then stopped (a block, a crash) is relaunched with the same `why`, since no part was published after it. Nothing to record — the next startable MR/PR → `/flow-feat-build`; none left → `phase = done` and `done`, as the row above |
+| `merged` | none, or nothing published and nothing merged | `blocked` — nothing of this ticket was published from here |
 | `review` | exists | `/flow-work-respond` — the threads come from `<cmd> events --json` |
 | `pipeline` | exists | `/flow-work-green` — the failed jobs come from `<cmd> events --json` |
 | `conflict` | exists | `/flow-work-green` — the MR/PR conflicts with its base; which base, and where it stands, come from `<cmd> events --json` |
