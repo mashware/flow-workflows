@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.99.2 — A failure is called pre-existing only under the same load  ·  2026-10-22
+
+**In short**
+- **An unattended `validate` checks the base the way HEAD went red.** Same command: the whole
+  suite when the whole suite failed, never the failing file alone.
+- **A test red in the suite and green on its own runs three times on each side.** Each side's red
+  count and that test's durations go in `07-validation.md`. Red on the base as often → pre-existing.
+  Green on the base and red on HEAD even once → this diff made it.
+- **The repair round then looks at what the diff adds under concurrency** — a lock, a pool, a timer,
+  a background loop — never a longer timeout or a retry.
+
+An unattended run spent its three repair rounds on a test it called pre-existing after one isolated
+run on the base. In the whole suite the test passed every time on the base and failed on its branch,
+almost three times slower: the run had added the failure itself.
+
 ## v0.99.1 — A part's merge that comes back no longer blocks the split  ·  2026-10-22
 
 **In short**
