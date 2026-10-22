@@ -186,8 +186,10 @@ base branch resolvable — is §2 below; flag the key here, check the world ther
   resolves on `PATH` (`command -v`) — **empty → flag it as an error**: no phase runs in
   `unattended` without it. Say which file set the mode: every session that reads that file — a
   person's included, when they share the checkout and the harness — stops asking too, so it belongs
-  in a FLOW file only the orchestrator's environment has. `orchestrator_cmd` set with any other mode
-  → note it is ignored.
+  in a FLOW file only the orchestrator's environment has. Echo `autonomy.after_study` (empty =
+  `ask`): `recommended` → once a study is approved, the run answers its own questions with the
+  recommended option and lists them in the draft MR/PR (flow-core §2.1); any other value → flag,
+  `ask` assumed. `orchestrator_cmd` or `after_study` set with any other mode → note it is ignored.
 
 ## 2. Checks
 
