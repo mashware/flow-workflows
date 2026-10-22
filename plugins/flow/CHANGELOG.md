@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.99.1 — A part's merge that comes back no longer blocks the split  ·  2026-10-22
+
+**In short**
+- **`/flow:work:run` with `why = merged` and the merge already recorded goes on.** A run that
+  recorded a part's merge and then stopped (a block, a crash) is relaunched with the same `merged`,
+  since no part was published after it. It used to block with «nothing published»; it now takes
+  the next startable MR/PR, or closes the work when none is left.
+- **`/flow:feat:plan` knows a split's parts may not reach the default branch.** In `unattended`, an
+  orchestrator may merge each part into a base of its own until the last one merges, so a part
+  that waits for an earlier one to be *released or deployed* can never start. The plan merges the
+  two, or drops the wait and leaves the check on a real release to a person on the MR/PR.
+
+An unattended split stopped for good: its plan waited for a release of part 1, which only lived on
+the split's own base, and every relaunch came back as a `merged` that was already recorded.
+
 ## v0.99.0 — After an approved study, an unattended run answers its own questions  ·  2026-10-22
 
 **In short**
