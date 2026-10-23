@@ -36,7 +36,7 @@ of truth, and an argument that disagrees with it is ignored and named in the log
   other mode a person is the router (`/flow-next`).
 - `autonomy.orchestrator_cmd` empty → flow-core §2.1: no phase runs.
 - Run `<cmd> why`. It fails, or prints anything but `start`, `study`, `answer`, `review`,
-  `pipeline`, `merged` or `conflict` → print what it returned and its stderr in the §3 header and end. No closing order: an
+  `pipeline`, `merged`, `conflict` or `next` → print what it returned and its stderr in the §3 header and end. No closing order: an
   orchestrator that cannot say why it launched the run cannot take one either.
 - Run `<cmd> ticket --json` and keep `number`, `title`, `base` and `kind` (`kind` absent or `null` → `feat`: the tracker could not tell, so flow decides). `kind` is re-read on every run; only a run that starts the work uses it — once the work exists, its folder says feat or bug.
   It fails or prints no `number` → `blocked` (flow-core §2.1).
@@ -63,6 +63,8 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 | `merged` | exists, something published | the entry of `meta.json.mrs` whose `status` is `published` (the only one: one MR/PR per run) becomes `merged`; set `meta.json.base` to the `base` just read (empty → `git.default_base`); the next startable MR/PR → `/flow-feat-build`; none left, or a work with no `mrs` and `published` true (one MR/PR, every bug) → `phase = done` and `done`, the summary naming the ticket as complete |
 | `merged` | exists, nothing published, its last `mrs[]` entry with a number `merged` | the same merge again: a run that recorded it and then stopped (a block, a crash) is relaunched with the same `why`, since no part was published after it. Nothing to record — the next startable MR/PR → `/flow-feat-build`; none left → `phase = done` and `done`, as the row above |
 | `merged` | none, or nothing published and nothing merged | `blocked` — nothing of this ticket was published from here |
+| `next` | exists, something published | a stacked split (flow-core §2.1, `--stack`): nothing merged, so every `published` entry stays `published`. Set `meta.json.base` to the `base` just read — the branch of the part published last, or the umbrella — then the next startable MR/PR, a `published` dependency counting as met → `/flow-feat-build`; none left → `done`, the summary saying every part is published and waits to merge |
+| `next` | none, or nothing published | `blocked` — there is no published part to build on |
 | `review` | exists | `/flow-work-respond` — the threads come from `<cmd> events --json` |
 | `pipeline` | exists | `/flow-work-green` — the failed jobs come from `<cmd> events --json` |
 | `conflict` | exists | `/flow-work-green` — the MR/PR conflicts with its base; which base, and where it stands, come from `<cmd> events --json` |

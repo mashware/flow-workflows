@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.100.0 — An unattended split builds every part without waiting for merges  ·  2026-10-23
+
+**In short**
+- **`publish --part … --stack` when the orchestrator offers it.** `<cmd> ticket --json` saying
+  `"stack": true` means the orchestrator can stack a split's parts: `ship` passes `--stack` with
+  every part, and the next part no longer waits for the previous one to merge.
+- **`/flow:work:run` routes `why = next`.** Nothing merged: the published parts stay `published`,
+  `meta.json.base` becomes the part published last (or the umbrella), and the next startable MR/PR
+  is built on it — a `published` dependency counts as met on this route only.
+- **Without `stack` nothing changes:** the next part waits for `why = merged`, as before.
+
+An unattended split used to stop after each part until a person merged it, so a split ticket left
+to run overnight was one part long in the morning.
+
 ## v0.99.2 — A failure is called pre-existing only under the same load  ·  2026-10-22
 
 **In short**
