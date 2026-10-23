@@ -52,11 +52,13 @@ place it would ask:
   the work folder.
 - **"Was it merged?" (§6.1)** → not merged: the entry stays `in_progress` (a work with no `mrs`
   keeps `phase = "ship"`) until `publish` succeeds, below. **The parent merged first (§6.2.1)** → blocked, never
-  force-push. **Train continuation (§6.2)** → not started: one MR/PR per unattended run.
+  force-push. **Train continuation (§6.2)** → not started: one MR/PR per unattended run (with
+  `--stack`, the orchestrator launches the next one as `why = next`).
 - **At Close**, after `meta.json` and `00-summary.md` are written: commit what is left outside
   `.claude/work/` so the tree is clean, then the run's closing order — `<cmd> publish --title-file
   <work>/publish-title.md --body-file <work>/publish-body.md`, plus `--part <n> --of <N>` when
-  `meta.json.mrs` has more than one entry (`n` this MR/PR's, `N` the number of entries). Exit 0 →
+  `meta.json.mrs` has more than one entry (`n` this MR/PR's, `N` the number of entries), and
+  `--stack` beside them when `<cmd> ticket --json` says `"stack": true` (flow-core §2.1). Exit 0 →
   this MR/PR's `mrs[]` entry gets `status: "published"` (a work with no `mrs`: `meta.json.published:
   true`) — what `/flow-work-run` turns into `merged` when the orchestrator relaunches with
   `why = merged` — and nothing else runs. The summary and the panel written before it say the work

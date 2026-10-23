@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.99.2`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.100.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -301,14 +301,15 @@ configuration; these orders are the whole interface, and nothing else about the 
 assumed:
 
 ```
-<cmd> why                                   → start | study | answer | review | pipeline | merged | conflict
-<cmd> ticket --json                         → {number, title, body, comments[{author, at, text}], base, kind}
+<cmd> why                                   → start | study | answer | review | pipeline | merged | conflict | next
+<cmd> ticket --json                         → {number, title, body, comments[{author, at, text}], base, kind, stack?}
 <cmd> answer                                → one option's exact text, or free text; exit 2 = no reply
 <cmd> events --json                         → {"comments":[{thread,kind,id,author,at,body,url,path?,line?,owner?}]}
                                                | {"sha":…, "failed":[{name,conclusion,url,log_tail}]}
                                                | {"conflict":{"base":…, "base_sha":…}}
+                                               | {"part":…, "parts":…, "part_pr":{number,url,branch}|null, "umbrella":{…}}
 <cmd> ask --question-file F --options-file F [--recommended N] [--free-text] [--gate NAME]
-<cmd> publish --title-file F --body-file F [--part N --of M]
+<cmd> publish --title-file F --body-file F [--part N --of M [--stack]]
 <cmd> blocked --reason-file F
 <cmd> done [--summary-file F] [--depends-on N]…
 <cmd> reply --thread ID --body-file F
@@ -329,6 +330,12 @@ assumed:
   (`/flow:feat:ship`). A publish that updates one already open — `/flow:work:green`,
   `/flow:work:respond` — carries neither: the MR/PR is already that part, and an orchestrator may
   refuse a part declared on a run launched for `pipeline`, `conflict` or `review`.
+- **`--stack` goes with every `--part` when `<cmd> ticket --json` says `"stack": true`** — an
+  orchestrator that can stack a split's parts says so there, and only there. It then builds the next
+  part without waiting for this one to merge: the run ends at `publish` as always, and the next
+  launch is `why = next`, with `base` the branch of the part just published (or the umbrella, once
+  every part below it is in). `stack` absent or false → no `--stack`, and the next part waits for
+  `why = merged` as before.
 - **Free text travels in files, never on the command line.** Question, options (one per line, the
   recommended one first), title, body, reason and summary are written into the work folder
   (`ask-question.md`, `ask-options.md`, `publish-title.md`, `publish-body.md`, `blocked-reason.md`,
@@ -372,7 +379,7 @@ run has.
 runs the study phases as any run does, and three rules make it stop where it should:
 
 - **The door to code.** The first step of `/flow:feat:build` and `/flow:bug:fix` pre-flight, in
-  `unattended`, re-reads `<cmd> why`: `start`, `answer`, `merged`, `review`, `pipeline` or `conflict` → go on;
+  `unattended`, re-reads `<cmd> why`: `start`, `answer`, `merged`, `next`, `review`, `pipeline` or `conflict` → go on;
   `study` → the study ends here; anything else, or the order failing → `blocked`. Every path from a
   study to code crosses that door, an answered question that resumes straight into `build`
   included, so the phases before it carry no clause. The run kind is read there, never stored: the
@@ -419,8 +426,8 @@ person asking for changes, a ticket that already has code — is `/flow:work:run
 | Criteria that need a person to verify (`validate`) | record — `not-verified-unattended`; every later `ship`, in any mode, lists them in the body under "Not verified — needs a human" |
 | The query duel needs a database (`review`, `query`) | record — schema-only verdict; never create or seed a database |
 | "Was it merged?" (`ship` close) | record — not merged; the orchestrator relaunches with `why = merged` when it is |
-| The next MR/PR of a train (`ship` close) | record — not started: one MR/PR per unattended run |
-| `build` with no startable MR/PR (its `depends_on` not `merged` in `meta.json`) | blocked — the reason names what must merge; an unattended `build` never stacks a branch on another, and never creates a remote branch |
+| The next MR/PR of a train (`ship` close) | record — not started: one MR/PR per unattended run; with `--stack` the orchestrator relaunches with `why = next` |
+| `build` with no startable MR/PR (its `depends_on` not `merged` in `meta.json`) | blocked — the reason names what must merge; an unattended `build` never stacks a branch on another, and never creates a remote branch. **On `why = next`** a dependency `published` counts as met: the orchestrator's `base` already holds it, and the new branch starts there |
 | The parent of a stacked MR/PR merged — rebase and force-push | blocked — never force-push unattended |
 | An approved study's branch (`run`, `why = start`, no build or fix begun) | record — fast-forwarded to its base when it holds no commit of its own (`/flow:work:run` §2); the base unreadable or the fast-forward failing → blocked. Not integrating: nothing of the run's is merged |
 | Integrating the base into the MR/PR's branch (`green`) | on `why = conflict`, record — `git merge origin/<base>` as the orchestrator left it, never rebase, each conflict resolved on its merits (`/flow:work:green` §5.C); on any other `why`, blocked — the orchestrator brings the base in |
