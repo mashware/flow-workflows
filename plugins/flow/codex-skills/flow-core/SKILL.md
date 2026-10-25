@@ -538,9 +538,9 @@ holds a study a person approved: `done-summary.md` in the work folder (a study r
 `why = start`) or `meta.json.handoff` true (a study handed off from elsewhere). Then a question
 stop in `build`, `fix`, `review`, `validate` or `ship` is not sent, and the run answers it with its
 own recommended option, in the same turn. So is one in `design`, `plan` or `investigate` once the
-work has crossed the door to code — `05-implementation.md` or `04-fix.md` exists — and a gap found
-while building sent it back to the study: `--study` sets `handoff` at start, before anyone approved
-anything, so before that door the flag proves nothing.
+work has crossed the door to code — `05-implementation.md` or `04-fix.md` exists, as when building
+sent the work back to the study: `--study` sets `handoff` at start, before anyone approved anything,
+so before that door the flag proves nothing.
 
 1. Write the question and options files as the stop would, and compute its `id` the same way.
 2. Append one entry to `auto-answers.md` in the work folder — whoever reads it later has not seen
@@ -560,7 +560,7 @@ anything, so before that door the flag proves nothing.
    table says, with every effect its row names — *Fix them* writes the plan steps and chains into
    `build` / `fix` — and `{ "key": "unattended:answer:<gate>", "default": "<option>", "id": "<id>",
    "phase": "<phase>", "head": "<head>", "mr": <n>, "source": "recommended" }` in
-   `meta.json.defaults_used[]`, so "Which site takes it" reads it as it reads any answer.
+   `meta.json.defaults_used[]` — `mr` left out when the heading names none — so "Which site takes it" reads it as it reads any answer.
 4. `pending` stays `null`: no `ask`, no end of the run. The phase goes on from that site.
 
 Still a question stop, as above:
@@ -576,8 +576,10 @@ Still a question stop, as above:
   orchestrator owns this checkout only; widening the work past it is a person's call.
 - **An option that writes a schema object `approved-schema.md` does not list** — a table, column,
   index, constraint or data copy, or any of them when the file does not exist. A `migration`
-  question is this case by construction: hard gate 3 asks for whatever lies beyond the approved
-  list (§2, a schema approved with the study).
+  question in `build`, `fix` or `review` is this case by construction: one that writes only listed
+  objects is never asked (§2, a schema approved with the study), and hard gate 3 asks for whatever
+  lies beyond the list. Applying a migration (`validate`) and the pre-deploy SQL (`ship`) write no
+  new object, and are answered as before.
 - **A bundled option** — *Apply the recommended response to each* of a `design_challenge` or an
   `investigation_challenge` — is judged response by response: one that falls in either case above
   stops the whole question.
