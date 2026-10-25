@@ -5,6 +5,26 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.101.0 — An approved study answers its own design questions too  ·  2026-10-25
+
+**In short**
+- **`after_study: recommended` now reaches `design`, `plan` and `investigate`** — once the work has
+  crossed the door to code (`05-implementation.md` or `04-fix.md` exists) and building sent it back
+  to the study. Before that door nothing changes: `--study` sets `handoff` at start, before anyone
+  approved anything.
+- **Still a person's call, in every phase the rule covers:** a recommended option that adds
+  another repository or changes a sibling's contract, and one that writes a schema object
+  `approved-schema.md` does not list. A `migration` question in `build`, `fix` or `review` for an
+  unlisted object now stops — the recommended answer used to take it past hard gate 3.
+- **A bundled challenge answer is judged response by response:** one that widens the work stops
+  the whole question.
+- **Answers given before `plan` wrote `mrs`** go into the draft MR/PR under `## Decided without
+  asking` while no part is published yet.
+
+A study approved with "take the recommended option" still stopped at every design question a gap
+in the build sent it back to, and the answer — always the recommended one — came hours later on a
+cold relaunch.
+
 ## v0.100.0 — An unattended split builds every part without waiting for merges  ·  2026-10-23
 
 **In short**
