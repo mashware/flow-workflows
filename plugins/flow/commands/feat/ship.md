@@ -58,7 +58,8 @@ where it failed too — and the review findings an orchestrator's answer accepte
 (`06-review.md` "Answered (unattended)"), one line each. The §3 preview shows that section like
 any other, and the person reading it is the check the run could not do. Entries of
 `auto-answers.md` for this MR/PR (`MR/PR <n>` in their heading, or all of them for a work with no
-`mrs`) go into the body verbatim under `## Decided without asking` — each question, its options,
+`mrs`) — plus, on the first MR/PR this work publishes, every entry whose heading names none: a study
+phase answered it before `plan` wrote `mrs` — go into the body verbatim under `## Decided without asking` — each question, its options,
 the one taken checked (flow-core §2.1, the recommended answer).
 
 ## 1. Pre-flight

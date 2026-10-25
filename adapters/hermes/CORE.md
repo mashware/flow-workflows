@@ -530,7 +530,10 @@ only in `unattended` (empty or `ask` → every question stops as above). It appl
 holds a study a person approved: `done-summary.md` in the work folder (a study run, approved with
 `why = start`) or `meta.json.handoff` true (a study handed off from elsewhere). Then a question
 stop in `build`, `fix`, `review`, `validate` or `ship` is not sent, and the run answers it with its
-own recommended option, in the same turn:
+own recommended option, in the same turn. So is one in `design`, `plan` or `investigate` once the
+work has crossed the door to code — `05-implementation.md` or `04-fix.md` exists — and a gap found
+while building sent it back to the study: `--study` sets `handoff` at start, before anyone approved
+anything, so before that door the flag proves nothing.
 
 1. Write the question and options files as the stop would, and compute its `id` the same way.
 2. Append one entry to `auto-answers.md` in the work folder — whoever reads it later has not seen
@@ -544,7 +547,8 @@ own recommended option, in the same turn:
    - [ ] <each other option, in its order>
    ```
 
-   `MR/PR <n>` is this MR/PR's `mrs[]` entry, left out for a work with no `mrs`.
+   `MR/PR <n>` is this MR/PR's `mrs[]` entry, left out for a work with no `mrs` — and for a study
+   phase run before `plan` wrote them, whose entries go to the first MR/PR the work publishes.
 3. Apply that option as an orchestrator's answer is applied (above): written where the re-entry
    table says, with every effect its row names — *Fix them* writes the plan steps and chains into
    `build` / `fix` — and `{ "key": "unattended:answer:<gate>", "default": "<option>", "id": "<id>",
@@ -559,8 +563,21 @@ Still a question stop, as above:
 - **A third `high_findings` on the same MR/PR** — two `source: "recommended"` answers to that gate
   with this `mr` already in `defaults_used[]`: two rounds of fixes that left high findings behind
   are for a person to judge.
-- **Outside those five phases** — the study phases, and `respond` and `green`, ask or block as
-  they always do: a review round answers a reviewer, and the ticket's owner decides that one.
+- **An option that reaches another repository** — taken, it adds a `meta.json.related_repos`
+  entry, or changes a contract a sibling repo consumes (a `related_repos` consumer in
+  `03-design.md` "External contracts") or published (`01-context.md` "Contracts received"). The
+  orchestrator owns this checkout only; widening the work past it is a person's call.
+- **An option that writes a schema object `approved-schema.md` does not list** — a table, column,
+  index, constraint or data copy, or any of them when the file does not exist. A `migration`
+  question is this case by construction: hard gate 3 asks for whatever lies beyond the approved
+  list (§2, a schema approved with the study).
+- **A bundled option** — *Apply the recommended response to each* of a `design_challenge` or an
+  `investigation_challenge` — is judged response by response: one that falls in either case above
+  stops the whole question.
+- **The study phases before the door to code** — the first study run, a `--study` work still
+  being studied, a study a person's changes rewound — and **`respond`, `green` and `start`**, in
+  every case, ask or block as they always do: a review round answers a reviewer, and the ticket's
+  owner decides that one.
 
 `ship` puts this MR/PR's entries in the body (its "In every mode" paragraph), so the person who
 reads the draft sees each question, its options and the one taken, and asks for a change there.

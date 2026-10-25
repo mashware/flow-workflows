@@ -129,10 +129,12 @@ How much the flow advances on its own vs. stopping to ask you.
                       #   the run's one closing order (`ask`, `publish`, `blocked`, `done`). Read only
                       #   in that mode. The orders: flow-core §2.1.
 - `after_study:`      # `ask` (default) | `recommended`. Read only in `unattended`, once the work holds an approved study.
-                      #   ask         — a question in build/fix/review/validate/ship ends the run with `ask`.
+                      #   ask         — a question in build/fix/review/validate/ship ends the run with `ask`,
+                      #                 and so does one in design/plan/investigate once building began.
                       #   recommended — the run takes the recommended option itself and goes on; the draft
                       #                 MR/PR lists each question with its options, the one taken checked.
-                      #   Questions with no recommended option, and a third high-findings round, still ask.
+                      #   Questions with no recommended option, a third high-findings round, and an option
+                      #   that reaches another repo or a schema object the study did not list, still ask.
 
 ## quality
 Repo commands for quality gates, whatever the stack — `make test`, `./gradlew test`, `dotnet test`,
