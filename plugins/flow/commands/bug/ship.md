@@ -34,7 +34,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 - **The review has to be about the tree you are about to push — `/flow:feat:ship` §1, in full and unchanged**, including its four newer cases: `reviewed_sha` is the revision the reviewers *read* (`/flow:bug:review` §1.5 froze it), so `fixed_sha` set alongside an equal sha is a mismatch and not a match; a dirty tree at this end is named and asked about rather than passed over; and a `reviewed_sha` that no longer resolves is reported, then treated as absent. Compare `meta.json.reviewed_sha` and `validated_sha` against `git rev-parse HEAD`:
   - **Equal** (and no `fixed_sha`, over a clean tree) → continue.
   - **Absent** (a work from before the shas were recorded) → say so in one line, continue; absence is not a mismatch.
-  - **Different** → read the delta (`git log --oneline <sha>..HEAD`, `git diff --stat <sha>..HEAD`) and judge it by **what it touches**. Only test files (`tests/`, `test/`, `spec/`, `__tests__/`, `*_test.*`, `*Test.*`, `*.test.*`, `*.spec.*`) or this work's folder under `.claude/work/` → append both shas and the file list to `06-review.md`, continue without asking. **Anything else** → stop and ask in **every** `autonomy.mode`, no exceptions (`AskUserQuestion`): *re-review the delta* (`/flow:bug:review`, the recommended default — its §1.5 takes `reviewed_sha` as the base, so the delta is both what it reads and what sets its tier) · *ship as it stands*, recording in `06-review.md` the two shas and that the user accepted them unreviewed.
+  - **Different** → read the delta (`git log --oneline <sha>..HEAD`, `git diff --stat <sha>..HEAD`) and judge it by **what it touches**. Only test files (`tests/`, `test/`, `spec/`, `__tests__/`, `*_test.*`, `*Test.*`, `*.test.*`, `*.spec.*`) or this work's folder under `.claude/work/` → append both shas and the file list to `06-review.md`, continue without asking. **Anything else** → stop and ask in **every** `autonomy.mode`, no exceptions (`AskUserQuestion`): *re-review the delta* (`/flow:bug:review`, the recommended default — its §1.5 takes `reviewed_sha` as the base, so the delta is both what it reads and what sets its tier) · *ship as it stands*, recording in `06-review.md` the two shas and that the user accepted them unreviewed. Its own question, never a line of the §2 MR/PR preview; a delta that adds or modifies a query or a schema object names it in the question, as `/flow:feat:ship` §1 says.
 
 ## 1. Draft title and description (without sending anything yet)
 
@@ -171,8 +171,8 @@ With an "all threads resolved before merge" policy, the MR/PR cannot be merged o
 
 ### 3.3 Performance comment
 
-`/flow:feat:ship` §4.3, unchanged: query rows from `06-review.md` — a modified query that was not
-measured included, as `not measured (<reason>)` — and benchmark rows from `05-validation.md`,
+`/flow:feat:ship` §4.3, unchanged: query and schema rows from `06-review.md` — added and modified
+queries alike, one that was not measured included, as `not measured (<reason>)` — and benchmark rows from `05-validation.md`,
 posted as comments anchored on the changed lines of the MR/PR, confirmed in every mode. A slowness bug is the case where this comment *is* the proof the fix worked.
 
 ## 4. Close

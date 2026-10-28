@@ -208,7 +208,9 @@ Judging rules: **no number, no win** (unresolved is recorded unresolved, never s
 
 **A modified query is judged against its own past, not only against its rivals.** For every query the diff *changes* (as opposed to adds), the duel carries the **base row** — the same query on `git merge-base HEAD <git.default_base>`, measured in the same sandbox with the same seed (`/flow:work:query` §4). Without it the table cannot say whether this diff made things better or worse, which is the one thing a reviewer wants from it.
 
-**A modified query with no plan behind its verdict is recorded `ok (plan not measured)` — and says what would measure it (`data.explain_cmd`, a data set) — never a bare `ok`.** Ship publishes that row on the MR/PR (`/flow:feat:ship` §4.3); a reviewer who finds a plain "ok" and no number has no way to know nobody looked.
+**A query with no plan behind its verdict — added or modified — is recorded `ok (plan not measured)` — and says what would measure it (`data.explain_cmd`, a data set) — never a bare `ok`.** Ship publishes that row on the MR/PR (`/flow:feat:ship` §4.3); a reviewer who finds a plain "ok" and no number has no way to know nobody looked.
+
+**This round's own fixes are diff too.** A fix applied after the round — a blocker's, a suggestion's, or a scope the user widened when a finding asked — that adds or modifies a query or a schema object runs this section on it before §9, on the tree that holds the fix. "No queries touched" is written only when neither the candidate nor the fixes touched one; a query that entered with a fix and was judged by reading it ("indexed unique key, LIMIT 1") is `ok (plan not measured)`, never an `ok`, and ship publishes it as such.
 
 Verdicts as findings: **change** = blocker, through §6; **regressed** = blocker unless `03-design.md` justifies the trade, in which case it is stated and published; **schema / follow-up** → proposed ticket in the output **and a `followups[]` entry** (flow-core §7); **unresolved** → recorded literally with the open question (as §3.5). A `change` verdict resting on a measured plan is already confirmed — no §6 skeptic.
 
@@ -332,7 +334,7 @@ Write `.claude/work/<TICKET>/06-review.md`. The `Cost:` line of `## Summary` is 
 <the phases §2.0b's give-up order dropped because the budget ran out, one line each with what was not looked at, or "none">
 
 ## Data-access duel
-<one row per query added or modified by the diff, per §3.6; "no queries touched" if none, or "renames only" when the change did not alter filter/order/bound/joins/columns>
+<one row per query added or modified by the diff or by this round's fixes, and per schema change, per §3.6; "no queries touched" if none, or "renames only" when the change did not alter filter/order/bound/joins/columns>
 
 | Query (file:line) | New/mod | Bound | Index used / plan | Rows read → returned | vs base | Verdict | Evidence |
 |---|---|---|---|---|---|---|---|
