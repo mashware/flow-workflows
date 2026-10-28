@@ -825,8 +825,9 @@ the commands.
 
 ### What the MR/PR gets, with and without these keys
 
-Every **modified** query reaches the MR/PR as an inline comment on its changed lines
-(`/flow:feat:ship` §4.3). What the comment can say depends on what you filled in:
+Every query the diff **adds or modifies**, and every table or index it creates or changes, reaches
+the MR/PR as an inline comment on its changed lines (`/flow:feat:ship` §4.3); an added query has
+the branch's plan only, its base row reading `new`. What the comment can say depends on what you filled in:
 
 | Set | The comment carries |
 |---|---|

@@ -88,7 +88,7 @@ the one taken checked (flow-core §2.1, the recommended answer).
   - **Absent** (work started before the shas were recorded) → say so in one line and continue. Absence is not a mismatch.
   - **Different** → read the delta (`git log --oneline <sha>..HEAD`, `git diff --stat <sha>..HEAD`) and judge it by **what it touches**, never by size. When `fixed_sha` is set, say in the same line that part of this delta is the review's own fixes: the user is judging what the reviewers never read, and where it came from is the first thing they need.
     - Only test files (`tests/`, `test/`, `spec/`, `__tests__/`, `*_test.*`, `*Test.*`, `*.test.*`, `*.spec.*`) and this work's own folder under `.claude/work/` → append both shas and the file list to `06-review.md`, continue **without asking** (a test written by `validate` after the review is the normal order).
-    - **Anything else** → stop and ask, in **every** `autonomy.mode`, with a single `AskUserQuestion`: *re-review the delta* (`$flow-feat-review`, recommended default — §1.5 resolves `reviewed_sha` as its base, so it reads the delta and nothing else, and resolves the tier on the delta too) · *ship it as it stands*, which first appends to `06-review.md` the two shas, the files, and that the user accepted them unreviewed. Never resolve this one silently.
+    - **Anything else** → stop and ask, in **every** `autonomy.mode`, with a single `AskUserQuestion`: *re-review the delta* (`$flow-feat-review`, recommended default — §1.5 resolves `reviewed_sha` as its base, so it reads the delta and nothing else, and resolves the tier on the delta too) · *ship it as it stands*, which first appends to `06-review.md` the two shas, the files, and that the user accepted them unreviewed. Never resolve this one silently, and never fold it into the §3 description preview as a line to accept with the MR/PR: it is a question of its own, asked before §2 drafts anything. **A delta that adds or modifies a query or a schema object** says so in the question, by name: re-reviewing it is what puts it through the data-access duel (`$flow-feat-review` §3.6) and onto the performance comment (§4.3); shipping as it stands leaves that query out of both, and the appended line in `06-review.md` names it as unmeasured.
 - Check for blocking TODO/FIXME added on this branch (`git diff --unified=0 <git.default_base>...HEAD | grep -E '^\+.*(TODO|FIXME)'`). If any, list them and ask whether to continue.
 
 ## 2. Draft title and description (without sending anything yet)
@@ -246,20 +246,26 @@ Thread body: the SQL block under "Pre-deploy: run this SQL on the server BEFORE 
 
 With the repo policy "all threads resolved before merge", the MR/PR cannot merge until the SQL is executed and the thread **resolved**. **One single thread even with multiple statements.** Tell the user it is left open on purpose.
 
-### 4.3 Performance comment (every modified query, measured or not)
+### 4.3 Performance comment (every query or table the diff touches, measured or not)
 
-Post one when `06-review.md` §"Data-access duel" has a row for a **modified** query — **whatever its
-verdict, measured or not** — or `07-validation.md` §3.7 has benchmark rows. New queries only, or
-renames and reformats only, and nothing benchmarked → post nothing.
+Post one when `06-review.md` §"Data-access duel" has a row for a query the diff **adds or modifies**,
+or for a **schema change** (a table created or altered, an index added or dropped) — **whatever its
+verdict, measured or not** — or `07-validation.md` §3.7 has benchmark rows. Renames and reformats
+only, and nothing benchmarked → post nothing.
 
-**A modified query that was never measured is the case this comment exists for.** Silence reads as
+**An added query has no past, not no plan.** Its comment carries the plan on the branch alone, the
+`base` row reading `new`. A new table carries its DDL with the indexes it was created with, and the
+plan of every query in the diff that reads it — a table nobody queries yet says so in one line. The
+row is anchored to the migration's changed lines, the queries' rows to theirs.
+
+**A query that was never measured is the case this comment exists for.** Silence reads as
 "nothing to see"; a reviewer cannot tell a query that was measured and is fine from one that nobody
 looked at. The row says `not measured (<reason>)` and what would settle it (`data.explain_cmd`, a
 data set, the entry point to run), so the reviewer knows what was *not* checked.
 
 **Where it goes: on the query, not under the title.** One **inline thread anchored to the changed
 lines of that query in the MR/PR diff** (a resolvable GitLab discussion with a `position`; a GitHub
-review comment on `path` + `line`), one per modified query. The entry-point rows anchor to the entry
+review comment on `path` + `line`), one per query or schema change. The entry-point rows anchor to the entry
 point's changed line the same way. Anchoring fails (the line is not in the diff, the forge refuses
 the position) → a general MR/PR comment that names the file and line, and say so. A general comment
 is the fallback, never the default: a number a reviewer meets on the line they are reading is read;
@@ -294,8 +300,9 @@ no measurable change, not a percentage.
   plan command for it — `EXPLAIN`, never `EXPLAIN ANALYZE` on a write — in a code block, so the
   author can run it on production or a replica and answer in the thread. This is a complement to the
   sandbox measurement, never a substitute: the flow does not touch production.
-- **Memory is the entry point's, not the query's.** A modified query also gets the entry-point row
-  that exercises it, through `quality.bench_cmd` on both sides (`$flow-*-validate` §3.7). No
+- **Memory is the entry point's, not the query's.** A query the diff adds or modifies also gets the
+  entry-point row that exercises it, through `quality.bench_cmd` on both sides — the branch alone
+  for an added one (`$flow-*-validate` §3.7). No
   `bench_cmd` → the entry-point row says `not measured (no quality.bench_cmd)`; never an estimate.
 - **Verdicts**: `improved` · `no measurable change` · `regressed` · `not measured (<reason>)`.
 - **A `regressed` row is a review blocker** unless `03-design.md` justifies the trade — in which

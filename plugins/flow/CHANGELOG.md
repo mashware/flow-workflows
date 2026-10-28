@@ -5,6 +5,24 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.102.0 — A query that entered after the review still reaches the MR with its plan  ·  2026-10-28
+
+**In short**
+- **New queries and new tables get the performance comment too.** Before, only a *modified* query
+  did: a new query ships with its plan on the branch (base row `new`), a new table with its DDL,
+  its indexes and the plan of the queries that read it.
+- **The review duels its own fixes.** A blocker fixed in the round, or a scope widened when a
+  finding asked, that adds a query is tried on its plan before the review closes. "No queries
+  touched" now means none in the candidate *and* none in the fixes.
+- **Ship asks the re-review question on its own.** Code the reviewers never read is a separate
+  question, never a line inside the MR/PR preview, and when that code adds a query or a schema
+  object the question names it: shipping as it stands leaves it unmeasured, and says so.
+
+A bug fix widened its scope after a review finding and added a query that checked who owned the
+record. The review had already written "no queries touched", the query was judged by reading it,
+and ship folded "these lines were only reviewed by me" into the MR preview — so no plan was ever
+taken and no comment was posted.
+
 ## v0.101.0 — An approved study answers its own design questions too  ·  2026-10-25
 
 **In short**

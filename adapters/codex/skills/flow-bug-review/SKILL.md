@@ -141,6 +141,7 @@ Fix-specific:
 - **Every modified query carries its base row** — the same query on `git merge-base HEAD <git.default_base>`, measured in the same sandbox with the same seed (`$flow-work-query` §4). This chain already demanded it for slowness bugs; it now applies to any query the fix changes, because a fix that quietly costs 40 ms is a regression whether or not the ticket mentioned speed.
 - **Bug about slowness or timeouts → the duel is the fix's proof**: the base and after rows are the verdict, or the fix is unproven whatever the tests say.
 - A **trick** added under pressure (a cast to align a collation, a hint, a hand-written column order) — checklist item 11 applies in full: it ships with a comment saying why it is there and what removes it, plus the ticket for the root cause, or it does not ship.
+- **This round's own fixes are diff too** — `$flow-feat-review` §3.6, unchanged: a fix applied after the round that adds or modifies a query (a scope the user widened included) is dueled before §8, and "no queries touched" is written only when neither the candidate nor the fixes touched one.
 - Verdicts map as findings: **change** blocks, **regressed** blocks unless `03-investigation.md` justifies the trade, **schema / follow-up** → proposed ticket **and a `followups[]` entry** (flow-core §7), **unresolved** recorded literally.
 
 ## 4. Over-engineering audit (fit + YAGNI)
