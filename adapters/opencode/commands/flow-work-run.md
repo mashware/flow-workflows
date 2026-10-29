@@ -38,8 +38,8 @@ of truth, and an argument that disagrees with it is ignored and named in the log
   orchestrator that cannot say why it launched the run cannot take one either.
 - Run `<cmd> ticket --json` and keep `number`, `title`, `base` and `kind` (`kind` absent or `null` → `feat`: the tracker could not tell, so flow decides). `kind` is re-read on every run; only a run that starts the work uses it — once the work exists, its folder says feat or bug.
   It fails or prints no `number` → `blocked` (flow-core §2.1).
-- Find the work: the `meta.json` under `.claude/work/` whose `ticket` equals `number` (archive
-  excluded). None is not an error — it is the "none" of the table below.
+- Find the work: the `meta.json` in the work folders (flow-core §0 — here and in the main
+  checkout) whose `ticket` equals `number` (archive excluded). None is not an error — it is the "none" of the table below.
 
 ## 2. Route
 

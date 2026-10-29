@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.102.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.102.1`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -88,6 +88,18 @@ a command relies on is simply absent in that session, and nothing else will repo
   base branch — and goes out in no MR/PR at all. So a phase writing a tracked file writes it
   **here**, in the directory it is running in, and `/flow-feat-ship §5.5` is what catches the
   tools that could not be told.
+- **`.claude/work/` lives where the config does, and every command looks in both places.** It is
+  git-ignored in most repos, so it exists only in the main checkout: `start` writes it there, and
+  from a linked worktree a bare `.claude/work/` finds no works at all — `next` says "nothing in
+  flight" about a work that is in flight, and a phase reports the work missing. So **the work
+  folders are the union of `.claude/work/` here and in the main checkout** (located as above,
+  deduplicated when they are the same directory); a listing reads both, and a work is read and
+  written in the folder where it was found. A new work folder goes in the main checkout, unless
+  that checkout tracks `.claude/work/` — then it belongs to the branch and goes here.
+  **"The work for this branch"** — what every "load `meta.json` by current branch" means — is the
+  `meta.json` in those folders (`_archive/` excluded) whose `branch` or any `mrs[].branch` equals
+  `git branch --show-current`, or whose `worktree` equals `git rev-parse --show-toplevel`. The
+  SessionStart hook matches the same way.
 - **A fenced block in a FLOW file is an example, and an example is not configuration.** These
   files are prose with keys in them, and the rule that decides what a key *is* — a `- key:` line
   under a `## section` — knows nothing about triple backticks. So a block written to be pasted

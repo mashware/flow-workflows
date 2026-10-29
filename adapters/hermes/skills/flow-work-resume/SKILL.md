@@ -31,7 +31,7 @@ reads where the run got to, not how the run continues.
 ## 1. Detection
 
 - `git branch --show-current`.
-- Search `.claude/work/` for the `meta.json` whose `branch` matches.
+- Find the work for this branch (flow-core §0: both work-folder locations, `branch`, `mrs[].branch` or `worktree`).
 - None found → ask the user for the ticket or whether to start a new one.
 - `meta.json.worktree` non-null and the current directory is not that worktree → tell the user the work lives in a worktree and to `cd <worktree>` before continuing; run the repo-state checks below from there (`git -C <worktree> …`).
 

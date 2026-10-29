@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.102.1 — From a worktree, flow finds the work it is in  ·  2026-10-29
+
+**In short**
+- **`next`, `daily` and `resume` see your works from inside a worktree.** Before, they said
+  "nothing in flight" there, because the work folders only exist in the main checkout.
+- **From the main checkout they say which worktree each work lives in**, so "where were we" is
+  answered with a `cd`, not with silence.
+- **Every phase finds its work the same way** — by branch, by any MR branch of a train, or by the
+  worktree it was created in — the way the session-start header already did.
+
+`.claude/work/` is git-ignored in most repos, so `start` writes it in the main checkout and it never
+reaches a linked worktree. The session-start hook looked in both places; the commands looked only
+where they stood. So the session opened with the right header and `next` contradicted it.
+
 ## v0.102.0 — A query that entered after the review still reaches the MR with its plan  ·  2026-10-28
 
 **In short**
