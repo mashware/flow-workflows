@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.102.1`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.103.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -1286,3 +1286,60 @@ estimate meeting a good change.
 **It travels into every brief.** A subagent handed a size or a `lines_est` is handed a thermometer,
 never a budget, and the brief says so (§6). An agent optimising for a number nobody told it was
 advisory is the one that returns tidier, shorter, worse code — and it returns it looking finished.
+
+## 10. Roadmap — the phases and milestones above the ticket
+
+A ticket is the largest thing a work knows about: it splits into MRs/PRs (`04-mr-plan.md`), and
+nothing sits above it. A project that is being built in phases usually keeps that plan in a markdown
+file — phases, milestones, sub-milestones, tasks with checkboxes — and without this section no
+command reads it unless told to, `next` cannot say where the project stands, and nobody ticks off
+what an MR/PR delivered.
+
+**The file.** `roadmap.path` in `FLOW.md`; `none` turns the whole section off. Empty → `ROADMAP.md`
+at the repo root, then `docs/ROADMAP.md`, and either counts only if it holds at least one checkbox
+line (`- [ ]` / `- [x]`). Nothing found → there is no roadmap, and every command below behaves as
+before, silently. A tracked file is read **here** (it is this branch's version); a git-ignored one
+from the main checkout, by §0's rule.
+
+**Its shape is the author's, not flow's.** Headings are phases and milestones, at whatever depth the
+file uses; a checkbox line is a task; a checkbox line with checkbox children is a milestone made of
+those children. flow never rewrites the structure, renumbers, reorders or adds headings — it touches
+exactly two things: a checkbox, and a short annotation at the end of the line it ticks.
+
+**Where the project stands** — computed the same way by `next`, `daily` and `resume`:
+- **Current phase**: the first heading, in file order, that still holds an unchecked item.
+- **In progress**: unchecked items an open work links (below), or that carry flow's in-progress
+  annotation.
+- **Next**: the first unchecked item of the current phase that is neither — a leaf, not a milestone
+  whose children are listed.
+- Said in one line: `Roadmap: <phase> › <milestone> — <done>/<total> · in progress: <item> (<work>) ·
+  next: <item>`. Counts are the checkboxes under the current phase. All done → `Roadmap: complete`.
+
+**The link.** A work records the item it delivers in `meta.json.roadmap`:
+`{ "path": "<file>", "item": "<the line's text, without checkbox or annotation>", "under": "<heading › heading>" }`
+— or `null`. `/flow:feat:start` sets it: an item the ticket clearly names (its id, or its title
+matching the item's text) is taken in every mode; otherwise `manual` asks once, offering the next
+unchecked items and *none*, and `guided`/`auto`/`unattended` record `null` and say so in one line. A
+work is linked to one item, at any depth: linking a milestone means the work delivers all its
+children.
+
+**The mark — in the MR/PR, so the roadmap moves with the code and is reviewed with it.** `/flow:feat:ship`
+edits the file in the same commit as the change, and the preview shows the line it will become:
+- **First MR/PR of the work, more to come** → the item stays unchecked and gains
+  ` — in progress (<TICKET>)`.
+- **Last MR/PR of the work** (the one that `Closes` the ticket, or a single one) → `- [x]` and the
+  annotation becomes ` — done (<TICKET>)`. Every child of a linked milestone is ticked with it;
+  a parent checkbox whose children are now all ticked is ticked too, without annotation.
+- **Intermediate MRs/PRs of a train** touch nothing: the first one marked the item and the last one
+  closes it, so stacked branches never edit the same line twice.
+- Write the annotation's words in the file's language. flow recognises its own annotation as a
+  trailing ` — <words> (<ticket>)` and replaces it rather than stacking a second one. The ticket,
+  not the MR/PR url: the edit is committed before the MR/PR exists, and the ticket already leads to
+  it. A ticket-less work writes its slug.
+- **The item cannot be found** (renamed, moved, deleted since `start`) → do not guess a near match:
+  leave the file alone and say so in the ship's stop. **The file is git-ignored** → there is no MR/PR
+  to carry it: edit it in place in the main checkout at the same moment, and say so.
+- `roadmap.mark: never` keeps the roadmap read-only — a team document flow only reads.
+
+Bugs do not link: a bug repairs something already delivered, and the roadmap tracks what is still to
+deliver. A bug that *is* a roadmap item is started as a feature.

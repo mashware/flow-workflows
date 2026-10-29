@@ -77,6 +77,8 @@ Run, deduce, show what was found for confirmation or correction:
 
 <!-- stack-detection:end -->
 
+- **Roadmap** (`roadmap.path`, flow-core §10) — a markdown file at the root or under `docs/` with headings and checkbox lines whose name or title says plan, roadmap, phases or milestones, in any language. `ROADMAP.md` or `docs/ROADMAP.md` → nothing to write, it is found by default. Any other → propose its path. Several → ask which one is the project's plan. None → leave the section out.
+
 ## 3. Ask five things
 
 Everything §2 detected is shown **in one screen** for confirmation or correction — host, base

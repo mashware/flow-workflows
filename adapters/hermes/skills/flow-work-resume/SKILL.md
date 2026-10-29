@@ -48,6 +48,7 @@ Waves:          Wave 1: #1 ∥ #2 → Wave 2: #3 → Wave 3: #4 ∥ #5      (lin
 Last updated:   <updated_at>
 Notes:          <meta.notes>
 Cross-repo:     <meta.related_repos entries not "done", as "repo: scope"; or "—">
+Roadmap:        <meta.roadmap: "under › item" — and the project's one line, flow-core §10>   (line only with a roadmap)
 Ticket thread:  <new since <updated_at>: <n> comment(s) that change the work — detailed below · or "nothing new" · or "not read">   (line only in ticket mode, from §2.5)
 Unattended:     <from `meta.json.pending` when it is set: the gate, `resume` and the question file's first line — the orchestrator holds the question and will relaunch with its answer>   (line only when `pending` is set)
 ```

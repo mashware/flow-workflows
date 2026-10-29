@@ -155,6 +155,10 @@ While reading the ticket (§2), look for a **published contract block** (what `$
 
 Another repo referenced but **no** contract → say so in one line — *"the `<repo>` side is referenced but no contract was published; the literal shapes will have to be confirmed with that side, not assumed"* — and record it in `01-context.md` under the same heading. **Silent by default**: no cross-repo signal → skip this section, no note.
 
+## 3.7 Roadmap item
+
+Only when the repo has a roadmap (flow-core §10) and `roadmap.path` is not `none`: link this work to the item it delivers, by §10's rule. A clear match — the item names this ticket's id, or its text is this ticket's title (a ticket-less start drafted from a roadmap item is one) — is taken in every mode, with no question. Otherwise `manual` asks once (header "Roadmap"): the next two or three unchecked items of the current phase, **none** as the last option; `guided`/`auto`/`unattended` record `null` and say in one line that the work is not linked. Never create, rename or reorder an item here: start reads the roadmap, `ship` is the only command that writes it.
+
 ## 4. Classify size
 
 Propose a size. **`manual`** → confirm with one `AskUserQuestion`. **`guided`/`auto` → do not ask**: record your estimate in `01-context.md` with a one-line reason and continue — the size is a route, not a commitment; `$flow-feat-design §1.5.5`, `§7` and `$flow-feat-plan §5` reclassify.
@@ -250,6 +254,7 @@ Create the work directory where flow-core §0 puts a new one (the main checkout,
   "draft_from_conversation": false,
   "tracker_issue": null,
   "related_repos": [],
+  "roadmap": null,
   "started_at": "<ISO8601 now>",
   "updated_at": "<ISO8601 now>",
   "notes": ""
@@ -259,6 +264,7 @@ Create the work directory where flow-core §0 puts a new one (the main checkout,
 - `handoff` — `true` only when `--study` was given and `git.handoff_branch` is set; omit it otherwise.
 - Ticket-less (§2.5) → `draft_from_conversation: true`, `tracker_issue` = created issue id/url (or `null` if local-only). Ticket mode → defaults above.
 - `base` — `unattended` only: the ticket's `base`, or `git.default_base` when it is empty — never empty (the branch every MR/PR of this work starts from and targets; `$flow-work-run` refreshes it on `merged`). Omit it in every other mode.
+- `roadmap` from §3.7 — `{ "path", "item", "under" }` (flow-core §10), or `null` with no roadmap or no link.
 - `related_repos` from §3.5 — one `{ "repo": "<name>", "scope": "<one line>", "status": "pending", "contract_handoff": "pending" | "none" }` per *other* repo; `[]` for a single-repo task.
 - **This work *is* an accepted follow-up** (the ticket came from another work's `followups[]`, flow-core §7) → set `origin: { "work": "<originating work dir>", "followup": "F<n>" }`, carry that entry's recorded `why` into `01-context.md` verbatim instead of re-deriving it, and set the originating entry to `in_progress` with `work` naming this folder. Not a follow-up → omit `origin` entirely.
 

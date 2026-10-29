@@ -346,6 +346,14 @@ written without that question.
 
 <!-- e.g.: DDD (Domain/Application/Infrastructure); no #[AsMessageHandler]; etc. -->
 
+## roadmap
+The project's plan above the ticket — phases, milestones, tasks with checkboxes — in a markdown file
+of your own shape (flow-core §10). `next`, `daily` and `resume` say where it stands, `feat:start`
+links a work to one of its items, and `feat:ship` ticks it in the MR/PR that delivers it.
+
+- `path:`             # the roadmap file, relative to the repo root. Empty = `ROADMAP.md`, then `docs/ROADMAP.md`, if it has checkbox lines. `none` = no roadmap.
+- `mark:`             # `ship` (default) = mark in progress on the work's first MR/PR, tick on its last | `never` = read-only, flow only reads it.
+
 ## notes
 Per-command extra guidance. When a command runs, it MUST follow the entry matching its command
 plus the `all` entry, as **mandatory additional instructions for that step**, on top of the
