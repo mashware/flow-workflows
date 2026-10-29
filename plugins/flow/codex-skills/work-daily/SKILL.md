@@ -44,8 +44,8 @@ Every *mine* below — your MRs/PRs, your threads, your tickets — is the **aut
 
 ## 1. Local layer (always — the base of the briefing)
 
-- `git branch --show-current` → the **active** work.
-- `ls -1 .claude/work/` (ignore `_archive`); read each `meta.json` (folders are `<TICKET>-<slug>`, `<slug>` for ticket-less works, or just `<TICKET>` for older ones — identify each by `meta.json.ticket`, not the folder name). Read `00-summary.md` per work when it exists and take the recap from it (`Next:` line, what is pending) instead of every artifact (flow-core §5); missing → the most recent artifact(s) (`NN-*.md`) and `meta.notes`, not re-derived from code.
+- The work for this branch (flow-core §0) → the **active** work. From the main checkout on the base branch there is none — that is not "nothing in flight".
+- Every work folder in both locations of flow-core §0, here and the main checkout (ignore `_archive`); read each `meta.json`. Name the worktree a work is checked out in (`git worktree list`) next to it, so the user knows where to `cd` (folders are `<TICKET>-<slug>`, `<slug>` for ticket-less works, or just `<TICKET>` for older ones — identify each by `meta.json.ticket`, not the folder name). Read `00-summary.md` per work when it exists and take the recap from it (`Next:` line, what is pending) instead of every artifact (flow-core §5); missing → the most recent artifact(s) (`NN-*.md`) and `meta.notes`, not re-derived from code.
 - **"Last session" boundary**: the marker from §7 if present; otherwise the most recent commit date and the newest `updated_at` across works.
 - Order works by `updated_at` (most recent first); the first is the *"what were we on?"* answer.
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.

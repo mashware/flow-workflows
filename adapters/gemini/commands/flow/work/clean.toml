@@ -64,7 +64,7 @@ Three lists, gathered in one pass:
 
 - **Worktrees** — `git worktree list --porcelain` → path + branch per entry. Skip the first (the main checkout).
 - **Local branches** — `git for-each-ref --format='%(refname:short)|%(upstream:short)|%(upstream:track)' refs/heads/`.
-- **Work folders** — `ls -1 .claude/work/` (ignore `_archive`), reading each `meta.json` for `ticket`, `branch`, `phase`, `worktree`, `mrs[]`.
+- **Work folders** — both locations of flow-core §0 (here and the main checkout; ignore `_archive`), reading each `meta.json` for `ticket`, `branch`, `phase`, `worktree`, `mrs[]`.
 
 Two strays caught in the same sweep:
 

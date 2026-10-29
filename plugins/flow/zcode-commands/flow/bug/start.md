@@ -42,7 +42,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 
 - Verify you are in the correct repo.
 - **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
-- Once the identifier is known, check whether the work already exists: ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `/flow:work:resume`.
+- Once the identifier is known, check whether the work already exists: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `/flow:work:resume`.
 - This command **creates** `00-summary.md` (§4); there is nothing to read yet.
 
 **Work directory naming.** The work lives in `.claude/work/<work-dir>/`. `meta.json.ticket` stays the **pure identifier** (the real ticket id, or the slug in ticket-less local-only) — it feeds the tracker view, the issue link and `{TICKET}` in the branch. The directory name adds a slug:
@@ -151,7 +151,7 @@ The `Closes #N` in the body (`/flow:bug:ship §1`) is **ignored when the MR/PR t
 
 ## 4. Write artifacts
 
-Create the work directory per §0: `.claude/work/<TICKET>-<slug>/` in ticket mode, `.claude/work/<slug>/` in ticket-less local-only mode.
+Create the work directory where flow-core §0 puts a new one (the main checkout, unless it tracks `.claude/work/`) per §0: `.claude/work/<TICKET>-<slug>/` in ticket mode, `.claude/work/<slug>/` in ticket-less local-only mode.
 
 `<work-dir>/meta.json`:
 ```json

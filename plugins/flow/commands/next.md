@@ -14,9 +14,9 @@ runs a phase on its own and never advances `meta.json`.
 1. Identify the active harness. Does `FLOW.md`, the context file `FLOW_CONTEXT` selects, or the
    active `FLOW.<harness>.md` exist (flow-core §0)? An inactive harness's overlay, or a context file
    no variable selects, does not configure this session.
-2. `git branch --show-current`, and whether `.claude/work/*/meta.json` has a `branch` equal to it (also check `worktree` entries, and `.claude/work/_archive/` is ignored).
-3. `.claude/work/` — how many open works, and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
-3b. `followups[]` across those works **and** `.claude/work/_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
+2. The work for this branch (flow-core §0): the work folders here **and** in the main checkout, matched by `branch`, `mrs[].branch` or `worktree`. From a linked worktree the folders are usually only in the main checkout — reading `.claude/work/` here alone finds nothing.
+3. Those work folders — how many open works, in which worktree each is checked out (`git worktree list`), and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
+3b. `followups[]` across those works **and** their `_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
 4. Is the working tree dirty (`git status --porcelain`)?
 
 ## 2. Route
@@ -25,7 +25,7 @@ runs a phase on its own and never advances `meta.json`.
 |---|---|---|
 | No FLOW layer present | "This repo is not configured for flow on this harness yet." One line on what the FLOW config is (personal config, auto-detected). | `/flow:init` |
 | A work matches the current branch | Its stop header (flow-core §3: ticket · size · phase · MR #n of N) and the next phase for its size. | `/flow:work:resume` |
-| No match, but open works exist | Count, and the two most recently updated with their phase. | `/flow:work:daily`, or `/flow:feat:start` / `/flow:bug:start` if the user said what they want to do |
+| No match, but open works exist | Count, and the two most recently updated with their phase — and the worktree each lives in, so the answer to "where were we" is a `cd`. | `/flow:work:daily`, or `/flow:feat:start` / `/flow:bug:start` if the user said what they want to do |
 | No works at all, but an accepted follow-up is waiting | "Nothing in flight — but `<TICKET>` F1 was accepted and never started: `<title>`." | `/flow:feat:start <ticket>` (or `/flow:bug:start`) for that follow-up · `/flow:feat:start` for something else |
 | No works at all | "Nothing in flight." | `/flow:feat:start <TICKET>` (or with no ticket, from the conversation) · `/flow:bug:start <TICKET>` |
 

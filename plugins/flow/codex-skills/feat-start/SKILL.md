@@ -58,7 +58,7 @@ its reason file in a `mktemp -d` directory (flow-core §2.1).
   step's default. This command **creates** `00-summary.md` (§6) instead of reading it (flow-core §5).
 - No recognizable project structure → warn and stop.
 - **Determine the mode** (`--study` already taken out): `$ARGUMENTS` non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less* (identifier = the §2.5 slug).
-- Once the identifier is known, check the work does not exist: ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after the slug is decided in §2.5. Exists → do not overwrite; warn and suggest `$flow:work-resume`.
+- Once the identifier is known, check the work does not exist: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after the slug is decided in §2.5. Exists → do not overwrite; warn and suggest `$flow:work-resume`.
 
 **Work directory naming.** Work lives in `.claude/work/<work-dir>/`. `meta.json.ticket` stays the **pure identifier** (real ticket id, or the slug in ticket-less local-only) — it feeds the tracker view, the issue link and `{TICKET}`. The directory adds a slug:
 - **ticket mode** → `<TICKET>-<slug>`; `<slug>` = short English kebab-case (≤5 words) from the ticket title, the **same** slug as the branch (§5).
@@ -234,7 +234,7 @@ Best-effort: failure (branch already on remote, permissions, older `gh`) → **w
 
 ## 6. Write artifacts
 
-Create the work directory per §1: `.claude/work/<TICKET>-<slug>/` (ticket mode) or `.claude/work/<slug>/` (ticket-less local-only).
+Create the work directory where flow-core §0 puts a new one (the main checkout, unless it tracks `.claude/work/`) per §1: `.claude/work/<TICKET>-<slug>/` (ticket mode) or `.claude/work/<slug>/` (ticket-less local-only).
 
 ### `meta.json`
 ```json
