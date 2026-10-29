@@ -238,6 +238,8 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `data` | `sandbox_cmd` | create a THROWAWAY database to measure in, isolated from anything the project uses. Empty = no |
 | `data` | `seed_cmd` | populate the sandbox with a data set shaped like production — the DISTRIBUTION is the point, not the |
 | `data` | `volumes` | free text: the real sizes of the hot tables — rows, growth, worst key. The cheapest key in this |
+| `roadmap` | `path` | the roadmap file, relative to the repo root. Empty = `ROADMAP.md`, then `docs/ROADMAP.md`, if it has checkbox lines. `none` = no roadmap |
+| `roadmap` | `mark` | `ship` (default) = mark in progress on the work's first MR/PR, tick on its last \| `never` = read-only, flow only reads it |
 | `notes` | `all` | applies to every command |
 | `knowledge` | `search` | tool(s) that return context for a query — one per line with `- ` to consult several in parallel |
 | `knowledge` | `stage` | optional. Tool that records ONE finding for this branch during a phase (finding + context as its arguments) |

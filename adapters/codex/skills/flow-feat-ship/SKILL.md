@@ -118,6 +118,10 @@ Decide first whether **this** MR/PR *completes* the issue: it does when, after i
 - **`linear`**: `Closes <TICKET>` (Linear id, e.g. `ENG-123`) on the completing MR/PR; nothing on intermediates.
 - **`none` / empty**: nothing to link.
 
+### Roadmap mark (only with a linked item)
+
+`meta.json.roadmap` set and `roadmap.mark` not `never` → decide the edit by flow-core §10, with the same *completes / intermediate* answer as the issue link above: the work's first MR/PR with more to come marks the item in progress, the completing one ticks it (with its children, and any parent left with every child ticked), an intermediate one touches nothing. Find the line by its `item` text with flow's annotation stripped; not found → no edit, and the stop says so. Decide it here, show it in the §3 preview, write it in §4.1 — never before approval.
+
 ### Referencing other MRs/PRs of the plan in the body (never `#<n>`)
 
 When the body mentions **another MR/PR of the delivery plan**, **never write `#<n>`** with `<n>` the plan order from `meta.json.mrs` — GitHub/GitLab auto-link it to whatever issue/PR carries that number (`#5 (closed)`).
@@ -199,6 +203,7 @@ Squash on merge: <git.squash from FLOW.md>
 Target branch: <git.default_base from FLOW.md, or the parent branch in train mode>
 Issue link: <keyword that will appear in the body, e.g. "Closes #123" / "Part of #123 (intermediate train PR)" / "none — Jira links by title prefix">
 Pre-deploy (manual SQL): <"yes — N statements, a blocking thread will be opened" / "not applicable">
+Roadmap: <"<line now>" → "<line after>" / "untouched — intermediate MR/PR" / "item not found">   (line only with a linked item)
 
 Description:
 <full description rendered exactly as it will appear in the MR/PR>
@@ -231,6 +236,7 @@ git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null   # must NOT be
 Only here — with the content approved in §3 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask for the content; if it does, answer with what was confirmed. Any push it does must be `git push -u origin HEAD` (own branch), never to the base branch.
 
 - `git.assignee` not empty → assign to that user. `git.squash` `true` → enable squash-before-merge.
+- **Roadmap mark approved in §3** → write it into the roadmap file **before** the commit, here in the worktree (a tracked file belongs to the branch, flow-core §0), so it ships in the same commit as the change. A git-ignored roadmap is edited in place in the main checkout instead, and the stop says it travelled in no MR/PR.
 - `commit-push-pr` skill unavailable → commit and push manually and create the MR/PR with the `git.cli` CLI from `FLOW.md` — always with the content confirmed in §3.
 
 **Record the URL the moment it exists**: write it into this MR/PR's `meta.json.mrs` entry and refresh the panel (flow-core §4) right here, before §4.2 and before anything else can fail.

@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.103.0 — The project's roadmap: flow reads where you are and ticks off what ships  ·  2026-10-29
+
+**In short**
+- **A roadmap above the ticket.** Keep your plan as a markdown file of phases, milestones and
+  checkbox tasks (`ROADMAP.md`, or any file you name in `roadmap.path`). flow reads it without being told.
+- **`next`, `daily` and `resume` say where the project stands** — current phase, what is in
+  progress and by which work, and the next item nobody has started. With nothing in flight, `next`
+  proposes starting that item.
+- **`feat:start` links the work to its item** — on its own when the ticket names it, by asking in
+  `manual` otherwise.
+- **`feat:ship` updates the roadmap inside the MR/PR**: the first one marks the item in progress, the
+  one that completes the work ticks it off (and its milestone, once every child is done). The roadmap
+  moves with the code and is reviewed with it. Intermediate MRs/PRs of a train never touch it, so
+  stacked branches do not conflict on it.
+- `roadmap.mark: never` keeps a team document read-only; `roadmap.path: none` turns it all off.
+
+Until now a work's hierarchy stopped at the ticket and its MRs/PRs. A project built in phases kept its
+plan in a markdown file that no command read unless told to, and nobody crossed anything off.
+
 ## v0.102.1 — From a worktree, flow finds the work it is in  ·  2026-10-29
 
 **In short**

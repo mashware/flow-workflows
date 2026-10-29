@@ -28,6 +28,7 @@ runs a phase on its own and never advances `meta.json`.
 3. Those work folders — how many open works, in which worktree each is checked out (`git worktree list`), and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
 3b. `followups[]` across those works **and** their `_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
 4. Is the working tree dirty (`git status --porcelain`)?
+5. The roadmap, if the repo has one (flow-core §10): where the project stands — current phase, what is in progress, the next unstarted item.
 
 ## 2. Route
 
@@ -37,9 +38,11 @@ runs a phase on its own and never advances `meta.json`.
 | A work matches the current branch | Its stop header (flow-core §3: ticket · size · phase · MR #n of N) and the next phase for its size. | `/flow:work:resume` |
 | No match, but open works exist | Count, and the two most recently updated with their phase — and the worktree each lives in, so the answer to "where were we" is a `cd`. | `/flow:work:daily`, or `/flow:feat:start` / `/flow:bug:start` if the user said what they want to do |
 | No works at all, but an accepted follow-up is waiting | "Nothing in flight — but `<TICKET>` F1 was accepted and never started: `<title>`." | `/flow:feat:start <ticket>` (or `/flow:bug:start`) for that follow-up · `/flow:feat:start` for something else |
+| No works at all, but the roadmap has a next item | "Nothing in flight. Roadmap: `<phase> › <milestone>` — next: `<item>`." | `/flow:feat:start <id>` when the item names a ticket, else `/flow:feat:start` with the item as the draft · `/flow:feat:start` for something else |
 | No works at all | "Nothing in flight." | `/flow:feat:start <TICKET>` (or with no ticket, from the conversation) · `/flow:bug:start <TICKET>` |
 
 - The SessionStart hook (`hooks/session-start.sh`) has already printed the first two rows of this table's second case — the header and what the last session was doing — off disk, without reading a ticket or an artifact. Say them again anyway: `next` is where the user asked, and a line they scrolled past is not an answer.
+- A roadmap exists → its one line (flow-core §10) goes under the situation in every row but the first: the work in front of you is one step of it, and that line is what "where are we" means for the project.
 - An `accepted` follow-up exists **and** other works are open → do not reroute; add one line naming it after the options. It is a standing commitment, not an interruption.
 - Dirty tree and no matching work → mention it in one line ("uncommitted changes on `<branch>`, no work is tracking them") before the options; `start` will warn again.
 - A FLOW layer is present but `/flow:doctor` has never been run in this session and the

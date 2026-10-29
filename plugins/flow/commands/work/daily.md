@@ -36,6 +36,7 @@ Every *mine* below — your MRs/PRs, your threads, your tickets — is the **aut
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.
 - Per work: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending**.
 - **Cross-repo parts**: `meta.json.related_repos` entries not `done` → a *sibling repo* still needs work. Surface only what is recorded — never scan or open the other repo.
+- **Roadmap** (flow-core §10): where the project stands, and which open work delivers which item. An unchecked item no open work links, ahead of the in-progress ones, is what to pick up next.
 - **Open follow-ups**: `followups[]` entries not `declined`/`logged`/`done`, from the live works **and** from `_archive/*/meta.json` (flow-core §7). The archive is read for this and nothing else — a finished work is exactly when its deferred items stop being visible.
 - **Measured cost**: `meta.json.cost[]` entries (flow-core §4) — sum the `usd` there, count the phases behind them, count apart the entries whose `source` is `not reported`. No entries → no figure at all: absence is not zero. The figures are the harness's client-side estimates, not a bill; `flow cost` prints them phase by phase.
 
@@ -108,6 +109,7 @@ The briefing's reference section: every open work, compact, most recently update
   Cross-repo: <repo>: <scope> — contract not handed over                (only if any)
   Follow-ups: 2 awaiting a decision · 1 accepted, not started           (only if any)
   Cost:       $0.71 measured over 2 phases · 1 phase not reported       (only if any)
+  Roadmap:    <phase › item it delivers>                                 (only if linked)
   Next:       <the concrete next command>
 ```
 
@@ -127,6 +129,9 @@ Yesterday / last session
 
 Today
   <what to resume + what the forge/tracker asks of you, ordered by urgency>
+
+Roadmap (only with one)
+  <phase › milestone — done/total · in progress: item (work) · next: item>
 
 Blockers / attention
   <CI red · reviews awaiting you (latest comment not yours) · stale works (merged on the forge) · divergences · raised priorities — or "none">
