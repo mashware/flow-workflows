@@ -68,7 +68,8 @@ place it would ask:
 **In every mode**, criteria `07-validation.md` marks `not-verified-unattended` go into the body under
 `## Not verified — needs a human`, with what to do for each — and so do the tests the suite left red
 because they also fail on the base (`unattended:validate-red-base`): each name, and the base sha
-where it failed too — and the review findings an orchestrator's answer accepted unfixed
+where it failed too — and the suspect flakes the run advanced past (`unattended:validate-flaky`), one line each:
+`` `<test>` — intermittent: red 1/3 then 0/5 on HEAD, 0/3 on base `<sha>`; not in a file this change touches `` — and the review findings an orchestrator's answer accepted unfixed
 (`06-review.md` "Answered (unattended)"), one line each. The §3 preview shows that section like
 any other, and the person reading it is the check the run could not do. Entries of
 `auto-answers.md` for this MR/PR (`MR/PR <n>` in their heading, or all of them for a work with no
