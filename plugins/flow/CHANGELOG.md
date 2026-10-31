@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.104.0 — A flaky test outside your change no longer blocks an unattended run  ·  2026-10-31
+
+**In short**
+- **A once-in-three red is measured again before it is blamed.** In `unattended`, a test that went red in one of
+  HEAD's three suite runs and none of the base's, in a file the change does not touch and proving no acceptance
+  criterion, is a suspect flake. When every red test is one, the whole suite runs five more times on HEAD.
+- **Five clean runs → the run advances**, records `unattended:validate-flaky`, and the draft MR/PR lists each test
+  under "Not verified — needs a human" with both sides' counts.
+- **Anything red in those five, or any other red test → the repair rounds, as before.** Tests are never rerun alone,
+  retried, skipped or loosened. Bug runs follow the same rule; no other mode changes.
+
+Until now one red in three on HEAD against none on the base meant "this change made it". A test failing one time in
+ten lands there about a quarter of the time, so runs spent their repair rounds on code that was not broken and then
+blocked. With the five extra runs, that same test blocks about one run in ten.
+
 ## v0.103.0 — The project's roadmap: flow reads where you are and ticks off what ships  ·  2026-10-29
 
 **In short**
