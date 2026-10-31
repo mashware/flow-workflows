@@ -232,7 +232,7 @@ Write `.claude/work/<TICKET>/07-validation.md`:
   for a test that is red in the suite and green on its own — and write each name, its result there,
   the run counts and the base sha under "Suite results" in `07-validation.md`. Calling a failure "pre-existing" without that run is not the
   exception — it is a red suite. Tests red once in HEAD's three runs, never on the base, outside the
-  files this diff touches and proving no criterion are suspect flakes: when they are all that is red,
+  files this diff touches, green on their own and proving no criterion are suspect flakes: when they are all that is red,
   five more whole-suite runs on HEAD decide — nothing red in them → `unattended:validate-flaky`, the
   counts under "Suite results", and the phase advances. Short of it, the red suite gets a repair round (the same row):
   the failing tests become unticked steps of this MR/PR's plan, `phase = build`, and the run
