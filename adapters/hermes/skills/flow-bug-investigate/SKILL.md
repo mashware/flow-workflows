@@ -225,7 +225,7 @@ If the bug turned out simpler or wider than `meta.json.size` says (multi-compone
 If `knowledge.stage` is set and the root cause reveals a **non-obvious "why"** about the domain (a false model assumption, a historical decision that no longer applies, an undocumented external-integration behaviour), stage it. Silence by default — only on a clear signal.
 
 - `knowledge.stage` with the finding and context, one call per finding.
-- Notify the user: "Staged X domain finding(s) to consolidate in `/flow-bug-postmortem`".
+- Notify the user: "Staged X domain finding(s) to consolidate in `/flow-bug-postmortem`" (M/L) or "in `/flow-bug-ship`" (XS/S, whose route has no postmortem).
 - Never `knowledge.save` here — that belongs to the postmortem.
 
 ## 8. Close

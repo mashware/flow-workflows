@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.105.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.106.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -155,8 +155,9 @@ a command relies on is simply absent in that session, and nothing else will repo
   artifact only; no `read_staging` → the artifacts are the staging; no `save` →
   the consolidation appends to `KNOWLEDGE.md` at the repo root. Per-call timeout
   `knowledge.timeout_s` (empty = 2 s); a failure or timeout → continue without it, silently.
-**How a consolidation runs** (`ship`, `postmortem`, `abandon`, and the offer in `/flow:work:daily`
-when `read_staging` has entries). No role set at all → say so in one line and stop:
+**How a consolidation runs** (`ship` — before its commit, so the findings travel in the work's own
+MR/PR —, `postmortem`, `abandon`, and the offer in `/flow:work:daily` when `read_staging` has
+entries). No role set at all → say so in one line and stop:
 
 1. **Read the staging** for this branch with `knowledge.read_staging`; the role empty → the "why"
    findings already written in this work's artifacts (`03-design.md` ADR-light and challenges,
@@ -173,12 +174,34 @@ when `read_staging` has entries). No role set at all → say so in one line and 
    `## <topic>` heading — the finding, its evidence line, the date and the branch. Creating that file
    the first time edits the tree, so it is asked once, in every mode; appending to an existing one is
    recorded, not asked.
-4. **Report** in one line: *"Created N · Updated M · Conflicts resolved J"*, or *"Appended N
-   finding(s) to KNOWLEDGE.md"*.
-5. **Clear the staging** for the branch afterwards, when the store has that notion.
+4. **Land the writes in the work's tree** — only with `meta.json.worktree` set, and only for a work
+   that will still ship its branch (`ship`, `postmortem`, the `daily` offer; never `abandon`, whose
+   worktree is about to go). A `knowledge.save` tool is started once per session, resolves the repo
+   from the directory it started in and takes no root in its call, so what it writes lands in the
+   **main checkout**, standing on another branch; flow is the only party that knows a worktree
+   exists, so flow moves it. Before the first `save`, read the main checkout's
+   `git -C <main checkout> status --porcelain` and keep it. After the last one, the files written
+   are what each result names (a `file_written`, a path) or, where it names none, the paths new in
+   that status since the snapshot — never a path that was already there. Copy each one to the same
+   relative path in the worktree, then take it out of the main checkout: delete an untracked file,
+   `git -C <main checkout> checkout -- <path>` a tracked one. A path that already differs in the
+   worktree is not overwritten: ask (`AskUserQuestion`). Record the paths in
+   `meta.json.knowledge.files`; they ride the work's next commit like any change (a `ship` puts them
+   in its own commit), and the main checkout is left as it was found.
+5. **Report** in one line: *"Created N · Updated M · Conflicts resolved J"*, or *"Appended N
+   finding(s) to KNOWLEDGE.md"* — plus, after step 4, *"moved to the branch: <paths>"*.
+6. **Record the outcome** in `meta.json.knowledge`: `{ "status": "consolidated" | "declined" |
+   "later" | "failed" | "nothing", "phase": "<phase>", "files": [...] }`. Every consolidation point
+   writes it, an offer turned down included: it is how `ship` knows whether the work's knowledge is
+   still owed (`/flow:feat:ship` §2, *Domain knowledge*), and a decision that lives only in the
+   conversation is lost with it.
+7. **Clear the staging** for the branch, when the store has that notion: after a consolidation that
+   saved, and in any case once the work reaches `phase = "done"` (`ship`'s Close) — a draft left
+   in staging after its findings shipped is offered again by `daily` as if nothing had been saved.
 
 A tool call that fails is **reported, never swallowed** — this is the one knowledge path that is
-explicit rather than degrading in silence.
+explicit rather than degrading in silence. It records `failed` (step 6), and the work ships without
+those files rather than not shipping.
 
 - `notes.<command>` (or `notes.all`) → mandatory extra instructions for that command.
 - Key names, merge rules, and defaults: the template shipped with the plugin

@@ -21,13 +21,13 @@ description: "Commit, push, MR/PR the fix"
 Close the bug flow: commit, push, MR/PR. Same mechanics as `/flow-feat-ship`, with two differences:
 
 1. If `99-postmortem.md` exists, **include the link or the executive summary** in the MR/PR description.
-2. The knowledge-consolidation offer was already made in `/flow-bug-postmortem` — do not ask again here.
+2. **Knowledge goes in the fix's own commit, decided where it was not decided yet.** `postmortem` in `phases_done` and `meta.json.knowledge.status` set → `/flow-bug-postmortem` §4 already answered it (and with a worktree, already moved the files into it): do not ask again; its `meta.json.knowledge.files` are staged with the fix in §3.1. Otherwise — a fix of size XS/S, whose route has no postmortem, or a postmortem from before this rule — run `/flow-feat-ship` §2 *Domain knowledge* here, with `03-investigation.md`, `04-fix.md`, `05-validation.md` and `06-review.md` as the artifacts it reads: the findings go into the §2 preview, and §3.1 consolidates them before the commit. Without this, what `investigate`, `validate` and `review` staged on a small fix was never saved, or went out later in an MR/PR of its own.
 
 **In `unattended`** (flow-core §2.1) this command asks nothing, pushes nothing and opens nothing —
 the same resolutions as `/flow-feat-ship`'s unattended paragraph, and its "In every mode" paragraph
 too, applied to the sections here: the MR/PR (§2–§3) is not confirmed and not created — its title
 and description go to `publish-title.md` / `publish-body.md` in the work folder, §3.1–§3.3 do not
-run, and pre-deploy SQL → question `migration`; §3.0's upstream on the base is unset with no push. The tree check (§0) re-runs what is behind `HEAD`
+run, the knowledge of difference 2 is `Later` (recorded, as `/flow-feat-ship` says), and pre-deploy SQL → question `migration`; §3.0's upstream on the base is unset with no push. The tree check (§0) re-runs what is behind `HEAD`
 once per MR/PR, recorded as `/flow-feat-ship` says — here `validate` first, since it ran before the
 review, then the review on the delta — and is `blocked` after that. Every offer and survey at Close
 (§4) — follow-ups, conventions, archiving — is `Later`; "was it merged?" is not merged (`phase`
@@ -146,6 +146,7 @@ Squash: <git.squash from FLOW.md>
 Target branch: <git.default_base>
 Issue link: <keyword that will appear in the body, e.g. "Closes #123" / "none — Jira links by title prefix">
 Pre-deploy (manual SQL): <"yes — N statements, a blocking thread will be opened" / "not applicable">
+Knowledge: <N finding(s) saved before the commit, shipped in it — one line each / "N file(s) the postmortem saved, shipped in it">   (line only when there is any)
 
 Description:
 <full description rendered exactly as it will appear in the MR/PR>
@@ -157,6 +158,7 @@ If there is pre-deploy SQL, ask the user to **explicitly confirm that the block 
 Then ask with `AskUserQuestion` (header: "Create {MR or PR}"):
 
 - **Create {MR or PR} with this content** → §3.
+- **Create, without saving the knowledge** (only with findings gathered here) → §3 without the consolidation; `meta.json.knowledge.status: "later"`, offered again on the re-run as `/flow-feat-ship` §5 says.
 - **Edit before creating** → adjust what the user indicates, return to §2.
 - **Cancel** → stop without creating anything. Do not touch `meta.json`.
 
@@ -173,6 +175,8 @@ Same as `/flow-feat-ship` §4.0: `git rev-parse --abbrev-ref HEAD` must not be t
 Only here — with the content approved in §2 — invoke `Skill commit-commands:commit-push-pr` passing **the final title and description**. The skill must not re-ask; if it does, answer with what was confirmed. If it pushes, it uses `git push -u origin HEAD`, never to the main base.
 
 Assign to `git.assignee` from FLOW.md (empty → unassigned). Squash per `git.squash`.
+
+**Knowledge, before the commit — `/flow-feat-ship` §4.1's knowledge bullet, in full and unchanged**: findings approved in §2 → the consolidation of flow-core §0, step 4 moving the written files from the main checkout into the worktree; then those files, and any the postmortem already landed (`meta.json.knowledge.files`), are staged with the fix. A failed `save` → one line, `failed`, and the fix ships without them.
 
 **Record the URL the moment it exists**: write it into `meta.json` (the `mrs` entry if there is one) and refresh the panel (flow-core §4) right here, before §3.2 and before anything else can fail.
 
@@ -191,7 +195,8 @@ posted as comments anchored on the changed lines of the MR/PR, confirmed in ever
 
 ## 4. Close
 
-- **A worktree does not own the tree its tools wrote into — `/flow-feat-ship` §5.5, in full and unchanged.** First, before anything below: `meta.json.worktree` not null → read the main checkout's `git status --porcelain`, name any paths it holds in one line as what they are (in the main checkout, not in the branch just pushed, and not necessarily put there by this run), and offer once to carry them over. A fix consolidates its knowledge one phase earlier, in `/flow-bug-postmortem` §4, so by the time this runs those writes have already happened and the branch has already been pushed — which is exactly the window this check exists to close.
+- **A worktree does not own the tree its tools wrote into — `/flow-feat-ship` §5.5, in full and unchanged.** First, before anything below: `meta.json.worktree` not null → read the main checkout's `git status --porcelain`, name any paths it holds in one line as what they are (in the main checkout, not in the branch just pushed, and not necessarily put there by this run), and offer once to carry them over. The knowledge files are no longer the expected case — flow-core §0 step 4 moved them into the worktree before the commit, whether `postmortem` or §3.1 saved them — so what is left here is another tool's output, or a move that went wrong.
+- **Knowledge still owed — `/flow-feat-ship` §5, in full and unchanged**: `meta.json.knowledge.status` `later` or `failed` → offered once on this re-run; onto the open branch, or a knowledge-only MR/PR once the fix merged.
 - Update `meta.json`: add `ship` to `phases_done`, update `updated_at`. **`phase` becomes `done` only once the MR/PR is confirmed merged** — creating it is not finishing it. Right after §3.1 it is open, so ask once with `AskUserQuestion` whether it has already been merged: **no** (the normal answer) → leave `phase = "ship"`; **yes** → `phase = "done"`. `/flow-work-green` and `/flow-work-respond` work on the open MR/PR; `/flow-work-clean` only sweeps what merged.
 - Refresh the panel: while the MR/PR is open its line is `wait` with the `link`; once merged it is `done`, and only then say there is nothing left here (`mark: "info"`, `style: "ok"`). Drop the `Decision` line either way.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
@@ -200,10 +205,10 @@ posted as comments anchored on the changed lines of the MR/PR, confirmed in ever
 - **Cross-repo reminder**: for each `meta.json.related_repos` entry not `done`: *"you've shipped the `<this-repo>` part; `<repo>` still needs: `<scope>` → go there and run `/flow-bug-start <TICKET>` (or `/flow-feat-start`)"*. flow only reminds; this is not a hard gate.
 - **Cross-repo contract handoff**: for each such entry with `contract_handoff: "pending"` — the fix changed a surface that sibling consumes — hand the new shape over as `/flow-feat-ship` §6.3 (publish the **literal** shape to the tracker ticket, mandatory preview in every autonomy mode, then record `published → <location>`; versioned-file fallback when there is no tracker). A bug flow has no §"External contracts": take the literal from the fix itself — the actual key, code, route or event the code now emits — read it off the code, never from memory.
 - **Follow-up triage — `/flow-feat-ship` §6.4, in full and unchanged.** Read `meta.json.followups[]`; nothing `proposed` → skip silently. Otherwise §6.4 step 0 first — **3 or more candidates go to a skeptic** whose job is to refute that each deserves a ticket, and only the strongest `tracker.followup_ask_max` (empty → **2**) reach the user (flow-core §7) — then one batched `AskUserQuestion` (**Do it** / **Not worth it** / **Later**; `decision` entries asked as their question, `tooling` and everything `log`ged never asked), the accepted ones get their tracker issue created (outward-facing → **asks in every mode**), the logged ones nothing but `status: "logged"` in `meta.json`, then one offer to start the first. A bug flow is where the gate earns its keep: the prevention actions `/flow-bug-postmortem` wrote, the neighbouring bugs `/flow-bug-validate` found and the similar-risk patterns `/flow-bug-fix` flagged all land here — half a dozen of them, from one fix, and «similar risk elsewhere» that no skeptic ever read is exactly the entry that turns a closed bug into six open questions. Repeat for anything still `proposed` on the re-run that confirms the merge.
-- **Specialists created — `/flow-feat-ship` §5.1, in full and unchanged.** Read `meta.json.specialists[]` (flow-core §6.6); nothing `useful` and pending → skip silently. Otherwise one batched offer to save each as an agent, after the MR/PR and after the knowledge `/flow-bug-postmortem` §4 already consolidated — asked in every mode, never overwriting an agent that exists.
+- **Specialists created — `/flow-feat-ship` §5.1, in full and unchanged.** Read `meta.json.specialists[]` (flow-core §6.6); nothing `useful` and pending → skip silently. Otherwise one batched offer to save each as an agent, after the MR/PR and the knowledge that shipped in it — asked in every mode, never overwriting an agent that exists.
 - **What the agents missed — `/flow-feat-ship` §5.2, in full and unchanged.** Read `meta.json.agent_lessons[]` (flow-core §6.7); `agents.learn: off` or nothing pending → skip silently. Otherwise one question per agent with the resulting lessons section, backup first, your agents asked in every mode.
 - **Conventions learned — `/flow-feat-ship` §6.4bis, in full and unchanged.** Read `meta.json.conventions_candidates[]` (flow-core §8); nothing pending → skip silently. Otherwise: drop what `FLOW.md` already says, then one batched `AskUserQuestion` (**Add to FLOW.md** / **Not a rule** / **Later**, or **Replace** when it contradicts a line that is there). Asked in every mode — it edits a file in the tree. A fix is where the corrections land hardest: *«never mock the repository in that layer»*, *«the regression test goes next to the unit test, not in the functional suite»* — said once inside `bug:fix`, and proposed again in the next incident unless they reach the file.
 - **Close the follow-up that started this work.** `meta.json.origin` set and this ship moved `phase` to `done` → open the originating work's `meta.json` (live folder or `_archive/`) and set that `followups[]` entry to `status: "done"`. Best-effort: the originating folder is gone or unreadable → warn in one line and continue, never block. Without this the entry stays `in_progress` forever and `status`/`daily` keep reporting work that is finished.
-- **Only once `phase` is `done`**: delete the candidate anchor `/flow-bug-review §1.5` left behind — `git update-ref -d refs/flow/candidate/<TICKET>`. No question: local, never pushed, and the gate that needed it has run.
+- **Only once `phase` is `done`**: delete the candidate anchor `/flow-bug-review §1.5` left behind — `git update-ref -d refs/flow/candidate/<TICKET>`. No question: local, never pushed, and the gate that needed it has run. And clear the branch's staging as `/flow-feat-ship` §6.5 says (`consolidated`/`declined` only).
 - Ask whether to archive `.claude/work/<TICKET>/` to `.claude/work/_archive/`.
 - If `meta.json.worktree` is not null, offer `git worktree remove <worktree>` once the MR/PR is merged (`--force` only if the user confirms discarding remaining changes). Not before merge, not without confirmation.

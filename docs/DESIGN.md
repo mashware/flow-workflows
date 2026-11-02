@@ -688,7 +688,11 @@ invocation could have corrected it"; flow is the only party that knows `meta.jso
 as a reading, not an accusation — that checkout may have been dirty already. The one write flow does
 control was corrected at the source: "the repo root" is the main checkout's for reading a
 git-ignored config, and the opposite for a tracked file, which belongs to the branch.
-*Now:* flow-core §0; feat:ship §5.5; bug:ship §4.
+v0.106.0: the check came after the push, so it depended on an offer being accepted, and two works
+still merged without their cards. The knowledge is now approved in the MR/PR preview and saved
+before the commit; flow moves what the tool wrote from the main checkout into the worktree, and the
+files ride the change's own commit. The check stays as the net for every other tool.
+*Now:* flow-core §0 (consolidation steps 4, 6, 7); feat:ship §2, §4.1, §5, §5.5; bug:ship §3.1, §4.
 
 **`clean` sweeps what `ship` never gets to ask about.** v0.27.0: 22 and 14 worktrees, thirteen of
 fourteen merged, sixteen work folders and zero archived. Every offer was "a prompt at the end of a long

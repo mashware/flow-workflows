@@ -5,6 +5,25 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.106.0 — The knowledge a work learned ships in its own MR/PR  ·  2026-11-02
+
+**In short**
+- **Knowledge is approved with the MR/PR, and saved before its commit.** `feat:ship` lists the findings to save in
+  the same preview as the title and description. Once you approve, it saves them and commits the files with the change.
+  It no longer offers them after the push, when the MR/PR had already gone out without them.
+- **With a worktree, the files land in the branch, not in the main checkout.** A knowledge tool writes where its
+  session started, so flow now moves what it wrote into the work's worktree and leaves the main checkout as it found
+  it. That covers `ship`, a bug's `postmortem` and the mid-work offer in `daily`.
+- **A small bug saves its knowledge too.** An XS/S fix has no postmortem, so what `investigate`, `validate` and
+  `review` staged was never saved. `bug:ship` now gathers it and ships it with the fix.
+- **Knowledge left for later is not forgotten.** Postponed, failed or skipped by an unattended run, it is recorded in
+  `meta.json` and offered again by the next `ship`. The files go onto the open branch, or into a knowledge-only MR/PR
+  once the work has merged.
+- **The staging is cleared when the work closes**, so `daily` stops offering findings that already shipped.
+
+Until now, in a repo with `git.worktree: always`, every work's knowledge files ended up in the main checkout after
+the push. Two works merged without them and needed a separate MR/PR just for the cards (#230, #167).
+
 ## v0.105.0 — A roadmap kept as tables: flow reads its dependencies and sees the rows the code already delivered  ·  2026-11-02
 
 **In short**

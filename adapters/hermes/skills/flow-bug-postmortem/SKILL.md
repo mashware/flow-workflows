@@ -89,7 +89,7 @@ Produce an honest analysis:
 1. Call `knowledge.read_staging` (empty → the findings recorded in `03-investigation.md`) — the findings staged in `/flow-bug-investigate` are the primary material.
 2. Review the postmortem for additional "why" items not staged at the time (business decisions, legal constraints, integrations, false model assumptions). The "what" (code, paths) is not saved.
 3. Combine staging + new findings. Empty or only obvious things → do not insist.
-4. 1+ relevant findings → ask the user whether to save them. Yes → run the consolidation of flow-core §0, with the right angle (the lesson, not the code). No → do not insist.
+4. 1+ relevant findings → ask the user whether to save them. Yes → run the consolidation of flow-core §0, with the right angle (the lesson, not the code) — with a worktree, its step 4 moves the written files into it, left uncommitted for `/flow-bug-ship` §3.1 to commit with the fix. No → do not insist. Either way record the answer in `meta.json.knowledge` (flow-core §0 step 6): `ship` reads it to know the question was asked.
 
 Neither role set → skip this block silently.
 
