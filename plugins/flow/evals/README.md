@@ -172,6 +172,23 @@ Nothing here may depend on one ecosystem's tools: the fixture is a repository, a
 repository is built with is `FLOW.md`'s business. `script/check.py` enforces that over this
 directory exactly as it does over the rest of the plugin.
 
+## The roadmap case
+
+`roadmap-next-waits-on-deps`, tagged `roadmap`, puts flow-core §10 on trial through `/flow:next`
+rather than a phase: a plan kept as tables under a lowercase `docs/roadmap.md`, dependencies per
+deliverable, and an archived work that delivered a row the file still calls in progress. The first
+pending row in file order waits on the row below it, so reading the plan by order alone picks the
+wrong one. Graded: `next:` names the unblocked row and not the first pending one, `stale:` names the
+row the merge never reached. No work is in flight, so nothing under `.claude/` needs writing.
+
+```bash
+claude plugin eval ./plugins/flow --case roadmap-next-waits-on-deps --ablation none --scaffold \
+  --allow-tools Bash Write Edit --trust-plugin --no-publish
+```
+
+Not part of `--tag xs`: it measures reading a plan, not a review, and would move that tier's
+baseline.
+
 ## What the first run said
 
 `baselines/0.67.0-rc.1-claude-opus-5.json`, the base every later run is read against: 48 sessions,

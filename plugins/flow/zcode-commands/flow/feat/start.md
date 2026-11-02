@@ -150,7 +150,7 @@ Another repo referenced but **no** contract → say so in one line — *"the `<r
 
 ## 3.7 Roadmap item
 
-Only when the repo has a roadmap (flow-core §10) and `roadmap.path` is not `none`: link this work to the item it delivers, by §10's rule. A clear match — the item names this ticket's id, or its text is this ticket's title (a ticket-less start drafted from a roadmap item is one) — is taken in every mode, with no question. Otherwise `manual` asks once (header "Roadmap"): the next two or three unchecked items of the current phase, **none** as the last option; `guided`/`auto`/`unattended` record `null` and say in one line that the work is not linked. Never create, rename or reorder an item here: start reads the roadmap, `ship` is the only command that writes it.
+Only when the repo has a roadmap (flow-core §10) and `roadmap.path` is not `none`: link this work to the item it delivers, by §10's rule. A clear match — the item names this ticket's id, in its text or its ticket cell, or its text is this ticket's title (a ticket-less start drafted from a roadmap item is one) — is taken in every mode, with no question. Otherwise `manual` asks once (header "Roadmap"): the next two or three items by §10's *next* rule (dependencies met, not linked by another work), **none** as the last option; an item whose dependencies are not met is never offered, and one the ticket clearly names but that is blocked is linked anyway, with one line naming what it waits on; `guided`/`auto`/`unattended` record `null` and say in one line that the work is not linked. Never create, rename or reorder an item here: start reads the roadmap, `ship` is the only command that writes it.
 
 ## 4. Classify size
 

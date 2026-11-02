@@ -17,7 +17,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.104.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.105.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -1292,55 +1292,120 @@ advisory is the one that returns tidier, shorter, worse code — and it returns 
 
 A ticket is the largest thing a work knows about: it splits into MRs/PRs (`04-mr-plan.md`), and
 nothing sits above it. A project that is being built in phases usually keeps that plan in a markdown
-file — phases, milestones, sub-milestones, tasks with checkboxes — and without this section no
-command reads it unless told to, `next` cannot say where the project stands, and nobody ticks off
-what an MR/PR delivered.
+file — phases, milestones, the deliverables of each — and without this section no command reads it
+unless told to, `next` cannot say where the project stands, and nobody marks what an MR/PR delivered.
 
 **The file.** `roadmap.path` in `FLOW.md`; `none` turns the whole section off. Empty → `ROADMAP.md`
-at the repo root, then `docs/ROADMAP.md`, and either counts only if it holds at least one checkbox
-line (`- [ ]` / `- [x]`). Nothing found → there is no roadmap, and every command below behaves as
-before, silently. A tracked file is read **here** (it is this branch's version); a git-ignored one
-from the main checkout, by §0's rule.
+at the repo root, then `docs/ROADMAP.md`, either name in any letter case, and either counts only if
+it holds at least one item in one of the two notations below. Nothing found → there is no roadmap,
+and every command below behaves as before, silently. A tracked file is read **here** (it is this
+branch's version); a git-ignored one from the main checkout, by §0's rule.
 
-**Its shape is the author's, not flow's.** Headings are phases and milestones, at whatever depth the
-file uses; a checkbox line is a task; a checkbox line with checkbox children is a milestone made of
-those children. flow never rewrites the structure, renumbers, reorders or adds headings — it touches
-exactly two things: a checkbox, and a short annotation at the end of the line it ticks.
+**Its shape is the author's, not flow's.** flow never rewrites the structure, renumbers, reorders,
+adds headings, rows or columns, or realigns a table. What it reads is a set of items, each with a
+text, a state (*pending*, *in progress* or *done*), an optional note, its ticket(s) and its
+dependencies, grouped under milestones. Two notations carry them, and one file may use both:
+
+- **Checkboxes.** A checkbox line (`- [ ]` / `- [x]`) is an item: `[x]` is done, flow's trailing
+  annotation (below) says in progress, anything else is pending. A checkbox line with checkbox
+  children is a milestone made of those children. Checkbox items have no dependencies but their
+  order.
+- **Tables.** A markdown table whose header has a **state** column holds one item per row. The
+  column roles are read off the header, in the file's language: *state* (status, estado…),
+  *ticket* (issue, ticket…), *dependencies* (depends on, after, depende de…), and the item's text in
+  the first remaining column. `roadmap.columns` names them when the header is ambiguous —
+  `state=<header>, ticket=<header>, depends=<header>`. A state cell is a state word, optionally
+  followed by `:` and a free note the team wrote; the state is read from the word alone, against the
+  words the file itself uses (done / in progress / pending, in its language). A word flow cannot
+  place is shown as it is and counted as pending.
+
+**Milestones.** The headings that hold items are the phases and milestones, at whatever depth the
+file uses. When the file has an **order table** — a table whose rows name the other sections
+(`H1`, `Phase 2`, a heading's text) — only the sections it lists are milestones, and its own
+dependency column is the milestones' dependencies; a section with items that it does not list is
+**side work** (work that is not code, a parallel track): counted and shown, never proposed as next.
+A milestone may state its **closing criterion** in prose — a line such as `Done when: …` / `Terminado
+cuando: …` right under its heading. flow never judges prose, so a milestone with a criterion is
+closed **only when the file says so**: a done state for it in the order table, or a checked checkbox
+on the criterion line. One without a criterion is closed when every item in it is done.
+
+**Dependencies.** An item's dependency cell names other items or milestones — by their text, their
+ticket, or the milestone's id or heading — and an item inherits its milestone's dependencies. A
+dependency is **met** when the item it names is done, or the milestone it names is closed. A name
+that resolves to nothing is **unmet**, and is said as such: flow never guesses a near match.
 
 **Where the project stands** — computed the same way by `next`, `daily` and `resume`:
-- **Current phase**: the first heading, in file order, that still holds an unchecked item.
-- **In progress**: unchecked items an open work links (below), or that carry flow's in-progress
-  annotation.
-- **Next**: the first unchecked item of the current phase that is neither — a leaf, not a milestone
-  whose children are listed.
+- **Current phase**: the first milestone, in file order, that is not closed.
+- **In progress**: items an open work links (below), or whose state is in progress.
+- **Next**: the first pending item, in file order across the whole file, whose dependencies are all
+  met and that no open work links — a leaf, not a milestone whose children are listed, and never
+  side work. Without dependencies this is the first pending item of the current phase, as order
+  alone always said.
+- **Blocked**: the pending items ahead of *next* that wait on something, each with what it waits on;
+  a milestone whose items are all done but whose criterion is not marked is named with its criterion.
+- **Stale**: items whose work has already merged while their state still says otherwise (below).
 - Said in one line: `Roadmap: <phase> › <milestone> — <done>/<total> · in progress: <item> (<work>) ·
-  next: <item>`. Counts are the checkboxes under the current phase. All done → `Roadmap: complete`.
+  next: <item> · blocked: <item> ← <what it waits on>`, the last part only when something ahead of
+  *next* is blocked; a milestone waiting on its criterion reads `<milestone>: items done — criterion
+  not marked: "<criterion>"`. Counts are the items under the current phase. Every milestone closed →
+  `Roadmap: complete`.
+
+**Stale items — the merge that never reached the file.** An item can stay *in progress* or *pending*
+after the work that delivers it merged: a part shipped outside flow, a train whose closing MR/PR was
+merged by hand, a deliverable split across several tickets. `next`, `daily` and `resume` check every
+item that is not done and names a ticket, or that an open or archived work links, against:
+- **the works** — a live or `_archive/` work linking the item (or carrying its ticket) whose
+  `phase` is `done`, or whose `mrs[]` are all merged → **delivered**;
+- **the tracker**, when `tracker.cli` is set — the ticket reports done, and the forge has no open
+  MR/PR carrying it → **delivered**;
+- **the forge alone** — MRs/PRs carrying the ticket are merged and none is open, with no work and no
+  tracker to say it was the last part → **probably delivered**: said as such, never corrected by
+  `ship`.
+A delivered item whose state is not done is **stale**, said in one line with its evidence:
+`stale: <milestone> › <item> still <state> — <TICKET> merged <date>`. One forge query per ticket,
+only for items that are not done; the commands that report it stay read-only.
 
 **The link.** A work records the item it delivers in `meta.json.roadmap`:
-`{ "path": "<file>", "item": "<the line's text, without checkbox or annotation>", "under": "<heading › heading>" }`
-— or `null`. `/flow-feat-start` sets it: an item the ticket clearly names (its id, or its title
-matching the item's text) is taken in every mode; otherwise `manual` asks once, offering the next
-unchecked items and *none*, and `guided`/`auto`/`unattended` record `null` and say so in one line. A
-work is linked to one item, at any depth: linking a milestone means the work delivers all its
-children.
+`{ "path": "<file>", "item": "<the item's text, without checkbox, annotation or note>", "under": "<heading › heading>" }`
+— or `null`. `/flow-feat-start` sets it: an item the ticket clearly names (its id in the item's text
+or ticket cell, or its title matching the item's text) is taken in every mode; otherwise `manual`
+asks once, offering the next items and *none*, and `guided`/`auto`/`unattended` record `null` and
+say so in one line. A work is linked to one item, at any depth: linking a milestone means the work
+delivers all its items.
 
 **The mark — in the MR/PR, so the roadmap moves with the code and is reviewed with it.** `/flow-feat-ship`
-edits the file in the same commit as the change, and the preview shows the line it will become:
-- **First MR/PR of the work, more to come** → the item stays unchecked and gains
-  ` — in progress (<TICKET>)`.
-- **Last MR/PR of the work** (the one that `Closes` the ticket, or a single one) → `- [x]` and the
-  annotation becomes ` — done (<TICKET>)`. Every child of a linked milestone is ticked with it;
-  a parent checkbox whose children are now all ticked is ticked too, without annotation.
+edits the file in the same commit as the change, and the preview shows each line it will change,
+before and after:
+- **First MR/PR of the work, more to come** → in progress. A checkbox item stays unchecked and gains
+  ` — in progress (<TICKET>)`. A table row gets the file's in-progress word in its state cell.
+- **Last MR/PR of the work** (the one that `Closes` the ticket, or a single one) → done. A checkbox
+  item becomes `- [x]` and its annotation ` — done (<TICKET>)`; every child of a linked milestone is
+  ticked with it, and a parent checkbox whose children are now all ticked is ticked too, without
+  annotation — unless it states a closing criterion, which flow never marks. A table row gets the
+  file's done word; every row of a linked milestone with it. A milestone itself is never closed by
+  flow when it has a criterion.
 - **Intermediate MRs/PRs of a train** touch nothing: the first one marked the item and the last one
   closes it, so stacked branches never edit the same line twice.
-- Write the annotation's words in the file's language. flow recognises its own annotation as a
-  trailing ` — <words> (<ticket>)` and replaces it rather than stacking a second one. The ticket,
-  not the MR/PR url: the edit is committed before the MR/PR exists, and the ticket already leads to
-  it. A ticket-less work writes its slug.
+- **A table row is edited in two cells at most, and only there**: the state word — the note after
+  the `:` is kept as the team wrote it, the preview shows it so a note that no longer holds is seen
+  before approval — and the ticket cell, filled with this work's ticket when it is empty. No other
+  cell, row or alignment changes; a cell that grows wider than its column is left so, because
+  realigning would touch every row. A `|` inside a value is written `\|`. Without a ticket column
+  the ticket goes in parentheses after the state word.
+- **The words are the file's.** A state word is one the column already uses, or — for a state it
+  never uses yet — the one the file's own instructions name, else the plain word in the file's
+  language. flow recognises its checkbox annotation as a trailing ` — <words> (<ticket>)` and
+  replaces it rather than stacking a second one. The ticket, not the MR/PR url: the edit is
+  committed before the MR/PR exists, and the ticket already leads to it. A ticket-less work writes
+  its slug.
+- **Stale items found on the way** → the same preview offers to correct them in this MR/PR: only
+  items **delivered** by the works or the tracker (never *probably delivered*), only to *done*, by
+  the rules above, each line shown before and after. Not on an intermediate MR/PR of a train.
 - **The item cannot be found** (renamed, moved, deleted since `start`) → do not guess a near match:
   leave the file alone and say so in the ship's stop. **The file is git-ignored** → there is no MR/PR
   to carry it: edit it in place in the main checkout at the same moment, and say so.
-- `roadmap.mark: never` keeps the roadmap read-only — a team document flow only reads.
+- `roadmap.mark: never` keeps the roadmap read-only — a team document flow only reads. Stale items
+  are still reported.
 
 Bugs do not link: a bug repairs something already delivered, and the roadmap tracks what is still to
 deliver. A bug that *is* a roadmap item is started as a feature.

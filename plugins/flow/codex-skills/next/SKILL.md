@@ -34,7 +34,7 @@ runs a phase on its own and never advances `meta.json`.
 3. Those work folders — how many open works, in which worktree each is checked out (`git worktree list`), and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
 3b. `followups[]` across those works **and** their `_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
 4. Is the working tree dirty (`git status --porcelain`)?
-5. The roadmap, if the repo has one (flow-core §10): where the project stands — current phase, what is in progress, the next unstarted item.
+5. The roadmap, if the repo has one (flow-core §10): where the project stands — current phase, what is in progress, the next item whose dependencies are met, what is blocked, and any stale item.
 
 ## 2. Route
 
@@ -48,7 +48,7 @@ runs a phase on its own and never advances `meta.json`.
 | No works at all | "Nothing in flight." | `$flow:feat-start <TICKET>` (or with no ticket, from the conversation) · `$flow:bug-start <TICKET>` |
 
 - The SessionStart hook (`hooks/session-start.sh`) has already printed the first two rows of this table's second case — the header and what the last session was doing — off disk, without reading a ticket or an artifact. Say them again anyway: `next` is where the user asked, and a line they scrolled past is not an answer.
-- A roadmap exists → its one line (flow-core §10) goes under the situation in every row but the first: the work in front of you is one step of it, and that line is what "where are we" means for the project.
+- A roadmap exists → its one line (flow-core §10) goes under the situation in every row but the first: the work in front of you is one step of it, and that line is what "where are we" means for the project. A stale item gets its own line under it, with its evidence: it is the plan saying something the code already contradicts.
 - An `accepted` follow-up exists **and** other works are open → do not reroute; add one line naming it after the options. It is a standing commitment, not an interruption.
 - Dirty tree and no matching work → mention it in one line ("uncommitted changes on `<branch>`, no work is tracking them") before the options; `start` will warn again.
 - A FLOW layer is present but `$flow:doctor` has never been run in this session and the
