@@ -24,7 +24,7 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
-Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`) and an optional offer to consolidate knowledge.
+Closes the feature: commit, push, MR/PR (assigned per `git.assignee`, squash per `git.squash`, sections per `git.request_sections`), with the domain knowledge the work learned approved in the same preview and shipped in the same commit.
 
 **In `unattended`** (flow-core §2.1) this command asks nothing, pushes nothing and opens nothing:
 it hands the finished MR/PR to the orchestrator, which pushes the branch and opens the draft. Each
@@ -48,8 +48,9 @@ place it would ask:
   continue and list them in the body.
 - **Posting anything else** — a contract handoff (§6.3) — → not posted; the handoff stays
   `pending`.
-- **The offers and surveys (§5, §5.1, §5.2, §5.5, §6.4, §6.4bis)** → `Later`; nothing written outside
-  the work folder.
+- **The offers and surveys (§2's *Domain knowledge*, §5, §5.1, §5.2, §5.5, §6.4, §6.4bis)** → `Later`;
+  nothing written outside the work folder. Knowledge left unsaved this way is recorded
+  (`meta.json.knowledge.status: "later"`), so the first attended `ship` of the work offers it again.
 - **"Was it merged?" (§6.1)** → not merged: the entry stays `in_progress` (a work with no `mrs`
   keeps `phase = "ship"`) until `publish` succeeds, below. **The parent merged first (§6.2.1)** → blocked, never
   force-push. **Train continuation (§6.2)** → not started: one MR/PR per unattended run (with
@@ -84,7 +85,7 @@ the one taken checked (flow-core §2.1, the recommended answer).
 - Not met → refuse and send the user to the missing step (multi-MR/PR: `/flow-feat-review` or `/flow-feat-validate` **for this MR/PR**).
 - **The review has to be about the tree you are about to push.** `reviewed_sha` is the revision the reviewers **read** (`/flow-feat-review §1.5` froze it), not the one that phase ended on, so the round's own fixes are a real delta here rather than a match. Compare `meta.json.reviewed_sha` and `validated_sha` (this MR/PR's `mrs[]` entry in a multi-MR/PR work) against `git rev-parse HEAD`:
   - **Equal** → continue, nothing to report — **unless `fixed_sha` is set**, which says the review changed the tree after reading it and cannot then be equal to `HEAD`. That combination is a mismatch, not a match: the shas were recorded by two different mechanisms and one of them is wrong. Say so and treat it as Different below.
-  - **The tree is dirty at this end** (`git status --porcelain` non-empty, ignoring untracked) → both shas describe committed history and the bytes about to be pushed are not in either. Name the paths and ask, exactly as Different does; a comparison of two identical shas over two different trees is the case the old gate passed over in silence.
+  - **The tree is dirty at this end** (`git status --porcelain` non-empty, ignoring untracked, and ignoring the paths in `meta.json.knowledge.files` — knowledge a `postmortem` or a `daily` offer already landed here, flow-core §0 step 4, which ships with this commit and is no code to review) → both shas describe committed history and the bytes about to be pushed are not in either. Name the paths and ask, exactly as Different does; a comparison of two identical shas over two different trees is the case the old gate passed over in silence.
   - **`reviewed_sha` does not resolve** (`git cat-file -e <sha>^{commit}`) — a candidate from a dirty tree whose anchor ref was deleted, or history rewritten since — → say so in one line and treat it as Absent. A gate that cannot read its own input must not report nothing wrong here.
   - **Absent** (work started before the shas were recorded) → say so in one line and continue. Absence is not a mismatch.
   - **Different** → read the delta (`git log --oneline <sha>..HEAD`, `git diff --stat <sha>..HEAD`) and judge it by **what it touches**, never by size. When `fixed_sha` is set, say in the same line that part of this delta is the review's own fixes: the user is judging what the reviewers never read, and where it came from is the first thing they need.
@@ -122,6 +123,16 @@ Decide first whether **this** MR/PR *completes* the issue: it does when, after i
 ### Roadmap mark (only with a linked item or a stale one)
 
 `meta.json.roadmap` set, or a stale item §10 counts as delivered, and `roadmap.mark` not `never` → decide the edit by flow-core §10, with the same *completes / intermediate* answer as the issue link above: the work's first MR/PR with more to come marks the item in progress, the completing one marks it done (with its children, and any parent left with every child done — never a milestone that states a closing criterion), an intermediate one touches nothing. Find the item by its `item` text with flow's annotation, or a table row's note, stripped; not found → no edit, and the stop says so. In a table, only the state cell and an empty ticket cell change. Not an intermediate MR/PR → also list the **stale items** §10 counts as delivered, to be marked done in the same edit. Decide it here, show it in the §3 preview, write it in §4.1 — never before approval.
+
+### Domain knowledge (decided with the MR/PR, written before its commit)
+
+Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip without notifying (the artifacts already hold the findings). `meta.json.knowledge.status` already `consolidated` (a `daily` offer banked it mid-work) → nothing new to gather beyond what was staged since; `declined` → skip, it was answered.
+
+1. **Read the staging accumulated during the branch**: `knowledge.read_staging` (empty → what the artifacts recorded) — what `/flow-feat-design` and the other phases staged. Main material.
+2. **Review** `03-design.md`, `05-implementation.md`, `06-review.md` for "why" findings (domain decisions, legal constraints, integrations, business motivations) **not staged at the time**. The "what" (code, paths) is NOT saved.
+3. **Combine** into a short list, one line per finding. Empty or only code-derivable → no `Knowledge` line in §3 and `meta.json.knowledge.status: "nothing"` — silence by default.
+
+Nothing is saved here. The list goes into the §3 preview and is approved with the MR/PR; §4.1 runs the consolidation (flow-core §0) **before the commit**, so the files it writes travel in the same commit as the change. Saving after the push is what left knowledge files sitting in a main checkout while the MR/PR merged without them.
 
 ### Referencing other MRs/PRs of the plan in the body (never `#<n>`)
 
@@ -206,6 +217,8 @@ Issue link: <keyword that will appear in the body, e.g. "Closes #123" / "Part of
 Pre-deploy (manual SQL): <"yes — N statements, a blocking thread will be opened" / "not applicable">
 Roadmap: <"<line now>" → "<line after>", one pair per line changed / "untouched — intermediate MR/PR" / "item not found">   (line only with a linked item or a stale one)
          <stale items: "<line now>" → "<line after>" — <evidence>; each one can be dropped from the edit>   (only if any)
+Knowledge: <N finding(s) saved before the commit, shipped in it:>   (line only with a §2 list)
+           <- one line per finding>
 
 Description:
 <full description rendered exactly as it will appear in the MR/PR>
@@ -217,7 +230,8 @@ If there is pre-deploy SQL, ask the user to **explicitly confirm that the block 
 The preview is the last thing before the question — **no tool call between them** (flow-core §3), or the block the user is meant to approve is the one their terminal folds away. Then ask with `AskUserQuestion` (header: "Create <MR or PR>"):
 
 - **Create with this content** → invoke §4.
-- **Edit before creating** → user says what to change (title, a section, both); adjust and return to §3 with the new preview.
+- **Create, without saving the knowledge** (only with a `Knowledge` line) → invoke §4 and skip its consolidation; `meta.json.knowledge.status: "later"`, offered again by the re-run of this command (§5). A finding the user wants dropped rather than postponed is an *Edit*.
+- **Edit before creating** → user says what to change (title, a section, a finding, any of them); adjust and return to §3 with the new preview.
 - **Cancel** → stop without creating anything. Do not touch `meta.json`. The user can return to `/flow-feat-ship` later.
 
 Do not push or invoke any creation command until the user has responded "Create with this content".
@@ -239,6 +253,7 @@ Only here — with the content approved in §3 — invoke `Skill commit-commands
 
 - `git.assignee` not empty → assign to that user. `git.squash` `true` → enable squash-before-merge.
 - **Roadmap mark approved in §3** → write it into the roadmap file **before** the commit, here in the worktree (a tracked file belongs to the branch, flow-core §0), so it ships in the same commit as the change. A git-ignored roadmap is edited in place in the main checkout instead, and the stop says it travelled in no MR/PR.
+- **Knowledge approved in §3** → at the same point, before the commit: run the consolidation of flow-core §0 on the approved list, step 4 included — with `meta.json.worktree` set, every file `knowledge.save` wrote is moved from the main checkout into this worktree, so it is in the diff about to be committed and the main checkout is left as it was. Then stage what it wrote (`meta.json.knowledge.files`, or the `KNOWLEDGE.md` it appended) with the change — and the files an earlier phase already landed in this worktree (the same key), which are otherwise left uncommitted. A store that writes outside the repo leaves nothing to stage, and that is fine. A `save` that fails → report it in one line, `meta.json.knowledge.status: "failed"`, and the MR/PR goes out without those files; §5 offers them again.
 - `commit-push-pr` skill unavailable → commit and push manually and create the MR/PR with the `git.cli` CLI from `FLOW.md` — always with the content confirmed in §3.
 
 **Record the URL the moment it exists**: write it into this MR/PR's `meta.json.mrs` entry and refresh the panel (flow-core §4) right here, before §4.2 and before anything else can fail.
@@ -318,20 +333,22 @@ no measurable change, not a percentage.
 - Posting to the forge is outward-facing: show the comment and confirm with `AskUserQuestion`
   **in every `autonomy.mode`**, exactly like the description preview in §3.
 
-## 5. Domain knowledge (offer)
+## 5. Knowledge still owed (re-run only)
 
-Only if `knowledge.read_staging` or `knowledge.save` is set; neither → skip without notifying (the artifacts already hold the findings). **Only if there is something non-obvious worth saving** (silence-by-default):
+The knowledge normally left with the commit (§2, §4.1). This section is for the run where it did not: `meta.json.knowledge.status` is `later` or `failed` — postponed in §3, a `save` that failed, or an unattended run. Anything else → skip silently.
 
-1. **Read the staging accumulated during the branch**: `knowledge.read_staging` (empty → what the artifacts recorded) — what `/flow-feat-design` (and other phases) already staged. Main material.
-2. **Review** `03-design.md`, `05-implementation.md`, `06-review.md` for "why" findings (domain decisions, legal constraints, integrations, business motivations) **not staged at the time**. The "what" (code, paths) is NOT saved.
-3. **Combine staging + new findings** into a short list. Empty or only code-derivable → do not insist.
-4. 1+ relevant findings → ask the user whether to consolidate. Yes → run the consolidation of flow-core §0 (`read_staging`, then one decision and one `knowledge.save` per finding). No → do not insist.
+On every re-run of this command (the one that confirms the merge included), offer it once with `AskUserQuestion`, listing the findings again from §2's steps: **Save them now** · **Not worth it** (→ `declined`, never offered again) · **Later** (stays). *Save them now* runs the consolidation of flow-core §0, then ships its files by the MR/PR's state:
+
+- **Still open** → commit them onto this branch in the worktree and push; the MR/PR updates itself.
+- **Merged** → a knowledge-only MR/PR: a fresh branch from `git.default_base` with this work's branch name, one commit, title `<TICKET> Domain knowledge from <the work's title>`, the same issue-link rule as §2 (`Part of`, never `Closes` — the issue is already done). It goes through §3's preview and §4.0's checks like any MR/PR: outward-facing, asked in every mode.
+
+A store that writes outside the repo leaves no file to ship; then saving is the whole step.
 
 ## 5.1 Specialists created (offer)
 
 Read `meta.json.specialists[]` (flow-core §6.6). **No entry with `useful: true` and `status` unset
-or `"later"` → skip this section and say nothing.** It comes after §5 on purpose: the MR/PR is open,
-the knowledge is saved, and what is left is whether an agent this work improvised deserves a name.
+or `"later"` → skip this section and say nothing.** It comes after the MR/PR on purpose: the MR/PR is open,
+the knowledge shipped with it, and what is left is whether an agent this work improvised deserves a name.
 
 1. **A harness with no file-defined agents** → the section does not exist; say so in one line if
    there were useful specialists, so the brief is not mistaken for lost (it stays in `meta.json`).
@@ -379,7 +396,7 @@ exist get what this work showed they lacked.
 
 `meta.json.worktree` null → skip silently; there is nothing here that can go wrong.
 
-Everything above this line ran in a worktree, and several of the tools it called had no way of knowing that. A configured tool — `knowledge.save` is the first one this caught, and no key is special — is started once per session, resolves the repo from the directory it was started in, and takes no root in its call. A worktree is the same repo with another tree, so its output can land in the **main checkout**, which is standing on another branch, while the branch §4 just pushed goes out without it. Nothing in the invocation could have corrected that: flow is the only party that knows `meta.json.worktree` is set, and this is the only place that knows the push already happened.
+Everything above this line ran in a worktree, and several of the tools it called had no way of knowing that. A configured tool is started once per session, resolves the repo from the directory it was started in, and takes no root in its call. A worktree is the same repo with another tree, so its output can land in the **main checkout**, which is standing on another branch, while the branch §4 just pushed goes out without it. `knowledge.save` was the first one this caught, and its writes are now moved into the worktree before the commit (flow-core §0 step 4); this check is the net for every other tool, and for a move that went wrong. Nothing in the invocation could have corrected that: flow is the only party that knows `meta.json.worktree` is set, and this is the only place that knows the push already happened.
 
 So, before the Close:
 
@@ -389,7 +406,7 @@ git -C "$(git rev-parse --path-format=absolute --git-common-dir)/.." status --po
 
 Empty → say nothing at all. Non-empty → **one line naming the paths**, and what it means in plain words: they are sitting in the main checkout, not in the branch that was pushed. Say it as a reading, never as an accusation — that checkout may have been dirty before this work started, and only the user can tell their own leftovers from what this run put there.
 
-Then offer once, with `AskUserQuestion` **in every autonomy mode** (it edits two trees): **carry them over** — copy the paths the user confirms into this worktree, commit onto the branch, push, and the MR/PR from §4 updates itself — or **leave them**, which is the right answer whenever what is sitting there belongs to the other branch. Either way the Close reports what was decided: a `ship` that quietly repaired two checkouts is worse than one that named the problem and left it standing.
+Then offer once, with `AskUserQuestion` **in every autonomy mode** (it edits two trees): **carry them over** — copy the paths the user confirms into this worktree, take them out of the main checkout as flow-core §0 step 4 does, commit onto the branch with `git -C <worktree>` (a push launched from the main checkout's directory can be refused by a guard that sees the base branch there), push, and the MR/PR from §4 updates itself — or **leave them**, which is the right answer whenever what is sitting there belongs to the other branch. Either way the Close reports what was decided: a `ship` that quietly repaired two checkouts is worse than one that named the problem and left it standing.
 
 ## 6. Close
 
@@ -573,6 +590,7 @@ paste. Never a list here, and never a question: in `guided`/`auto` not asking is
 
 Only if `phase = "done"`:
 - Delete the candidate anchor `/flow-feat-review §1.5` left behind: `git update-ref -d refs/flow/candidate/<TICKET>`. It existed to stop the object being collected while the gate still needed it; the gate has run. No question — it is local, it was never pushed, and nothing reads it after this. Absent already → nothing to do.
+- Clear this branch's staging (flow-core §0 step 7) when `meta.json.knowledge.status` is `consolidated` or `declined` and the store has that notion. No question: what it held is saved, or was refused. `later`/`failed` → leave it; §5 still owes it.
 - Ask whether to keep `.claude/work/<TICKET>/` or archive it (move to `.claude/work/_archive/`).
 - If `meta.json.worktree` is not null, offer to remove the worktree (from the main checkout) with `git worktree remove <worktree>` (`--force` only if it still has changes the user confirms discarding). Never without confirmation, never if the MR/PR is not yet merged.
 
