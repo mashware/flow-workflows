@@ -5,6 +5,32 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.105.0 — A roadmap kept as tables: flow reads its dependencies and sees the rows the code already delivered  ·  2026-11-02
+
+**In short**
+- **A plan written as tables is a roadmap too.** A table whose header has a state column is read row by row:
+  state, an optional note after `:`, the ticket and the dependencies, with the column roles read off the header in
+  the file's language. `roadmap.columns` names them when the header is ambiguous. Checkbox lines work as before,
+  and one file may mix both.
+- **`roadmap.md` and `docs/roadmap.md` are found too.** The default lookup ignores letter case.
+- **"Next" respects dependencies.** It is the first pending item whose dependencies are met, not the first pending
+  one in the file. An item inherits its milestone's dependencies from an order table. `next` and `daily` say what is
+  blocked and on what.
+- **A milestone that states "Done when: …" in prose is closed only when the file says so.** flow never judges the
+  criterion and never closes such a milestone itself. What depends on it waits, and the line says which criterion
+  is unmarked.
+- **Stale rows are flagged.** An item that is not done in the file but whose work is done is reported by `next`,
+  `daily` and `resume`, with the evidence. The evidence comes from an archived work, every MR/PR of its work merged,
+  or the tracker. The next `feat:ship` offers to correct it in its own MR/PR. Evidence from the forge alone is
+  reported, never corrected.
+- **`feat:ship` edits a row in two cells at most.** It changes the state word, keeps the team's note, and fills an
+  empty ticket cell. It never touches another cell, another row or the alignment.
+
+Until now §10 only counted checkbox lines in `ROADMAP.md`. A team that keeps its plan in tables got silence:
+`next` could not say where the project stood, and `ship` marked nothing. Order was the only dependency, so a row
+waiting on the one below it was proposed first. A merge that delivered a deliverable without updating its row
+went unnoticed.
+
 ## v0.104.0 — A flaky test outside your change no longer blocks an unattended run  ·  2026-10-31
 
 **In short**

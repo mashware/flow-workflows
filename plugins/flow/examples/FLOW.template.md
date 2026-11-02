@@ -347,12 +347,15 @@ written without that question.
 <!-- e.g.: DDD (Domain/Application/Infrastructure); no #[AsMessageHandler]; etc. -->
 
 ## roadmap
-The project's plan above the ticket — phases, milestones, tasks with checkboxes — in a markdown file
-of your own shape (flow-core §10). `next`, `daily` and `resume` say where it stands, `feat:start`
-links a work to one of its items, and `feat:ship` ticks it in the MR/PR that delivers it.
+The project's plan above the ticket — phases, milestones, deliverables as checkbox lines or as table
+rows with a state column — in a markdown file of your own shape (flow-core §10). `next`, `daily` and
+`resume` say where it stands, what is next once its dependencies are met, and which items the code
+already delivered but the file does not say; `feat:start` links a work to one of its items, and
+`feat:ship` marks it in the MR/PR that delivers it.
 
-- `path:`             # the roadmap file, relative to the repo root. Empty = `ROADMAP.md`, then `docs/ROADMAP.md`, if it has checkbox lines. `none` = no roadmap.
-- `mark:`             # `ship` (default) = mark in progress on the work's first MR/PR, tick on its last | `never` = read-only, flow only reads it.
+- `path:`             # the roadmap file, relative to the repo root. Empty = `ROADMAP.md`, then `docs/ROADMAP.md`, in any letter case, if it has checkbox lines or a table with a state column. `none` = no roadmap.
+- `mark:`             # `ship` (default) = mark in progress on the work's first MR/PR, done on its last | `never` = read-only, flow only reads it.
+- `columns:`          # only when a table's header is ambiguous: `state=<header>, ticket=<header>, depends=<header>`. Empty = read off the header.
 
 ## notes
 Per-command extra guidance. When a command runs, it MUST follow the entry matching its command

@@ -36,7 +36,7 @@ Every *mine* below — your MRs/PRs, your threads, your tickets — is the **aut
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.
 - Per work: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending**.
 - **Cross-repo parts**: `meta.json.related_repos` entries not `done` → a *sibling repo* still needs work. Surface only what is recorded — never scan or open the other repo.
-- **Roadmap** (flow-core §10): where the project stands, and which open work delivers which item. An unchecked item no open work links, ahead of the in-progress ones, is what to pick up next.
+- **Roadmap** (flow-core §10): where the project stands, which open work delivers which item, what is next (the first pending item whose dependencies are met and no open work links), what is blocked and on what, and the stale items — not done in the file, delivered by the works, the tracker or the forge.
 - **Open follow-ups**: `followups[]` entries not `declined`/`logged`/`done`, from the live works **and** from `_archive/*/meta.json` (flow-core §7). The archive is read for this and nothing else — a finished work is exactly when its deferred items stop being visible.
 - **Measured cost**: `meta.json.cost[]` entries (flow-core §4) — sum the `usd` there, count the phases behind them, count apart the entries whose `source` is `not reported`. No entries → no figure at all: absence is not zero. The figures are the harness's client-side estimates, not a bill; `flow cost` prints them phase by phase.
 
@@ -88,6 +88,7 @@ Turn the *joins* into concrete, **suggested** commands (never act):
 - Local work `done`/`ship` but its ticket still open in the tracker → divergence to close out.
 - Local work whose branch has an open MR/PR with **CI red or an unmergeable state** (conflicts, behind base) → `/flow:work:green`; with **threads awaiting your reply** (latest comment not yours) → `/flow:work:respond`.
 - A ticket's **priority was raised** while you were on something else → call out the possible refocus.
+- A **stale roadmap item** (flow-core §10) → the file is behind the code: name the item and its evidence. The next `/flow:feat:ship` offers to correct it in its MR/PR; this command never edits the file.
 - `related_repos` entries not `done` → the **other repo's part is still open**: surface it (`<repo>: <scope>`) and suggest `/flow:feat:start <TICKET>` in that repo. `contract_handoff` `pending` → add that the contract was never handed over; the fix is `/flow:feat:ship` §6.3 on this side first. flow only reminds; it never scans the sibling.
 - **Follow-ups nobody has decided on** → one line at most, not a list: `<N> follow-ups awaiting a decision (oldest: <TICKET> F2 — <title>)`, and separately any `accepted` entry with no `work` started, suggesting `/flow:feat:start <ticket>`. A standup is where deferred work should resurface; it is not where it gets triaged — that is `ship`, once. Say nothing when there are none.
 - Uncommitted local changes not reflected in any log/artifact → nudge toward the relevant phase.
@@ -131,10 +132,11 @@ Today
   <what to resume + what the forge/tracker asks of you, ordered by urgency>
 
 Roadmap (only with one)
-  <phase › milestone — done/total · in progress: item (work) · next: item>
+  <phase › milestone — done/total · in progress: item (work) · next: item · blocked: item ← what it waits on>
+  <stale: milestone › item still <state> — TICKET merged <date>, one line each — only if any>
 
 Blockers / attention
-  <CI red · reviews awaiting you (latest comment not yours) · stale works (merged on the forge) · divergences · raised priorities — or "none">
+  <CI red · reviews awaiting you (latest comment not yours) · stale works (merged on the forge) · stale roadmap items · divergences · raised priorities — or "none">
 
 Awaiting others (optional)
   <threads you already answered, waiting on the reviewer — informational, not yours to act on>

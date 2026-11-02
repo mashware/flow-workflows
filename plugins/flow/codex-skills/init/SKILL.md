@@ -83,7 +83,7 @@ Run, deduce, show what was found for confirmation or correction:
 
 <!-- stack-detection:end -->
 
-- **Roadmap** (`roadmap.path`, flow-core §10) — a markdown file at the root or under `docs/` with headings and checkbox lines whose name or title says plan, roadmap, phases or milestones, in any language. `ROADMAP.md` or `docs/ROADMAP.md` → nothing to write, it is found by default. Any other → propose its path. Several → ask which one is the project's plan. None → leave the section out.
+- **Roadmap** (`roadmap.path`, flow-core §10) — a markdown file at the root or under `docs/` with headings and either checkbox lines or tables with a state column, whose name or title says plan, roadmap, phases or milestones, in any language. `ROADMAP.md` or `docs/ROADMAP.md`, in any letter case → nothing to write, it is found by default. Tables whose header does not say plainly which column is the state, the ticket and the dependencies → propose `roadmap.columns` with the headers you would map, for confirmation. Any other → propose its path. Several → ask which one is the project's plan. None → leave the section out.
 
 ## 3. Ask five things
 

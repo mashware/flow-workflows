@@ -111,9 +111,9 @@ Decide first whether **this** MR/PR *completes* the issue: it does when, after i
 - **`linear`**: `Closes <TICKET>` (Linear id, e.g. `ENG-123`) on the completing MR/PR; nothing on intermediates.
 - **`none` / empty**: nothing to link.
 
-### Roadmap mark (only with a linked item)
+### Roadmap mark (only with a linked item or a stale one)
 
-`meta.json.roadmap` set and `roadmap.mark` not `never` → decide the edit by flow-core §10, with the same *completes / intermediate* answer as the issue link above: the work's first MR/PR with more to come marks the item in progress, the completing one ticks it (with its children, and any parent left with every child ticked), an intermediate one touches nothing. Find the line by its `item` text with flow's annotation stripped; not found → no edit, and the stop says so. Decide it here, show it in the §3 preview, write it in §4.1 — never before approval.
+`meta.json.roadmap` set, or a stale item §10 counts as delivered, and `roadmap.mark` not `never` → decide the edit by flow-core §10, with the same *completes / intermediate* answer as the issue link above: the work's first MR/PR with more to come marks the item in progress, the completing one marks it done (with its children, and any parent left with every child done — never a milestone that states a closing criterion), an intermediate one touches nothing. Find the item by its `item` text with flow's annotation, or a table row's note, stripped; not found → no edit, and the stop says so. In a table, only the state cell and an empty ticket cell change. Not an intermediate MR/PR → also list the **stale items** §10 counts as delivered, to be marked done in the same edit. Decide it here, show it in the §3 preview, write it in §4.1 — never before approval.
 
 ### Referencing other MRs/PRs of the plan in the body (never `#<n>`)
 
@@ -196,7 +196,8 @@ Squash on merge: <git.squash from FLOW.md>
 Target branch: <git.default_base from FLOW.md, or the parent branch in train mode>
 Issue link: <keyword that will appear in the body, e.g. "Closes #123" / "Part of #123 (intermediate train PR)" / "none — Jira links by title prefix">
 Pre-deploy (manual SQL): <"yes — N statements, a blocking thread will be opened" / "not applicable">
-Roadmap: <"<line now>" → "<line after>" / "untouched — intermediate MR/PR" / "item not found">   (line only with a linked item)
+Roadmap: <"<line now>" → "<line after>", one pair per line changed / "untouched — intermediate MR/PR" / "item not found">   (line only with a linked item or a stale one)
+         <stale items: "<line now>" → "<line after>" — <evidence>; each one can be dropped from the edit>   (only if any)
 
 Description:
 <full description rendered exactly as it will appear in the MR/PR>

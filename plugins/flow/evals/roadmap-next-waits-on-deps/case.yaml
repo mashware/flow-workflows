@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: roadmap-next-waits-on-deps
+description: A plan kept as tables under docs/roadmap.md, with dependencies per deliverable and a row the merged code already delivered. `next` must pick the first unblocked row and flag the stale one.
+tags: [roadmap]
+runs: 3
+expected_outcome: |
+  The next deliverable is "Mapeo de columnas": "Deduplicado" comes first in the file but waits on it, and H3 waits on H2. "Validación de filas" is stale: the file says in progress, while the archived work DEMO-12 that delivers it is done with both MRs merged.
+context:
+  scaffold_script: fixture.sh
