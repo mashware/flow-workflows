@@ -16,7 +16,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.106.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.107.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -448,7 +448,7 @@ person asking for changes, a ticket that already has code — is `/flow:work:run
 | Writing a DB schema change, index or migration — in any phase, a review's own fixes included — or applying one (`validate`) | question `migration`, before the first line of it is written or run — except in `respond` and `green`, where it is blocked: a schema change agreed after the MR/PR exists goes back through `build`. Writing one whose every object `approved-schema.md` lists is not asked (§2, a schema approved with the study) |
 | `review` with blockers or high-severity findings | question `high_findings` |
 | `validate` with a criterion `unproven` | blocked — the phase does not advance and does not chain |
-| `validate` with a red suite | **One exception, and it is measured, never judged**: every failing test also fails, under the same name, on the base (`git merge-base HEAD <git.default_base>`, run in a detached worktree), none of them lives in a file this diff touches, and none is the test that proves an acceptance criterion. **The base runs the way HEAD went red**: the same command (the whole suite when the whole suite went red, never the failing file alone), and a test that is red in the whole suite but green on its own is load- or order-dependent, so one run on each side proves nothing — run the whole suite three times on HEAD and three on the base, and write each side's red count and that test's duration in every run. Red on the base as often as on HEAD → the exception holds: record `{"key":"unattended:validate-red-base","default":"<n> red on HEAD and on base <short sha>: <test names>","phase":"validate"}` and advance; `ship` lists those tests under "Not verified — needs a human". Green on the base and red on HEAD, even once in three → this diff made it, whatever a single base run said (a suspect flake, below, gets five more runs first); its repair step says so, with both sides' counts and how much slower the failing runs were, and the fix is what this diff adds under concurrency (a lock, a pool, a timer, a background loop), never a longer timeout or a retry. **A suspect flake is measured again before it is blamed**: a test red in exactly one of HEAD's three runs (the run that first went red is not one of them), in none of the base's, in a file this diff does not touch, green when run on its own, and not the test that proves an acceptance criterion. When at least one test is red in HEAD's three runs and every such test is one, run the whole suite five more times on HEAD — not on the base, whose three runs already said 0 — and write each run's red tests and the suspects' durations. Nothing red in any of the five → record `{"key":"unattended:validate-flaky","default":"<test name>: red 1/3 then 0/5 on HEAD, 0/3 on base <short sha>","phase":"validate"}` per test and advance; `ship` lists them under "Not verified — needs a human". Anything red in the five, or a red test that is not a suspect → this diff made it, and the repair rounds below follow: every red test, suspects included, goes to the repair rounds and counts in their `<n>`. The five runs are only ever more runs: a test is never rerun alone in their place, retried, skipped or loosened. Short of the exception and of a flake that held, **repair rounds while they make progress, at most three per MR/PR**: each round is a heading under this MR/PR's plan (`05-implementation.md` / `04-fix.md`), `### Red suite at validate (unattended), round <k>: <n> red`. No such heading yet, or the last one's `<n>` above the count red now and `<k>` below 3 → write the next heading with one unticked step per failing test (its name and the first line of its failure), each ending *fix the code, or update an assertion whose expected value this MR/PR's design or fix changed — never delete, skip or loosen a test*; record `{"key":"unattended:validate-red-loop","default":"round <k>, <n> red: <test names>","phase":"validate"}`, leave `phase = build` (`fix`) and chain into `/flow:feat:build` (`/flow:bug:fix`) — whose steps then run through the phases that follow it as always, review and validate included. A review of that round treats a test the round deleted, skipped or loosened as a blocker. A round that did not lower the count, or a third round still red → blocked, naming the tests still red and the count each round left |
+| `validate` with a red suite | **One exception, and it is measured, never judged**: every failing test also fails, under the same name, on the base (`git merge-base HEAD <git.default_base>`, run in a detached worktree), none of them lives in a file this diff touches, and none is the test that proves an acceptance criterion. **The base runs the way HEAD went red**: the same command (the whole suite when the whole suite went red, never the failing file alone), and a test that is red in the whole suite but green on its own is load- or order-dependent, so one run on each side proves nothing — run the whole suite three times on HEAD and three on the base, and write each side's red count and that test's duration in every run. **Before either record below, the cause is looked for** (§11, a red test outside the change): a test that would take the base exception or the flake record and whose cause §11 identifies is not excused — it goes to the repair rounds below, its step naming the cause, and counts in their `<n>`; only a test whose cause is not identified takes a record, and **a pass that sends any test to a repair round writes no record at all** — the others are measured again at the next validate, so the pass has one ending. Red on the base as often as on HEAD → the exception holds: record `{"key":"unattended:validate-red-base","default":"<n> red on HEAD and on base <short sha>: <test names>","phase":"validate"}` and advance; `ship` lists those tests under "Not verified — needs a human". Green on the base and red on HEAD, even once in three → this diff made it, whatever a single base run said (a suspect flake, below, gets five more runs first); its repair step says so, with both sides' counts and how much slower the failing runs were, and the fix is what this diff adds under concurrency (a lock, a pool, a timer, a background loop), never a longer timeout or a retry — unless §11 finds the fragility in the test itself (it counts ticks the diff's extra load now delays): then the test is the step, fixed as §11 says. **A suspect flake is measured again before it is blamed**: a test red in exactly one of HEAD's three runs (the run that first went red is not one of them), in none of the base's, in a file this diff does not touch, green when run on its own, and not the test that proves an acceptance criterion. When at least one test is red in HEAD's three runs and every such test is one, run the whole suite five more times on HEAD — not on the base, whose three runs already said 0 — and write each run's red tests and the suspects' durations. Nothing red in any of the five → record `{"key":"unattended:validate-flaky","default":"<test name>: red 1/3 then 0/5 on HEAD, 0/3 on base <short sha>","phase":"validate"}` per test and advance; `ship` lists them under "Not verified — needs a human". Anything red in the five, or a red test that is not a suspect → this diff made it, and the repair rounds below follow: every red test, suspects included, goes to the repair rounds and counts in their `<n>`. The five runs are only ever more runs: a test is never rerun alone in their place, retried, skipped or loosened. Short of the exception and of a flake that held, **repair rounds while they make progress, at most three per MR/PR**: each round is a heading under this MR/PR's plan (`05-implementation.md` / `04-fix.md`), `### Red suite at validate (unattended), round <k>: <n> red`. No such heading yet, or the last one's `<n>` above the count red now and `<k>` below 3 → write the next heading with one unticked step per failing test (its name and the first line of its failure), each ending *fix the code, or update an assertion whose expected value this MR/PR's design or fix changed, or — for a test §11 found fragile — make it assert on the result it meant to prove; never delete, skip, retry or loosen a test, and never lengthen a timeout*; record `{"key":"unattended:validate-red-loop","default":"round <k>, <n> red: <test names>","phase":"validate"}`, leave `phase = build` (`fix`) and chain into `/flow:feat:build` (`/flow:bug:fix`) — whose steps then run through the phases that follow it as always, review and validate included. A review of that round treats a test the round deleted, skipped or loosened as a blocker; a fragile test rewritten to assert on the same result, as §11 allows, is not loosened. A round that did not lower the count, or a third round still red → blocked, naming the tests still red, the count each round left and, for each, what a person does next |
 | A product decision (§7 `decision`) | question `decision` |
 | Clarifying questions on the ticket (`start`) | question `clarify` — after the branch and the work folder exist, with the questions also written to `01-context.md` |
 | An unanswered high-severity challenge (`design`, `investigate`) | question `design_challenge` / `investigation_challenge` |
@@ -1431,3 +1431,53 @@ before and after:
 
 Bugs do not link: a bug repairs something already delivered, and the roadmap tracks what is still to
 deliver. A bug that *is* a roadmap item is started as a feature.
+
+## 11. A red test outside the change — find the cause before it is excused
+
+A test this diff did not touch goes red, and every path flow has for it — the base exception and the
+flake record of `validate` (§2.1), a rerun in `green`, "not reproduced" in `respond` — hands it to a
+person. When flow can see why the test is red, handing it over is the wrong answer: the MR/PR has to
+go green to merge, so the fix is in scope whether or not the diff touched that test.
+
+**Look for the cause first.** Read the test and the code it drives, and name the mechanism. Typical
+causes in the test: it asserts on **how many times** something ran (timer ticks, calls, retries)
+inside a wall-clock window instead of on what came out — when the count *is* the behaviour (retries, calls made), the count stays and the clock is what gets fixed (a fake or injected time source); it depends on the order tests run in; it
+reads state another test left behind (a shared fixture, a global, a file, a port); it sleeps and
+hopes. Typical causes in the code: a race, an await missing, a resource not released.
+
+**Identified means evidence, not a story.** A cause is identified only when the diagnosis names it at
+`file:line` **and** either (a) a forced reproduction turns the test red on purpose — stall the timer,
+reorder the run, leave the shared state dirty, load the machine — or (b) the mechanism is in the
+assertion itself, plain to read (it counts ticks in a time window, it expects an order nobody
+guarantees). A plausible guess with neither is **not identified**, and is never acted on.
+
+**Identified → a repair step in this MR/PR**, aimed where the cause is:
+
+- **In the test** → the test is rewritten to prove the **same behaviour by its result**, not by its
+  timing or its order. That is not loosening it: the assertion keeps its subject and gets a sturdier
+  witness. Never delete, skip, retry or loosen it, and never lengthen a timeout or a sleep — each one
+  hides the cause instead of removing it. Where (a) applied, the forced reproduction passes after the
+  fix.
+- **In the code** → the step fixes the code; the test stays as it is.
+- **Proved by the whole suite**, never by `quality.test_one` alone — an order- or load-dependent test already passes on its own — plus the forced reproduction where (a) applied.
+- A fragile test in a file this diff touches is repaired the same way: it never had the exception to lose.
+- **Its own commit** — `Fix fragile test <name>: <cause in one line>` — never folded into another
+  step's or round's commit, so a reviewer reads it alone.
+- **The MR/PR body says so**, under `## Also fixed`: `` `<test>` — <cause>; <what changed> `` —
+  written by `ship` for a repair made before it (`/flow:feat:ship`, `/flow:bug:ship`); a repair made
+  by `green` or `respond` on an MR/PR already open adds the line itself: to `publish-body.md` in
+  `unattended`, otherwise to the MR/PR description with the push, shown at the push gate.
+
+**Not identified → the path that already exists** (the base exception, the flake record, a rerun,
+`blocked`), and whatever that path leaves red says, in the slot it already has — the stop's
+`I need:`, the `blocked` reason, the "what to do" of a line under `## Not verified — needs a human` —
+**what the person does next**, in one plain line: *rerun CI; if `<test>` fails again, its cause is
+not in this change — open a ticket for it*, never only that the test is red.
+
+**A CI failure that does not reproduce here** (`green`, or a CI log a person pasted into a review
+thread for `respond`) is diagnosed the same way, from its log and the test's code: a fragility
+identified → fix it as above and push it, even though it would not go red locally. Neither
+reproduced nor identified → change nothing for it and say so. In `unattended` that run ends with
+its usual closing order when it changed code (`publish`: the push reruns CI anyway); when it changed
+nothing, it ends `blocked`, its one-line reason starting `rerun CI: <job>[, <job>…]` — not
+reproduced, no cause found — so the orchestrator knows a rerun is all that is left.

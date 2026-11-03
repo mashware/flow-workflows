@@ -97,7 +97,10 @@ back through it, and the hard gates above resolve this way:
 - **The one closing order**, after the WIP commit (flow-core §2.1): code changed this round →
   `publish` with the work's `publish-title.md` / `publish-body.md` (updated when the round changed
   what they say, and naming any thread whose reply failed) and no `--part/--of` — the MR/PR is
-  already open (flow-core §2.1) — so the commits the replies name reach the branch; no code changed and every reply went
+  already open (flow-core §2.1) — so the commits the replies name reach the branch (and the push reruns CI, so a
+  failure nobody could explain needs nothing more); no code changed, every reply went out and a
+  thread carried a CI failure neither reproduced nor explained (§3) → `blocked`, its one-line reason
+  starting `rerun CI: <job>[, <job>…]` (flow-core §11); no code changed and every reply went
   out → `done`, the summary listing the threads answered; no code changed and a reply failed →
   `blocked`, naming those threads.
 
@@ -145,6 +148,8 @@ Categories:
 | **E — out of scope** | Valid, but belongs to another ticket | defer with justification (propose a follow-up ticket) |
 | **F — obsolete/done** | Already addressed, or no longer applies | reply pointing to where |
 | **G — data / performance objection** | The reviewer says a query is slow, unbounded, unindexed, or proposes a different query | **measure first** (§4.G), then reply with the plan |
+
+**A thread that carries a CI failure** — a person pasted a failing job's log or a red test's output — is a **C** about that test, not an **A** to answer: reproduce it with `quality.test_one`; red → fix it on its merits, through flow-core §11 when the test is outside this diff. Not red here → diagnose it from the pasted log and the test's code (flow-core §11): a fragility identified (it counts timer ticks, depends on order, reads another test's leftovers) or a cause in the code → fix it in its own commit `Fix fragile test <name>: <cause>`, and the reply names that commit and the cause, and the line for `## Also fixed` goes to the MR/PR description with the push (`publish-body.md` in `unattended`). Neither → change nothing for it; the reply says it did not reproduce, that no cause was found in the test or the code, and what the person does next (*rerun CI; if it fails again, …*) — never a bare "not reproduced".
 
 Present a **triage table** to the user: `thread → location → category → proposed action → one-line rationale` — the map for the rest of the command. In `manual` mode, let the user re-categorize any row before proceeding.
 

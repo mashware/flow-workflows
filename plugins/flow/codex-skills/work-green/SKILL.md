@@ -45,7 +45,7 @@ Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, a
 2. Creating/switching a branch, or DB schema changes/migrations, if a fix requires them.
 3. **Re-triggering a pipeline or job on the remote** (CI resources; outward action).
 4. **Integrating the base branch** — any `git merge`/`git rebase` of `git.default_base` into the branch, and any history rewrite or force-push it implies (§5.C).
-5. **Green-washing — NEVER, in any mode:** no rerun of a failed check hoping it passes; never disable, skip, `@skip`/`xit`, loosen a threshold, or delete a test/lint rule to force green; never resolve a conflict by blindly taking one side (`--ours`/`--theirs`, `checkout --theirs`, discarding the base's changes) — resolve by understanding both sides.
+5. **Green-washing — NEVER, in any mode:** no rerun of a failed check hoping it passes; never disable, skip, `@skip`/`xit`, loosen a threshold, or delete a test/lint rule to force green; never resolve a conflict by blindly taking one side (`--ours`/`--theirs`, `checkout --theirs`, discarding the base's changes) — resolve by understanding both sides. A fragile test rewritten to assert on the same result, as flow-core §11 allows, is not loosening it.
 
 **In `unattended`** (flow-core §2.1) — launched by `$flow:work-run` on `why = pipeline` or
 `why = conflict` — this command never touches the forge. Gate 5 holds exactly as written; the
@@ -59,8 +59,10 @@ others resolve this way:
   conflicts with `base`, which the orchestrator left in the checkout as `origin/<base>` at
   `base_sha`. That is the only blocker of the round — category C, nothing to triage. `origin/<base>`
   missing or not at `base_sha` → `blocked`: the run would merge a base nobody named.
-- **§3** — triage as written, recorded in `09-ci.md`. **K** (flaky / infra) → `blocked` with the
-  evidence: the run has no rerun order, and the orchestrator owns reruns and the red-round limit.
+- **§3** — triage as written, recorded in `09-ci.md`. **K** (flaky / infra) → when the round
+  changed no code, `blocked` with the evidence and a one-line reason starting `rerun CI: <job>[,
+  <job>…]` (flow-core §11): the run has no rerun order, and the orchestrator owns reruns and the
+  red-round limit; when the round changed code, its `publish` reruns CI anyway.
   **C** (conflict, behind base) on `why = pipeline`, and anything needing a rebase or force-push →
   `blocked`: the orchestrator brings the base in, and relaunches with `why = conflict` when it
   conflicts. A **human** blocker → `blocked`, naming who. **S** → fixed within
@@ -140,12 +142,14 @@ Categories:
 | **L — lint / style / format** | formatter or linter job red | mechanical auto-fix with `quality.style_fix` (or the repo's formatter) |
 | **T — test failure** | a unit/integration/functional/frontend test failed | **root-cause fix**: real regression → fix the code; behavior changed *on purpose* → update the test to the new contract (justified from the design) |
 | **Y — type / build / compile** | type-check (`static_analysis`) or build broke | fix the code/types |
-| **K — flaky / infra** | non-deterministic or CI-environment failure **not** caused by this diff (timeout, network, cache, runner) | do **not** green-wash; identify the evidence, propose a **confirmed** rerun (hard gate), and flag the flake |
+| **K — flaky / infra** | non-deterministic or CI-environment failure **not** caused by this diff (timeout, network, cache, runner) **whose cause in the test or the code was looked for and not identified** (flow-core §11) | do **not** green-wash; identify the evidence, propose a **confirmed** rerun (hard gate), and flag the flake |
 | **S — quality gate / scope** | coverage threshold, security scan, a lint rule newly hitting legacy code | judgment call: fix within scope, or defer/config with justification — never touch unrelated code just to appease a gate without confirming |
 | **C — conflict / branch behind base** | the branch conflicts with `git.default_base`, or the host requires it updated before merging | integrate the base into the branch and **resolve each conflict on its merits** (§5.C) — hard gate before touching git history |
 | **H — human blocker** | draft/WIP, approvals missing, unresolved review threads, a required reviewer or check that only a person can clear | **not this command's job**: name it, say exactly what is needed and from whom, and route it (threads → `$flow:work-respond`; draft → offer to mark ready; approvals → the reviewers). Never work around it |
 
-**Root cause, not symptom.** Find *why* the check is red before changing anything. Never weaken what a test checks, never silence a type error with a blanket cast/ignore, never mark a real failure as flaky. A "fix" that hides the failure is not a fix — surface it.
+**A test this diff did not touch is still this command's.** A red test that looks flaky is diagnosed before it is called K (flow-core §11): read its log tail and its code; a fragility identified there — it counts timer ticks, depends on order, reads another test's leftovers — or a cause in the code is **T**, fixed in this round even when it does not go red locally, in its own commit `Fix fragile test <name>: <cause>`, and the line for `## Also fixed` goes to the MR/PR description with the push (`publish-body.md` in `unattended`). Only a cause not identified stays K.
+
+**Root cause, not symptom.** Find *why* the check is red before changing anything. Never weaken what a test checks (a flow-core §11 rewrite onto the same result is not weakening), never silence a type error with a blanket cast/ignore, never mark a real failure as flaky. A "fix" that hides the failure is not a fix — surface it.
 
 Present a **triage table**: `blocker → kind → category → probable cause (log or merge verdict) → proposed action`, **C** and **H** rows first (a conflict makes the pipeline result provisional — CI reruns on a different tree after integrating the base). In `manual`, let the user re-categorize any row (especially T-vs-K) before proceeding.
 
@@ -168,9 +172,9 @@ Only **base-integration**, **auto-fix** and **code-fix**:
 
 - **Design-invalidation first.** A test failure that shows the *design* was wrong → do not patch the test into agreement; update `03-design.md` **before** editing; if large, route back through `$flow:feat-build` / `$flow:bug-fix`.
 - **Delegate the edits** to the expert sub-agents (FLOW.md `agents`); the conductor stays on judgment. Repo conventions plus the **comment discipline** of `$flow:feat-build` — comments only for a non-obvious *why*, never a ticket ID or "for MR #N".
-- **Reproduce and verify locally — the tight loop.** Before pushing, re-run the failing check locally: L/style → `quality.style_fix`; T → `quality.test` (or `quality.test_one` scoped to the failing test); Y → `quality.static_analysis`. Empty command → auto-discover. Not reproducible locally (environment-only job) → say so, push and let CI re-verify (§6), stating that verification is remote.
+- **Reproduce and verify locally — the tight loop.** Before pushing, re-run the failing check locally: L/style → `quality.style_fix`; T → `quality.test` (or `quality.test_one` scoped to the failing test); Y → `quality.static_analysis`. Empty command → auto-discover. Not reproducible locally (environment-only job) → say so, push and let CI re-verify (§6), stating that verification is remote. A fragile test fixed by flow-core §11 is checked with its forced reproduction when there is one, then pushed the same way.
 - **Re-run the review gate for non-trivial code-fixes.** More than a mechanical tweak → `quality.review_skill` (or built-in `code-review` if empty) on this round's diff before pushing. Pass the diagnosis as context, never as a scope exclusion (*"the cause was X"*, not *"skip X"*). High-severity findings block the push until addressed.
-- **Commits follow `autonomy.mode`.** After editing, **always** report a summary (files, lines, which job each edit turns green). `manual` → the user decides to commit or inspect first; do **not** `git commit` on your own. `guided`/`auto` → commit the round yourself, go straight to the §6 push gate (do not ask twice for one round). The push is a hard gate in **every** mode.
+- **Commits follow `autonomy.mode`.** After editing, **always** report a summary (files, lines, which job each edit turns green). `manual` → the user decides to commit or inspect first; do **not** `git commit` on your own. `guided`/`auto` → commit the round yourself, go straight to the §6 push gate (do not ask twice for one round). A fragile-test repair (flow-core §11) is split into its own commit in every mode, and the round's summary names it as *also fixes fragile test `<name>`: <cause>*. The push is a hard gate in **every** mode.
 
 ### 5.C Integrate the base and resolve conflicts (category C)
 
