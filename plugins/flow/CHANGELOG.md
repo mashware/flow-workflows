@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.107.0 — A red test outside the change gets fixed when flow can see why  ·  2026-11-03
+
+**In short**
+- **A red test the change did not touch is diagnosed before it is excused.** flow reads the test and the code it
+  drives and names the cause: it counts timer ticks instead of checking the result, it depends on the order tests
+  run in, it reads what another test left behind, or the code has a race.
+- **A cause it can prove gets fixed in the same MR/PR.** The test keeps checking the same behaviour, by its result
+  rather than its timing. It is never deleted, skipped, retried or loosened, and no timeout gets longer. The fix
+  goes in its own commit, and the MR/PR description lists it under `## Also fixed`.
+- **"Proved" means evidence.** The cause is named at `file:line`, and either a forced reproduction turns the test
+  red on purpose or the fragility is plain in the assertion. A plausible guess is not acted on.
+- **A CI failure pasted into a review no longer ends at "not reproduced".** `respond` and `green` diagnose it from
+  the log. If they find the fragility, they fix it and push. If not, the reply says so and tells the person what to
+  do next. An unattended run that changed nothing ends `blocked` with a reason starting `rerun CI:`.
+- **When the cause is not found, the old path still applies**: the base exception, the flake record, or a rerun.
+  Each test it leaves red now says what the person does next.
+
+Until now, an unattended `validate` let a red test through when it was also red on the base or looked flaky. The
+MR/PR went out red with the test under "Not verified — needs a human", even when the run could see why it failed.
+In one case the test counted timer ticks, so a 180 ms stall failed it (#232).
+
 ## v0.106.0 — The knowledge a work learned ships in its own MR/PR  ·  2026-11-02
 
 **In short**

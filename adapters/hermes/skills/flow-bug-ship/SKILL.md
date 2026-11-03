@@ -91,6 +91,9 @@ Template (in this order):
 <bullets from the "What is NOT touched" section of the Brief. Important so the reviewer knows the fix is minimal.>
 <then, if `meta.json.followups[]` has entries still `proposed` or `accepted`: one line each — the neighbouring bug, the similar-risk pattern, the prevention action — with its ticket id when one exists. Omit the block when there are none.>
 
+## Also fixed
+<only when a test outside this fix went red and was repaired because its cause was identified (flow-core §11): one line each, `` `<test>` — <cause>; <what changed> ``. Omit the section otherwise.>
+
 ## Evidence
 <only if `.claude/work/<TICKET>/evidence/` has files and `quality.evidence` is not `off`. The **before** is what `03-investigation.md` captured when the failure was reproduced — the one moment it exists — and the **after** is §2.5 of `05-validation.md`. A bug fix is the change where a before/after pair carries the most: it *is* the argument. Same upload rules as `/flow-feat-ship`. Omit when there is nothing.>
 

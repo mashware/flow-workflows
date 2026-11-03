@@ -225,13 +225,16 @@ Write `.claude/work/<TICKET>/07-validation.md`:
   failing tests on the base the way they went red on HEAD — the whole suite, three runs on each side
   for a test that is red in the suite and green on its own — and write each name, its result there,
   the run counts and the base sha under "Suite results" in `07-validation.md`. Calling a failure "pre-existing" without that run is not the
-  exception — it is a red suite. Tests red once in HEAD's three runs, never on the base, outside the
+  exception — it is a red suite. **Before a test takes the exception or the flake record, its cause
+  is looked for** (flow-core §11, a red test outside the change): identified → it is not excused, it
+  becomes a step of the repair round below, named with its cause, fixed in its own commit and listed
+  under `## Also fixed` by `ship`. Tests red once in HEAD's three runs, never on the base, outside the
   files this diff touches, green on their own and proving no criterion are suspect flakes: when every test red in HEAD's three runs is one,
   five more whole-suite runs on HEAD decide — nothing red in them → `unattended:validate-flaky`, the
   counts under "Suite results", and the phase advances. Short of it, the red suite gets a repair round (the same row):
   the failing tests become unticked steps of this MR/PR's plan, `phase = build`, and the run
   chains into `/flow:feat:build`, then review and this phase again. Rounds go on while each lowers
   the red count, three at most; one that does not, or a third still red → `blocked`, naming the
-  tests still red.
+  tests still red and, for each, what a person does next.
 
 In `guided`/`auto` this is, together with the brief in `/flow:feat:build §2`, **the only stop of the whole MR/PR** — everything between them ran without a person. It carries the **full stop header** and the body answers, in this order: what is green, what this MR/PR proves and what it does not, and what shipping it takes. Assume the user has read none of the build and review.

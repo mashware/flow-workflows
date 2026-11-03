@@ -86,9 +86,12 @@ there → it is a question like any other.
 Chained from a review's `high_findings` *Fix them* → the findings are unticked steps at the end of
 this MR/PR's plan: build them in order, then chain into `/flow:feat:review`. Chained from a red
 suite at validate (flow-core §2.1) → the same, under the plan's latest `### Red suite at validate
-(unattended), round <k>` heading: one step per failing test, and a test reaches green by fixing the code or by an
-assertion this MR/PR's design changed — never by deleting, skipping or loosening it. Run each
-step's test with `quality.test_one` before ticking it.
+(unattended), round <k>` heading: one step per failing test, and a test reaches green by fixing the code, by an
+assertion this MR/PR's design changed, or — a step naming a fragile test's cause (flow-core §11) —
+by making it assert on the result it meant to prove, in its own commit `Fix fragile test <name>:
+<cause>`; never by deleting, skipping, retrying or loosening it, or by a longer timeout. Run each
+step's test with `quality.test_one` before ticking it — and a §11 step with the whole suite plus its
+forced reproduction, since an order- or load-dependent test already passes on its own.
 
 **The brief travels inside the question** (flow-core §3): the user reads it in the prompt they are answering, never by opening `05-implementation.md`. Write the file, run whatever you need, and *then* open the gate — **nothing runs between the brief and the question**, because a tool call after it is what lets a terminal fold the brief into one collapsed line, and the gate is answered blind. Options:
 - **Yes, proceed** → start building.
