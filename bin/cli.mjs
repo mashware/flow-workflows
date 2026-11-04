@@ -436,8 +436,8 @@ function flowConfig(repo, harness, rev = null) {
 
 // `.claude/work` is git-ignored like the FLOW files, so a worktree does not carry it either — and
 // the two things that read it fail silently when it is missing: the pack drops its `## Work`
-// section, which it advertises and no reviewer knows to miss, and `--record` writes the figure
-// nowhere and exits 0. Same resolution as the config: here first, the main checkout otherwise.
+// section, which it advertises and no reviewer knows to miss, and `--record` used to write the
+// figure nowhere and exit 0. Same resolution as the config: here first, the main checkout otherwise.
 function workFolder(repo, branch) {
   const root = join(rootHolding(repo, join('.claude', 'work')), '.claude', 'work')
   if (!existsSync(root)) return null
@@ -1070,7 +1070,8 @@ async function review(argv) {
     for (const r of results.filter((x) => !x.error)) agents[role(r.role)] = (agents[role(r.role)] ?? 0) + 1
     if (!Object.keys(agents).length) {
       console.error('flow review --record: no reviewer answered, so there is no round to record.')
-      process.exit(1)
+      process.exitCode = 1
+      return
     }
     const doc = {
       round: { agents, ...(costs.length ? { usd: Number(costs.reduce((a, b) => a + b, 0).toFixed(6)) } : {}) },
@@ -1082,10 +1083,13 @@ async function review(argv) {
       })),
     }
     const bad = validateReview(doc)
-    if (bad.length) { console.error(`flow review --record: nothing recorded.\n${bad.join('\n')}`); process.exit(1) }
+    // `exitCode`, never `exit()`: the review was just printed, and on a pipe stdout is
+    // asynchronous — exiting now can cut off the output this ordering exists to keep.
+    if (bad.length) { console.error(`flow review --record: nothing recorded.\n${bad.join('\n')}`); process.exitCode = 1; return }
     if (!writeReview(built.work, doc)) {
-      console.error(`flow review --record: no work on \`${built.branch}\` to record into — the review above stands, unrecorded.`)
-      process.exit(1)
+      console.error(`flow review --record: no work on \`${built.branch}\`, or its meta.json is missing or not JSON — the review above stands, unrecorded.`)
+      process.exitCode = 1
+      return
     }
   }
 }
@@ -1233,7 +1237,7 @@ function cost(argv) {
   console.log()
   if (!entries.length) {
     console.log('Nothing recorded yet. A phase records here when it can measure what it spent:')
-    console.log('`flow review --record` writes what the harness reported for its round, and a')
+    console.log('`flow record-review` writes what the harness reported for a review round, and a')
     console.log('harness that reports no figure is recorded as "not reported" rather than guessed.')
     return
   }
@@ -1534,7 +1538,7 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   as it always has.
 
 "cost" prints what each phase of this branch's work actually reported spending, from
-  what --record wrote into meta.json. A harness that reports no figure is recorded as
+  what record-review (a review's Close) or review --record wrote into meta.json. A harness that reports no figure is recorded as
   "not reported": a headcount of subagents is not a cost, and neither is a guess.
 
 "record-review" writes one review round into this branch's work: each finding once, with
