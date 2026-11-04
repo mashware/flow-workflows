@@ -69,7 +69,9 @@ check "both repos, live and archive, read once"   '3 work(s), 23 review round(s)
 # the count row adds findings and no unique; `declined` is not accepted.
 # The count-only row of round 2 adds three findings and no round: it cannot be judged.
 in_section "aliases fold into built-in"           'M' '| built-in | 21 | 46 | 21 | 20 | 20 | keep |'
-in_section "a prefixed panel role is its role"   'M' '| panel:tests | 1 | 1 | 0 | 0 |'
+in_section "a prefixed panel role is its role"   'M' '| panel:tests | 1 | 1 | 0 | 0 | — | too few rounds (1/20) |'
+# `high` and `blocker` are one severity, so builtin and cli:tests share the x.php finding.
+in_section "legacy severities fold before dedup"  'M' '| panel:tests | 1 | 1 | 0 | 0 |'
 in_section "a section number is its pass"        'M' '| idiom | 1 | 1 | 1 | 1 |'
 in_section "a composite origin credits both"     'M' '| panel:frontend | 1 | 1 | 0 | 0 |'
 # New rows at S (effective size from cost[], not the work's L): a rejected unique finding
