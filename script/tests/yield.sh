@@ -67,7 +67,8 @@ in_section() {  # <label> <heading> <fixed string>
 check "both repos, live and archive, read once"   '3 work(s), 23 review round(s), 49 finding row(s).'
 # Legacy M: builtin+cli:tests share x.php at a mapped `blocker`, so neither is unique there;
 # the count row adds findings and no unique; `declined` is not accepted.
-in_section "aliases fold into built-in"           'M' '| built-in | 22 | 46 | 21 | 20 | 20 | keep |'
+# The count-only row of round 2 adds three findings and no round: it cannot be judged.
+in_section "aliases fold into built-in"           'M' '| built-in | 21 | 46 | 21 | 20 | 20 | keep |'
 in_section "a prefixed panel role is its role"   'M' '| panel:tests | 1 | 1 | 0 | 0 |'
 in_section "a section number is its pass"        'M' '| idiom | 1 | 1 | 1 | 1 |'
 in_section "a composite origin credits both"     'M' '| panel:frontend | 1 | 1 | 0 | 0 |'
@@ -79,6 +80,17 @@ in_section "twenty rounds, nothing unique: retire" 'M' '| panel:simplify | 20 | 
 in_section "under twenty: too few rounds"        'XS+S' 'too few rounds (1/20)'
 in_section "old spellings are listed"            'Spellings read as' '- built-in ← builtin, code-review'
 in_section "a prefix spelling is listed"         'Spellings read as' '- panel:tests ← cli:tests'
+
+# The same works named twice — the worktree and its main checkout — are still read once.
+(cd "$BASE/a-wt" && node "$CLI" yield . "$BASE/a" "$BASE/b") > "$BASE/out.txt" 2>&1
+check "a worktree and its main checkout: once"   '3 work(s), 23 review round(s), 49 finding row(s).'
+
+# A composite whose parts fold into one origin credits it once.
+mkdir -p "$BASE/c" && git -C "$BASE/c" init -q -b main .
+work "$BASE/c/.claude/work/one" '{"size":"L","review_findings":[
+  {"round":1,"origin":"builtin+code-review","severity":"minor","file":"q","discarded_by_skeptic":false}]}'
+(cd "$BASE/c" && node "$CLI" yield) > "$BASE/out.txt" 2>&1
+in_section "a composite of one origin counts once" 'L' '| built-in | 1 | 1 | 1 | 1 |'
 
 repo "$BASE/empty"
 (cd "$BASE/empty" && node "$CLI" yield) > "$BASE/out.txt" 2>&1

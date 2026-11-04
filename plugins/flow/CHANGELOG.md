@@ -12,6 +12,8 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   in the checkout you run it from and in the main one, across as many repos as you name.
 - **Per reviewer or pass, and per change size**, it shows the rounds it ran, the findings it raised, how many only
   it raised, how many of those were acted on, and the agents it took.
+  Rows recorded so far carry no outcome and no agent count: for them "acted on" means "not refuted by a skeptic",
+  the agents column shows `—`, and `yield` says so under its tables.
 - **A verdict per row.** A pass that ran 20 rounds at a size without one finding of its own that was acted on is
   marked `retire at <size>`. Under 20 rounds, it says how many it has. XS and S count together, because the panel
   rarely runs below M.

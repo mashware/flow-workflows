@@ -1204,10 +1204,6 @@ function panelRole(raw) {
 function canonicalOrigin(raw) {
   const o = String(raw ?? '').trim()
   if (!o) return 'unknown'
-  if (o.startsWith('panel:') && !/^panel:.*[A-Z\s]/.test(o) && !o.includes('§')) {
-    const role = o.slice('panel:'.length)
-    return SECTION_ORIGINS[role] ?? (BUILT_IN.has(role) ? 'built-in' : panelRole(role))
-  }
   if (o.startsWith('reinforcement:')) return o.toLowerCase()
   const bare = o.replace(/^(§panel:|cli-panel:|cli:|panel:)/, '')
   if (BUILT_IN.has(bare)) return 'built-in'
@@ -1217,9 +1213,11 @@ function canonicalOrigin(raw) {
 
 // Every work folder a repo holds: its `.claude/work` here and in the main checkout, live and
 // `_archive/`, each meta.json read once however many of those paths lead to it.
-function worksOf(repo) {
+// `seen` is shared across every repo of one call: a worktree and its main checkout, or the
+// same path named twice, lead to the same folders and must count them once.
+function worksOf(repo, seen) {
   const roots = new Set([join(repo, '.claude', 'work'), join(mainCheckout(repo), '.claude', 'work')])
-  const seen = new Set(), works = []
+  const works = []
   for (const root of roots) {
     for (const dir of [root, join(root, '_archive')]) {
       let entries = []
@@ -1256,6 +1254,7 @@ function yieldOf(argv) {
   const table = new Map()
   const spellings = new Map()
   let rounds = 0, rows = 0, works = 0
+  const seen = new Set()
   const cell = (bucket, origin) => {
     if (!table.has(bucket)) table.set(bucket, new Map())
     const t = table.get(bucket)
@@ -1272,13 +1271,13 @@ function yieldOf(argv) {
   }
 
   for (const repo of repos) {
-    for (const { path, meta } of worksOf(repo)) {
+    for (const { path, meta } of worksOf(repo, seen)) {
       const found = Array.isArray(meta.review_findings) ? meta.review_findings : []
       const costs = (Array.isArray(meta.cost) ? meta.cost : []).filter((e) => e?.phase === 'review' && e.round != null)
       if (!found.length && !costs.length) continue
       works += 1
       const sizeFor = (mr, round) => {
-        const entry = costs.find((e) => e.round === round && e.effective_size)
+        const entry = costs.find((e) => e.round === round && e.effective_size && (mr == null || e.mr == null || e.mr === mr))
         if (entry) return entry.effective_size
         const part = Array.isArray(meta.mrs) && mr != null ? meta.mrs.find((m) => m?.n === mr) : null
         return part?.size ?? meta.size
@@ -1290,7 +1289,7 @@ function yieldOf(argv) {
         roundsHere.add(e.round)
         for (const [raw, n] of Object.entries(e.agents ?? {})) {
           if (!(Number(n) > 0)) continue
-          const c = cell(sizeBucket(sizeFor(e.mr, e.round)), read(raw))
+          const c = cell(sizeBucket(e.effective_size ?? sizeFor(e.mr, e.round)), read(raw))
           c.rounds.add(`${path}#${e.round}`)
           c.agents = (c.agents ?? 0) + Number(n)
         }
@@ -1311,12 +1310,13 @@ function yieldOf(argv) {
         roundsHere.add(r.round)
         const bucket = sizeBucket(sizeFor(r.mr, r.round))
         const accepted = !r.discarded_by_skeptic && !['declined', 'discarded'].includes(r.severity)
-        for (const raw of String(r.origin ?? '').split('+')) {
-          const c = cell(bucket, read(raw))
-          c.rounds.add(`${path}#${r.round}`)
+        for (const origin of new Set(String(r.origin ?? '').split('+').map(read))) {
+          const c = cell(bucket, origin)
           // A row that only carries a count says how many, never which: they are findings,
-          // and nothing can say whether another source had them too.
+          // and nothing can say whether another source had them too — so the round they sit in
+          // is not one this origin can be judged on either.
           if (r.count != null) { c.findings += Number(r.count) || 0; continue }
+          c.rounds.add(`${path}#${r.round}`)
           c.findings += 1
           if (sourcesOf.get(keyOf(r)).size === 1) {
             c.unique += 1
@@ -1374,7 +1374,8 @@ function yieldOf(argv) {
   console.log('Re-run it when the model changes — a pass that stopped paying may pay again, and back.')
   console.log('Rows written before findings carried an outcome count "accepted" as "not refuted by a')
   console.log('skeptic", and a round they record counts only for the origins with a row in it, so')
-  console.log('"rounds" is a lower bound there and "agents" is unknown (—).')
+  console.log('"rounds" is a lower bound there and "agents" is unknown (—). Those rows carry no MR/PR')
+  console.log('number either, so a split work\'s legacy rows count at the size of the whole work.')
   if (spellings.size) {
     console.log()
     console.log('## Spellings read as')
@@ -1393,7 +1394,7 @@ function usage() {
   npx flow-workflows tier   [--base <ref>] [--rev <ref>] [--harness <name>]
   npx flow-workflows review [--out <file>] [--record] [same options as bundle]
   npx flow-workflows cost
-  npx flow-workflows yield  [<repo>…]
+  npx flow-workflows yield  [<repo-path>…]
 
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
   "project" installs into the current repo instead of your user folder.
