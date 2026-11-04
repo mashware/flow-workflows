@@ -186,7 +186,7 @@ every repo they work in points at it.
 3. **Can the key be kept out of git?** `git ls-files --error-unmatch FLOW.claude.md` succeeds → the
    overlay is tracked, and anything written there reaches the team: do not write the key — say so,
    and that untracking the file (`git rm --cached FLOW.claude.md`, then ignoring it) is the user's
-   call. Not tracked and not git-ignored → the step-4 question also asks to ignore it, unless §5
+   call. Not tracked and not git-ignored (`git check-ignore -q FLOW.claude.md` fails — `.git/info/exclude` counts as ignored) → the step-4 question also asks to ignore it, unless §5
    already asked that this run.
 4. **One `AskUserQuestion`**, before anything is published or written. Options: each page found in
    step 2, most recently updated first, at most three — or, when none was found, **publish your
