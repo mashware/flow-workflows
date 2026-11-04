@@ -5,6 +5,29 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.111.0 — Every work of every repo on one page  ·  2026-11-04
+
+**In short**
+- **One page for all your consoles.** With `panel.artifact` set, each work also writes its live panel to its own
+  card on a claude.ai artifact. The page shows every work of every repo, grouped by repo, and you can open it from
+  any device.
+- **Each card shows what the terminal shows**: the MR/PR train, what runs now, what comes next, and whether the
+  work waits on you. It is a copy of what is on screen, never a version rebuilt from memory.
+- **Off unless you turn it on.** The key belongs in `FLOW.claude.md`, because only an interactive Claude Code
+  session has the artifact tools. Left empty, flow calls no artifact tool and nothing changes. Headless runs and
+  other harnesses keep the terminal panel only.
+- **It never stops a phase.** A card whose version moved on gets one retry. Any other failure (a wrong URL, a
+  declined permission) turns the mirror off for the rest of the session, with one line at the next stop.
+- **`doctor` checks it**: where the key came from, whether the tool is there, whether the page answers, and the
+  permission rule that keeps every card update from asking.
+- **Finished work leaves the page.** Archiving a work (`abandon`, `clean`, `ship`'s archive offer) deletes its
+  card, and done cards older than a day fold into one line per repo.
+- **The page ships with the plugin** as `examples/panel-artifact.html`. You publish it once and paste its URL into
+  each repo.
+
+Until now each panel lived in its own pane. Someone with several consoles across several repos had no single place
+to see which work was running and which one was waiting on them (#237).
+
 ## v0.110.0 — A bug that a flow review read is counted against that review  ·  2026-11-04
 
 **In short**

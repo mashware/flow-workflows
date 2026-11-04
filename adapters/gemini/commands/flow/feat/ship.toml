@@ -591,7 +591,7 @@ paste. Never a list here, and never a question: in `guided`/`auto` not asking is
 Only if `phase = "done"`:
 - Delete the candidate anchor `/flow:feat:review §1.5` left behind: `git update-ref -d refs/flow/candidate/<TICKET>`. It existed to stop the object being collected while the gate still needed it; the gate has run. No question — it is local, it was never pushed, and nothing reads it after this. Absent already → nothing to do.
 - Clear this branch's staging (flow-core §0 step 7) when `meta.json.knowledge.status` is `consolidated` or `declined` and the store has that notion. No question: what it held is saved, or was refused. `later`/`failed` → leave it; §5 still owes it.
-- Ask whether to keep `.claude/work/<TICKET>/` or archive it (move to `.claude/work/_archive/`).
+- Ask whether to keep `.claude/work/<TICKET>/` or archive it (move to `.claude/work/_archive/`). Archiving deletes the work's card from the artifact control room first, when `panel.artifact` is set (flow-core §4.6).
 - If `meta.json.worktree` is not null, offer to remove the worktree (from the main checkout) with `git worktree remove <worktree>` (`--force` only if it still has changes the user confirms discarding). Never without confirmation, never if the MR/PR is not yet merged.
 
 On a **train MR/PR** neither offer fires (`phase` is not `done`; the branch is the base of the next one). When shipping an intermediate MR/PR whose predecessor has since merged, say so in one line and point at `/flow:work:clean`, which sweeps the whole backlog at once. Mention it once per work, not per MR/PR.

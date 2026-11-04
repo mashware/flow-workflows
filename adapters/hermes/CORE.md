@@ -17,7 +17,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.110.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.111.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -117,7 +117,7 @@ a command relies on is simply absent in that session, and nothing else will repo
   prints that file with it — "`agents: opus` (`FLOW.claude.md`)", never the value alone. `doctor` reports it and later
   edits preserve it.
 - The sections in any of the files are tracker, git, autonomy, quality, agents, models, data,
-  conventions, notes, knowledge, and observability. No layer found, or an effective empty key
+  conventions, notes, knowledge, observability, roadmap, and panel. No layer found, or an effective empty key
   → the default or auto-discovery each step names. Never stop because a file or key is empty.
 - **An empty key that is a real decision for this repo is offered where it first matters**, and
   nowhere else. Three steps, in order:
@@ -674,7 +674,9 @@ right now. **Any progress line you were about to type into the chat is a panel u
 available, this console is a pane of agent-terminal: publish the panel through them (§4.2) and
 **stop writing `.claude/work/<work>/panel.json`** — while a pane is claimed, its file is not read at
 all. When they are not there, write the file (§4.3). No work folder (lightweight
-`respond`/`green`) → nothing to publish, either way.
+`respond`/`green`) → nothing to publish, either way. With `panel.artifact` set, each publication is
+also mirrored to a claude.ai page that gathers every work of every repo (§4.6) — in addition to the
+transport, never instead of it.
 
 **Look for them before you conclude they are missing**, once per session, in pre-flight. A harness
 namespaces an MCP server's tools, so what you are looking for is a tool whose name *ends* in
@@ -802,6 +804,60 @@ outside one); `flow cost` reads it back per phase. Two rules, and they are the r
 that reports no figure is recorded with `"source": "not reported"` rather than estimated, and a
 phase with no entry measured nothing — **absence is not zero**. Every figure is the harness's own
 client-side estimate and can differ from a bill.
+
+### 4.6 The artifact mirror — one page for every work, opt-in
+
+Someone running flow in several consoles, across several repos, has one panel per pane and no view
+of them together. `panel.artifact` in the FLOW config — the URL of a claude.ai artifact published
+from `examples/panel-artifact.html` — turns on a mirror: each work writes its own card to that
+page's shared database, and the page shows every card, grouped by repo. Empty or absent → this
+section does not exist: no artifact tool is loaded or called.
+
+- **Only where the tool is.** The writes go through the tool whose name ends in `ArtifactData` —
+  interactive Claude Code, and possibly **deferred** (load it, as §4 says of the panel tools).
+  Absent → the mirror is off, in silence: no line, no error. A headless run (`claude -p`, an
+  `unattended` container) has no such tool, and other harnesses never read `FLOW.claude.md`, where
+  the key belongs.
+- **When**: right after the transport publishes, at §4.4 (a) to (e) — a phase's own publications
+  (`ship` the moment an MR/PR URL exists, `plan`, `resume`, `watch`, `abandon`) are among them. At
+  (f), a plan step, only when the card's last write is 10 minutes old or more: every write is a
+  tool call, and outside auto mode a prompt, while a card left alone for 30 minutes reads as a dead
+  session on the page.
+- **What**: what the terminal now shows, never a document rebuilt in your head. On the file
+  transport, the §4.1 document just written. Over the tools, what `panel_get` returns right after a
+  publication that applied — a refused patch changed nothing on screen and writes nothing here.
+  Then set, whichever transport:
+  - `updated_at` — the real clock (`date -Iseconds`); over the tools the app stamps arrival itself,
+    so the document carries none of its own.
+  - `attention` — as §4.2 defines it, on the file transport too: `wait` while a `Decision` is
+    parked on the user, `block` while stuck on somebody else, absent while simply working — and
+    `done` only once the work is over: `meta.json.phase` set to `done`, or `abandon` (whose terminal
+    panel clears `attention` and carries a `block` line; the card says `done`). An open MR/PR
+    waiting to merge is not over. The page reads the state from this field alone.
+  - `repo` (the repo id below), `work` (the work folder's name), `ticket`, `type`, `branch`, and
+    `harness` (`Claude Code`), from `meta.json` and git.
+- **Where**: action `set` — the whole document, so a line dropped from the panel leaves the card —
+  `url` the key's value, collection `works`, doc id `<repo id>--<work folder>`. The repo id is the
+  path of `git remote get-url origin` — everything after the host, which ends at the first `/` after
+  `//` (`https://host/owner/repo.git`, `ssh://git@host:22/owner/repo.git`) or at the first `:`
+  (`git@host:owner/repo.git`) — with `.git` dropped and every `/` turned into `.`: `owner.repo`,
+  `group.subgroup.repo`. No remote → the main checkout's directory name (§0). Any character outside
+  `[A-Za-z0-9_.~:@+-]` becomes `-`.
+- **Version**: a write to a card that exists needs `if_version`, the version the last write
+  returned. Keep it in the session — one writer per card, so it is right until the session loses
+  it. None held → one `get` first: the card exists → pin to its version; it does not → write
+  unpinned. A write refused for its version — stale, or missing on a card that exists — is not a
+  failure: one retry pinned to the version the refusal names, or to the one a single `get` returns.
+  Then remember what the write returned.
+- **A card ends with its work folder.** Whatever moves a work folder to `_archive/` — `abandon`,
+  `clean`, the archive offer at `ship`'s Close — first deletes that work's card: action `delete`,
+  pinned to the version held, or to the one a single `get` returns; no card → nothing to do. The
+  mirror off or the key empty → nothing to do. A folder moved back out of `_archive/` gets its card
+  again at its next publication.
+- **Failure never stops a phase.** A second version refusal → no more retries for that
+  publication. Any other failure — a wrong URL, auth, a permission prompt the user declined — turns
+  the mirror off for the rest of the session. Either way the next stop carries one line,
+  `artifact panel: <error>`, once.
 
 ## 5. Work summary — `00-summary.md`
 
