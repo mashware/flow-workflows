@@ -30,6 +30,11 @@ auto-detected and only confirmed.
 
 Key names and contract: `examples/FLOW.template.md` from the plugin. Do not invent keys that are not there.
 
+**`/flow-init room`** runs only §4.5, the control room, and stops — for a repo that is already set
+up. The repo has no FLOW file at all → say so in one line and run the whole command instead: the
+room is offered at its close, and a repo never ends with an overlay that holds nothing but the room
+while nobody was asked the rest.
+
 ## 1. If either configuration file already exists
 
 Show `FLOW.md` and the active overlay when each exists, then show their effective merged values —
@@ -154,6 +159,34 @@ phase, so their size is paid on every step:
 
 - **A worked example exists for one stack.** When detection says PHP (a `composer.json`, a `symfony.lock`, a `bin/console`), add **one line** to the close: *"an example `FLOW.md` and agent set for Symfony ship with the plugin under `examples/symfony/` — copy what applies."* Never copy anything on your own, and never mention it for another stack: it is one stack's answer, not a default.
 
+## 4.5 Control room — one page for every work (Claude Code)
+
+Only when a tool whose name ends in `Artifact` and one ending in `ArtifactData` are both here
+(deferred counts: load them) — interactive Claude Code. Neither → plain `init` says nothing about
+it, and `init room` says in one line that the control room needs an interactive Claude Code session,
+and stops. `panel.artifact` already set in this repo → say where it points and stop.
+
+The control room is the page flow-core §4.6 mirrors every work's panel to; each person has one, and
+every repo they work in points at it. One `AskUserQuestion` before anything is published or written.
+
+1. **Find theirs.** Artifact `list`, scope `mine`, `limit` 200, every page of it (`page_token`
+   until none is left): the artifacts titled exactly `Flow Control Room`. One → offer to use it.
+   Several → offer them, newest first, as the options. A page past the first 25 is still theirs: a
+   second page would split their works in two.
+2. **None → publish it.** Offer to publish the page that ships with the plugin. Copy
+   `~/.claude/flow/examples/panel-artifact.html` into the session's scratchpad (the Artifact
+   tool publishes only from the working directory or the scratchpad, and the plugin's folder is
+   neither), read it whole, load whatever the harness asks for before passing `capabilities`, and
+   publish that copy as a new artifact with the capabilities its header names. Nobody types a path
+   or a version: the plugin knows where it is.
+3. **Write the key** to this repo's `FLOW.claude.md`: the file exists → append `## panel` with
+   `` - `artifact:`  <url> `` (or replace the value when the section is there); absent → create it
+   with that section alone and the two-line header of §4.
+4. **Keep it out of git.** `FLOW.claude.md` not git-ignored → ask §5's ignore question for it. A
+   committed overlay hands one person's page to the whole team.
+5. **One line**: the URL, whether it was reused or published, and that `/flow-doctor` checks it and
+   names the permission rule that stops each card update from asking.
+
 ## 5. Close
 
 - Summarize on screen: what was written to the base, what was written to the active overlay, and
@@ -169,4 +202,6 @@ phase, so their size is paid on every step:
     (`FLOW.<context>.md`, flow-core §0), which a repo commits on purpose. Do not use a recursive
     pattern either: examples under the plugin must remain visible.
   - Git-ignore `.claude/work/` too — recommended default: ignore it (artifacts are personal working state; teams that want to share them commit deliberately). `git.worktree` not `off` → offer `.worktrees/` in the same gesture.
+- **The control room** (§4.5), when the artifact tools are here and `panel.artifact` is empty: offer
+  it as the last question of the close.
 - Suggest `/flow-next` as the next step (it routes to `/flow-feat-start`, `/flow-work-resume` or `/flow-work-daily`).

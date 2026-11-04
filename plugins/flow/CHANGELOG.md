@@ -5,6 +5,20 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.112.0 — The control room sets itself up  ·  2026-11-04
+
+**In short**
+- **One command per repo: `/flow:init room`.** The first time, flow publishes your control room by itself. In
+  every other repo it finds that same page among your artifacts and reuses it. Nobody types a path or a version.
+- **`/flow:doctor` tells you when the room is off** and names the command that turns it on. It still changes
+  nothing.
+- **A repo with no flow configuration gets the full setup**, with the room offered at the end, so no repo is
+  left with only half a configuration.
+- **Plain `/flow:init` offers the room too**, as its last question, whenever Claude Code has the artifact tools.
+
+Until now, turning the room on meant publishing the plugin's page by hand. That required knowing where the plugin
+was installed and which version it was, then pasting the URL into each repo (#240).
+
 ## v0.111.0 — Every work of every repo on one page  ·  2026-11-04
 
 **In short**

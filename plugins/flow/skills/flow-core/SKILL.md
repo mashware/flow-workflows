@@ -9,7 +9,7 @@ Every `/flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.111.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.112.0`.** Compare it once, at the start of the session, against
 `version` in `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -800,8 +800,9 @@ client-side estimate and can differ from a bill.
 ### 4.6 The artifact mirror — one page for every work, opt-in
 
 Someone running flow in several consoles, across several repos, has one panel per pane and no view
-of them together. `panel.artifact` in the FLOW config — the URL of a claude.ai artifact published
-from `examples/panel-artifact.html` — turns on a mirror: each work writes its own card to that
+of them together. `panel.artifact` in the FLOW config — the URL of a claude.ai artifact, which
+`/flow:init room` publishes from `examples/panel-artifact.html` or finds among the person's own —
+turns on a mirror: each work writes its own card to that
 page's shared database, and the page shows every card, grouped by repo. Empty or absent → this
 section does not exist: no artifact tool is loaded or called.
 
