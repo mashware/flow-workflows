@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.110.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.111.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -116,7 +116,7 @@ a command relies on is simply absent in that session, and nothing else will repo
   prints that file with it — "`agents: opus` (`FLOW.claude.md`)", never the value alone. `doctor` reports it and later
   edits preserve it.
 - The sections in any of the files are tracker, git, autonomy, quality, agents, models, data,
-  conventions, notes, knowledge, and observability. No layer found, or an effective empty key
+  conventions, notes, knowledge, observability, roadmap, and panel. No layer found, or an effective empty key
   → the default or auto-discovery each step names. Never stop because a file or key is empty.
 - **An empty key that is a real decision for this repo is offered where it first matters**, and
   nowhere else. Three steps, in order:
@@ -673,7 +673,9 @@ right now. **Any progress line you were about to type into the chat is a panel u
 available, this console is a pane of agent-terminal: publish the panel through them (§4.2) and
 **stop writing `.claude/work/<work>/panel.json`** — while a pane is claimed, its file is not read at
 all. When they are not there, write the file (§4.3). No work folder (lightweight
-`respond`/`green`) → nothing to publish, either way.
+`respond`/`green`) → nothing to publish, either way. With `panel.artifact` set, each publication is
+also mirrored to a claude.ai page that gathers every work of every repo (§4.6) — in addition to the
+transport, never instead of it.
 
 **Look for them before you conclude they are missing**, once per session, in pre-flight. A harness
 namespaces an MCP server's tools, so what you are looking for is a tool whose name *ends* in
@@ -801,6 +803,39 @@ outside one); `flow cost` reads it back per phase. Two rules, and they are the r
 that reports no figure is recorded with `"source": "not reported"` rather than estimated, and a
 phase with no entry measured nothing — **absence is not zero**. Every figure is the harness's own
 client-side estimate and can differ from a bill.
+
+### 4.6 The artifact mirror — one page for every work, opt-in
+
+Someone running flow in several consoles, across several repos, has one panel per pane and no view
+of them together. `panel.artifact` in the FLOW config — the URL of a claude.ai artifact published
+from `examples/panel-artifact.html` — turns on a mirror: each work writes its own card to that
+page's shared database, and the page shows every card, grouped by repo. Empty or absent → this
+section does not exist: no artifact tool is loaded or called.
+
+- **Only where the tool is.** The writes go through the tool whose name ends in `ArtifactData` —
+  interactive Claude Code, and possibly **deferred** (load it, as §4 says of the panel tools).
+  Absent → the mirror is off, in silence: no line, no error. A headless run (`claude -p`, an
+  `unattended` container) has no such tool, and other harnesses never read `FLOW.claude.md`, where
+  the key belongs.
+- **When**: right after the transport publishes, at §4.4 (a) to (e). Not at (f): every write is a
+  tool call, and outside auto mode a prompt — a step reaches the page at the next stop or long
+  stretch.
+- **What**: what the terminal now shows, never a document rebuilt from memory. On the file
+  transport, the §4.1 document just written. Over the tools, what `panel_get` returns after a
+  `panel_set` or `panel_patch` that applied; a refused patch changed nothing on screen and writes
+  nothing here. Add six fields, from `meta.json` and git: `repo` (the repo id below), `work` (the
+  work folder's name), `ticket`, `type`, `branch`, and `harness` (`Claude Code`).
+- **Where**: action `set` — the whole document, so a line dropped from the panel leaves the card —
+  `url` the key's value, collection `works`, doc id `<repo id>--<work folder>`. The repo id is
+  `git remote get-url origin` reduced to `owner.repo` (scheme, host and `.git` dropped, `/` → `.`);
+  no remote → the main checkout's directory name (§0). Any character outside
+  `[A-Za-z0-9_.~:@+-]` becomes `-`.
+- **Version**: a write to a card that exists needs `if_version`, the version the last write
+  returned. Keep it in the session — one writer per card, so it is right until the session loses
+  it. None held → write unpinned. Refused for its version → one retry pinned to the version the
+  refusal names, or to the one a single `get` returns; then remember what the write returned.
+- **Failure never stops a phase.** A second refusal, a wrong URL, auth, any other error → no more
+  retries for that publication, and the next stop carries one line: `artifact panel: <error>`.
 
 ## 5. Work summary — `00-summary.md`
 

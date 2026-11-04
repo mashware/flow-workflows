@@ -1,0 +1,207 @@
+<title>Flow Control Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--
+  The page behind `panel.artifact` (flow-core §4.6). Publish it once from Claude Code as an
+  artifact with these capabilities:
+    {"db": {"rules": [{"path": "works", "read": "view", "write": "admin"}]}}
+  then put its URL in each repo's FLOW.claude.md:
+    ## panel
+    - `artifact:`  https://claude.ai/artifact/<id>
+  Every work writes one document to the `works` collection; this page shows them, grouped by repo.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a bank of work cards, one per flow session, summary strip on top. */
+:root {
+  --bg: #f3f4f1; --surface: #ffffff; --fg: #1d2421; --muted: #66706b; --line: #dde1dc;
+  --accent: #2f6f5e;
+  --ok: #2f7d4f; --wait: #a86a00; --block: #b3261e; --current: #1f5fa8; --pending: #8a938e;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --surface: #1a201d; --fg: #e3e8e4; --muted: #94a09a; --line: #2b3430;
+  --accent: #6fbfa6; --ok: #6cc58f; --wait: #e2a94a; --block: #f07a72; --current: #79aef0; --pending: #6f7a74;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121614; --surface: #1a201d; --fg: #e3e8e4; --muted: #94a09a; --line: #2b3430;
+  --accent: #6fbfa6; --ok: #6cc58f; --wait: #e2a94a; --block: #f07a72; --current: #79aef0; --pending: #6f7a74;
+  color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+h1 { margin: 0; font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.conn { font-family: var(--font-data); font-size: 0.78rem; color: var(--muted); }
+.conn.bad { color: var(--block); }
+
+.summary { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--font-data); font-size: 0.8rem; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); font-variant-numeric: tabular-nums; }
+.chip b { font-weight: 600; }
+.chip.wait b { color: var(--wait); } .chip.block b { color: var(--block); } .chip.run b { color: var(--current); } .chip.done b { color: var(--ok); }
+
+.groups { display: grid; gap: 26px; }
+.group { display: grid; gap: 10px; }
+.group h2 { margin: 0; font-family: var(--font-data); font-size: 0.82rem; font-weight: 600; color: var(--muted);
+  letter-spacing: 0.04em; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 6px; overflow-wrap: anywhere; }
+.group h2 span { font-weight: 400; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px 12px;
+  display: grid; gap: 10px; min-width: 0; border-top: 3px solid var(--line); }
+.card[data-att="wait"] { border-top-color: var(--wait); }
+.card[data-att="block"] { border-top-color: var(--block); }
+.card[data-att="done"] { border-top-color: var(--ok); }
+.card[data-att="run"] { border-top-color: var(--current); }
+.card.stale { opacity: 0.62; }
+
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-family: var(--font-data); font-size: 0.75rem; color: var(--muted); }
+.ticket { color: var(--fg); font-weight: 600; }
+.type { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.68rem; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; }
+.phase { color: var(--accent); font-weight: 500; }
+.age { margin-left: auto; font-variant-numeric: tabular-nums; }
+.age.stale { color: var(--wait); }
+.who { font-size: 0.72rem; color: var(--muted); font-family: var(--font-data); overflow-wrap: anywhere; }
+
+.lines { display: grid; gap: 3px; font-size: 0.88rem; line-height: 1.4; }
+.ln { display: grid; grid-template-columns: 16px minmax(0, auto) 1fr; gap: 0 8px; align-items: baseline; min-width: 0; }
+.ln.noref { grid-template-columns: 16px 1fr; }
+.ln.title { font-weight: 600; font-size: 0.98rem; grid-template-columns: 1fr; }
+.ln.gap { height: 6px; }
+.ln .ref { font-family: var(--font-data); font-size: 0.76rem; color: var(--muted); white-space: nowrap; }
+.ln .tx { min-width: 0; overflow-wrap: anywhere; }
+.ln a { color: var(--accent); text-decoration: none; font-family: var(--font-data); font-size: 0.78rem; margin-left: 6px; }
+.ln a:hover, .ln a:focus-visible { text-decoration: underline; outline: none; }
+.mk { font-family: var(--font-data); font-size: 0.8rem; text-align: center; }
+.mk.done { color: var(--ok); } .mk.current { color: var(--current); } .mk.pending { color: var(--pending); }
+.mk.wait { color: var(--wait); } .mk.block { color: var(--block); } .mk.info { color: var(--muted); }
+.s-dim .tx { color: var(--muted); } .s-ok .tx { color: var(--ok); } .s-warn .tx { color: var(--wait); }
+.s-error .tx { color: var(--block); } .s-accent .tx { color: var(--accent); }
+
+.empty { border: 1px dashed var(--line); border-radius: 8px; padding: 28px 20px; color: var(--muted); display: grid; gap: 8px; max-width: 62ch; }
+.empty strong { color: var(--fg); }
+.empty code { font-family: var(--font-data); font-size: 0.8rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Flow <span>·</span> control room</h1>
+    <div class="conn" id="conn">Connecting…</div>
+  </header>
+  <div class="summary" id="summary" hidden></div>
+  <div class="groups" id="grid"></div>
+  <div class="empty" id="empty">
+    <strong>No work has reported yet.</strong>
+    <span>Each flow session writes its own work here whenever it stops or starts a long stretch. One card per work, grouped by repo: its MR/PR train, what runs now, and whether it waits on you.</span>
+    <span>Collection <code>works</code> · one document per work · key <code>panel.artifact</code> in FLOW.claude.md.</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  const MARK = { done: "✓", current: "▸", pending: "·", wait: "◷", block: "✕", info: "–" };
+  const ATT_LABEL = { wait: "waiting on you", block: "blocked", run: "working", done: "done" };
+  const grid = document.getElementById("grid");
+  const empty = document.getElementById("empty");
+  const summary = document.getElementById("summary");
+  const conn = document.getElementById("conn");
+  let docs = [];
+
+  function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function safeLink(u) { try { const x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : null; } catch (e) { return null; } }
+  function shortLink(u) { const m = /(?:merge_requests|pull)\/(\d+)/.exec(u); return m ? (u.includes("merge_requests") ? "!" : "#") + m[1] : "open"; }
+  function ageMin(iso) { const t = Date.parse(iso); return isNaN(t) ? null : Math.max(0, Math.round((Date.now() - t) / 60000)); }
+  function fmtAge(m) { if (m == null) return "no time"; if (m < 1) return "just now"; if (m < 60) return m + " min ago"; const h = Math.floor(m / 60); return h < 24 ? h + " h ago" : Math.floor(h / 24) + " d ago"; }
+  function attention(d) {
+    if (d.attention === "wait" || d.attention === "block" || d.attention === "done") return d.attention;
+    const marks = (d.lines || []).map(l => l && l.mark);
+    if (marks.includes("block")) return "block";
+    return "run";
+  }
+
+  function card(d) {
+    const c = el("article", "card");
+    const att = attention(d); c.dataset.att = att;
+    const age = ageMin(d.updated_at);
+    const staleAfter = Number(d.stale_after_minutes) > 0 ? Number(d.stale_after_minutes) : 30;
+    const stale = age != null && age > staleAfter && att !== "done";
+    if (stale) c.classList.add("stale");
+
+    const meta = el("div", "meta");
+    meta.append(el("span", "ticket", d.ticket || d.work || d._id));
+    if (d.type) meta.append(el("span", "type", d.type));
+    if (d.phase) meta.append(el("span", "phase", d.phase));
+    const a = el("span", "age" + (stale ? " stale" : ""), stale ? fmtAge(age) + " · no news" : fmtAge(age));
+    if (d.updated_at) a.title = d.updated_at;
+    meta.append(a);
+    c.append(meta);
+
+    const who = [d.branch, d.harness && ("on " + d.harness)].filter(Boolean).join(" · ");
+    if (who) c.append(el("div", "who", who));
+
+    const box = el("div", "lines");
+    (Array.isArray(d.lines) ? d.lines : []).forEach(l => {
+      if (l === "" || l == null) { box.append(el("div", "ln gap")); return; }
+      if (typeof l === "string") l = { text: l };
+      if (l.style === "title") { box.append(el("div", "ln title", l.text || "")); return; }
+      const row = el("div", "ln" + (l.ref ? "" : " noref") + (l.style ? " s-" + l.style : ""));
+      const mk = l.mark && MARK[l.mark] ? l.mark : null;
+      row.append(el("span", "mk " + (mk || ""), mk ? MARK[mk] : ""));
+      if (l.ref) row.append(el("span", "ref", l.ref));
+      const tx = el("span", "tx", l.text || "");
+      const href = l.link && safeLink(l.link);
+      if (href) { const ln = el("a", null, shortLink(href)); ln.href = href; ln.target = "_blank"; ln.rel = "noopener"; tx.append(ln); }
+      row.append(tx);
+      box.append(row);
+    });
+    c.append(box);
+    return c;
+  }
+
+  const ORDER = { block: 0, wait: 1, run: 2, done: 3 };
+  function render() {
+    const list = docs.slice().sort((x, y) => (ORDER[attention(x)] - ORDER[attention(y)]) || String(y.updated_at || "").localeCompare(String(x.updated_at || "")));
+    const byRepo = new Map();
+    list.forEach(d => { const r = d.repo || "no repo"; if (!byRepo.has(r)) byRepo.set(r, []); byRepo.get(r).push(d); });
+    grid.replaceChildren(...[...byRepo.entries()].map(([repo, ds]) => {
+      const g = el("section", "group");
+      const h = el("h2", null, repo);
+      h.append(el("span", null, ds.length === 1 ? "1 work" : ds.length + " works"));
+      const cards = el("div", "grid");
+      cards.replaceChildren(...ds.map(card));
+      g.append(h, cards);
+      return g;
+    }));
+    empty.hidden = list.length > 0;
+    const counts = {}; list.forEach(d => { const a = attention(d); counts[a] = (counts[a] || 0) + 1; });
+    summary.replaceChildren(...["wait", "block", "run", "done"].filter(k => counts[k]).map(k => {
+      const ch = el("span", "chip " + k); const b = el("b", null, String(counts[k])); ch.append(b, " " + ATT_LABEL[k]); return ch;
+    }));
+    summary.hidden = list.length === 0;
+  }
+
+  setInterval(render, 60000); // refresh ages only; data arrives through the subscription
+
+  (async function () {
+    const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    if (!db) { conn.textContent = "This view cannot read the room's data."; conn.classList.add("bad"); return; }
+    const timer = setTimeout(() => { conn.textContent = "The data is slow to arrive; what is shown may be out of date."; conn.classList.add("bad"); }, 10000);
+    db.collection("works").onSnapshot(snap => {
+      docs = snap.docs.filter(s => s.exists).map(s => Object.assign({ _id: s.id }, s.data()));
+      if (!snap.metadata.fromCache) { clearTimeout(timer); conn.textContent = "Live"; conn.classList.remove("bad"); }
+      render();
+    }, err => {
+      clearTimeout(timer);
+      conn.textContent = "Lost the connection to the room (" + (err && err.code || "error") + "). Reload to try again.";
+      conn.classList.add("bad");
+    });
+  })();
+  render();
+})();
+</script>

@@ -357,6 +357,15 @@ already delivered but the file does not say; `feat:start` links a work to one of
 - `mark:`             # `ship` (default) = mark in progress on the work's first MR/PR, done on its last | `never` = read-only, flow only reads it.
 - `columns:`          # only when a table's header is ambiguous: `state=<header>, ticket=<header>, depends=<header>`. Empty = read off the header.
 
+## panel
+One page for every work you have running, across repos and consoles (flow-core §4.6): each work
+mirrors its live panel to its own card on a claude.ai artifact, grouped by repo. Claude Code only —
+put the key in `FLOW.claude.md`, which is personal and read by no other harness. Publish
+`examples/panel-artifact.html` once (ask Claude Code to publish it as an artifact with the
+capabilities its header names), then paste the same URL into each repo you want on the page.
+
+- `artifact:`         # the artifact's URL, `https://claude.ai/artifact/<id>`. Empty = no mirror, no artifact tool called. Each card update is a tool call that asks permission unless `ArtifactData` is allowed — `doctor` prints the rule.
+
 ## notes
 Per-command extra guidance. When a command runs, it MUST follow the entry matching its command
 plus the `all` entry, as **mandatory additional instructions for that step**, on top of the

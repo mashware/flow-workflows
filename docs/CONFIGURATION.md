@@ -241,6 +241,7 @@ _Generated from [`plugins/flow/examples/FLOW.template.md`](../plugins/flow/examp
 | `roadmap` | `path` | the roadmap file, relative to the repo root. Empty = `ROADMAP.md`, then `docs/ROADMAP.md`, in any letter case, if it has checkbox lines or a table with a state column. `none` = no roadmap |
 | `roadmap` | `mark` | `ship` (default) = mark in progress on the work's first MR/PR, done on its last \| `never` = read-only, flow only reads it |
 | `roadmap` | `columns` | only when a table's header is ambiguous: `state=<header>, ticket=<header>, depends=<header>`. Empty = read off the header |
+| `panel` | `artifact` | the artifact's URL, `https://claude.ai/artifact/<id>`. Empty = no mirror, no artifact tool called. Each card update is a tool call that asks permission unless `ArtifactData` is allowed — `doctor` prints the rule |
 | `notes` | `all` | applies to every command |
 | `knowledge` | `search` | tool(s) that return context for a query — one per line with `- ` to consult several in parallel |
 | `knowledge` | `stage` | optional. Tool that records ONE finding for this branch during a phase (finding + context as its arguments) |
