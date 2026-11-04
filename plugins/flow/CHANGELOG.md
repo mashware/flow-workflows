@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.110.0 — A bug that a flow review read is counted against that review  ·  2026-11-04
+
+**In short**
+- **`bug:investigate` now asks whether a flow review read the commit it blames.**
+  `npx flow-workflows escape <commit>` looks for the one reviewed work the commit belongs to and records it in the
+  bug's work.
+- **Only on evidence.** On a repo that merges, the commit must sit between where the reviewed branch left its base
+  and what was reviewed. On a repo that squashes, its subject must carry the number of the reviewed MR/PR. Older
+  history, or a commit two works could claim, is said and recorded nowhere.
+- **`flow yield` prints `escapes: <n>` under each size**, with the works they came from. This shows what reviews at
+  that size have already let through, next to what each pass found there.
+- **The escape is counted per size, not per pass**, because every pass missed it.
+
+The retirement rule weighed what a pass found against what it cost. It could not say what trimming the review would
+let through. This is that count, and it closes #234.
+
 ## v0.109.0 — A review round records each finding once, and refuses names it does not know  ·  2026-11-04
 
 **In short**

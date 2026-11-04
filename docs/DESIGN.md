@@ -549,6 +549,18 @@ every pass it launched, findings or not, which is the only way a pass that keeps
 can be counted at all.
 *Now:* `flow record-review`; `flow review --record`; feat:review §2.1, §8, §9; bug:review §8, §9; work/README `meta.json`; script/tests/record-review.sh.
 
+**The bugs a review let through are counted, and only on evidence.** v0.110.0: the retirement
+rule weighs what a pass found against what it cost, which says nothing about what trimming it would
+let through. `bug:investigate` already names the commit that introduced a bug, so `flow escape`
+asks whether a flow review read it. "An ancestor of the reviewed sha" is not an answer — the whole
+history of the base is an ancestor of every reviewed sha — so the commit must sit between where the
+reviewed branch left its base (read off the merge that brought it in, since after the merge their
+merge-base is the reviewed sha itself) and the reviewed sha; on a squash-merging repo, where those
+commits are gone, its subject must carry the number of the reviewed MR/PR. One work or none: a
+ticket spans several MRs/PRs, and two candidates are a guess. The escape is counted per size, not
+per pass — every pass missed it.
+*Now:* `flow escape`; `flow yield`; bug:investigate §4, §8; work/README `meta.json`; script/tests/escape.sh.
+
 **A change to `review` can now be checked against an outcome.** v0.67.0: every preflight in this
 repository checks shape — the adapters match their sources byte for byte, a cited path exists, a
 hook is executable — and nothing could say whether a change to the command found more defects,

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Exercise `flow escape` and the escapes line of `flow yield`.
+#     bash script/tests/escape.sh
+# Cases: a commit inside one work's reviewed range (merge history) is charged to it · a commit
+# older than that range is not, though it is an ancestor of the reviewed sha · a squash commit
+# whose subject carries one reviewed MR/PR's number is charged to that work · a number that two
+# works carry is charged to neither · a commit no review read · the bug's own work is never a
+# candidate · no work on the branch · not a commit · `yield` counts the escape per size.
+set -u
+unset FLOW_CONTEXT
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLI="$HERE/../../bin/cli.mjs"
+BASE="${TMPDIR:-/tmp}/flow-escape-test"
+rm -rf "$BASE"; mkdir -p "$BASE/repo"
+fails=0
+commit() { git -c user.email=t@t -c user.name=t commit -q --allow-empty -m "$1"; git rev-parse HEAD; }
+
+cd "$BASE/repo" || exit 1
+git init -q -b main .
+printf '## git\n- default_base: main\n' > FLOW.md
+old=$(commit "old history")
+# A reviewed feature branch, merged with a merge commit.
+git checkout -q -b feat-1
+bad=$(commit "feature change")
+reviewed=$(commit "feature polish")
+git checkout -q main
+git -c user.email=t@t -c user.name=t merge -q --no-ff feat-1 -m "Merge feat-1"
+# A squash-merged PR #41, whose branch commits are gone.
+sq=$(commit "41 Something users see (v1.0.0) [minor] (#41)")
+both=$(commit "Two works claim this (#50)")
+unread=$(commit "Nobody reviewed this")
+
+mkdir -p .claude/work
+w() { mkdir -p ".claude/work/$1" && printf '%s\n' "$2" > ".claude/work/$1/meta.json"; }
+w feat-1   "{\"ticket\":\"11\",\"size\":\"M\",\"mrs\":[{\"n\":1,\"size\":\"S\",\"branch\":\"feat-1\",\"reviewed_sha\":\"$reviewed\"}]}"
+mkdir -p .claude/work/_archive
+w _archive/sq "{\"ticket\":\"40\",\"size\":\"L\",\"reviewed_sha\":\"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\",\"mrs\":[{\"n\":1,\"url\":\"https://github.com/o/r/pull/41\",\"reviewed_sha\":\"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\"}]}"
+w twin-a   '{"ticket":"50","size":"M","mrs":[{"n":1,"url":"https://github.com/o/r/pull/50","reviewed_sha":"aaaa"}]}'
+w twin-b   '{"ticket":"51","size":"M","mrs":[{"n":1,"url":"https://gitlab.com/o/r/-/merge_requests/50","reviewed_sha":"bbbb"}]}'
+git checkout -q -b bug-1
+w bug-1 "{\"ticket\":\"99\",\"type\":\"bug\",\"branch\":\"bug-1\",\"reviewed_sha\":\"$unread\"}"
+
+run() { out=$(node "$CLI" escape "$@" 2>&1); rc=$?; }
+expect() {  # <label> <rc> <fixed string>
+  if [ "$rc" = "$2" ] && printf '%s' "$out" | grep -qF -- "$3"; then printf '  ok   %s\n' "$1"
+  else printf '  FAIL %s\n       rc=%s (want %s), no %q in:\n%s\n' "$1" "$rc" "$2" "$3" "$out"; fails=$((fails+1)); fi
+}
+escape_field() { node -e "const m=require('$BASE/repo/.claude/work/bug-1/meta.json'); console.log(JSON.stringify(m.escape ?? null))"; }
+
+run "$old"
+expect "older history is not charged"          0 'is not inside any reviewed range'
+[ "$(escape_field)" = null ] && printf '  ok   … and nothing was recorded\n' || { printf '  FAIL recorded %s\n' "$(escape_field)"; fails=$((fails+1)); }
+run "$both"
+expect "a number two works carry: neither"     0 'matches 2 reviewed works'
+run "$unread"
+expect "the bug's own work is not a candidate" 0 'is not inside any reviewed range'
+run "$sq" --file src/a.ts
+expect "a squash PR number charges its work"   0 'went through the review of sq (subject carries #41'
+[ "$(escape_field)" = "{\"work\":\"sq\",\"ticket\":\"40\",\"commit\":\"$sq\",\"file\":\"src/a.ts\",\"size\":\"L\"}" ] \
+  && printf '  ok   … recorded with the reviewed size\n' || { printf '  FAIL recorded %s\n' "$(escape_field)"; fails=$((fails+1)); }
+run "$bad"
+expect "a commit in the reviewed range"        0 'went through the review of feat-1 (inside'
+[ "$(escape_field)" = "{\"work\":\"feat-1\",\"ticket\":\"11\",\"commit\":\"$bad\",\"file\":null,\"size\":\"S\"}" ] \
+  && printf '  ok   … recorded at its MR/PR size\n' || { printf '  FAIL recorded %s\n' "$(escape_field)"; fails=$((fails+1)); }
+
+node "$CLI" yield > "$BASE/out.txt" 2>&1
+awk '$0=="## XS+S"{p=1;next} /^## /{p=0} p' "$BASE/out.txt" | grep -qF 'escapes: 1 (feat-1)' \
+  && printf '  ok   yield counts the escape at its size\n' || { printf '  FAIL yield escapes line:\n%s\n' "$(cat "$BASE/out.txt")"; fails=$((fails+1)); }
+
+run deadbeef
+expect "not a commit is refused"               1 'is not a commit'
+git checkout -q main
+run "$bad"
+expect "no work on the branch is refused"      1 'no work on `main`'
+
+cd /
+rm -rf "$BASE"
+if [ "$fails" = 0 ]; then echo "escape: all cases pass"; else echo "escape: $fails failure(s)"; exit 1; fi
