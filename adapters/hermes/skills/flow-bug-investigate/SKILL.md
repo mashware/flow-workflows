@@ -165,7 +165,7 @@ If `agents.fanout_tool` is set in `FLOW.md`, run the sweep through that tool; br
 - Logs / traces that confirm it:
 
 ## Why tests/CI did not catch it
-<2-3 lines>
+<2-3 lines. Then one line with what `escape` (§8) answered about the suspected commit: the work whose review read it, or that no single reviewed work holds it.>
 
 ## Areas with similar risk (same pattern)
 - explain
@@ -231,6 +231,7 @@ If `knowledge.stage` is set and the root cause reveals a **non-obvious "why"** a
 ## 8. Close
 
 - Update `meta.json`: `phase = "investigate"`, add to `phases_done`.
+- **Did a flow review let it through?** With a suspected commit named under "Evidence", run `npx flow-workflows@<version> escape <commit> --file <the file the root cause is in>` from the work's checkout (`<version>` = this plugin's own, from `~/.claude/flow/.claude-plugin/plugin.json`). It records `meta.json.escape` only when the commit sits inside exactly one work's reviewed range, or carries the number of exactly one reviewed MR/PR; anything less it says and records nowhere. Copy its line under "Why tests/CI did not catch it". No suspected commit, or the CLI unavailable → say so there in one line; never write `escape` by hand. Asks nothing: it is a reading, and `flow yield` is what counts it.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 - Suggest `/flow-bug-fix` — `meta.json.handoff` set and not `unattended` → `/flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff).
 - **Autonomy handoff** (`autonomy.mode`, flow-core §2): `manual` → propose `/flow-bug-fix` with a single `AskUserQuestion`, invoke it only on confirmation; `guided`/`auto` → chain into it in this same turn. Either way: `meta.json.handoff` set and not `unattended` → `/flow-work-handoff` in its place, **Hand off the study** recommended and **Build here** second where it asks (flow-core §2, a study made for handoff).

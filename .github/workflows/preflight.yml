@@ -43,6 +43,8 @@ jobs:
         run: bash script/tests/yield.sh
       - name: the one writer of a review round's rows
         run: bash script/tests/record-review.sh
+      - name: a bug traced to the review that read its commit
+        run: bash script/tests/escape.sh
       - name: bundle size limits and config location
         run: bash script/tests/bundle-limits.sh
       - name: the bench's reader of two eval runs

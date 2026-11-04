@@ -1094,6 +1094,137 @@ async function review(argv) {
   }
 }
 
+// --- escape ----------------------------------------------------------------------------
+// A bug whose cause is a commit a flow review read is the one number that says what trimming
+// the review would cost. It is charged only on evidence: the commit inside exactly one
+// reviewed range, or carrying the number of exactly one reviewed MR/PR. "An ancestor of what
+// was reviewed" is not evidence — the whole history of the base is an ancestor of every
+// reviewed sha — and a ticket number is not either, since one ticket spans several MRs/PRs.
+
+function escapeOf(argv) {
+  let file = null
+  const rest = []
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--file') file = argv[++i] ?? null
+    else if (argv[i].startsWith('--file=')) file = argv[i].slice('--file='.length)
+    else if (argv[i].startsWith('--')) { console.error(`flow escape: unknown option \`${argv[i]}\``); process.exit(1) }
+    else rest.push(argv[i])
+  }
+  const commitArg = rest[0]
+  if (!commitArg) { console.error('flow escape: <commit> is required'); process.exit(1) }
+  const repo = git(['rev-parse', '--show-toplevel']).trim()
+  if (!repo) { console.error('flow escape: not a git checkout'); process.exit(1) }
+  const commit = git(['rev-parse', '--verify', '--quiet', `${commitArg}^{commit}`], repo).trim()
+  if (!commit) { console.error(`flow escape: \`${commitArg}\` is not a commit in this checkout`); process.exit(1) }
+  const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
+  const here = workFolder(repo, branch)
+  if (!here) { console.error(`flow escape: no work on \`${branch}\` to record the escape in`); process.exit(1) }
+
+  const cfg = flowConfig(repo, null, null)
+  // The MR/PR a squash commit came from, and nothing else: GitHub appends `(#N)` to the end of
+  // the subject, GitLab writes `See merge request <path>!N` in the body. A `(#7)` quoted
+  // mid-subject — a revert, a cherry-pick — names another MR/PR and charges nobody.
+  const subject = git(['log', '-1', '--format=%s', commit], repo).trim()
+  const body = git(['log', '-1', '--format=%b', commit], repo)
+  // A GitLab reference carries its project path, and an MR of another project with the same
+  // number is not this one: the unit's url has to name that path too.
+  const refs = [
+    ...(subject.match(/\(#(\d+)\)\s*$/) ? [{ n: subject.match(/\(#(\d+)\)\s*$/)[1], path: null }] : []),
+    ...[...body.matchAll(/See merge request (\S*)!(\d+)/g)].map((m) => ({ n: m[2], path: m[1] || null })),
+  ]
+  // `(#N)` is a GitHub pull request; on GitLab `#N` is an issue, and only `!N` is an MR.
+  const namedBy = (url) => {
+    const u = String(url ?? '')
+    const pull = u.match(/\/pull\/(\d+)/)?.[1]
+    const mr = u.match(/\/merge_requests\/(\d+)/)?.[1]
+    return refs.some((r) => (r.path === null && r.n === pull)
+      || (r.path !== null && r.n === mr && u.includes(`/${r.path}/-/merge_requests/${mr}`)))
+  }
+  const isAncestor = (a, b) => {
+    try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: repo, stdio: 'ignore' }); return true } catch { return false }
+  }
+  const resolves = (ref) => Boolean(ref) && Boolean(git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], repo).trim())
+
+  // Where the reviewed branch left the base. Once merged, the base contains the reviewed sha
+  // and their merge-base is that sha itself, so the fork is read off the merge that brought it
+  // in: the side it was merged into, at that point. A fast-forward leaves no merge to read,
+  // and then there is no range — the MR/PR number is the only evidence left.
+  // The reviewed branch's own commits: what `reviewed` reaches and the far side of every merge
+  // that carried it across does not — the base's tip when it is not merged yet, otherwise the
+  // first parent of each merge whose second side holds it (into the base, or into another
+  // branch on the way). A commit the base already had, brought in by a back-merge, sits behind
+  // one of those first parents and is never the branch's; a branch cut from another branch
+  // owns only its own commits. A fast-forward leaves no merge, and then there is no range.
+  // Two `rev-list` calls per unit, the rest in process: an archive of hundreds of works must
+  // not cost a process per merge per work.
+  const ranges = new Map()
+  const rangeOf = (base, reviewed) => {
+    const key = `${base} ${reviewed}`
+    if (ranges.has(key)) return ranges.get(key)
+    let set = null
+    if (resolves(base)) {
+      let stops = []
+      if (!isAncestor(reviewed, base)) stops = [base]
+      else {
+        const lines = git(['rev-list', '--ancestry-path', '--parents', `${reviewed}..${base}`], repo).trim().split('\n').filter(Boolean)
+        const after = new Set(lines.map((l) => l.split(' ')[0]))
+        const holds = (c) => c === reviewed || after.has(c)
+        stops = lines.map((l) => l.split(' ')).filter((p) => p.length > 2 && !holds(p[1]) && p.slice(2).some(holds)).map((p) => p[1])
+      }
+      if (stops.length) set = new Set(git(['rev-list', reviewed, ...stops.map((x) => `^${x}`)], repo).trim().split('\n').filter(Boolean))
+    }
+    ranges.set(key, set)
+    return set
+  }
+
+  const matches = []
+  const hereReal = realpathSync(here)
+  for (const { path, meta } of worksOf(repo, new Set())) {
+    if (realpathSync(path) === hereReal) continue
+    const units = Array.isArray(meta.mrs) && meta.mrs.length ? meta.mrs : [meta]
+    for (const u of units) {
+      const reviewed = u?.reviewed_sha
+      let how = null
+      if (resolves(reviewed) && isAncestor(commit, reviewed)) {
+        const own = rangeOf(meta.base || cfg.git?.default_base || 'origin/main', git(['rev-parse', reviewed], repo).trim())
+        if (own?.has(commit)) how = `one of the ${own.size} commit(s) its review read, up to ${reviewed.slice(0, 7)}`
+      }
+      if (!how && reviewed && namedBy(u?.url)) how = `the commit names its MR/PR, ${String(u.url).split('/').pop()}`
+      if (how) matches.push({ path, meta, unit: u, how })
+    }
+  }
+
+  const works = [...new Set(matches.map((m) => m.path))]
+  if (works.length !== 1) {
+    // A blame that changed takes the old escape with it: counted, it would charge a review for
+    // a commit the investigation no longer names.
+    // Kept only for the same commit matching nothing at all: its evidence did not resolve this
+    // time (a ref not fetched, a branch gone). Another commit, or now two candidate works, and
+    // the old blame no longer stands.
+    let dropped = false, kept = false
+    editMeta(here, (meta) => {
+      if (!meta.escape) return
+      if (meta.escape.commit === commit && !works.length) kept = true
+      else { dropped = true; delete meta.escape }
+    })
+    if (dropped) console.log('The escape recorded earlier for this bug was removed: the evidence below no longer names one review.')
+    if (kept) console.log('The escape recorded earlier for this same commit is kept: its evidence did not resolve this time.')
+    console.log(works.length
+      ? `No escape recorded: ${commit.slice(0, 7)} matches ${works.length} reviewed works (${works.map((w) => w.split('/').pop()).join(', ')}), and a guess is not evidence.`
+      : `No escape recorded: ${commit.slice(0, 7)} is not inside any reviewed range or reviewed MR/PR of this repo's works.`)
+    return
+  }
+  const m = matches[0]
+  const escape = {
+    work: m.path.split('/').pop(), ticket: m.meta.ticket ?? null, commit,
+    file: file ?? null, size: m.unit.size ?? m.meta.size ?? null,
+  }
+  if (!editMeta(here, (meta) => { meta.escape = escape })) {
+    console.error(`flow escape: \`${join(here, 'meta.json')}\` is missing or not JSON — nothing recorded`); process.exit(1)
+  }
+  console.log(`Escape recorded: ${commit.slice(0, 7)} went through the review of ${escape.work} (${m.how}).`)
+}
+
 // --- cost ------------------------------------------------------------------------------
 // `review` reports `<n>/<budget_max> subagents launched`, which is a headcount: two runs
 // with the same count differ by an order of magnitude depending on the turns each agent
@@ -1350,6 +1481,7 @@ function yieldOf(argv) {
   const spellings = new Map()
   let rounds = 0, rows = 0, works = 0
   const seen = new Set()
+  const escapes = new Map()
   const cell = (bucket, origin) => {
     if (!table.has(bucket)) table.set(bucket, new Map())
     const t = table.get(bucket)
@@ -1367,6 +1499,11 @@ function yieldOf(argv) {
 
   for (const repo of repos) {
     for (const { path, meta } of worksOf(repo, seen)) {
+      if (meta.escape?.work) {
+        const b = sizeBucket(meta.escape.size)
+        if (!escapes.has(b)) escapes.set(b, [])
+        escapes.get(b).push(meta.escape.work)
+      }
       const found = Array.isArray(meta.review_findings) ? meta.review_findings : []
       const costs = (Array.isArray(meta.cost) ? meta.cost : []).filter((e) => e?.phase === 'review' && e.round != null)
       if (!found.length && !costs.length) continue
@@ -1441,20 +1578,23 @@ function yieldOf(argv) {
 
   console.log(`# Review yield — ${repos.join(' · ')}`)
   console.log()
-  if (!table.size) {
+  if (!table.size && !escapes.size) {
     console.log('No review rounds recorded in the works these checkouts hold')
     console.log(`(${repos.map((r) => join(r, '.claude', 'work')).join(', ')}, archive included).`)
     return
   }
   console.log(`${works} work(s), ${rounds} review round(s), ${rows} finding row(s).`)
   for (const bucket of ['XS+S', 'M', 'L', 'unknown size']) {
-    const t = table.get(bucket)
-    if (!t) continue
+    const t = table.get(bucket) ?? new Map()
+    const esc = escapes.get(bucket) ?? []
+    if (!t.size && !esc.length) continue
     console.log()
     console.log(`## ${bucket}`)
-    console.log()
-    console.log('| origin | rounds | findings | unique | unique accepted | agents | verdict |')
-    console.log('|---|---|---|---|---|---|---|')
+    if (t.size) {
+      console.log()
+      console.log('| origin | rounds | findings | unique | unique accepted | agents | verdict |')
+      console.log('|---|---|---|---|---|---|---|')
+    }
     const sorted = [...t.entries()].sort((a, b) => b[1].accepted - a[1].accepted || b[1].findings - a[1].findings)
     for (const [origin, c] of sorted) {
       const n = c.rounds.size
@@ -1462,6 +1602,8 @@ function yieldOf(argv) {
         : c.accepted === 0 ? `retire at ${bucket}` : 'keep'
       console.log(`| ${origin} | ${n} | ${c.findings} | ${c.unique} | ${c.accepted} | ${c.agents ?? '—'} | ${verdict} |`)
     }
+    console.log()
+    console.log(`escapes: ${esc.length}${esc.length ? ` (${[...new Set(esc)].sort().join(', ')})` : ''}`)
   }
   console.log()
   console.log('"unique accepted" decides: a finding only this origin raised and that was acted on.')
@@ -1491,6 +1633,7 @@ function usage() {
   npx flow-workflows cost
   npx flow-workflows record-review --file <rows.json>
   npx flow-workflows yield  [<repo-path>…]
+  npx flow-workflows escape <commit> [--file <path>]
 
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
   "project" installs into the current repo instead of your user folder.
@@ -1546,6 +1689,11 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   severities and outcomes come from closed lists; one value outside them and nothing is
   written, and the error names the values that are valid.
 
+"escape" tells whether the commit a bug investigation blamed went through a flow review:
+  it must sit inside exactly one work's reviewed range (merge history), or carry the number
+  of exactly one reviewed MR/PR in its subject (squash). Then it is recorded in this branch's
+  work and "yield" counts it; anything less is said and recorded nowhere.
+
 "yield" reads every work of the repos named (default: this one) — live and archived,
   here and in the main checkout — and prints, per reviewer or pass and per size, the
   rounds it ran, the findings it raised, how many only it raised, how many of those were
@@ -1564,6 +1712,7 @@ else if (cmd === 'tier') tier(process.argv.slice(3))
 else if (cmd === 'cost') cost(process.argv.slice(3))
 else if (cmd === 'yield') yieldOf(process.argv.slice(3))
 else if (cmd === 'record-review') recordReview(process.argv.slice(3))
+else if (cmd === 'escape') escapeOf(process.argv.slice(3))
 else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()
 else if (cmd === 'install' && tool === 'claude') claude()
