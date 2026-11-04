@@ -826,34 +826,40 @@ section does not exist: no artifact tool is loaded or called.
   `unattended` container) has no such tool, and other harnesses never read `FLOW.claude.md`, where
   the key belongs.
 - **When**: right after the transport publishes, at §4.4 (a) to (e) — a phase's own publications
-  (`ship` the moment an MR/PR URL exists, `plan`, `resume`, `watch`, `abandon`) are among them. Not
-  at (f): every write is a tool call, and outside auto mode a prompt — a step reaches the page at
-  the next stop or long stretch.
-- **What**: what the terminal now shows, never a document guessed at. On the file transport, the
-  §4.1 document just written. Over the tools, the document you published with `panel_set`, with
-  every `panel_patch` that applied since applied to it in order — a refused patch changed nothing on
-  screen and writes nothing here. You do not hold it (a new session, a compaction, a resume) →
-  `panel_get` once, and carry on from what it returns. Then set, whichever transport:
+  (`ship` the moment an MR/PR URL exists, `plan`, `resume`, `watch`, `abandon`) are among them. At
+  (f), a plan step, only when the card's last write is 10 minutes old or more: every write is a
+  tool call, and outside auto mode a prompt, while a card left alone for 30 minutes reads as a dead
+  session on the page.
+- **What**: what the terminal now shows, never a document rebuilt in your head. On the file
+  transport, the §4.1 document just written. Over the tools, what `panel_get` returns right after a
+  publication that applied — a refused patch changed nothing on screen and writes nothing here.
+  Then set, whichever transport:
   - `updated_at` — the real clock (`date -Iseconds`); over the tools the app stamps arrival itself,
     so the document carries none of its own.
   - `attention` — as §4.2 defines it, on the file transport too: `wait` while a `Decision` is
-    parked on the user, `block` while stuck on somebody else, `done` once the work closed (`ship`'s
-    Close, `abandon`), absent while simply working. The page reads the state from this field.
+    parked on the user, `block` while stuck on somebody else, absent while simply working — and
+    `done` only once the work is over: `meta.json.phase` set to `done`, or `abandon` (whose terminal
+    panel clears `attention` and carries a `block` line; the card says `done`). An open MR/PR
+    waiting to merge is not over. The page reads the state from this field alone.
   - `repo` (the repo id below), `work` (the work folder's name), `ticket`, `type`, `branch`, and
     `harness` (`Claude Code`), from `meta.json` and git.
 - **Where**: action `set` — the whole document, so a line dropped from the panel leaves the card —
   `url` the key's value, collection `works`, doc id `<repo id>--<work folder>`. The repo id is the
-  last two path segments of `git remote get-url origin`, `.git` dropped, joined by `.` — `owner.repo`
-  whether the remote is `https://host/owner/repo.git` or `git@host:owner/repo.git`; no remote → the
-  main checkout's directory name (§0). Any character outside `[A-Za-z0-9_.~:@+-]` becomes `-`.
+  path of `git remote get-url origin` — everything after the host, which ends at the first `/` after
+  `//` (`https://host/owner/repo.git`, `ssh://git@host:22/owner/repo.git`) or at the first `:`
+  (`git@host:owner/repo.git`) — with `.git` dropped and every `/` turned into `.`: `owner.repo`,
+  `group.subgroup.repo`. No remote → the main checkout's directory name (§0). Any character outside
+  `[A-Za-z0-9_.~:@+-]` becomes `-`.
 - **Version**: a write to a card that exists needs `if_version`, the version the last write
   returned. Keep it in the session — one writer per card, so it is right until the session loses
   it. None held → one `get` first: the card exists → pin to its version; it does not → write
   unpinned. A write refused for its version — stale, or missing on a card that exists — is not a
   failure: one retry pinned to the version the refusal names, or to the one a single `get` returns.
   Then remember what the write returned.
-- **Failure never stops a phase.** A second refusal, a wrong URL, auth, any other error → no more
-  retries for that publication, and the next stop carries one line: `artifact panel: <error>`.
+- **Failure never stops a phase.** A second version refusal → no more retries for that
+  publication. Any other failure — a wrong URL, auth, a permission prompt the user declined — turns
+  the mirror off for the rest of the session. Either way the next stop carries one line,
+  `artifact panel: <error>`, once.
 
 ## 5. Work summary — `00-summary.md`
 

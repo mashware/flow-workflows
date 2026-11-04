@@ -120,8 +120,6 @@ h1 span { color: var(--accent); }
   function fmtAge(m) { if (m == null) return "no time"; if (m < 1) return "just now"; if (m < 60) return m + " min ago"; const h = Math.floor(m / 60); return h < 24 ? h + " h ago" : Math.floor(h / 24) + " d ago"; }
   function attention(d) {
     if (d.attention === "wait" || d.attention === "block" || d.attention === "done") return d.attention;
-    const marks = (d.lines || []).map(l => l && l.mark);
-    if (marks.includes("block")) return "block";
     return "run";
   }
 
@@ -167,7 +165,7 @@ h1 span { color: var(--accent); }
 
   const ORDER = { block: 0, wait: 1, run: 2, done: 3 };
   function render() {
-    const list = docs.slice().sort((x, y) => (ORDER[attention(x)] - ORDER[attention(y)]) || String(y.updated_at || "").localeCompare(String(x.updated_at || "")));
+    const list = docs.slice().sort((x, y) => (ORDER[attention(x)] - ORDER[attention(y)]) || ((Date.parse(y.updated_at) || 0) - (Date.parse(x.updated_at) || 0)));
     const byRepo = new Map();
     list.forEach(d => { const r = d.repo || "no repo"; if (!byRepo.has(r)) byRepo.set(r, []); byRepo.get(r).push(d); });
     grid.replaceChildren(...[...byRepo.entries()].map(([repo, ds]) => {
@@ -190,7 +188,8 @@ h1 span { color: var(--accent); }
   setInterval(render, 60000); // refresh ages only; data arrives through the subscription
 
   (async function () {
-    const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    let db = null;
+    try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
     if (!db) { conn.textContent = "This view cannot read the room's data."; conn.classList.add("bad"); return; }
     const timer = setTimeout(() => { conn.textContent = "The data is slow to arrive; what is shown may be out of date."; conn.classList.add("bad"); }, 10000);
     db.collection("works").onSnapshot(snap => {
