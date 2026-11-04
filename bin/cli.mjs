@@ -1054,29 +1054,40 @@ async function review(argv) {
   }
 
   const text = out.join('\n')
+  const outFile = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : null
+  if (outFile) { writeFileSync(outFile, `${text}\n`); console.log(`wrote ${outFile}`) } else console.log(text)
+
   if (argv.includes('--record')) {
-    // Through the same check as an agentic round's `record-review`: a role name the CLI ran
-    // becomes `panel:<role>` exactly as the prose asks the agentic Close to write it.
-    const role = (r) => `panel:${r.split(':')[0].trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
-    const answered = results.filter((r) => !r.error)
+    // The review above is already printed: a recording that fails must never cost the panel's
+    // output. Harness answers are not schema-checked, so what the writer refuses — a severity
+    // outside the four, a finding with no file — is normalised here rather than lost.
+    const slugs = roles.map((r, i) => {
+      const slug = r.split(':')[0].trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      return slug ? `panel:${slug}` : `panel:role-${i + 1}`
+    })
+    const role = (r) => slugs[roles.indexOf(r)]
+    const agents = {}
+    for (const r of results.filter((x) => !x.error)) agents[role(r.role)] = (agents[role(r.role)] ?? 0) + 1
+    if (!Object.keys(agents).length) {
+      console.error('flow review --record: no reviewer answered, so there is no round to record.')
+      process.exit(1)
+    }
     const doc = {
-      round: {
-        agents: Object.fromEntries(answered.map((r) => [role(r.role), 1])),
-        usd: costs.length ? Number(costs.reduce((a, b) => a + b, 0).toFixed(6)) : null,
-      },
+      round: { agents, ...(costs.length ? { usd: Number(costs.reduce((a, b) => a + b, 0).toFixed(6)) } : {}) },
       findings: findings.map((f) => ({
         sources: [...new Set(f.roles.map(role))],
-        severity: f.severity ?? 'unrated',
-        file: f.file,
+        severity: SEVERITIES.includes(f.severity) ? f.severity : 'unrated',
+        file: typeof f.file === 'string' && f.file ? f.file : '?',
         outcome: 'open',
       })),
     }
     const bad = validateReview(doc)
     if (bad.length) { console.error(`flow review --record: nothing recorded.\n${bad.join('\n')}`); process.exit(1) }
-    writeReview(built.work, doc)
+    if (!writeReview(built.work, doc)) {
+      console.error(`flow review --record: no work on \`${built.branch}\` to record into — the review above stands, unrecorded.`)
+      process.exit(1)
+    }
   }
-  const outFile = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : null
-  if (outFile) { writeFileSync(outFile, `${text}\n`); console.log(`wrote ${outFile}`) } else console.log(text)
 }
 
 // --- cost ------------------------------------------------------------------------------
@@ -1092,15 +1103,16 @@ async function review(argv) {
 // Read-modify-write against meta.json, the flow's own state, so both writers go through a
 // temporary file: a half-written meta.json loses the work, not just the figure.
 function editMeta(work, fn) {
-  if (!work) return
+  if (!work) return false
   const p = join(work, 'meta.json')
-  if (!existsSync(p)) return
+  if (!existsSync(p)) return false
   let meta
-  try { meta = JSON.parse(readFileSync(p, 'utf8')) } catch { return }
+  try { meta = JSON.parse(readFileSync(p, 'utf8')) } catch { return false }
   fn(meta)
   const tmp = `${p}.tmp`
   writeFileSync(tmp, `${JSON.stringify(meta, null, 2)}\n`)
   renameSync(tmp, p)
+  return true
 }
 
 // --- record-review -----------------------------------------------------------------------
@@ -1120,16 +1132,18 @@ const ORIGINS_HELP = 'built-in · sweep · query-duel · yagni · contract · id
 function validateReview(doc) {
   const bad = []
   if (!doc || typeof doc !== 'object') return ['the file is not a JSON object']
-  const round = doc.round ?? {}
-  if (typeof round !== 'object' || Array.isArray(round)) bad.push('`round` must be an object')
+  const round = doc.round
+  if (!round || typeof round !== 'object' || Array.isArray(round)) return ['`round` is required: an object with at least `agents`']
   if (round.mr != null && !(Number.isInteger(round.mr) && round.mr > 0)) bad.push(`round.mr \`${round.mr}\`: a positive integer`)
   if (round.tier != null && !TIERS.includes(round.tier)) bad.push(`round.tier \`${round.tier}\`: one of ${TIERS.join(' · ')}`)
   if (round.effective_size != null && !SIZE_NAMES.includes(round.effective_size)) {
     bad.push(`round.effective_size \`${round.effective_size}\`: one of ${SIZE_NAMES.join(' · ')}`)
   }
   if (round.usd != null && typeof round.usd !== 'number') bad.push(`round.usd \`${round.usd}\`: a number, or leave it out`)
-  const agents = round.agents ?? {}
-  if (typeof agents !== 'object' || Array.isArray(agents)) bad.push('round.agents must be an object {origin: n}')
+  const agents = round.agents
+  if (!agents || typeof agents !== 'object' || Array.isArray(agents) || !Object.keys(agents).length) {
+    bad.push('round.agents: every pass this round launched, as {origin: agents}, findings or not')
+  }
   else {
     for (const [o, n] of Object.entries(agents)) {
       if (!ORIGIN_RE.test(o)) bad.push(`round.agents origin \`${o}\`: one of ${ORIGINS_HELP}`)
@@ -1142,7 +1156,10 @@ function validateReview(doc) {
       const at = `findings[${i}]`
       if (!f || typeof f !== 'object') { bad.push(`${at}: not an object`); return }
       if (!Array.isArray(f.sources) || !f.sources.length) bad.push(`${at}.sources: a non-empty list of origins`)
-      else f.sources.forEach((o) => { if (!ORIGIN_RE.test(o)) bad.push(`${at}.sources \`${o}\`: one of ${ORIGINS_HELP}`) })
+      else f.sources.forEach((o) => {
+        if (!ORIGIN_RE.test(o)) bad.push(`${at}.sources \`${o}\`: one of ${ORIGINS_HELP}`)
+        else if (agents && typeof agents === 'object' && !(o in agents)) bad.push(`${at}.sources \`${o}\`: not in round.agents — a source is a pass that ran`)
+      })
       if (!SEVERITIES.includes(f.severity)) bad.push(`${at}.severity \`${f.severity}\`: one of ${SEVERITIES.join(' · ')}`)
       if (!OUTCOMES.includes(f.outcome)) bad.push(`${at}.outcome \`${f.outcome}\`: one of ${OUTCOMES.join(' · ')}`)
       if (typeof f.file !== 'string' || !f.file) bad.push(`${at}.file: the path the finding is about`)
@@ -1154,7 +1171,7 @@ function validateReview(doc) {
 // One round: its findings, each once with every source, and one `cost[]` review entry saying
 // what the round launched. The round number continues this work's own count, across both.
 function writeReview(work, doc) {
-  editMeta(work, (meta) => {
+  return editMeta(work, (meta) => {
     const rows = Array.isArray(meta.review_findings) ? meta.review_findings : []
     const costs = Array.isArray(meta.cost) ? meta.cost : []
     const last = [...rows, ...costs.filter((e) => e?.phase === 'review')]
@@ -1195,7 +1212,7 @@ function recordReview(argv) {
     bad.forEach((b) => console.error(`  - ${b}`))
     process.exit(1)
   }
-  writeReview(work, doc)
+  if (!writeReview(work, doc)) { console.error(`flow record-review: \`${join(work, 'meta.json')}\` is missing or not JSON — nothing recorded`); process.exit(1) }
   console.log(`recorded ${doc.findings.length} finding(s) and the round's agents in ${join(work, 'meta.json')}`)
 }
 

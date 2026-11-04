@@ -52,13 +52,16 @@ refused() {  # <label> <json> <fixed string naming the bad value>
   if cmp -s "$META" "$BASE/before.json"; then printf '  ok   … and nothing was written\n'
   else printf '  FAIL %s wrote to meta.json\n' "$1"; fails=$((fails+1)); cp "$BASE/before.json" "$META"; fi
 }
-refused "a hand-written origin is refused"   '{"findings":[{"sources":["builtin"],"severity":"minor","file":"a","outcome":"fixed"}]}' 'sources `builtin`: one of built-in · sweep'
-refused "a section number is refused"        '{"findings":[{"sources":["§5.5"],"severity":"minor","file":"a","outcome":"fixed"}]}' 'sources `§5.5`'
-refused "an outcome as a severity is refused" '{"findings":[{"sources":["idiom"],"severity":"declined","file":"a","outcome":"rejected"}]}' 'severity `declined`: one of blocker · major · minor · nit · unrated'
-refused "an unknown outcome is refused"      '{"findings":[{"sources":["idiom"],"severity":"nit","file":"a","outcome":"accepted"}]}' 'outcome `accepted`: one of fixed · open · rejected · discarded · deferred'
+refused "a hand-written origin is refused"   '{"round":{"agents":{"built-in":1,"idiom":1,"panel:x":1}},"findings":[{"sources":["builtin"],"severity":"minor","file":"a","outcome":"fixed"}]}' 'sources `builtin`: one of built-in · sweep'
+refused "a section number is refused"        '{"round":{"agents":{"built-in":1,"idiom":1,"panel:x":1}},"findings":[{"sources":["§5.5"],"severity":"minor","file":"a","outcome":"fixed"}]}' 'sources `§5.5`'
+refused "an outcome as a severity is refused" '{"round":{"agents":{"built-in":1,"idiom":1,"panel:x":1}},"findings":[{"sources":["idiom"],"severity":"declined","file":"a","outcome":"rejected"}]}' 'severity `declined`: one of blocker · major · minor · nit · unrated'
+refused "an unknown outcome is refused"      '{"round":{"agents":{"built-in":1,"idiom":1,"panel:x":1}},"findings":[{"sources":["idiom"],"severity":"nit","file":"a","outcome":"accepted"}]}' 'outcome `accepted`: one of fixed · open · rejected · discarded · deferred'
 refused "an agents origin is checked too"    '{"round":{"agents":{"Security":1}},"findings":[]}' 'round.agents origin `Security`'
-refused "a size outside the four is refused" '{"round":{"effective_size":"XL"},"findings":[]}' 'round.effective_size `XL`: one of XS · S · M · L'
-refused "every bad value is named at once"   '{"findings":[{"sources":["x y"],"severity":"high","file":"","outcome":"done"}]}' '4 value(s) outside the lists'
+refused "a size outside the four is refused" '{"round":{"effective_size":"XL","agents":{"built-in":1}},"findings":[]}' 'round.effective_size `XL`: one of XS · S · M · L'
+refused "every bad value is named at once"   '{"round":{"agents":{"built-in":1,"idiom":1,"panel:x":1}},"findings":[{"sources":["x y"],"severity":"high","file":"","outcome":"done"}]}' '4 value(s) outside the lists'
+refused "a round is required"                '{"findings":[]}' '`round` is required'
+refused "a round names what it launched"     '{"round":{},"findings":[]}' 'round.agents: every pass this round launched'
+refused "a source is a pass that ran"        '{"round":{"agents":{"built-in":1}},"findings":[{"sources":["idiom"],"severity":"nit","file":"a","outcome":"fixed"}]}' 'not in round.agents'
 
 out=$(node "$CLI" record-review 2>&1); rc=$?
 expect "no --file is refused"                 1 '--file <rows.json> is required'
@@ -66,7 +69,7 @@ printf 'not json' > "$BASE/round.json"
 out=$(node "$CLI" record-review --file "$BASE/round.json" 2>&1); rc=$?
 expect "unreadable JSON is refused"           1 'is not readable JSON'
 git checkout -q -b other
-run '{"findings":[]}'
+run '{"round":{"agents":{"built-in":1}},"findings":[]}'
 expect "a branch with no work is named"       1 'no work on `other`'
 
 cd /

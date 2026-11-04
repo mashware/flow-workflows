@@ -125,6 +125,27 @@ in_yield "and a shared finding is unique to neither" '| panel:performance | 1 | 
 if node "$CLI" cost 2>&1 | grep -q 'Findings by origin'; then
   printf '  FAIL cost no longer breaks findings down by origin\n'; fails=$((fails+1))
 else printf '  ok   cost is about spend only\n'; fi
+# A harness answer the writer would refuse — a severity outside the four, a role whose name
+# slugs to nothing — is normalised, and the review itself is printed whatever --record does.
+cat > FLOW.md <<'EOF'
+## git
+- default_base: main
+
+## quality
+- reviewers:
+  - —: a role whose name has no letters
+
+## agents
+- exec_cmd: cat answer.json
+EOF
+printf '{"findings":[{"file":"a.txt","line":1,"severity":"high","what":"odd","fix":"even"}]}' > answer.json
+rm -f .claude/work/T-9/meta.json; printf '{"ticket":"T-9","branch":"feature"}\n' > .claude/work/T-9/meta.json
+node "$CLI" review --record > "$BASE/out.txt" 2>&1
+check "the review is printed before recording"   0 '1 finding(s) from 1 reviewer(s)'
+if grep -qF '"sources":["panel:role-1"],"severity":"unrated"' <(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json')))"); then
+  printf '  ok   an unknown severity and an empty slug are normalised\n'
+else printf '  FAIL an unknown severity and an empty slug are normalised — got %s\n' "$(cat .claude/work/T-9/meta.json)"; fails=$((fails+1)); fi
+
 rm -rf .claude
 
 cd /

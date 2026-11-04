@@ -803,8 +803,9 @@ of the MR/PR: a list that jumps from nothing to finished told the user nothing w
 ### 4.5 `meta.json.cost[]` — what a phase measured, when it could
 
 A phase that can measure what it spent appends one entry: `{ "phase": "review", "at": "<ISO>",
-"reviewers": 8, "usd": 0.0124, "source": "harness" }`. `flow review --record` writes it; `flow cost`
-reads it back per phase. Two rules, and they are the reason the block is worth having: a harness
+"reviewers": 8, "usd": 0.0124, "source": "harness" }` — a review's entry also carries `round`, `tier`,
+`effective_size` and `agents`. `flow record-review` writes it at the review's Close (`flow review --record`
+outside one); `flow cost` reads it back per phase. Two rules, and they are the reason the block is worth having: a harness
 that reports no figure is recorded with `"source": "not reported"` rather than estimated, and a
 phase with no entry measured nothing — **absence is not zero**. Every figure is the harness's own
 client-side estimate and can differ from a bill.
