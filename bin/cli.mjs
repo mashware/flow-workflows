@@ -1126,10 +1126,16 @@ function escapeOf(argv) {
   // mid-subject — a revert, a cherry-pick — names another MR/PR and charges nobody.
   const subject = git(['log', '-1', '--format=%s', commit], repo).trim()
   const body = git(['log', '-1', '--format=%b', commit], repo)
-  const numbers = new Set([
-    subject.match(/\(#(\d+)\)\s*$/)?.[1],
-    ...[...body.matchAll(/See merge request \S*!(\d+)/g)].map((m) => m[1]),
-  ].filter(Boolean))
+  // A GitLab reference carries its project path, and an MR of another project with the same
+  // number is not this one: the unit's url has to name that path too.
+  const refs = [
+    ...(subject.match(/\(#(\d+)\)\s*$/) ? [{ n: subject.match(/\(#(\d+)\)\s*$/)[1], path: null }] : []),
+    ...[...body.matchAll(/See merge request (\S*)!(\d+)/g)].map((m) => ({ n: m[2], path: m[1] || null })),
+  ]
+  const namedBy = (url) => {
+    const n = String(url ?? '').match(/\/(?:pull|merge_requests)\/(\d+)/)?.[1]
+    return n && refs.some((r) => r.n === n && (!r.path || String(url).includes(`/${r.path}/-/merge_requests/${n}`)))
+  }
   const isAncestor = (a, b) => {
     try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: repo, stdio: 'ignore' }); return true } catch { return false }
   }
@@ -1139,23 +1145,25 @@ function escapeOf(argv) {
   // and their merge-base is that sha itself, so the fork is read off the merge that brought it
   // in: the side it was merged into, at that point. A fast-forward leaves no merge to read,
   // and then there is no range — the MR/PR number is the only evidence left.
-  // The merge is looked for on the base's own mainline (`--first-parent`): a branch merged into
-  // another branch first is brought into the base by that other branch's merge, and reading
-  // the fork off the inner one would count the other branch's base commits as reviewed.
+  // Every merge that brought the reviewed sha across — into the base, or into another branch on
+  // its way there — gives a fork: where the reviewed branch left the side it was merged into.
+  // A commit counts as reviewed only when it is an ancestor of none of them, so the narrowest
+  // range wins: a branch cut from another branch owns only its own commits, never the parent's.
+  // A fast-forward leaves no merge, and then there is no range — only the MR/PR number counts.
   const forks = new Map()
-  const forkOf = (base, reviewed) => {
+  const forksOf = (base, reviewed) => {
     const key = `${base} ${reviewed}`
     if (forks.has(key)) return forks.get(key)
-    let fork = ''
-    if (!resolves(base)) fork = ''
-    else if (!isAncestor(reviewed, base)) fork = git(['merge-base', base, reviewed], repo).trim()
+    let list = []
+    if (!resolves(base)) list = []
+    else if (!isAncestor(reviewed, base)) list = [git(['merge-base', base, reviewed], repo).trim()].filter(Boolean)
     else {
-      const merges = git(['rev-list', '--first-parent', '--merges', `${reviewed}..${base}`], repo).trim().split('\n').filter(Boolean)
-      const m = merges.find((x) => isAncestor(reviewed, `${x}^2`) && !isAncestor(reviewed, `${x}^1`))
-      if (m) fork = git(['merge-base', `${m}^1`, reviewed], repo).trim()
+      const merges = git(['rev-list', '--ancestry-path', '--merges', `${reviewed}..${base}`], repo).trim().split('\n').filter(Boolean)
+      list = merges.filter((m) => isAncestor(reviewed, `${m}^2`) && !isAncestor(reviewed, `${m}^1`))
+        .map((m) => git(['merge-base', `${m}^1`, reviewed], repo).trim()).filter(Boolean)
     }
-    forks.set(key, fork)
-    return fork
+    forks.set(key, list)
+    return list
   }
 
   const matches = []
@@ -1167,11 +1175,10 @@ function escapeOf(argv) {
       const reviewed = u?.reviewed_sha
       let how = null
       if (resolves(reviewed) && isAncestor(commit, reviewed)) {
-        const fork = forkOf(meta.base || cfg.git?.default_base || 'origin/main', reviewed)
-        if (fork && !isAncestor(commit, fork)) how = `inside ${fork.slice(0, 7)}..${reviewed.slice(0, 7)}`
+        const fs = forksOf(meta.base || cfg.git?.default_base || 'origin/main', reviewed)
+        if (fs.length && fs.every((f) => !isAncestor(commit, f))) how = `inside ${fs[0].slice(0, 7)}..${reviewed.slice(0, 7)}`
       }
-      const n = String(u?.url ?? '').match(/\/(?:pull|merge_requests)\/(\d+)/)?.[1]
-      if (!how && reviewed && n && numbers.has(n)) how = `subject carries #${n}, its MR/PR`
+      if (!how && reviewed && namedBy(u?.url)) how = `the commit names its MR/PR, ${String(u.url).split('/').pop()}`
       if (how) matches.push({ path, meta, unit: u, how })
     }
   }
@@ -1180,9 +1187,16 @@ function escapeOf(argv) {
   if (works.length !== 1) {
     // A blame that changed takes the old escape with it: counted, it would charge a review for
     // a commit the investigation no longer names.
-    let dropped = false
-    editMeta(here, (meta) => { if (meta.escape) { dropped = true; delete meta.escape } })
-    if (dropped) console.log('The escape recorded earlier for this bug was removed.')
+    // Only for another commit: the same one finding no match now has lost its evidence (a ref
+    // not fetched, a branch gone), which is not a reason to forget what was already shown.
+    let dropped = false, kept = false
+    editMeta(here, (meta) => {
+      if (!meta.escape) return
+      if (meta.escape.commit === commit) kept = true
+      else { dropped = true; delete meta.escape }
+    })
+    if (dropped) console.log('The escape recorded earlier for this bug was removed: it blamed another commit.')
+    if (kept) console.log('The escape recorded earlier for this same commit is kept: its evidence did not resolve this time.')
     console.log(works.length
       ? `No escape recorded: ${commit.slice(0, 7)} matches ${works.length} reviewed works (${works.map((w) => w.split('/').pop()).join(', ')}), and a guess is not evidence.`
       : `No escape recorded: ${commit.slice(0, 7)} is not inside any reviewed range or reviewed MR/PR of this repo's works.`)

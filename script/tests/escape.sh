@@ -55,7 +55,7 @@ expect "a number two works carry: neither"     0 'matches 2 reviewed works'
 run "$unread"
 expect "the bug's own work is not a candidate" 0 'is not inside any reviewed range'
 run "$sq" --file src/a.ts
-expect "a squash PR number charges its work"   0 'went through the review of sq (subject carries #41'
+expect "a squash PR number charges its work"   0 'went through the review of sq (the commit names its MR/PR'
 [ "$(escape_field)" = "{\"work\":\"sq\",\"ticket\":\"40\",\"commit\":\"$sq\",\"file\":\"src/a.ts\",\"size\":\"L\"}" ] \
   && printf '  ok   … recorded with the reviewed size\n' || { printf '  FAIL recorded %s\n' "$(escape_field)"; fails=$((fails+1)); }
 run "$bad"
@@ -69,7 +69,7 @@ awk '$0=="## XS+S"{p=1;next} /^## /{p=0} p' "$BASE/out.txt" | grep -qF 'escapes:
 
 # Re-run with a blame no review holds: the earlier escape goes, so yield stops counting it.
 run "$unread"
-expect "a changed blame drops the old escape"  0 'The escape recorded earlier for this bug was removed.'
+expect "a changed blame drops the old escape"  0 'The escape recorded earlier for this bug was removed'
 [ "$(escape_field)" = null ] && printf '  ok   … and it is gone from meta.json\n' || { printf '  FAIL still %s\n' "$(escape_field)"; fails=$((fails+1)); }
 run "$sq" --file=src/b.ts
 expect "--file=<path> is read"                 0 'went through the review of sq'
@@ -86,7 +86,10 @@ expect "a quoted (#N) charges nobody"          0 'No escape recorded'
 glc=$(git -c user.email=t@t -c user.name=t commit -q --allow-empty -m "Something" -m "See merge request group/repo!88" && git rev-parse HEAD)
 w _archive/gl '{"ticket":"87","size":"M","mrs":[{"n":1,"url":"https://gitlab.com/group/repo/-/merge_requests/88","reviewed_sha":"cccc"}]}'
 run "$glc"
-expect "a GitLab body names its MR"            0 'went through the review of gl (subject carries #88'
+expect "a GitLab body names its MR"            0 'went through the review of gl (the commit names its MR/PR'
+other=$(git -c user.email=t@t -c user.name=t commit -q --allow-empty -m "Elsewhere" -m "See merge request other/proj!88" && git rev-parse HEAD)
+run "$other"
+expect "another project's MR !88 is not this one" 0 'No escape recorded'
 # The bug's own work is never a candidate, even when its own MR/PR number matches.
 own=$(commit "Its own fix (#90)")
 node -e "const f='$BASE/repo/.claude/work/bug-1/meta.json';const m=require(f);m.mrs=[{n:1,url:'https://github.com/o/r/pull/90',reviewed_sha:'dddd'}];require('fs').writeFileSync(f,JSON.stringify(m))"
@@ -111,8 +114,19 @@ w inner "{\"ticket\":\"60\",\"size\":\"M\",\"mrs\":[{\"n\":1,\"size\":\"M\",\"br
 git checkout -q bug-1
 run "$main_mid"
 expect "a nested merge does not take main's commits" 0 'No escape recorded'
+run "$outer_c"
+expect "the parent branch's commit is not the inner's" 0 'No escape recorded'
 run "$inner_bad"
 expect "but the inner branch's own commit counts"    0 'went through the review of inner (inside'
+# Same commit, evidence gone (the reviewed sha no longer resolves): the escape stays.
+node -e "const f='$BASE/repo/.claude/work/inner/meta.json';const m=require(f);m.mrs[0].reviewed_sha='eeee';require('fs').writeFileSync(f,JSON.stringify(m))"
+run "$inner_bad"
+expect "lost evidence keeps the same commit's escape" 0 'is kept: its evidence did not resolve'
+# A bucket with escapes and no review rows prints its escapes without an empty table.
+node "$CLI" yield > "$BASE/out.txt" 2>&1
+awk '$0=="## M"{p=1;next} /^## /{p=0} p' "$BASE/out.txt" > "$BASE/m.txt"
+if grep -qF 'escapes: 1 (inner)' "$BASE/m.txt" && ! grep -qF '| origin |' "$BASE/m.txt"; then printf '  ok   an escapes-only size has no empty table\n'
+else printf '  FAIL escapes-only size:\n%s\n' "$(cat "$BASE/m.txt")"; fails=$((fails+1)); fi
 
 run deadbeef
 expect "not a commit is refused"               1 'is not a commit'
