@@ -106,16 +106,18 @@ else
   printf '  FAIL --record writes one row per source — got %s\n' "$findings"; fails=$((fails+1))
 fi
 
-# And `flow cost` has to be able to answer the question the rows exist for: what did each
-# pass contribute that nothing else did. A finding both roles raised is exclusive to neither.
-in_cost() {  # <label> <grep-pattern>
-  if grep -q -- "$2" "$BASE/cost.txt"; then printf '  ok   %s\n' "$1"
-  else printf '  FAIL %s — no match for %q in flow cost\n' "$1" "$2"; fails=$((fails+1)); fi
+# And `flow yield` has to be able to answer the question the rows exist for: what did each
+# pass contribute that nothing else did. A finding both roles raised is unique to neither.
+in_yield() {  # <label> <grep-pattern>
+  if grep -qF -- "$2" "$BASE/yield.txt"; then printf '  ok   %s\n' "$1"
+  else printf '  FAIL %s — no match for %q in flow yield\n' "$1" "$2"; fails=$((fails+1)); fi
 }
-node "$CLI" cost > "$BASE/cost.txt" 2>&1
-in_cost "cost breaks findings down by origin"     'Findings by origin'
-in_cost "and a shared finding is exclusive to none" '| security | 1 | 0 | 0 |'
-in_cost "with the retirement rule written down"   'across twenty reviews'
+node "$CLI" yield > "$BASE/yield.txt" 2>&1
+in_yield "yield reads the rows --record wrote"       '| panel:security | 1 | 1 | 0 | 0 |'
+in_yield "and a shared finding is unique to neither" '| panel:performance | 1 | 1 | 0 | 0 |'
+if node "$CLI" cost 2>&1 | grep -q 'Findings by origin'; then
+  printf '  FAIL cost no longer breaks findings down by origin\n'; fails=$((fails+1))
+else printf '  ok   cost is about spend only\n'; fi
 rm -rf .claude
 
 cd /

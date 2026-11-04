@@ -5,6 +5,24 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.108.0 — You can see which review passes still find what nothing else finds  ·  2026-11-04
+
+**In short**
+- **`npx flow-workflows yield [<repo>…]` counts every review your repos kept.** It reads live and archived works,
+  in the checkout you run it from and in the main one, across as many repos as you name.
+- **Per reviewer or pass, and per change size**, it shows the rounds it ran, the findings it raised, how many only
+  it raised, how many of those were acted on, and the agents it took.
+- **A verdict per row.** A pass that ran 20 rounds at a size without one finding of its own that was acted on is
+  marked `retire at <size>`. Under 20 rounds, it says how many it has. XS and S count together, because the panel
+  rarely runs below M.
+- **Old spellings count as the pass they are.** `builtin`, `code-review`, `cli:tests` and `§5.5` were all written by
+  hand. They are folded on read, and the output lists each spelling with what it was read as.
+- **`flow cost` is back to spend only.** Its per-origin table moved to `yield`, where it spans works.
+
+Every review has recorded which pass raised each finding since v0.66.0, but only one work at a time could be read.
+So the rule "no finding of its own across twenty reviews, and the pass comes out" had nothing to count. On the
+three repos using flow today that is 131 rounds and about 1 100 rows (#234).
+
 ## v0.107.0 — A red test outside the change gets fixed when flow can see why  ·  2026-11-03
 
 **In short**

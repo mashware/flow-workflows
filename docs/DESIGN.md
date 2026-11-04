@@ -528,6 +528,16 @@ written down before the data arrived, so it cannot be argued backwards: no exclu
 finding across twenty reviews and the pass comes out. No pass was removed or weakened here.
 *Now:* feat:review §2.1, §8, §9; bug:review §2.1, §8; `flow cost`; work/README `meta.json`.
 
+**The rows were there; nothing counted them.** v0.108.0: asked whether the review passes still
+earn their tokens as models improve, the answer had to come from 131 recorded rounds that no
+command could read together — `flow cost` saw one work at a time, the twenty-review rule had
+nothing to count, and six weeks of hand-written origins had drifted into ~65 spellings for ~12
+passes. `flow yield` reads every work of the repos named, live and archived, maps the spellings
+on read (and prints what each became), and judges per size, because the review is scaled per
+size: the panel rarely runs below M, so XS and S are pooled or no pass there would ever reach
+twenty rounds. `cost` went back to being about spend.
+*Now:* `flow yield`; feat:review §9; bug:review §9; work/README `meta.json`; script/tests/yield.sh.
+
 **A change to `review` can now be checked against an outcome.** v0.67.0: every preflight in this
 repository checks shape — the adapters match their sources byte for byte, a cited path exists, a
 hook is executable — and nothing could say whether a change to the command found more defects,
