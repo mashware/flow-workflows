@@ -841,6 +841,11 @@ section does not exist: no artifact tool is loaded or called.
   unpinned. A write refused for its version — stale, or missing on a card that exists — is not a
   failure: one retry pinned to the version the refusal names, or to the one a single `get` returns.
   Then remember what the write returned.
+- **A card ends with its work folder.** Whatever moves a work folder to `_archive/` — `abandon`,
+  `clean`, the archive offer at `ship`'s Close — first deletes that work's card: action `delete`,
+  pinned to the version held, or to the one a single `get` returns; no card → nothing to do. The
+  mirror off or the key empty → nothing to do. A folder moved back out of `_archive/` gets its card
+  again at its next publication.
 - **Failure never stops a phase.** A second version refusal → no more retries for that
   publication. Any other failure — a wrong URL, auth, a permission prompt the user declined — turns
   the mirror off for the rest of the session. Either way the next stop carries one line,

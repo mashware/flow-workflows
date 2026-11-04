@@ -189,7 +189,7 @@ Execute in this order (a branch cannot be deleted while a worktree holds it):
 
 1. **Worktrees** — `git worktree remove <path>`. No `--force`, ever: §5 excluded the dirty ones, so a failure means something changed since the inventory. Stop that row, report it, continue.
 2. **Branches** — `git branch -d <branch>` first. Git refuses on a squash merge; only then `git branch -D`, and only for rows whose verdict came from **the forge** (§4a) — never a locally inferred one. Name it in the report: `-D (squash-merged, MR #401)`.
-3. **Work folders** — `mv .claude/work/<dir> .claude/work/_archive/<dir>`, keeping the name, as `/flow-work-abandon` §6 does. Never `rm`.
+3. **Work folders** — `mv .claude/work/<dir> .claude/work/_archive/<dir>`, keeping the name, as `/flow-work-abandon` §6 does. Never `rm`. Before each move, delete that work's card from the artifact control room when `panel.artifact` is set (flow-core §4.6, *a card ends with its work folder*).
 4. **Prune** — `git worktree prune`.
 
 Never touch the remote (no `git push --delete`; deleting merged remote branches is the forge's job).

@@ -20,6 +20,8 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   declined permission) turns the mirror off for the rest of the session, with one line at the next stop.
 - **`doctor` checks it**: where the key came from, whether the tool is there, whether the page answers, and the
   permission rule that keeps every card update from asking.
+- **Finished work leaves the page.** Archiving a work (`abandon`, `clean`, `ship`'s archive offer) deletes its
+  card, and done cards older than a day fold into one line per repo.
 - **The page ships with the plugin** as `examples/panel-artifact.html`. You publish it once and paste its URL into
   each repo.
 
