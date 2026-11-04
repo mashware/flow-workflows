@@ -16,8 +16,8 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 - **Off unless you turn it on.** The key belongs in `FLOW.claude.md`, because only an interactive Claude Code
   session has the artifact tools. Left empty, flow calls no artifact tool and nothing changes. Headless runs and
   other harnesses keep the terminal panel only.
-- **It never stops a phase.** A card whose version moved on gets one retry. Any other failure is one line at the
-  next stop.
+- **It never stops a phase.** A card whose version moved on gets one retry. Any other failure (a wrong URL, a
+  declined permission) turns the mirror off for the rest of the session, with one line at the next stop.
 - **`doctor` checks it**: where the key came from, whether the tool is there, whether the page answers, and the
   permission rule that keeps every card update from asking.
 - **The page ships with the plugin** as `examples/panel-artifact.html`. You publish it once and paste its URL into
