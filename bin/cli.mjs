@@ -1277,7 +1277,7 @@ function yieldOf(argv) {
       if (!found.length && !costs.length) continue
       works += 1
       const sizeFor = (mr, round) => {
-        const entry = costs.find((e) => e.round === round && e.effective_size && (mr == null || e.mr == null || e.mr === mr))
+        const entry = costs.find((e) => e.round === round && e.effective_size && (e.mr ?? null) === (mr ?? null))
         if (entry) return entry.effective_size
         const part = Array.isArray(meta.mrs) && mr != null ? meta.mrs.find((m) => m?.n === mr) : null
         return part?.size ?? meta.size

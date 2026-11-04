@@ -92,6 +92,18 @@ work "$BASE/c/.claude/work/one" '{"size":"L","review_findings":[
 (cd "$BASE/c" && node "$CLI" yield) > "$BASE/out.txt" 2>&1
 in_section "a composite of one origin counts once" 'L' '| built-in | 1 | 1 | 1 | 1 |'
 
+# Two MRs/PRs of one work, each with its own round 1 at its own size: each row goes to the
+# size its own MR/PR's round recorded, never to the other's.
+work "$BASE/c/.claude/work/split" '{"size":"M",
+  "cost":[{"phase":"review","round":1,"mr":1,"effective_size":"S","agents":{"panel:a":1}},
+          {"phase":"review","round":1,"mr":2,"effective_size":"L","agents":{"panel:b":1}}],
+  "review_findings":[
+  {"round":1,"mr":1,"sources":["panel:a"],"severity":"minor","file":"m1","outcome":"fixed"},
+  {"round":1,"mr":2,"sources":["panel:b"],"severity":"minor","file":"m2","outcome":"fixed"}]}'
+(cd "$BASE/c" && node "$CLI" yield) > "$BASE/out.txt" 2>&1
+in_section "an MR/PR's rows take its own size"   'XS+S' '| panel:a | 1 | 1 | 1 | 1 | 1 |'
+in_section "and the other MR/PR's take its own"  'L' '| panel:b | 1 | 1 | 1 | 1 | 1 |'
+
 repo "$BASE/empty"
 (cd "$BASE/empty" && node "$CLI" yield) > "$BASE/out.txt" 2>&1
 check "no works: says what it read, exits 0"      'No review rounds recorded'
