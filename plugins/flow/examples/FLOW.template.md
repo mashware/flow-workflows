@@ -360,11 +360,10 @@ already delivered but the file does not say; `feat:start` links a work to one of
 ## panel
 One page for every work you have running, across repos and consoles (flow-core §4.6): each work
 mirrors its live panel to its own card on a claude.ai artifact, grouped by repo. Claude Code only —
-put the key in `FLOW.claude.md`, which is personal and read by no other harness. Publish
-`examples/panel-artifact.html` once (ask Claude Code to publish it as an artifact with the
-capabilities its header names), then paste the same URL into each repo you want on the page.
+put the key in `FLOW.claude.md`, which is personal and read by no other harness. `/flow:init room`
+sets it: the first time it publishes your page, in every other repo it finds that page and reuses it.
 
-- `artifact:`         # the artifact's URL, `https://claude.ai/artifact/<id>`. Empty = no mirror, no artifact tool called. Each card update is a tool call that asks permission unless `ArtifactData` is allowed — `doctor` prints the rule.
+- `artifact:`         # the artifact's URL, `https://claude.ai/artifact/<id>` — `/flow:init room` writes it. Empty = no mirror, no artifact tool called. Each card update is a tool call that asks permission unless `ArtifactData` is allowed — `doctor` prints the rule.
 
 ## notes
 Per-command extra guidance. When a command runs, it MUST follow the entry matching its command
