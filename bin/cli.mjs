@@ -1132,9 +1132,13 @@ function escapeOf(argv) {
     ...(subject.match(/\(#(\d+)\)\s*$/) ? [{ n: subject.match(/\(#(\d+)\)\s*$/)[1], path: null }] : []),
     ...[...body.matchAll(/See merge request (\S*)!(\d+)/g)].map((m) => ({ n: m[2], path: m[1] || null })),
   ]
+  // `(#N)` is a GitHub pull request; on GitLab `#N` is an issue, and only `!N` is an MR.
   const namedBy = (url) => {
-    const n = String(url ?? '').match(/\/(?:pull|merge_requests)\/(\d+)/)?.[1]
-    return n && refs.some((r) => r.n === n && (!r.path || String(url).includes(`/${r.path}/-/merge_requests/${n}`)))
+    const u = String(url ?? '')
+    const pull = u.match(/\/pull\/(\d+)/)?.[1]
+    const mr = u.match(/\/merge_requests\/(\d+)/)?.[1]
+    return refs.some((r) => (r.path === null && r.n === pull)
+      || (r.path !== null && r.n === mr && u.includes(`/${r.path}/-/merge_requests/${mr}`)))
   }
   const isAncestor = (a, b) => {
     try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: repo, stdio: 'ignore' }); return true } catch { return false }
@@ -1145,25 +1149,32 @@ function escapeOf(argv) {
   // and their merge-base is that sha itself, so the fork is read off the merge that brought it
   // in: the side it was merged into, at that point. A fast-forward leaves no merge to read,
   // and then there is no range — the MR/PR number is the only evidence left.
-  // Every merge that brought the reviewed sha across — into the base, or into another branch on
-  // its way there — gives a fork: where the reviewed branch left the side it was merged into.
-  // A commit counts as reviewed only when it is an ancestor of none of them, so the narrowest
-  // range wins: a branch cut from another branch owns only its own commits, never the parent's.
-  // A fast-forward leaves no merge, and then there is no range — only the MR/PR number counts.
-  const forks = new Map()
-  const forksOf = (base, reviewed) => {
+  // The reviewed branch's own commits: what `reviewed` reaches and the far side of every merge
+  // that carried it across does not — the base's tip when it is not merged yet, otherwise the
+  // first parent of each merge whose second side holds it (into the base, or into another
+  // branch on the way). A commit the base already had, brought in by a back-merge, sits behind
+  // one of those first parents and is never the branch's; a branch cut from another branch
+  // owns only its own commits. A fast-forward leaves no merge, and then there is no range.
+  // Two `rev-list` calls per unit, the rest in process: an archive of hundreds of works must
+  // not cost a process per merge per work.
+  const ranges = new Map()
+  const rangeOf = (base, reviewed) => {
     const key = `${base} ${reviewed}`
-    if (forks.has(key)) return forks.get(key)
-    let list = []
-    if (!resolves(base)) list = []
-    else if (!isAncestor(reviewed, base)) list = [git(['merge-base', base, reviewed], repo).trim()].filter(Boolean)
-    else {
-      const merges = git(['rev-list', '--ancestry-path', '--merges', `${reviewed}..${base}`], repo).trim().split('\n').filter(Boolean)
-      list = merges.filter((m) => isAncestor(reviewed, `${m}^2`) && !isAncestor(reviewed, `${m}^1`))
-        .map((m) => git(['merge-base', `${m}^1`, reviewed], repo).trim()).filter(Boolean)
+    if (ranges.has(key)) return ranges.get(key)
+    let set = null
+    if (resolves(base)) {
+      let stops = []
+      if (!isAncestor(reviewed, base)) stops = [base]
+      else {
+        const lines = git(['rev-list', '--ancestry-path', '--parents', `${reviewed}..${base}`], repo).trim().split('\n').filter(Boolean)
+        const after = new Set(lines.map((l) => l.split(' ')[0]))
+        const holds = (c) => c === reviewed || after.has(c)
+        stops = lines.map((l) => l.split(' ')).filter((p) => p.length > 2 && !holds(p[1]) && p.slice(2).some(holds)).map((p) => p[1])
+      }
+      if (stops.length) set = new Set(git(['rev-list', reviewed, ...stops.map((x) => `^${x}`)], repo).trim().split('\n').filter(Boolean))
     }
-    forks.set(key, list)
-    return list
+    ranges.set(key, set)
+    return set
   }
 
   const matches = []
@@ -1175,8 +1186,8 @@ function escapeOf(argv) {
       const reviewed = u?.reviewed_sha
       let how = null
       if (resolves(reviewed) && isAncestor(commit, reviewed)) {
-        const fs = forksOf(meta.base || cfg.git?.default_base || 'origin/main', reviewed)
-        if (fs.length && fs.every((f) => !isAncestor(commit, f))) how = `inside ${fs[0].slice(0, 7)}..${reviewed.slice(0, 7)}`
+        const own = rangeOf(meta.base || cfg.git?.default_base || 'origin/main', git(['rev-parse', reviewed], repo).trim())
+        if (own?.has(commit)) how = `one of the ${own.size} commit(s) its review read, up to ${reviewed.slice(0, 7)}`
       }
       if (!how && reviewed && namedBy(u?.url)) how = `the commit names its MR/PR, ${String(u.url).split('/').pop()}`
       if (how) matches.push({ path, meta, unit: u, how })
@@ -1187,15 +1198,16 @@ function escapeOf(argv) {
   if (works.length !== 1) {
     // A blame that changed takes the old escape with it: counted, it would charge a review for
     // a commit the investigation no longer names.
-    // Only for another commit: the same one finding no match now has lost its evidence (a ref
-    // not fetched, a branch gone), which is not a reason to forget what was already shown.
+    // Kept only for the same commit matching nothing at all: its evidence did not resolve this
+    // time (a ref not fetched, a branch gone). Another commit, or now two candidate works, and
+    // the old blame no longer stands.
     let dropped = false, kept = false
     editMeta(here, (meta) => {
       if (!meta.escape) return
-      if (meta.escape.commit === commit) kept = true
+      if (meta.escape.commit === commit && !works.length) kept = true
       else { dropped = true; delete meta.escape }
     })
-    if (dropped) console.log('The escape recorded earlier for this bug was removed: it blamed another commit.')
+    if (dropped) console.log('The escape recorded earlier for this bug was removed: the evidence below no longer names one review.')
     if (kept) console.log('The escape recorded earlier for this same commit is kept: its evidence did not resolve this time.')
     console.log(works.length
       ? `No escape recorded: ${commit.slice(0, 7)} matches ${works.length} reviewed works (${works.map((w) => w.split('/').pop()).join(', ')}), and a guess is not evidence.`

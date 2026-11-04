@@ -36,7 +36,7 @@ w feat-1   "{\"ticket\":\"11\",\"size\":\"M\",\"mrs\":[{\"n\":1,\"size\":\"S\",\
 mkdir -p .claude/work/_archive
 w _archive/sq "{\"ticket\":\"40\",\"size\":\"L\",\"reviewed_sha\":\"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\",\"mrs\":[{\"n\":1,\"url\":\"https://github.com/o/r/pull/41\",\"reviewed_sha\":\"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\"}]}"
 w twin-a   '{"ticket":"50","size":"M","mrs":[{"n":1,"url":"https://github.com/o/r/pull/50","reviewed_sha":"aaaa"}]}'
-w twin-b   '{"ticket":"51","size":"M","mrs":[{"n":1,"url":"https://gitlab.com/o/r/-/merge_requests/50","reviewed_sha":"bbbb"}]}'
+w twin-b   '{"ticket":"51","size":"M","mrs":[{"n":1,"url":"https://github.com/o/fork/pull/50","reviewed_sha":"bbbb"}]}'
 git checkout -q -b bug-1
 w bug-1 "{\"ticket\":\"99\",\"type\":\"bug\",\"branch\":\"bug-1\",\"reviewed_sha\":\"$unread\"}"
 
@@ -59,7 +59,7 @@ expect "a squash PR number charges its work"   0 'went through the review of sq 
 [ "$(escape_field)" = "{\"work\":\"sq\",\"ticket\":\"40\",\"commit\":\"$sq\",\"file\":\"src/a.ts\",\"size\":\"L\"}" ] \
   && printf '  ok   … recorded with the reviewed size\n' || { printf '  FAIL recorded %s\n' "$(escape_field)"; fails=$((fails+1)); }
 run "$bad"
-expect "a commit in the reviewed range"        0 'went through the review of feat-1 (inside'
+expect "a commit in the reviewed range"        0 'went through the review of feat-1 (one of the'
 [ "$(escape_field)" = "{\"work\":\"feat-1\",\"ticket\":\"11\",\"commit\":\"$bad\",\"file\":null,\"size\":\"S\"}" ] \
   && printf '  ok   … recorded at its MR/PR size\n' || { printf '  FAIL recorded %s\n' "$(escape_field)"; fails=$((fails+1)); }
 
@@ -69,7 +69,7 @@ awk '$0=="## XS+S"{p=1;next} /^## /{p=0} p' "$BASE/out.txt" | grep -qF 'escapes:
 
 # Re-run with a blame no review holds: the earlier escape goes, so yield stops counting it.
 run "$unread"
-expect "a changed blame drops the old escape"  0 'The escape recorded earlier for this bug was removed'
+expect "a changed blame drops the old escape"  0 'was removed'
 [ "$(escape_field)" = null ] && printf '  ok   … and it is gone from meta.json\n' || { printf '  FAIL still %s\n' "$(escape_field)"; fails=$((fails+1)); }
 run "$sq" --file=src/b.ts
 expect "--file=<path> is read"                 0 'went through the review of sq'
@@ -117,7 +117,7 @@ expect "a nested merge does not take main's commits" 0 'No escape recorded'
 run "$outer_c"
 expect "the parent branch's commit is not the inner's" 0 'No escape recorded'
 run "$inner_bad"
-expect "but the inner branch's own commit counts"    0 'went through the review of inner (inside'
+expect "but the inner branch's own commit counts"    0 'went through the review of inner (one of the'
 # Same commit, evidence gone (the reviewed sha no longer resolves): the escape stays.
 node -e "const f='$BASE/repo/.claude/work/inner/meta.json';const m=require(f);m.mrs[0].reviewed_sha='eeee';require('fs').writeFileSync(f,JSON.stringify(m))"
 run "$inner_bad"
@@ -127,6 +127,44 @@ node "$CLI" yield > "$BASE/out.txt" 2>&1
 awk '$0=="## M"{p=1;next} /^## /{p=0} p' "$BASE/out.txt" > "$BASE/m.txt"
 if grep -qF 'escapes: 1 (inner)' "$BASE/m.txt" && ! grep -qF '| origin |' "$BASE/m.txt"; then printf '  ok   an escapes-only size has no empty table\n'
 else printf '  FAIL escapes-only size:\n%s\n' "$(cat "$BASE/m.txt")"; fails=$((fails+1)); fi
+
+# On GitLab `#N` is an issue: a `(#N)` subject never names a GitLab MR of the same number.
+w _archive/glnum '{"ticket":"70","size":"M","mrs":[{"n":1,"url":"https://gitlab.com/group/repo/-/merge_requests/123","reviewed_sha":"ffff"}]}'
+issue_c=$(commit "Fix login (#123)")
+run "$issue_c"
+expect "(#N) is not a GitLab MR"               0 'No escape recorded'
+
+# A criss-cross: main merges the branch's early commit, the branch back-merges main, and the
+# branch is merged again after review. Main's own commit sits inside the reviewed history and
+# is still not the branch's.
+git checkout -q main
+git checkout -q -b cc
+cc1=$(commit "cc early")
+git checkout -q main
+m1=$(commit "direct to main")
+git -c user.email=t@t -c user.name=t merge -q --no-ff cc -m "Merge cc early"
+git checkout -q cc
+git -c user.email=t@t -c user.name=t merge -q --no-ff main -m "Back-merge main into cc"
+cc_bad=$(commit "cc late change")
+cc_rev=$(commit "cc reviewed")
+git checkout -q main
+git -c user.email=t@t -c user.name=t merge -q --no-ff cc -m "Merge cc"
+w cc "{\"ticket\":\"80\",\"size\":\"M\",\"mrs\":[{\"n\":1,\"branch\":\"cc\",\"reviewed_sha\":\"$cc_rev\"}]}"
+git checkout -q bug-1
+run "$m1"
+expect "a back-merged main commit is not the branch's" 0 'No escape recorded'
+run "$cc_bad"
+expect "the branch's commit after the back-merge is" 0 'went through the review of cc (one of the'
+
+# The same commit now matched by two works is ambiguous: the earlier escape does not survive it.
+seven=$(commit "Seven (#7)")
+w one7 '{"ticket":"7","size":"M","mrs":[{"n":1,"url":"https://github.com/o/r/pull/7","reviewed_sha":"1111"}]}'
+run "$seven"
+expect "one work names it"                     0 'went through the review of one7'
+w two7 '{"ticket":"8","size":"M","mrs":[{"n":1,"url":"https://github.com/o/r/pull/7","reviewed_sha":"2222"}]}'
+run "$seven"
+expect "two works now: the escape is removed"  0 'removed'
+[ "$(escape_field)" = null ] && printf '  ok   … and gone\n' || { printf '  FAIL still %s\n' "$(escape_field)"; fails=$((fails+1)); }
 
 run deadbeef
 expect "not a commit is refused"               1 'is not a commit'
