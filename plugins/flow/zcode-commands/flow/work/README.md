@@ -213,7 +213,7 @@ This system **orchestrates** the project's existing sub-agents and skills (it do
 
 **No headings over the train.** A shipped MR/PR is *open, waiting to merge*; `mark` says it per entry — `wait` shipped, `current` being worked, `done` only merged.
 
-**The artifact mirror** (opt-in, flow-core §4.6). With `panel.artifact` set — in `FLOW.claude.md`, Claude Code only — each publication is also written, whole, as one card of a claude.ai page that gathers every work of every repo: doc `<owner.repo>--<work folder>` in collection `works`, the document above plus `repo`, `work`, `ticket`, `type`, `branch` and `harness`. The page is `examples/panel-artifact.html`, published once by hand. The transport above is unchanged.
+**The artifact mirror** (opt-in, flow-core §4.6). With `panel.artifact` set — in `FLOW.claude.md`, Claude Code only — each publication except the per-step patches is also written, whole, as one card of a claude.ai page that gathers every work of every repo: doc `<owner.repo>--<work folder>` in collection `works`, the document above plus `updated_at`, `attention` (on either transport) and `repo`, `work`, `ticket`, `type`, `branch`, `harness`. The page is `examples/panel-artifact.html`, published once by hand. The transport above is unchanged.
 
 **Who publishes it.** The 18 phase commands (flow-core §4); `/flow:feat:ship` and `/flow:bug:ship` the instant an MR/PR URL exists; `/flow:feat:plan` when the train is populated — a new train is a new shape, so a full republish; `/flow:work:resume` (§5), after reading what is on screen; `/flow:work:watch` every cycle; `/flow:work:abandon` with a terminal state. Read-only `status`, `daily`, `config`, `doctor`, `news` never publish; `/flow:work:clean` archives the folder with any panel file inside.
 

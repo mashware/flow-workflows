@@ -817,23 +817,33 @@ section does not exist: no artifact tool is loaded or called.
   Absent → the mirror is off, in silence: no line, no error. A headless run (`claude -p`, an
   `unattended` container) has no such tool, and other harnesses never read `FLOW.claude.md`, where
   the key belongs.
-- **When**: right after the transport publishes, at §4.4 (a) to (e). Not at (f): every write is a
-  tool call, and outside auto mode a prompt — a step reaches the page at the next stop or long
-  stretch.
-- **What**: what the terminal now shows, never a document rebuilt from memory. On the file
-  transport, the §4.1 document just written. Over the tools, what `panel_get` returns after a
-  `panel_set` or `panel_patch` that applied; a refused patch changed nothing on screen and writes
-  nothing here. Add six fields, from `meta.json` and git: `repo` (the repo id below), `work` (the
-  work folder's name), `ticket`, `type`, `branch`, and `harness` (`Claude Code`).
+- **When**: right after the transport publishes, at §4.4 (a) to (e) — a phase's own publications
+  (`ship` the moment an MR/PR URL exists, `plan`, `resume`, `watch`, `abandon`) are among them. Not
+  at (f): every write is a tool call, and outside auto mode a prompt — a step reaches the page at
+  the next stop or long stretch.
+- **What**: what the terminal now shows, never a document guessed at. On the file transport, the
+  §4.1 document just written. Over the tools, the document you published with `panel_set`, with
+  every `panel_patch` that applied since applied to it in order — a refused patch changed nothing on
+  screen and writes nothing here. You do not hold it (a new session, a compaction, a resume) →
+  `panel_get` once, and carry on from what it returns. Then set, whichever transport:
+  - `updated_at` — the real clock (`date -Iseconds`); over the tools the app stamps arrival itself,
+    so the document carries none of its own.
+  - `attention` — as §4.2 defines it, on the file transport too: `wait` while a `Decision` is
+    parked on the user, `block` while stuck on somebody else, `done` once the work closed (`ship`'s
+    Close, `abandon`), absent while simply working. The page reads the state from this field.
+  - `repo` (the repo id below), `work` (the work folder's name), `ticket`, `type`, `branch`, and
+    `harness` (`Claude Code`), from `meta.json` and git.
 - **Where**: action `set` — the whole document, so a line dropped from the panel leaves the card —
-  `url` the key's value, collection `works`, doc id `<repo id>--<work folder>`. The repo id is
-  `git remote get-url origin` reduced to `owner.repo` (scheme, host and `.git` dropped, `/` → `.`);
-  no remote → the main checkout's directory name (§0). Any character outside
-  `[A-Za-z0-9_.~:@+-]` becomes `-`.
+  `url` the key's value, collection `works`, doc id `<repo id>--<work folder>`. The repo id is the
+  last two path segments of `git remote get-url origin`, `.git` dropped, joined by `.` — `owner.repo`
+  whether the remote is `https://host/owner/repo.git` or `git@host:owner/repo.git`; no remote → the
+  main checkout's directory name (§0). Any character outside `[A-Za-z0-9_.~:@+-]` becomes `-`.
 - **Version**: a write to a card that exists needs `if_version`, the version the last write
   returned. Keep it in the session — one writer per card, so it is right until the session loses
-  it. None held → write unpinned. Refused for its version → one retry pinned to the version the
-  refusal names, or to the one a single `get` returns; then remember what the write returned.
+  it. None held → one `get` first: the card exists → pin to its version; it does not → write
+  unpinned. A write refused for its version — stale, or missing on a card that exists — is not a
+  failure: one retry pinned to the version the refusal names, or to the one a single `get` returns.
+  Then remember what the write returned.
 - **Failure never stops a phase.** A second refusal, a wrong URL, auth, any other error → no more
   retries for that publication, and the next stop carries one line: `artifact panel: <error>`.
 
