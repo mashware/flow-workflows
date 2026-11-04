@@ -99,11 +99,18 @@ printf '{"ticket":"T-9","branch":"feature"}\n' > .claude/work/T-9/meta.json
 answer "{\"findings\":[$FINDING]}"                    # both roles return the same finding
 node "$CLI" review --record > "$BASE/out.txt" 2>&1
 check "every source is named, not counted"       0 'raised by: security, performance'
-findings=$(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json').review_findings))")
-if printf '%s' "$findings" | grep -q '"origin":"security"' && printf '%s' "$findings" | grep -q '"origin":"performance"'; then
-  printf '  ok   --record writes one row per source\n'
+meta=$(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json')))")
+# One finding both roles raised is one row naming both, never two rows that look unique.
+want_row='"review_findings":[{"round":1,"sources":["panel:security","panel:performance"],"severity":"blocker","file":"a.txt","outcome":"open"}]'
+if printf '%s' "$meta" | grep -qF "$want_row"; then
+  printf '  ok   --record writes one row per finding, every source on it\n'
 else
-  printf '  FAIL --record writes one row per source — got %s\n' "$findings"; fails=$((fails+1))
+  printf '  FAIL --record writes one row per finding — got %s\n' "$meta"; fails=$((fails+1))
+fi
+if printf '%s' "$meta" | grep -qF '"agents":{"panel:security":1,"panel:performance":1},"reviewers":2'; then
+  printf '  ok   --record writes what the round launched\n'
+else
+  printf '  FAIL --record writes what the round launched — got %s\n' "$meta"; fails=$((fails+1))
 fi
 
 # And `flow yield` has to be able to answer the question the rows exist for: what did each

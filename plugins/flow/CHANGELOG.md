@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.109.0 — A review round records each finding once, and refuses names it does not know  ·  2026-11-04
+
+**In short**
+- **One row per finding, with every pass that raised it and what happened to it.** The outcomes are `fixed`, `open`,
+  `rejected`, `discarded` and `deferred`. "Only this pass saw it" is now read straight off the row, and "acted on"
+  means an outcome, not "no skeptic refuted it".
+- **Each round records the passes it launched and how many agents each took, findings or not**, together with its
+  tier and effective size. `flow yield` fills its agents column and counts the rounds a pass ran and found nothing.
+- **`npx flow-workflows record-review --file <round.json>` is the only writer.** A pass name, severity or outcome
+  outside its list is refused. The error names every bad value with the valid ones, and nothing is written. The
+  review's Close calls it instead of editing `meta.json`, and `flow review --record` goes through the same check.
+- **Rows recorded before this stay as they are.** `yield` reads both kinds.
+
+Hand-written origins had drifted into about 65 spellings for 12 passes in six weeks, even though the review already
+listed them, and some outcomes ended up in the severity field (#234).
+
 ## v0.108.0 — You can see which review passes still find what nothing else finds  ·  2026-11-04
 
 **In short**

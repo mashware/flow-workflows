@@ -1055,23 +1055,25 @@ async function review(argv) {
 
   const text = out.join('\n')
   if (argv.includes('--record')) {
-    recordCost(built.work, {
-      phase: 'review',
-      at: new Date().toISOString(),
-      reviewers: results.length,
-      usd: costs.length ? Number(costs.reduce((a, b) => a + b, 0).toFixed(6)) : null,
-      source: costs.length ? 'harness' : 'not reported',
-    })
-    // One row per finding per source. Beyond the built-in and the panel, a review runs four
-    // specialised passes, every one of them written after a real defect got through, and not
-    // one of them can show it is still earning its cost: a finding that reaches `## Blockers`
-    // has lost where it came from. No finding text here — that stays in the artifact.
-    recordFindings(built.work, findings.flatMap((f) => f.roles.map((role) => ({
-      origin: role.split(':')[0],
-      severity: f.severity ?? 'unrated',
-      file: f.file,
-      discarded_by_skeptic: false,
-    }))))
+    // Through the same check as an agentic round's `record-review`: a role name the CLI ran
+    // becomes `panel:<role>` exactly as the prose asks the agentic Close to write it.
+    const role = (r) => `panel:${r.split(':')[0].trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+    const answered = results.filter((r) => !r.error)
+    const doc = {
+      round: {
+        agents: Object.fromEntries(answered.map((r) => [role(r.role), 1])),
+        usd: costs.length ? Number(costs.reduce((a, b) => a + b, 0).toFixed(6)) : null,
+      },
+      findings: findings.map((f) => ({
+        sources: [...new Set(f.roles.map(role))],
+        severity: f.severity ?? 'unrated',
+        file: f.file,
+        outcome: 'open',
+      })),
+    }
+    const bad = validateReview(doc)
+    if (bad.length) { console.error(`flow review --record: nothing recorded.\n${bad.join('\n')}`); process.exit(1) }
+    writeReview(built.work, doc)
   }
   const outFile = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : null
   if (outFile) { writeFileSync(outFile, `${text}\n`); console.log(`wrote ${outFile}`) } else console.log(text)
@@ -1101,28 +1103,100 @@ function editMeta(work, fn) {
   renameSync(tmp, p)
 }
 
-function recordFindings(work, rows) {
-  if (!rows.length) return
+// --- record-review -----------------------------------------------------------------------
+// The only writer of a review round's rows. The origins used to be written by hand from the
+// prose, and six weeks of that produced ~65 spellings for ~12 passes and outcomes written
+// into the severity field. So the lists are closed here, a value outside them is refused
+// with the ones that are valid, and nothing is written until every value is.
+
+const ORIGIN_RE = /^(built-in|sweep|query-duel|yagni|contract|idiom|(panel|reinforcement):[a-z0-9][a-z0-9-]*)$/
+const SEVERITIES = ['blocker', 'major', 'minor', 'nit', 'unrated']
+const OUTCOMES = ['fixed', 'open', 'rejected', 'discarded', 'deferred']
+const TIERS = ['light', 'proportional', 'full']
+const SIZE_NAMES = SIZES.map(([n]) => n)
+const ORIGINS_HELP = 'built-in · sweep · query-duel · yagni · contract · idiom · panel:<role> · reinforcement:<area>'
+  + ' (<role>/<area>: lower-case letters, digits and -)'
+
+function validateReview(doc) {
+  const bad = []
+  if (!doc || typeof doc !== 'object') return ['the file is not a JSON object']
+  const round = doc.round ?? {}
+  if (typeof round !== 'object' || Array.isArray(round)) bad.push('`round` must be an object')
+  if (round.mr != null && !(Number.isInteger(round.mr) && round.mr > 0)) bad.push(`round.mr \`${round.mr}\`: a positive integer`)
+  if (round.tier != null && !TIERS.includes(round.tier)) bad.push(`round.tier \`${round.tier}\`: one of ${TIERS.join(' · ')}`)
+  if (round.effective_size != null && !SIZE_NAMES.includes(round.effective_size)) {
+    bad.push(`round.effective_size \`${round.effective_size}\`: one of ${SIZE_NAMES.join(' · ')}`)
+  }
+  if (round.usd != null && typeof round.usd !== 'number') bad.push(`round.usd \`${round.usd}\`: a number, or leave it out`)
+  const agents = round.agents ?? {}
+  if (typeof agents !== 'object' || Array.isArray(agents)) bad.push('round.agents must be an object {origin: n}')
+  else {
+    for (const [o, n] of Object.entries(agents)) {
+      if (!ORIGIN_RE.test(o)) bad.push(`round.agents origin \`${o}\`: one of ${ORIGINS_HELP}`)
+      if (!(Number.isInteger(n) && n > 0)) bad.push(`round.agents[${o}] \`${n}\`: a positive integer`)
+    }
+  }
+  if (!Array.isArray(doc.findings)) bad.push('`findings` must be an array (empty when the round found nothing)')
+  else {
+    doc.findings.forEach((f, i) => {
+      const at = `findings[${i}]`
+      if (!f || typeof f !== 'object') { bad.push(`${at}: not an object`); return }
+      if (!Array.isArray(f.sources) || !f.sources.length) bad.push(`${at}.sources: a non-empty list of origins`)
+      else f.sources.forEach((o) => { if (!ORIGIN_RE.test(o)) bad.push(`${at}.sources \`${o}\`: one of ${ORIGINS_HELP}`) })
+      if (!SEVERITIES.includes(f.severity)) bad.push(`${at}.severity \`${f.severity}\`: one of ${SEVERITIES.join(' · ')}`)
+      if (!OUTCOMES.includes(f.outcome)) bad.push(`${at}.outcome \`${f.outcome}\`: one of ${OUTCOMES.join(' · ')}`)
+      if (typeof f.file !== 'string' || !f.file) bad.push(`${at}.file: the path the finding is about`)
+    })
+  }
+  return bad
+}
+
+// One round: its findings, each once with every source, and one `cost[]` review entry saying
+// what the round launched. The round number continues this work's own count, across both.
+function writeReview(work, doc) {
   editMeta(work, (meta) => {
-    const prev = Array.isArray(meta.review_findings) ? meta.review_findings : []
-    // The round is this work's nth recorded review, so a pass's contribution can be read
-    // per round and the twenty-review retirement rule has something to count.
-    const round = prev.reduce((n, r) => Math.max(n, Number(r.round) || 0), 0) + 1
-    meta.review_findings = [...prev, ...rows.map((r) => ({ round, ...r }))]
+    const rows = Array.isArray(meta.review_findings) ? meta.review_findings : []
+    const costs = Array.isArray(meta.cost) ? meta.cost : []
+    const last = [...rows, ...costs.filter((e) => e?.phase === 'review')]
+      .reduce((n, r) => Math.max(n, Number(r.round) || 0), 0)
+    const r = doc.round ?? {}
+    const round = last + 1
+    const mr = r.mr != null ? { mr: r.mr } : {}
+    meta.review_findings = [...rows, ...doc.findings.map((f) => ({
+      round, ...mr, sources: f.sources, severity: f.severity, file: f.file, outcome: f.outcome,
+    }))]
+    const agents = r.agents ?? {}
+    meta.cost = [...costs, {
+      phase: 'review', at: new Date().toISOString(), round, ...mr,
+      ...(r.tier ? { tier: r.tier } : {}), ...(r.effective_size ? { effective_size: r.effective_size } : {}),
+      agents, reviewers: Object.values(agents).reduce((a, b) => a + b, 0),
+      usd: typeof r.usd === 'number' ? r.usd : null,
+      source: typeof r.usd === 'number' ? 'harness' : 'not reported',
+    }]
   })
 }
 
-function recordCost(work, entry) {
-  if (!work) return
-  const p = join(work, 'meta.json')
-  if (!existsSync(p)) return
-  let meta
-  try { meta = JSON.parse(readFileSync(p, 'utf8')) } catch { return }
-  meta.cost = Array.isArray(meta.cost) ? meta.cost : []
-  meta.cost.push(entry)
-  const tmp = `${p}.tmp`
-  writeFileSync(tmp, `${JSON.stringify(meta, null, 2)}\n`)
-  renameSync(tmp, p)
+function recordReview(argv) {
+  const at = argv.indexOf('--file')
+  const file = at === -1 ? null : argv[at + 1]
+  if (!file) { console.error('flow record-review: --file <rows.json> is required'); process.exit(1) }
+  const repo = git(['rev-parse', '--show-toplevel']).trim()
+  if (!repo) { console.error('flow record-review: not a git checkout'); process.exit(1) }
+  const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
+  const work = workFolder(repo, branch)
+  if (!work) { console.error(`flow record-review: no work on \`${branch}\` — nothing to record against`); process.exit(1) }
+  let doc
+  try { doc = JSON.parse(readFileSync(file, 'utf8')) } catch (e) {
+    console.error(`flow record-review: \`${file}\` is not readable JSON (${e.message})`); process.exit(1)
+  }
+  const bad = validateReview(doc)
+  if (bad.length) {
+    console.error(`flow record-review: nothing recorded — ${bad.length} value(s) outside the lists:`)
+    bad.forEach((b) => console.error(`  - ${b}`))
+    process.exit(1)
+  }
+  writeReview(work, doc)
+  console.log(`recorded ${doc.findings.length} finding(s) and the round's agents in ${join(work, 'meta.json')}`)
 }
 
 function cost(argv) {
@@ -1394,6 +1468,7 @@ function usage() {
   npx flow-workflows tier   [--base <ref>] [--rev <ref>] [--harness <name>]
   npx flow-workflows review [--out <file>] [--record] [same options as bundle]
   npx flow-workflows cost
+  npx flow-workflows record-review --file <rows.json>
   npx flow-workflows yield  [<repo-path>…]
 
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
@@ -1445,6 +1520,11 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   what --record wrote into meta.json. A harness that reports no figure is recorded as
   "not reported": a headcount of subagents is not a cost, and neither is a guess.
 
+"record-review" writes one review round into this branch's work: each finding once, with
+  every origin that raised it and its outcome, and what the round launched. Origins,
+  severities and outcomes come from closed lists; one value outside them and nothing is
+  written, and the error names the values that are valid.
+
 "yield" reads every work of the repos named (default: this one) — live and archived,
   here and in the main checkout — and prints, per reviewer or pass and per size, the
   rounds it ran, the findings it raised, how many only it raised, how many of those were
@@ -1462,6 +1542,7 @@ if (cmd === 'bundle') bundle(process.argv.slice(3))
 else if (cmd === 'tier') tier(process.argv.slice(3))
 else if (cmd === 'cost') cost(process.argv.slice(3))
 else if (cmd === 'yield') yieldOf(process.argv.slice(3))
+else if (cmd === 'record-review') recordReview(process.argv.slice(3))
 else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()
 else if (cmd === 'install' && tool === 'claude') claude()
