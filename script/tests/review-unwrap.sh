@@ -99,11 +99,18 @@ printf '{"ticket":"T-9","branch":"feature"}\n' > .claude/work/T-9/meta.json
 answer "{\"findings\":[$FINDING]}"                    # both roles return the same finding
 node "$CLI" review --record > "$BASE/out.txt" 2>&1
 check "every source is named, not counted"       0 'raised by: security, performance'
-findings=$(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json').review_findings))")
-if printf '%s' "$findings" | grep -q '"origin":"security"' && printf '%s' "$findings" | grep -q '"origin":"performance"'; then
-  printf '  ok   --record writes one row per source\n'
+meta=$(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json')))")
+# One finding both roles raised is one row naming both, never two rows that look unique.
+want_row='"review_findings":[{"round":1,"sources":["panel:security","panel:performance"],"severity":"blocker","file":"a.txt","outcome":"open"}]'
+if printf '%s' "$meta" | grep -qF "$want_row"; then
+  printf '  ok   --record writes one row per finding, every source on it\n'
 else
-  printf '  FAIL --record writes one row per source — got %s\n' "$findings"; fails=$((fails+1))
+  printf '  FAIL --record writes one row per finding — got %s\n' "$meta"; fails=$((fails+1))
+fi
+if printf '%s' "$meta" | grep -qF '"agents":{"panel:security":1,"panel:performance":1},"reviewers":2'; then
+  printf '  ok   --record writes what the round launched\n'
+else
+  printf '  FAIL --record writes what the round launched — got %s\n' "$meta"; fails=$((fails+1))
 fi
 
 # And `flow yield` has to be able to answer the question the rows exist for: what did each
@@ -118,6 +125,54 @@ in_yield "and a shared finding is unique to neither" '| panel:performance | 1 | 
 if node "$CLI" cost 2>&1 | grep -q 'Findings by origin'; then
   printf '  FAIL cost no longer breaks findings down by origin\n'; fails=$((fails+1))
 else printf '  ok   cost is about spend only\n'; fi
+# A harness answer the writer would refuse — a severity outside the four, a role whose name
+# slugs to nothing — is normalised, and the review itself is printed whatever --record does.
+cat > FLOW.md <<'EOF'
+## git
+- default_base: main
+
+## quality
+- reviewers:
+  - —: a role whose name has no letters
+
+## agents
+- exec_cmd: cat answer.json
+EOF
+printf '{"findings":[{"file":"a.txt","line":1,"severity":"high","what":"odd","fix":"even"}]}' > answer.json
+rm -f .claude/work/T-9/meta.json; printf '{"ticket":"T-9","branch":"feature"}\n' > .claude/work/T-9/meta.json
+node "$CLI" review --record > "$BASE/out.txt" 2>&1
+check "the review is printed before recording"   0 '1 finding(s) from 1 reviewer(s)'
+if grep -qF '"sources":["panel:role-1"],"severity":"unrated"' <(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json')))"); then
+  printf '  ok   an unknown severity and an empty slug are normalised\n'
+else printf '  FAIL an unknown severity and an empty slug are normalised — got %s\n' "$(cat .claude/work/T-9/meta.json)"; fails=$((fails+1)); fi
+
+# A finding with no file becomes `?`; two roles that slug alike are one origin with two
+# agents; a work whose meta.json is gone is said, and the review is still printed.
+cat > FLOW.md <<'EOF'
+## git
+- default_base: main
+
+## quality
+- reviewers:
+  - Data access: one
+  - data-access: two
+
+## agents
+- exec_cmd: cat answer.json
+EOF
+printf '{"findings":[{"what":"no file","fix":"x"}]}' > answer.json
+printf '{"ticket":"T-9","branch":"feature"}\n' > .claude/work/T-9/meta.json
+node "$CLI" review --record > "$BASE/out.txt" 2>&1
+meta=$(node -e "console.log(JSON.stringify(require('$BASE/repo/.claude/work/T-9/meta.json')))")
+if printf '%s' "$meta" | grep -qF '"sources":["panel:data-access"],"severity":"unrated","file":"?"' && printf '%s' "$meta" | grep -qF '"agents":{"panel:data-access":2},"reviewers":2'; then
+  printf '  ok   no file becomes ?, alike slugs sum their agents\n'
+else printf '  FAIL no file becomes ?, alike slugs sum their agents — got %s\n' "$meta"; fails=$((fails+1)); fi
+rm .claude/work/T-9/meta.json
+out=$(node "$CLI" review --record 2>&1); rc=$?
+if [ "$rc" = 1 ] && printf '%s' "$out" | grep -qF 'missing or not JSON — the review above stands' && printf '%s' "$out" | grep -qF '1 finding(s) from 2 reviewer(s)'; then
+  printf '  ok   a missing meta.json is said, and the review is still printed\n'
+else printf '  FAIL a missing meta.json is said, and the review is still printed — rc=%s:\n%s\n' "$rc" "$out"; fails=$((fails+1)); fi
+
 rm -rf .claude
 
 cd /

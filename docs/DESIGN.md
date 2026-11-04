@@ -538,6 +538,17 @@ size: the panel rarely runs below M, so XS and S are pooled or no pass there wou
 twenty rounds. `cost` went back to being about spend.
 *Now:* `flow yield`; feat:review §9; bug:review §9; work/README `meta.json`; script/tests/yield.sh.
 
+**A review round is written by one command, which refuses what it does not know.** v0.109.0: the
+prose already listed the origins, and an agentic Close writing them by hand still produced ~65
+spellings in six weeks — and outcomes written into the severity field. So the lists are closed in
+code: `flow record-review --file` takes the round as JSON, names every value outside them with the
+ones that are valid, and writes nothing until all are. A finding is now one row carrying every
+source that raised it and what happened to it, so "only this pass saw it" is read off the row
+instead of re-derived from a key that split on how a severity was spelt; and the round records
+every pass it launched, findings or not, which is the only way a pass that keeps finding nothing
+can be counted at all.
+*Now:* `flow record-review`; `flow review --record`; feat:review §2.1, §8, §9; bug:review §8, §9; work/README `meta.json`; script/tests/record-review.sh.
+
 **A change to `review` can now be checked against an outcome.** v0.67.0: every preflight in this
 repository checks shape — the adapters match their sources byte for byte, a cited path exists, a
 hook is executable — and nothing could say whether a change to the command found more defects,

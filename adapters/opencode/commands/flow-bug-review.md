@@ -180,7 +180,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - Review tier: <light | full | proportional — which reviewers ran, at what built-in effort (medium/high/xhigh/max), and why, per §2.0>
 - Agents launched: <ran vs defined — `N/M` of the `review_skill`/`reviewers` roster, naming any that did not run (with the reason) and any substitution; "built-in only" if §2.0 selected no panel>
 - Cost: <n>/<budget_max> subagents launched (<k> reviewers · <m> reinforcements · <s> skeptics), tier <light|proportional|full>
-- Measured cost: <what the harness reported for this round, when it reported anything — `flow review --record` writes it to `meta.json.cost[]` and `/flow-work-daily` and `flow cost` read it back. A harness that reports no figure is recorded as "not reported": the subagent count above is a headcount, not a cost, and a guess is worse than a gap.>
+- Measured cost: <what the harness reported for this round, when it reported anything — recorded as the round's `usd` in `meta.json.cost[]` (`/flow-feat-review §9`), and `/flow-work-daily` and `flow cost` read it back. A harness that reports no figure is recorded as "not reported": the subagent count above is a headcount, not a cost, and a guess is worse than a gap.>
 - Effective size: <diff size (N changed lines) vs `meta.json.size`, which the tier used, and — when the diff landed within 10% under a tier threshold — that fact (§2.0)>
 - Review path: <the two paths this round actually took: `flow bundle` or git for the material, `flow review` or the agentic panel for the reviewers — each with the reason when it was the fallback (no CLI, non-zero exit, `agents.exec_cmd` empty, every role empty). Without this line a round that skipped the CLI reads exactly like one that used it. When the pack ran, quote its `Config read:` line verbatim: it is the only place that says whether the overlay reached the material, and “no `--harness` was given” there means every key set only in the overlay was missing from this round.>
 - Agent models: <the value of `models.workers`/`models.agents` **with the file each came from** (flow-core §0) when set; otherwise "inherited from this thread", naming the config files you listed; agents named in `agents.<role>` keep their own definition's model>
@@ -223,10 +223,10 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 <only if §5 was run; refuted findings with their reason, or "not applicable">
 
 ## Blockers
-1. [file:line] · <origin> · …
+1. [file:line] · <origin(s), from `/flow-feat-review §2.1`'s list> · …
 
 ## Suggestions
-1. [file:line] · <origin> · …
+1. [file:line] · <origin(s), from `/flow-feat-review §2.1`'s list> · …
 ```
 
 ## 8. Close
@@ -234,7 +234,7 @@ Cost line: count every subagent this command launched — reviewers = §2.1 buil
 - With blockers: `phase` stays where it was (`validate` for size ≥ S, `fix` on XS, where validate never ran). Iterate.
 - Without blockers: `phase = "review"`, add to `phases_done`. Suggest `/flow-bug-postmortem` (M/L) or `/flow-bug-ship` (XS/S).
 - **Record *what* you reviewed, and separately what you changed after reading it** — `/flow-feat-review` §9, unchanged: `reviewed_sha` = the **candidate** of §1.5 (the revision the reviewers read, never `git rev-parse HEAD`, which by now holds this round's own fixes), and `fixed_sha` = `git rev-parse HEAD` after those fixes, empty when the round applied none. `phases_done` says a review happened; these two say on which tree and what moved afterwards, and `/flow-bug-ship §0` reads both against what is being pushed. Only when the phase advances: a review that ended in blockers reviewed nothing that stands.
-- **Record which pass found what** — `/flow-feat-review §9`, unchanged: one `meta.json.review_findings[]` entry per finding **per source** (`{ round, origin, severity, file, discarded_by_skeptic }`, no finding text), written by `flow review --record` when the CLI ran the panel and by this Close when the agentic panel did. `flow yield` reads them back across works and repos, and the retirement rule is the same: a pass with no unique accepted finding across twenty rounds at a size comes out of the command at that size.
+- **Record which pass found what** — `/flow-feat-review §9`, unchanged: one `meta.json.review_findings[]` row per finding with every origin that raised it and its outcome, plus what the round launched, written once per round through `npx flow-workflows@<version> record-review --file`, the CLI panel's roles included as sources — never by hand, and never also by `flow review --record`. `flow yield` reads them back across works and repos, and the retirement rule is the same: a pass with no unique accepted finding across twenty rounds at a size comes out of the command at that size.
 - **Record what the agents missed** — `/flow-feat-review §9`, unchanged: surviving findings in a category a panel member or named `agents.<role>` owns and did not report → `meta.json.agent_lessons[]` rows (flow-core §6.7), asking nothing. A fix is where this pays most: the defect already reached production once, and the reviewer that owns its category let it.
 - **Stage what the review taught** (`knowledge.stage` set; silence by default). Review is where a project teaches the most, and this is the only moment its findings are in context. Candidates are findings about the **domain or the codebase's real behaviour**, not about this diff: a library that does other than its name says, a test disguise that kept the suite green over a live defect, a module rule the reviewers had to cite from its own prose, a measurement. A blocker fixed here is not knowledge; *why it was written wrong* may be. Same evidence rule as `/flow-feat-design` §8 — one line of evidence per finding or it is not staged. One call per finding, one line to the user («Staged N finding(s) for `postmortem`/`ship`»). Never `knowledge.save` here.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
