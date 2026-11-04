@@ -1102,9 +1102,15 @@ async function review(argv) {
 // reviewed sha — and a ticket number is not either, since one ticket spans several MRs/PRs.
 
 function escapeOf(argv) {
-  const commitArg = argv.find((a) => !a.startsWith('--') && argv[argv.indexOf(a) - 1] !== '--file')
-  const fileAt = argv.indexOf('--file')
-  const file = fileAt === -1 ? null : argv[fileAt + 1]
+  let file = null
+  const rest = []
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--file') file = argv[++i] ?? null
+    else if (argv[i].startsWith('--file=')) file = argv[i].slice('--file='.length)
+    else if (argv[i].startsWith('--')) { console.error(`flow escape: unknown option \`${argv[i]}\``); process.exit(1) }
+    else rest.push(argv[i])
+  }
+  const commitArg = rest[0]
   if (!commitArg) { console.error('flow escape: <commit> is required'); process.exit(1) }
   const repo = git(['rev-parse', '--show-toplevel']).trim()
   if (!repo) { console.error('flow escape: not a git checkout'); process.exit(1) }
@@ -1115,8 +1121,15 @@ function escapeOf(argv) {
   if (!here) { console.error(`flow escape: no work on \`${branch}\` to record the escape in`); process.exit(1) }
 
   const cfg = flowConfig(repo, null, null)
+  // The MR/PR a squash commit came from, and nothing else: GitHub appends `(#N)` to the end of
+  // the subject, GitLab writes `See merge request <path>!N` in the body. A `(#7)` quoted
+  // mid-subject — a revert, a cherry-pick — names another MR/PR and charges nobody.
   const subject = git(['log', '-1', '--format=%s', commit], repo).trim()
-  const numbers = new Set([...subject.matchAll(/\(#(\d+)\)|!(\d+)\b/g)].map((m) => m[1] ?? m[2]))
+  const body = git(['log', '-1', '--format=%b', commit], repo)
+  const numbers = new Set([
+    subject.match(/\(#(\d+)\)\s*$/)?.[1],
+    ...[...body.matchAll(/See merge request \S*!(\d+)/g)].map((m) => m[1]),
+  ].filter(Boolean))
   const isAncestor = (a, b) => {
     try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: repo, stdio: 'ignore' }); return true } catch { return false }
   }
@@ -1126,14 +1139,23 @@ function escapeOf(argv) {
   // and their merge-base is that sha itself, so the fork is read off the merge that brought it
   // in: the side it was merged into, at that point. A fast-forward leaves no merge to read,
   // and then there is no range — the MR/PR number is the only evidence left.
+  // The merge is looked for on the base's own mainline (`--first-parent`): a branch merged into
+  // another branch first is brought into the base by that other branch's merge, and reading
+  // the fork off the inner one would count the other branch's base commits as reviewed.
+  const forks = new Map()
   const forkOf = (base, reviewed) => {
-    if (!resolves(base)) return ''
-    if (!isAncestor(reviewed, base)) return git(['merge-base', base, reviewed], repo).trim()
-    const merges = git(['rev-list', '--ancestry-path', '--merges', '--reverse', `${reviewed}..${base}`], repo).trim().split('\n').filter(Boolean)
-    for (const m of merges) {
-      if (isAncestor(reviewed, `${m}^2`) && !isAncestor(reviewed, `${m}^1`)) return git(['merge-base', `${m}^1`, reviewed], repo).trim()
+    const key = `${base} ${reviewed}`
+    if (forks.has(key)) return forks.get(key)
+    let fork = ''
+    if (!resolves(base)) fork = ''
+    else if (!isAncestor(reviewed, base)) fork = git(['merge-base', base, reviewed], repo).trim()
+    else {
+      const merges = git(['rev-list', '--first-parent', '--merges', `${reviewed}..${base}`], repo).trim().split('\n').filter(Boolean)
+      const m = merges.find((x) => isAncestor(reviewed, `${x}^2`) && !isAncestor(reviewed, `${x}^1`))
+      if (m) fork = git(['merge-base', `${m}^1`, reviewed], repo).trim()
     }
-    return ''
+    forks.set(key, fork)
+    return fork
   }
 
   const matches = []
@@ -1156,6 +1178,11 @@ function escapeOf(argv) {
 
   const works = [...new Set(matches.map((m) => m.path))]
   if (works.length !== 1) {
+    // A blame that changed takes the old escape with it: counted, it would charge a review for
+    // a commit the investigation no longer names.
+    let dropped = false
+    editMeta(here, (meta) => { if (meta.escape) { dropped = true; delete meta.escape } })
+    if (dropped) console.log('The escape recorded earlier for this bug was removed.')
     console.log(works.length
       ? `No escape recorded: ${commit.slice(0, 7)} matches ${works.length} reviewed works (${works.map((w) => w.split('/').pop()).join(', ')}), and a guess is not evidence.`
       : `No escape recorded: ${commit.slice(0, 7)} is not inside any reviewed range or reviewed MR/PR of this repo's works.`)
@@ -1537,9 +1564,11 @@ function yieldOf(argv) {
     if (!t.size && !esc.length) continue
     console.log()
     console.log(`## ${bucket}`)
-    console.log()
-    console.log('| origin | rounds | findings | unique | unique accepted | agents | verdict |')
-    console.log('|---|---|---|---|---|---|---|')
+    if (t.size) {
+      console.log()
+      console.log('| origin | rounds | findings | unique | unique accepted | agents | verdict |')
+      console.log('|---|---|---|---|---|---|---|')
+    }
     const sorted = [...t.entries()].sort((a, b) => b[1].accepted - a[1].accepted || b[1].findings - a[1].findings)
     for (const [origin, c] of sorted) {
       const n = c.rounds.size

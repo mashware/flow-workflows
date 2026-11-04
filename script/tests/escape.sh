@@ -67,6 +67,53 @@ node "$CLI" yield > "$BASE/out.txt" 2>&1
 awk '$0=="## XS+S"{p=1;next} /^## /{p=0} p' "$BASE/out.txt" | grep -qF 'escapes: 1 (feat-1)' \
   && printf '  ok   yield counts the escape at its size\n' || { printf '  FAIL yield escapes line:\n%s\n' "$(cat "$BASE/out.txt")"; fails=$((fails+1)); }
 
+# Re-run with a blame no review holds: the earlier escape goes, so yield stops counting it.
+run "$unread"
+expect "a changed blame drops the old escape"  0 'The escape recorded earlier for this bug was removed.'
+[ "$(escape_field)" = null ] && printf '  ok   … and it is gone from meta.json\n' || { printf '  FAIL still %s\n' "$(escape_field)"; fails=$((fails+1)); }
+run "$sq" --file=src/b.ts
+expect "--file=<path> is read"                 0 'went through the review of sq'
+node -e "process.exit(require('$BASE/repo/.claude/work/bug-1/meta.json').escape.file === 'src/b.ts' ? 0 : 1)" \
+  && printf '  ok   … with its file\n' || { printf '  FAIL file not recorded: %s\n' "$(escape_field)"; fails=$((fails+1)); }
+run "$sq" --files x
+expect "an unknown option is refused"          1 'unknown option `--files`'
+
+# A revert quotes another PR's subject: only the trailing (#N) is the MR/PR it came from.
+rev=$(commit 'Revert "41 Something users see (#41)" (#77)')
+run "$rev"
+expect "a quoted (#N) charges nobody"          0 'No escape recorded'
+# GitLab squash: the MR number is in the body, not the subject.
+glc=$(git -c user.email=t@t -c user.name=t commit -q --allow-empty -m "Something" -m "See merge request group/repo!88" && git rev-parse HEAD)
+w _archive/gl '{"ticket":"87","size":"M","mrs":[{"n":1,"url":"https://gitlab.com/group/repo/-/merge_requests/88","reviewed_sha":"cccc"}]}'
+run "$glc"
+expect "a GitLab body names its MR"            0 'went through the review of gl (subject carries #88'
+# The bug's own work is never a candidate, even when its own MR/PR number matches.
+own=$(commit "Its own fix (#90)")
+node -e "const f='$BASE/repo/.claude/work/bug-1/meta.json';const m=require(f);m.mrs=[{n:1,url:'https://github.com/o/r/pull/90',reviewed_sha:'dddd'}];require('fs').writeFileSync(f,JSON.stringify(m))"
+run "$own"
+expect "its own MR/PR number does not count"   0 'No escape recorded'
+
+# A branch merged into another branch before reaching main: main commits made in between
+# are not the inner branch's, and are not charged to its review.
+git checkout -q main
+git checkout -q -b outer
+outer_c=$(commit "outer work")
+git checkout -q -b inner
+inner_bad=$(commit "inner change")
+inner_rev=$(commit "inner reviewed")
+git checkout -q main
+main_mid=$(commit "someone else on main")
+git checkout -q outer
+git -c user.email=t@t -c user.name=t merge -q --no-ff inner -m "Merge inner into outer"
+git checkout -q main
+git -c user.email=t@t -c user.name=t merge -q --no-ff outer -m "Merge outer"
+w inner "{\"ticket\":\"60\",\"size\":\"M\",\"mrs\":[{\"n\":1,\"size\":\"M\",\"branch\":\"inner\",\"reviewed_sha\":\"$inner_rev\"}]}"
+git checkout -q bug-1
+run "$main_mid"
+expect "a nested merge does not take main's commits" 0 'No escape recorded'
+run "$inner_bad"
+expect "but the inner branch's own commit counts"    0 'went through the review of inner (inside'
+
 run deadbeef
 expect "not a commit is refused"               1 'is not a commit'
 git checkout -q main
