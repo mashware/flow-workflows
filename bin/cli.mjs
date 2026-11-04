@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync, spawn } from 'node:child_process'
 
@@ -1160,52 +1160,228 @@ function cost(argv) {
   console.log()
   console.log('These are the harness\'s own client-side estimates and can differ from a bill.')
   console.log('Phases with no row did not measure anything — absence here is not zero.')
-
-  findingsByOrigin(meta)
+  console.log('Which reviewer found what, across every work: `flow yield`.')
 }
 
-// What the money was spent ON. A review runs the built-in, a panel, and four specialised
-// passes — roughly 1 800 words of a 5 683-word command — every one of them added after a real
-// defect got through, and not one able to show it still earns its cost. The only argument
-// available was an opinion, and opinions about this converge on whoever spoke last.
-function findingsByOrigin(meta) {
-  const rows = Array.isArray(meta.review_findings) ? meta.review_findings : []
+// --- yield -----------------------------------------------------------------------------
+// Whether each review pass still earns what it costs, across every work a repo has kept —
+// live and archived, in this checkout and in the main one, over as many repos as are named.
+// `meta.json.review_findings[]` has carried an origin per source since the rows were added;
+// what it never had is a reader that counts across works, so the twenty-review rule had
+// nothing to count. The origins were written by hand and drifted (`builtin`, `code-review`,
+// `cli:tests`, `§5.5`…): they are mapped here, on read, and every spelling that was not
+// already canonical is printed with what it was read as, so a wrong mapping is visible.
+
+const RETIRE_AFTER = 20
+const ACCEPTED = new Set(['fixed', 'open', 'deferred'])
+const SECTION_ORIGINS = {
+  '§3.5': 'sweep', sweep: 'sweep',
+  '§3.6': 'query-duel', 'query-duel': 'query-duel',
+  '§4': 'yagni', yagni: 'yagni',
+  '§5': 'contract', contract: 'contract', 'contract-verifier': 'contract',
+  '§5.5': 'idiom', idiom: 'idiom', 'idiom-audit': 'idiom',
+}
+const BUILT_IN = new Set(['built-in', 'builtin', 'builtin-code-review', 'code-review'])
+const LEGACY_SEVERITY = {
+  blocker: 'blocker', high: 'blocker',
+  major: 'major', medium: 'major',
+  minor: 'minor', low: 'minor', suggestion: 'minor',
+  nit: 'nit',
+}
+
+// A panel role is whatever the repo named it; only the spelling noise is folded: a prefix
+// saying which path ran it, case and spaces, and the suffixes an agent's file name adds.
+function panelRole(raw) {
+  let r = raw.toLowerCase().trim().replace(/\s+/g, '-')
+  r = r.replace(/-(reviewer|hunter|verifier|audit)$/, '').replace(/-round\d+$/, '')
+  if (r === 'testing') r = 'tests'
+  if (r === 'redteam') r = 'red-team'
+  if (/^silent(-failures?)?$/.test(r)) r = 'silent-failure'
+  if (r === 'code-simplifier') r = 'simplify'
+  return `panel:${r}`
+}
+
+function canonicalOrigin(raw) {
+  const o = String(raw ?? '').trim()
+  if (!o) return 'unknown'
+  if (o.startsWith('reinforcement:')) return o.toLowerCase()
+  const bare = o.replace(/^(§panel:|cli-panel:|cli:|panel:)/, '')
+  if (BUILT_IN.has(bare)) return 'built-in'
+  if (SECTION_ORIGINS[bare]) return SECTION_ORIGINS[bare]
+  return panelRole(bare)
+}
+
+// Every work folder a repo holds: its `.claude/work` here and in the main checkout, live and
+// `_archive/`, each meta.json read once however many of those paths lead to it.
+// `seen` is shared across every repo of one call: a worktree and its main checkout, or the
+// same path named twice, lead to the same folders and must count them once.
+function worksOf(repo, seen) {
+  const roots = new Set([join(repo, '.claude', 'work'), join(mainCheckout(repo), '.claude', 'work')])
+  const works = []
+  for (const root of roots) {
+    for (const dir of [root, join(root, '_archive')]) {
+      let entries = []
+      try { entries = readdirSync(dir, { withFileTypes: true }) } catch { continue }
+      for (const e of entries) {
+        if (!e.isDirectory() || (dir === root && e.name === '_archive')) continue
+        const p = join(dir, e.name, 'meta.json')
+        let real
+        try { real = realpathSync(p) } catch { continue }
+        if (seen.has(real)) continue
+        seen.add(real)
+        try { works.push({ path: join(dir, e.name), meta: JSON.parse(readFileSync(p, 'utf8')) }) } catch {}
+      }
+    }
+  }
+  return works
+}
+
+// The rule is judged per size because the review itself is: the panel rarely runs below M,
+// so XS and S are pooled or neither would ever reach twenty rounds.
+function sizeBucket(size) {
+  const s = String(size ?? '').toUpperCase()
+  return s === 'XS' || s === 'S' ? 'XS+S' : s === 'M' || s === 'L' ? s : 'unknown size'
+}
+
+function yieldOf(argv) {
+  const repos = (argv.length ? argv : ['.']).map((a) => {
+    const top = git(['rev-parse', '--show-toplevel'], resolve(a)).trim()
+    if (!top) { console.error(`flow yield: \`${a}\` is not a git checkout`); process.exit(1) }
+    return top
+  })
+
+  // bucket → origin → counters; rounds are (work, round) keys so a round counts once.
+  const table = new Map()
+  const spellings = new Map()
+  let rounds = 0, rows = 0, works = 0
+  const seen = new Set()
+  const cell = (bucket, origin) => {
+    if (!table.has(bucket)) table.set(bucket, new Map())
+    const t = table.get(bucket)
+    if (!t.has(origin)) t.set(origin, { rounds: new Set(), findings: 0, unique: 0, accepted: 0, agents: null })
+    return t.get(origin)
+  }
+  const read = (raw) => {
+    const c = canonicalOrigin(raw)
+    if (raw !== c) {
+      if (!spellings.has(c)) spellings.set(c, new Set())
+      spellings.get(c).add(String(raw))
+    }
+    return c
+  }
+
+  for (const repo of repos) {
+    for (const { path, meta } of worksOf(repo, seen)) {
+      const found = Array.isArray(meta.review_findings) ? meta.review_findings : []
+      const costs = (Array.isArray(meta.cost) ? meta.cost : []).filter((e) => e?.phase === 'review' && e.round != null)
+      if (!found.length && !costs.length) continue
+      works += 1
+      const sizeFor = (mr, round) => {
+        const entry = costs.find((e) => e.round === round && e.effective_size && (e.mr ?? null) === (mr ?? null))
+        if (entry) return entry.effective_size
+        const part = Array.isArray(meta.mrs) && mr != null ? meta.mrs.find((m) => m?.n === mr) : null
+        return part?.size ?? meta.size
+      }
+      const roundsHere = new Set()
+
+      // A round that recorded what it launched says which passes ran, findings or not.
+      for (const e of costs) {
+        roundsHere.add(e.round)
+        for (const [raw, n] of Object.entries(e.agents ?? {})) {
+          if (!(Number(n) > 0)) continue
+          const c = cell(sizeBucket(e.effective_size ?? sizeFor(e.mr, e.round)), read(raw))
+          c.rounds.add(`${path}#${e.round}`)
+          c.agents = (c.agents ?? 0) + Number(n)
+        }
+      }
+
+      // Legacy rows are one per source; the same finding is the same (round, severity, file).
+      const legacy = found.filter((r) => !Array.isArray(r.sources))
+      const keyOf = (r) => `${r.round}::${LEGACY_SEVERITY[r.severity] ?? 'unrated'}::${r.file ?? ''}`
+      const sourcesOf = new Map()
+      for (const r of legacy) {
+        if (r.count != null) continue
+        const k = keyOf(r)
+        if (!sourcesOf.has(k)) sourcesOf.set(k, new Set())
+        String(r.origin ?? '').split('+').forEach((o) => sourcesOf.get(k).add(canonicalOrigin(o)))
+      }
+      for (const r of legacy) {
+        rows += 1
+        roundsHere.add(r.round)
+        const bucket = sizeBucket(sizeFor(r.mr, r.round))
+        const accepted = !r.discarded_by_skeptic && !['declined', 'discarded'].includes(r.severity)
+        for (const origin of new Set(String(r.origin ?? '').split('+').map(read))) {
+          const c = cell(bucket, origin)
+          // A row that only carries a count says how many, never which: they are findings,
+          // and nothing can say whether another source had them too — so the round they sit in
+          // is not one this origin can be judged on either.
+          if (r.count != null) { c.findings += Number(r.count) || 0; continue }
+          c.rounds.add(`${path}#${r.round}`)
+          c.findings += 1
+          if (sourcesOf.get(keyOf(r)).size === 1) {
+            c.unique += 1
+            if (accepted) c.accepted += 1
+          }
+        }
+      }
+
+      for (const r of found.filter((x) => Array.isArray(x.sources))) {
+        rows += 1
+        roundsHere.add(r.round)
+        const bucket = sizeBucket(sizeFor(r.mr, r.round))
+        const sources = new Set(r.sources.map(read))
+        for (const o of sources) {
+          const c = cell(bucket, o)
+          c.rounds.add(`${path}#${r.round}`)
+          c.findings += 1
+          if (sources.size === 1) {
+            c.unique += 1
+            if (ACCEPTED.has(r.outcome)) c.accepted += 1
+          }
+        }
+      }
+      rounds += roundsHere.size
+    }
+  }
+
+  console.log(`# Review yield — ${repos.join(' · ')}`)
   console.log()
-  if (!rows.length) {
-    console.log('No findings recorded by origin yet. `flow review --record` writes one row per')
-    console.log('finding per source, and the agentic panel records the same at §9 of review.')
+  if (!table.size) {
+    console.log('No review rounds recorded in the works these checkouts hold')
+    console.log(`(${repos.map((r) => join(r, '.claude', 'work')).join(', ')}, archive included).`)
     return
   }
-  const rounds = new Set(rows.map((r) => r.round)).size
-  // A finding is identified by where it is, not by its text — the text lives in the artifact.
-  const key = (r) => `${r.round}::${r.severity}::${r.file}`
-  const sources = new Map()
-  for (const r of rows) {
-    if (!sources.has(key(r))) sources.set(key(r), new Set())
-    sources.get(key(r)).add(r.origin)
-  }
-  const per = new Map()
-  for (const r of rows) {
-    const e = per.get(r.origin) ?? { total: 0, exclusive: 0, survived: 0 }
-    e.total += 1
-    if (sources.get(key(r)).size === 1) {
-      e.exclusive += 1
-      if (!r.discarded_by_skeptic) e.survived += 1
+  console.log(`${works} work(s), ${rounds} review round(s), ${rows} finding row(s).`)
+  for (const bucket of ['XS+S', 'M', 'L', 'unknown size']) {
+    const t = table.get(bucket)
+    if (!t) continue
+    console.log()
+    console.log(`## ${bucket}`)
+    console.log()
+    console.log('| origin | rounds | findings | unique | unique accepted | agents | verdict |')
+    console.log('|---|---|---|---|---|---|---|')
+    const sorted = [...t.entries()].sort((a, b) => b[1].accepted - a[1].accepted || b[1].findings - a[1].findings)
+    for (const [origin, c] of sorted) {
+      const n = c.rounds.size
+      const verdict = n < RETIRE_AFTER ? `too few rounds (${n}/${RETIRE_AFTER})`
+        : c.accepted === 0 ? `retire at ${bucket}` : 'keep'
+      console.log(`| ${origin} | ${n} | ${c.findings} | ${c.unique} | ${c.accepted} | ${c.agents ?? '—'} | ${verdict} |`)
     }
-    per.set(r.origin, e)
-  }
-  console.log(`## Findings by origin — ${rows.length} row(s) over ${rounds} round(s)`)
-  console.log()
-  console.log('| origin | findings | only this one | and survived §6 |')
-  console.log('|---|---|---|---|')
-  for (const [origin, e] of [...per.entries()].sort((a, b) => b[1].survived - a[1].survived)) {
-    console.log(`| ${origin} | ${e.total} | ${e.exclusive} | ${e.survived} |`)
   }
   console.log()
-  console.log('"only this one" is the column that decides anything: a finding three sources')
-  console.log('raised says nothing about any of them. A pass contributing no exclusive surviving')
-  console.log('finding across twenty reviews is removed from the command — the rule is written')
-  console.log('down before the data arrives so it cannot be argued backwards later.')
+  console.log('"unique accepted" decides: a finding only this origin raised and that was acted on.')
+  console.log(`An origin that ran ${RETIRE_AFTER}+ rounds at a size with none is retired at that size.`)
+  console.log('Re-run it when the model changes — a pass that stopped paying may pay again, and back.')
+  console.log('Rows written before findings carried an outcome count "accepted" as "not refuted by a')
+  console.log('skeptic", and a round they record counts only for the origins with a row in it, so')
+  console.log('"rounds" is a lower bound there and "agents" is unknown (—). Those rows carry no MR/PR')
+  console.log('number either, so a split work\'s legacy rows count at the size of the whole work.')
+  if (spellings.size) {
+    console.log()
+    console.log('## Spellings read as')
+    console.log()
+    for (const [c, raws] of [...spellings.entries()].sort()) console.log(`- ${c} ← ${[...raws].sort().join(', ')}`)
+  }
 }
 
 function usage() {
@@ -1218,6 +1394,7 @@ function usage() {
   npx flow-workflows tier   [--base <ref>] [--rev <ref>] [--harness <name>]
   npx flow-workflows review [--out <file>] [--record] [same options as bundle]
   npx flow-workflows cost
+  npx flow-workflows yield  [<repo-path>…]
 
 Harnesses: ${Object.keys(HARNESSES).join(' · ')}
   "project" installs into the current repo instead of your user folder.
@@ -1267,9 +1444,13 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
 "cost" prints what each phase of this branch's work actually reported spending, from
   what --record wrote into meta.json. A harness that reports no figure is recorded as
   "not reported": a headcount of subagents is not a cost, and neither is a guess.
-  It also breaks the round's findings down by origin — which reviewer or pass raised
-  each one, how many only it raised, and how many of those survived verification. That
-  last column is the only evidence a pass is still earning the words it costs.
+
+"yield" reads every work of the repos named (default: this one) — live and archived,
+  here and in the main checkout — and prints, per reviewer or pass and per size, the
+  rounds it ran, the findings it raised, how many only it raised, how many of those were
+  acted on, and the agents it took. One that ran 20+ rounds at a size with no unique
+  accepted finding is marked "retire" there; XS and S are pooled, since the panel rarely
+  runs below M. Old spellings of an origin are mapped and listed with what they became.
 
 Updating: re-run the install command — it sweeps the previous version first.
 Docs: https://github.com/mashware/flow-workflows`)
@@ -1280,6 +1461,7 @@ const [cmd, tool, scope] = process.argv.slice(2)
 if (cmd === 'bundle') bundle(process.argv.slice(3))
 else if (cmd === 'tier') tier(process.argv.slice(3))
 else if (cmd === 'cost') cost(process.argv.slice(3))
+else if (cmd === 'yield') yieldOf(process.argv.slice(3))
 else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()
 else if (cmd === 'install' && tool === 'claude') claude()
