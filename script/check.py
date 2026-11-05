@@ -491,7 +491,7 @@ PANEL_REMINDER = (
     f"**Panel words are closed** — `mark`: {listed(MARKS)}; `style`: {listed(STYLES)}. "
     "Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. "
     "**Publish it before every stop and every question, and again the moment an answer arrives** — "
-    "the control-room card with it when `panel.artifact` is set (flow-core §4.4, §4.6): a phase that "
+    "the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that "
     "asks four questions and publishes nothing leaves the screen on the first."
 )
 
