@@ -5,6 +5,19 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.113.0 — The control room page keeps itself up to date  ·  2026-11-05
+
+**In short**
+- **A work that answered its question no longer stays red on the control room.** A page published by an older
+  plugin painted a card as blocked whenever one of its lines carried a ✕, even a heads-up such as "the sibling
+  repo will need the contract". The current page reads only the state the session writes.
+- **Nobody has to republish the page by hand.** Once per session, before its first card write, flow compares
+  the published page with the plugin's and republishes it when it is older. Cards and their data stay.
+- **`/flow:init room` brings a page it reuses up to date**, and `/flow:doctor` says when a page is out of date.
+
+The page carries its own version now, and the release preflight refuses a change to the page that does not
+raise it.
+
 ## v0.112.0 — The control room sets itself up  ·  2026-11-04
 
 **In short**

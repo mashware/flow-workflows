@@ -189,12 +189,15 @@ every repo they work in points at it.
    scratchpad, and the plugin's folder is neither), read it whole, load whatever the harness asks
    for before passing `capabilities`, and publish that copy as a new artifact with the capabilities
    its header names. Nobody types a path or a version: the plugin knows where it is.
+   **Reuse, when a found page was chosen**: bring it up to date as flow-core §4.6 says (*The page
+   is kept current*) — a page published by an older plugin is republished from the example, with
+   its cards kept.
 6. **Write the key** — `- artifact: <url>` under `## panel` in `FLOW.claude.md`, in the template's
    section order (§4): the section exists → replace the value; the file exists without it → insert
    the section where that order puts it; absent → create the file with the two-line header of §4
    and that section alone. Then the ignore line, if it was accepted.
-7. **One line**: the URL, whether it was reused or published, and that `/flow:doctor` checks it and
-   names the permission rule that stops each card update from asking.
+7. **One line**: the URL, whether it was reused (and brought up to date) or published, and that
+   `/flow:doctor` checks it and names the permission rule that stops each card update from asking.
 
 ## 5. Close
 
