@@ -1075,6 +1075,45 @@ def check_eval_suite(files):
                         f"noisiest review (clean) or the quietest one (seeded)")
 
 
+ROOM_PAGE = "plugins/flow/examples/panel-artifact.html"
+
+
+def room_page_version(text):
+    m = re.search(r'<meta name="flow-room-page" content="(\d+)">', text or "")
+    return int(m.group(1)) if m else None
+
+
+def check_room_page_version():
+    """A change to the control room page must raise its `flow-room-page` version.
+
+    Every session compares the published page's version with this file's and republishes
+    only when the published one is lower (flow-core §4.6). A change that keeps the number
+    never reaches anyone who already has the page: their old copy keeps drawing whatever
+    the old code drew, which is how a card stayed "blocked" after its question was answered.
+    """
+    try:
+        now = read(ROOM_PAGE)
+    except FileNotFoundError:
+        return
+    mine = room_page_version(now)
+    if mine is None:
+        fail(ROOM_PAGE, 'no `<meta name="flow-room-page" content="N">` — sessions cannot '
+                        'tell an old published page from this one')
+        return
+    tag = subprocess.run(["git", "describe", "--tags", "--abbrev=0"], cwd=ROOT,
+                         capture_output=True, text=True).stdout.strip()
+    if not tag:
+        return
+    old = subprocess.run(["git", "show", f"{tag}:{ROOM_PAGE}"], cwd=ROOT,
+                         capture_output=True, text=True)
+    if old.returncode != 0 or old.stdout == now:
+        return
+    before = room_page_version(old.stdout)
+    if before is not None and mine <= before:
+        fail(ROOM_PAGE, f"changed since {tag} but `flow-room-page` is still {mine} — raise it, "
+                        f"or the pages already published never get the change")
+
+
 def hand_over_to_the_tree():
     """The exit code of the tree's own copy of this script, when git reached another one.
 
@@ -1120,6 +1159,7 @@ def run_checks(files):
     check_panel_vocabulary_lists(files)
     check_no_stack_leak(files)
     check_eval_suite(files)
+    check_room_page_version()
 
 
 def main():

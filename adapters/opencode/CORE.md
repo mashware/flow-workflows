@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.112.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.113.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -818,6 +818,16 @@ section does not exist: no artifact tool is loaded or called.
   Absent → the mirror is off, in silence: no line, no error. A headless run (`claude -p`, an
   `unattended` container) has no such tool, and other harnesses never read `FLOW.claude.md`, where
   the key belongs.
+- **The page is kept current — once per session**, before its first card write. Artifact `read`
+  of the URL, and the `content` of `<meta name="flow-room-page">` in what comes back, against the
+  same tag in `~/.claude/flow/examples/panel-artifact.html`. Equal or higher → nothing.
+  Lower or absent → the page predates this plugin, and an old page draws states the cards no
+  longer mean: republish it — copy the example into the session's scratchpad (the Artifact tool
+  publishes only from there or the working directory), read it whole, publish that copy with `url`
+  the key's value and no `capabilities`, so the page keeps its database and every card. The read
+  saying the person cannot edit it (no "writer") → leave it. Either failing, or a page left
+  behind, → the next stop carries one line, `artifact panel: page out of date — <why>`, and the
+  cards are written anyway: an old page still shows them.
 - **When**: right after the transport publishes, at §4.4 (a) to (e) — a phase's own publications
   (`ship` the moment an MR/PR URL exists, `plan`, `resume`, `watch`, `abandon`) are among them. At
   (f), a plan step, only when the card's last write is 10 minutes old or more: every write is a

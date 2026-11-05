@@ -1,5 +1,6 @@
 <title>Flow Control Room</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="flow-room-page" content="1">
 <!--
   The page behind `panel.artifact` (flow-core §4.6). `/flow:init room` publishes it, or reuses the
   one you already have, and writes the key. Published by hand, it needs these capabilities:
@@ -8,6 +9,8 @@
     ## panel
     - artifact: https://claude.ai/artifact/<id>
   Every work writes one document to the `works` collection; this page shows them, grouped by repo.
+  `flow-room-page` above is this page's version: a session that finds a lower one, or none, on the
+  published page republishes this file over it (flow-core §4.6). Raise it with every change here.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
