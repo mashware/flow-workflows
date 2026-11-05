@@ -7,7 +7,7 @@ argument-hint: "[TICKET]"
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when `panel.artifact` is set (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 **Autopiloted post-deploy monitoring**: signals **scoped to the change** over a window (default 30 min), against a baseline; alert on errors or performance regressions from the deploy.
 

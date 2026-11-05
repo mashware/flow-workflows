@@ -22,7 +22,7 @@ description: "Close a work without shipping (discarded feature, non-issue, etc.)
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when `panel.artifact` is set (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 Clean closure for works that will not reach the base branch: a feature discarded after `design`, a bug that is not one (expected behavior, external problem, user misconfiguration), a work absorbed by another ticket.
 

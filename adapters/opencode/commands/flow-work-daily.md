@@ -18,13 +18,13 @@ description: Your work assistant — a Scrum-style daily standup across all your
 
 Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when `panel.artifact` is set (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 External sources (tracker, forge, `knowledge`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
 
 Your **work assistant**: a Scrum-style daily standup — *"what was I working on?"*, *"what's left?"*, *"what should I pick up today?"* — from three sources: **local** work state, the **forge** (open MRs/PRs, reviews, CI), the **tracker** (assigned/re-prioritized tickets). The one overview of every open work; `/flow-work-resume` is the one-branch view. With forge and tracker both unavailable it is still the full local picture.
 
-**Read-only.** Never touches `meta.json`, git, the forge, or the tracker; its only write is the "last seen" marker (§7). What it finds stale it reports and points at the command that writes.
+**Read-only.** Never touches `meta.json`, git, the forge, or the tracker; its only writes are the "last seen" marker (§7) and, with `panel.artifact` set, the control-room cards §2 finds stale. What it finds stale it reports and points at the command that writes.
 
 ## Modes
 
@@ -70,7 +70,7 @@ What the team is asking of you **right now**, and what already happened to the M
 
 - **Your open MRs/PRs**: `glab mr list --author=@me` / `gh pr list --author @me`.
 - **Awaiting your review**: `glab mr list --reviewer=@me` / `gh pr list --search "review-requested:@me"`.
-- **Recorded vs real state** — every `meta.json.mrs[]` entry with a number whose `status` is not `merged`/`closed`/`superseded`: one `glab mr view <n> --output json` / `gh pr view <n> --json state,mergedAt` each. The forge says merged or closed while the work still says otherwise → that work is **stale**: the merge happened outside flow, and the open-list above can no longer show it.
+- **Recorded vs real state** — every `meta.json.mrs[]` entry with a number whose `status` is not `merged`/`closed`/`superseded`: one `glab mr view <n> --output json` / `gh pr view <n> --json state,mergedAt` each. The forge says merged or closed while the work still says otherwise → that work is **stale**: the merge happened outside flow, and the open-list above can no longer show it. With `panel.artifact` set, its control-room card is brought up to date now (flow-core §4.6, *a card whose MR/PR moved without its session*).
 - **CI red** on your MRs/PRs → flag it (→ `/flow-work-green`).
 - **Cannot merge** — the forge's verdict, distinct from the pipeline: conflicts, behind base, draft, approvals missing (`detailed_merge_status`/`has_conflicts` on GitLab · `mergeable`/`mergeStateStatus`/`reviewDecision` on GitHub). Flag separately, naming the reason. Conflicts / behind-base → `/flow-work-green`; draft and approvals are yours or the reviewers' to clear.
 - **Threads that need *your* reply** — **latest comment not yours** (§0), fetched per open MR/PR (`glab api .../merge_requests/:iid/discussions` · `gh api` review threads). This — **not** the raw *unresolved* count — is the signal for `/flow-work-respond` (it **never resolves** threads, so an answered thread stays unresolved until the reviewer closes it).

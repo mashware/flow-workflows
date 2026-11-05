@@ -22,7 +22,7 @@ description: "Commit, push, MR/PR, and offer to save domain knowledge"
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context. **Models: this command runs with the model it was launched with; the wait it delegates takes `models.supervisors`.**
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when `panel.artifact` is set (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
