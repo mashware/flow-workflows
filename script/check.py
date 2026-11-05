@@ -489,7 +489,10 @@ def listed(words):
 # then four lines carrying the invented mark `doing`.
 PANEL_REMINDER = (
     f"**Panel words are closed** — `mark`: {listed(MARKS)}; `style`: {listed(STYLES)}. "
-    "Anything else is dropped by the reader in silence: the panel still paints, and nobody is told."
+    "Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. "
+    "**Publish it before every stop and every question, and again the moment an answer arrives** — "
+    "the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that "
+    "asks four questions and publishes nothing leaves the screen on the first."
 )
 
 # The line that decides which files owe the sentence. Every command that loads the shared

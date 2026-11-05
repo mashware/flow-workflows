@@ -17,7 +17,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.113.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.114.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -865,6 +865,15 @@ section does not exist: no artifact tool is loaded or called.
   pinned to the version held, or to the one a single `get` returns; no card → nothing to do. The
   mirror off or the key empty → nothing to do. A folder moved back out of `_archive/` gets its card
   again at its next publication.
+- **A card whose MR/PR moved without its session.** A merge or a close done in the forge has no
+  session to write it, and the card keeps asking. `/flow-work-daily` and `/flow-work-clean` — the
+  commands that ask the forge about every recorded MR/PR — read `works` once (`list`) when the
+  mirror is on, and rewrite each card of this repo (`repo` as below) whose work the forge just
+  showed moved while the card still shows it open: that train line's `mark` to `done` (merged) or
+  `block` (closed unmerged), `Now` to that fact, the `Decision` and every `wait` line about that
+  MR/PR dropped, and `attention` to `done` when every MR/PR of the work is merged, cleared
+  otherwise. Same `set`, same version pinning as above; `meta.json` is not touched — the work's own
+  next phase, or `clean`, closes it.
 - **Failure never stops a phase.** A second version refusal → no more retries for that
   publication. Any other failure — a wrong URL, auth, a permission prompt the user declined — turns
   the mirror off for the rest of the session. Either way the next stop carries one line,

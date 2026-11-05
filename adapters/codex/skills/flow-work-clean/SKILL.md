@@ -20,7 +20,7 @@ description: "Sweep what finished work left behind — merged worktrees, dead br
 
 Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 The forge (`git.cli`) is **best-effort**: CLI missing, unauthenticated, or over ~5s → fall back to the local evidence in §4 and say so in one line; never block.
 
@@ -125,6 +125,8 @@ gh pr list --head <branch> --state all --json state,number,url   # GitHub
 Above 25 → skip the pass and report how many were left unresolved.
 
 Degraded mode (no forge, no successful fetch): keep the (b)–(d) verdicts, mark the whole table `(local evidence only — origin not refreshed)`, and drop `merged, squashed` to `unknown`.
+
+**Cards that still ask.** With `panel.artifact` set, every work whose MR/PR the forge reports merged or closed here gets its control-room card brought up to date before the sweep is shown (flow-core §4.6, *a card whose MR/PR moved without its session*) — kept works included: a card is not a residue, and rewriting it removes nothing.
 
 ## 5. The protected set
 

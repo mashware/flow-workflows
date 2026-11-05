@@ -5,6 +5,16 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.114.0 — Control-room cards follow the work  ·  2026-11-05
+
+**In short**
+- **Every phase publishes again at each question and each answer.** A session could go through design, plan,
+  build and review, answering four questions, while its card still said "design". The line every command
+  carries now says when to publish, not only which words to use.
+- **A MR/PR merged in the forge no longer leaves its card "waiting on you".** `/flow:work:daily` and
+  `/flow:work:clean` already notice a merge done outside flow. Now they also bring that work's card up to date:
+  the MR/PR done, and the card done once every MR/PR of the work has merged.
+
 ## v0.113.0 — The control room page keeps itself up to date  ·  2026-11-05
 
 **In short**
