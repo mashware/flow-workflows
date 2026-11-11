@@ -165,11 +165,12 @@ if [ -n "$train" ]; then
 	head_line="$head_line · MR #$(printf '%s' "$train" | awk '{print $1}') of $(printf '%s' "$train" | awk '{print $2}')"
 fi
 
-# What the last session was doing, in its own words: the panel's `Now` line first, the
-# handoff's first line otherwise. A session that published its panel over the terminal's MCP
-# leaves no file here, so the handoff carries this on its own — absence is not an error.
+# What the last session was doing, in its own words: the panel's `now` line first, the
+# handoff's first line otherwise. `flow-workflows panel` writes panel.json whatever the
+# transport, one panel line per text line and keyed `now` in any language; a file written by
+# hand may only carry the `Now` ref, and no file at all leaves the handoff to say it.
 panel="$dir/panel.json"
-now=$(grep '"ref"[[:space:]]*:[[:space:]]*"Now"' "$panel" 2>/dev/null |
+now=$(grep -E '"key"[[:space:]]*:[[:space:]]*"now"|"ref"[[:space:]]*:[[:space:]]*"Now"' "$panel" 2>/dev/null |
 	sed -n 's/.*"text"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
 if [ -z "$now" ] && [ -f "$dir/00-summary.md" ]; then
 	now=$(grep -v '^[[:space:]]*$' "$dir/00-summary.md" 2>/dev/null | grep -v '^#' | head -1 |

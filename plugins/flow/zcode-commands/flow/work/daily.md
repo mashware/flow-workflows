@@ -19,7 +19,7 @@ External sources (tracker, forge, `knowledge`) are all **best-effort**: a CLI mi
 
 Your **work assistant**: a Scrum-style daily standup — *"what was I working on?"*, *"what's left?"*, *"what should I pick up today?"* — from three sources: **local** work state, the **forge** (open MRs/PRs, reviews, CI), the **tracker** (assigned/re-prioritized tickets). The one overview of every open work; `/flow:work:resume` is the one-branch view. With forge and tracker both unavailable it is still the full local picture.
 
-**Read-only.** Never touches `meta.json`, git, the forge, or the tracker; its only writes are the "last seen" marker (§7) and, with `panel.artifact` set, the control-room cards §2 finds stale. What it finds stale it reports and points at the command that writes.
+**Read-only.** Never touches `meta.json`, git, the forge, or the tracker; its only writes are the "last seen" marker (§7) and, with `panel.artifact` set, the control-room cards §2 finds stale — with the `card.json` the panel CLI renders for those works (never their `panel.json`: that is each work's own session's pane). What it finds stale it reports and points at the command that writes.
 
 ## Modes
 

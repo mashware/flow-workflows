@@ -476,9 +476,8 @@ def listed(words):
 # added a check that parsed it back into sets to confirm the two agreed; building it means
 # they cannot disagree, which is the version of that guarantee with no check to maintain.
 #
-# The lists are not held here for tidiness: they belong to `mashware/agent-terminal`
-# (`docs/04-contrato-panel.md`, and literally `crates/panel-contract/src/panel.rs`
-# `mark()`/`style()`), and flow only copies them. Copying them into twenty-four command
+# The lists are not held here for tidiness: they belong to the terminal that reads the panel
+# (its panel contract — the six marks and seven styles), and flow only copies them. Copying them into twenty-four command
 # files is the drift this repo paid a release to remove — unless one constant pins every
 # copy, which is what `check_panel_reminder` below does.
 #
@@ -800,7 +799,7 @@ CORE_ONLY_BLOCKS = (
     "**A stop is where you hand the screen back**",
     "- **Product altitude.**",
     "**Zero-context rule.**",
-    "**Two transports, one document.**",
+    "**Two transports for the one document.**",
     "- **`mark` says what a line is**",
     "- **`link` is a field, never a URL inside `text`**",
     "(a) In pre-flight, as soon as `meta.json` is loaded",
@@ -968,6 +967,27 @@ DETECTION_END = "stack-detection:end"
 def _stack_families(line, families):
     return {name for name, pattern in families.items()
             if re.search(pattern, line, re.IGNORECASE)}
+
+
+# The panel's reader is whichever terminal the person runs, and flow names none of them. The
+# plugin said "a pane of agent-terminal" for two months after that terminal was replaced, so a
+# session reading it looked for a product that was gone; a name in the shipped prose is a
+# claim about the person's machine that only their config can make.
+PANEL_READERS = ("agent-terminal", "wezterm", "herdr", "projectx")
+
+
+def check_no_panel_reader_named(files):
+    for f in files:
+        if not f.startswith(("plugins/", "adapters/", "bin/")) or "CHANGELOG" in f:
+            continue
+        if not f.endswith((".md", ".mjs", ".js", ".json", ".sh", ".toml", ".yaml")):
+            continue
+        for n, line in enumerate(read(f).splitlines(), 1):
+            low = line.lower()
+            hit = next((r for r in PANEL_READERS if r in low), None)
+            if hit:
+                fail(f"{f}:{n}", f"names a terminal ({hit}) — the panel's reader is \"the terminal\", "
+                     "and which one is the person's config (`panel.publish_cmd`, the MCP tools they installed)")
 
 
 def check_no_stack_leak(files):
@@ -1161,6 +1181,7 @@ def run_checks(files):
     check_panel_vocabulary_prose(files)
     check_panel_vocabulary_lists(files)
     check_no_stack_leak(files)
+    check_no_panel_reader_named(files)
     check_eval_suite(files)
     check_room_page_version()
 

@@ -363,6 +363,7 @@ mirrors its live panel to its own card on a claude.ai artifact, grouped by repo.
 put the key in `FLOW.claude.md`, which is personal and read by no other harness. `/flow:init room`
 sets it: the first time it publishes your page, in every other repo it finds that page and reuses it.
 
+- `publish_cmd:`      # a command that receives the rendered panel document (JSON) on stdin every time `flow-workflows panel` renders it — the agent's publication and the plugin hook's refresh alike. For a terminal that paints only what reaches it over its own channel and never reads `.claude/work/<work>/panel.json`. Empty = the file and the `panel_*` tools are the whole transport. A failure warns and never stops a phase. **Read only from a FLOW file git does not track** — a committed one is ignored with a warning, since the hook would run it on every machine that opens the repo.
 - `artifact:`         # the artifact's URL, `https://claude.ai/artifact/<id>` — `/flow:init room` writes it. Empty = no mirror, no artifact tool called. Each card update is a tool call that asks permission unless `ArtifactData` is allowed — `doctor` prints the rule.
 
 ## notes

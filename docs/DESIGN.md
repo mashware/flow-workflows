@@ -903,8 +903,8 @@ drift; a closed enumeration has no rewording that is still correct, so it may be
 only if a check pins every copy to one constant.** One sentence now sits in all 24 command files, on
 the line after the one that loads the skill — not at the points that order a publication, because
 `build`, `review` and `validate` order none of their own and are exactly where the failure was seen.
-The words belong to `mashware/agent-terminal` (`docs/04-contrato-panel.md`,
-`crates/panel-contract/src/panel.rs`); the day they change: edit `MARKS`/`STYLES` (the sentence is
+The words belong to the terminal that reads the panel (its panel contract: six marks, seven
+styles); the day they change: edit `MARKS`/`STYLES` (the sentence is
 built from them and moves on its own), `sed` the 24 files (they are byte-identical), **edit the two
 files that also enumerate the vocabulary in prose and that no check reads — `flow-core` §4.1 and
 `plugins/flow/commands/work/README.md`** — then run `script/adapter-build.py` and `script/check.py`.

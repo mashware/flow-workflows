@@ -74,7 +74,7 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 [ -d "$WORK" ] || { echo "no such folder: $WORK"; exit 1; }
 tmp=$(mktemp -d) || exit 1
 idx="$tmp/index"   # does not exist yet: git starts an empty index there
-GIT_INDEX_FILE="$idx" git add -f -- "$WORK" ":(exclude)$WORK/panel.json" &&
+GIT_INDEX_FILE="$idx" git add -f -- "$WORK" ":(exclude)$WORK/panel.json" ":(exclude)$WORK/panel-input.json" ":(exclude)$WORK/card.json" ":(exclude)$WORK/forge-state.json" ":(exclude)$WORK/.panel-refresh*" ":(exclude)$WORK/*.tmp" &&
   files=$(GIT_INDEX_FILE="$idx" git ls-files) &&
   tree=$(GIT_INDEX_FILE="$idx" git write-tree) &&
   commit=$(git commit-tree "$tree" -m "study $TICKET")
@@ -84,8 +84,9 @@ printf '%s\n' "$files"; echo "commit=$commit"
 ```
 
 `GIT_INDEX_FILE` is set per command, never exported, so a failure leaves no session pointing git
-at a deleted index. `panel.json` stays out: it is this machine's terminal panel, and on another one
-it would show this session's last state as if it were theirs. The block failing → its message, and
+at a deleted index. `panel.json`, `panel-input.json`, `card.json`, `forge-state.json`, the `.panel-refresh*` stamps and
+any `*.tmp` stay out: they are this machine's panel, and on
+another one they would show this session's last state as if it were theirs. The block failing → its message, and
 stop: `commit-tree` with no git identity configured is the usual cause.
 
 ## 4. Confirm, then push

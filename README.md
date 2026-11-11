@@ -366,13 +366,19 @@ CI runs the same seven on every PR. The preflight refuses what has shipped broke
 No agents and no review skill — those are stack-specific; you name yours in the effective FLOW
 configuration, normally the active harness overlay. One worked set ships as an *example* and is
 never loaded: [`examples/symfony/`](plugins/flow/examples/symfony/) is a filled-in `FLOW.md` plus
-four reviewers for a Symfony + Doctrine repo, to copy and edit. Three generic hooks ship: a guard
-against pushing to `master`/`main`, an update notice at session start, and a session-start line
-saying which work this branch belongs to and where it stands — after a compaction, that last one
+four reviewers for a Symfony + Doctrine repo, to copy and edit. Four generic hooks ship: a guard
+against pushing to `master`/`main`, an update notice at session start, a session-start line
+saying which work this branch belongs to and where it stands — after a compaction, that one
 prints the brief and plan the build is held to instead, since there the context is what was lost,
-not the thread. Optional dependencies (a knowledge
+not the thread — and one after each tool call that re-renders the live panel when the work's
+files changed. Optional dependencies (a knowledge
 source such as `domain-memory` or `codegraph`, your git host CLI, a tracker CLI) improve specific
 steps; without them those steps degrade and the rest works.
+
+## Acknowledgements
+
+Thanks to [carloscmaleno](https://github.com/carloscmaleno), the first person besides its author
+willing to give flow a chance on real work.
 
 ## License
 

@@ -55,6 +55,10 @@ jobs:
         run: bash script/tests/tier.sh
       - name: the panel-vocabulary sentence every command carries
         run: bash script/tests/panel-reminder.sh
+      - name: the panel renderer (flow panel)
+        run: bash script/tests/panel.sh
+      - name: the hook that re-renders the panel after a tool call
+        run: bash script/tests/panel-refresh.sh
       - name: guards that must fail when what they guard is gone
         run: bash script/tests/preflight-bindings.sh
       - name: every unattended question has a way back
