@@ -712,7 +712,9 @@ language. So a publication is two moves:
 newer than `panel.json` and than that branch's last attempt — a render that wrote nothing is not
 retried until one of them changes again. Ticking a step in the plan *is* publishing it there. **An answered question is too**: when the
 user answers the harness's question tool (`AskUserQuestion`, Codex's `request_user_input`) and the
-input holds a `decision`, the hook drops `decision` and a `wait` from it and renders — one left
+input holds a `decision`, the hook copies the input aside as answered (`panel-answered.json`) and
+renders: while the input is still that copy, its `decision` and `wait` claim nobody. Your input is
+never rewritten — the next one you write is newer than the answer and asks again. A question left
 unanswered, rejected or timed out changes nothing. The hook cannot reach
 the terminal's MCP tools, which is what `panel.publish_cmd` is for (§4.2).
 

@@ -18,11 +18,13 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
   no longer raises the flag.
 
 The plugin's hook, which already repainted the panel when the work's files changed, now also watches the
-question tool: when Claude Code's `AskUserQuestion` (or Codex's `request_user_input`) comes back with an answer
-and the panel input holds a `decision`, it runs `flow-workflows panel --answered`, which drops that decision and
-its `wait` from `panel-input.json` and renders — through `panel.publish_cmd` too. Any other tool call costs what
-it did. The CLI no longer honours `attention: "wait"` without a `decision`, and flow-core stops suggesting
-the agent write `attention` at all: `block` and `done` are the only values it writes by hand.
+question tool: when Claude Code's `AskUserQuestion` (or Codex's `request_user_input`) comes back with a real
+answer — read from the tool's response alone — and the panel input holds a `decision`, it copies the input aside
+as `panel-answered.json` and renders, through `panel.publish_cmd` too. While the input is still that copy,
+`flow-workflows panel` leaves its `decision` and `wait` out; the agent's own file is never rewritten, so the next
+one it writes asks again. Any other tool call costs what it did. The CLI no longer honours `attention: "wait"`
+without a `decision` (it says so on stderr), and flow-core stops suggesting the agent write `attention` at all:
+`block` and `done` are the only values it writes by hand.
 
 ## v0.116.0 — The board shows the roadmap, and each console hangs from its deliverable  ·  2026-11-12
 
