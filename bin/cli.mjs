@@ -1796,7 +1796,7 @@ function readPanelInput(work, warn) {
   return { input }
 }
 
-function renderPanel({ meta, work, input, forge = {}, foreign = false }) {
+function renderPanel({ meta, work, input, forge = {}, foreign = false, prs = false }) {
   const labels = { ...PANEL_LABELS, ...(input.labels ?? {}) }
   const done = meta.phase === 'done'
   const abandoned = meta.phase === 'abandoned'
@@ -1860,7 +1860,7 @@ function renderPanel({ meta, work, input, forge = {}, foreign = false }) {
   // Each block opens with a header that names it and says how far along it is. The train is
   // reference once its MRs/PRs merge, so it starts folded; the plan being built is the news.
   if (train.length) {
-    const forgeWord = labels.mrs || (train.some((l) => /\/pull\/\d+/.test(l.link ?? '')) ? 'PRs' : 'MRs')
+    const forgeWord = labels.mrs || (prs || train.some((l) => /\/pulls?\/\d+/.test(l.link ?? '')) ? 'PRs' : 'MRs')
     const merged = marks.filter((k) => k === 'done').length
     block([{ key: 'mrs', text: forgeWord, style: 'section', summary: `${merged}/${marks.length} ${labels.merged}`, collapsed: true }, ...train])
   }
@@ -2067,7 +2067,9 @@ function panel(argv) {
   // the folder of this branch's own work.
   const branches = [meta.branch, ...(Array.isArray(meta.mrs) ? meta.mrs.map((m) => m?.branch) : [])]
   const foreign = Boolean(named) && !branches.includes(branch)
-  const doc = renderPanel({ meta, work, input, forge, foreign })
+  // The forge's own word for the train, read off the remote while no MR/PR has a URL yet.
+  const prs = /github/i.test(git(['remote', 'get-url', 'origin'], repo))
+  const doc = renderPanel({ meta, work, input, forge, foreign, prs })
   // Another branch's panel.json is the live pane of the session that owns it: a render made for
   // the control room (daily, clean) writes only the card, never the file that session shows.
   if (!foreign) writeAtomic(join(work, 'panel.json'), panelText(doc))

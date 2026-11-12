@@ -1560,14 +1560,16 @@ judged.
   `title` the rest; a heading with no code is its own `id` and `title`, whole. `done_when` is its
   closing criterion as written, without its label; none → absent. `depends_on` is the `id` of every
   milestone its order-table dependency cell names by §10's rule — a range written as one (`H2 to
-  H11`) names each milestone between them in file order; an item, a person or anything outside the
-  file named there stays out.
+  H11`) names each milestone whose code has the same prefix and a number in that range, never a
+  milestone without a code that happens to sit between them in the file; an item, a person or
+  anything outside the file named there stays out.
 - **An item** is each deliverable — a table row or a checkbox — under that milestone, in file
   order. `text` is the item's first sentence, its markdown removed, cut to 80 characters with `…`.
   `ref` is the ticket cell as written (the checkbox annotation's ticket), absent when empty or a
-  dash. `id` is the ticket that cell names; no ticket → the one requirement code the text cites in
-  parentheses (`(TAX-06)`), when it cites exactly one; neither → no `id`. A ticket that two rows of
-  one milestone share keeps its bare `id` on the first and becomes `<ticket>-2`, `-3`… on the next.
+  dash. `id` is the ticket that cell names; no ticket → the one requirement code the row's whole
+  text cell (not only its first sentence) cites in parentheses (`(TAX-06)`), when it cites exactly
+  one; neither → no `id`. An `id` that two items of one milestone would share — a ticket or a code
+  alike — stays bare on the first and becomes `<id>-2`, `-3`… on the next, in file order.
 - **`mark` is the state word, copied** — the file's done word → `done`, in progress → `current`,
   pending → `pending`; a word the file uses for blocked → `block`, for waiting on someone →
   `wait`. The note after `:` is not read. A word flow cannot place → no `mark`: the board counts
@@ -1580,7 +1582,9 @@ judged.
 **When — wherever the roadmap is read to choose or to move**, and nowhere else: `next` and `daily`
 after they compute where the project stands, `$flow-feat-start` after it links the work (§3.7), and
 `$flow-feat-ship` right after it commits a roadmap edit — the branch's file, as the MR/PR carries
-it. First `plan_get`: the same document → nothing to send. Otherwise one `plan_set` with the
+it. That is on purpose: the board shows the deliverable moving the moment its MR/PR says so, and a
+later `next` or `daily` run from a checkout that has not merged it yet publishes that checkout's
+file again — each publication is the file it was read from, never a merge of several. First `plan_get`: the same document → nothing to send. Otherwise one `plan_set` with the
 document and `repo` the checkout the file was read from.
 
 **Where this console works.** The same moment, from a work's checkout (`start`, `ship`): the rows

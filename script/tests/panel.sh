@@ -89,6 +89,13 @@ run
 expect "a bug in fix shows its plan"                  'k("step-1").mark==="done" && k("step-2").mark==="current"'
 expect "single MR/PR from mr_url, named by its number" 'k("mr-1").ref==="#12" && k("mr-1").mark==="wait"'
 expect "a GitHub train is PRs; a bug's plan has no number" 'k("mrs").text==="PRs" && k("mrs").summary==="0/1 merged" && k("plan").text==="Plan" && k("plan").summary==="1/2"'
+git remote set-url origin git@github.com:acme/shop.git
+meta '{"ticket":"T-1","type":"feat","title":"x","branch":"feature","phase":"plan","mrs":[{"n":1,"title":"a","status":"pending"}]}'
+run
+expect "a GitHub remote says PRs before any PR exists" 'k("mrs").text==="PRs" && k("mrs").summary==="0/1 merged"'
+git remote set-url origin git@gitlab.com:acme/shop.git
+meta '{"ticket":"T-1","type":"bug","title":"Broken thing","branch":"feature","phase":"fix",
+  "mr_url":"https://github.com/acme/shop/pull/12"}'
 
 # 4 — statuses nobody listed, and a bare string entry, are drawn, never refused
 meta '{"ticket":"T-1","type":"feat","title":"x","branch":"feature","phase":"ship",

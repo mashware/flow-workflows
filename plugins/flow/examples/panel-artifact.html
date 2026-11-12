@@ -119,6 +119,8 @@ h1 span { color: var(--accent); }
 
 <script>
 (function () {
+  // A block the reader opened or folded stays so across re-renders: the click wins over `collapsed`.
+  const folds = new Map();
   const MARK = { done: "✓", current: "▸", pending: "·", wait: "◷", block: "✕", info: "–" };
   const ATT_LABEL = { wait: "waiting on you", block: "blocked", run: "working", done: "done" };
   const grid = document.getElementById("grid");
@@ -173,8 +175,9 @@ h1 span { color: var(--accent); }
         const tw = el("span", "tw");
         head.append(tw, el("span", null, l.text || ""));
         if (l.summary) head.append(el("span", "sm", String(l.summary).slice(0, 40)));
-        head.addEventListener("click", () => fold(blk.hidden));
-        fold(l.collapsed !== true);
+        const id = (d._id || d.work || "") + ":" + (l.key || l.text || "");
+        head.addEventListener("click", () => { const open = blk.hidden; folds.set(id, open); fold(open); });
+        fold(folds.has(id) ? folds.get(id) : l.collapsed !== true);
         box.append(head, blk);
         into = blk;
         return;
