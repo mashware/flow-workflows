@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.116.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.116.1`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -398,7 +398,7 @@ Each place a command would have asked resolves one of these ways:
   add `{ "key": "unattended:<site>", "default": "<resolution>", "phase": "<phase>" }` to
   `meta.json.defaults_used[]` (the prefix says it is not a FLOW key), and continue.
 - **question** — a decision only a person can take: the question stop below, `ask --gate <site>`,
-  the panel's `attention` set to `wait`, end of the run.
+  the question as the panel's `decision` (it raises `wait`), end of the run.
 - **blocked** — something the run cannot get past (the environment, a tool, a check that keeps
   failing): `blocked --reason-file` with one line saying what a person or the orchestrator must
   fix, `attention: block`, end of the run.
@@ -679,7 +679,7 @@ language. So a publication is two moves:
 
    ```json
    {"phase": "build", "now": "unit suite over #2", "next": "review #2",
-    "decision": "confirm the MR/PR body before I create it", "attention": "wait",
+    "decision": "confirm the MR/PR body before I create it",
     "blocks": [{"text": "sibling-repo still needs the endpoint contract", "link": "https://…"}],
     "stale_after_minutes": 45,
     "labels": {"now": "Ahora", "next": "Siguiente", "decision": "Decisión", "open": "Abierto",
@@ -690,7 +690,9 @@ language. So a publication is two moves:
    Every field is optional. `phase` is the phase **running now**. `now` is what is running — never
    the train restated (*"MR/PR open, waiting for review"* is what the train line already says).
    `next` is the next phase or MR/PR — never housekeeping (*archive the work*, *remove the
-   worktree*). `decision` only while parked on the user; it sets `attention: wait` by itself.
+   worktree*). `decision` only while parked on the user; it is the only thing that raises `attention: wait`.
+   `attention` itself is written only for `block` with no `blocks` line, or `done`: a written
+   `wait` with no `decision` claims nobody.
    `blocks` are what stops the work on somebody else — a sibling repo with `contract_handoff:
    pending`, a red pipeline, an unmerged dependency — each with its `link` when it names an MR/PR.
    `labels` carry the fixed words in **the language of the work's artifacts** — also `mrs` (the
@@ -708,7 +710,10 @@ language. So a publication is two moves:
 **Where the plugin's hooks run — Claude Code and Codex — the render also happens on its own**: a
 `PostToolUse` hook renders the panel again whenever `meta.json`, the plan, or `panel-input.json` is
 newer than `panel.json` and than that branch's last attempt — a render that wrote nothing is not
-retried until one of them changes again. Ticking a step in the plan *is* publishing it there. The hook cannot reach
+retried until one of them changes again. Ticking a step in the plan *is* publishing it there. **An answered question is too**: when the
+user answers the harness's question tool (`AskUserQuestion`, Codex's `request_user_input`) and the
+input holds a `decision`, the hook drops `decision` and a `wait` from it and renders — one left
+unanswered, rejected or timed out changes nothing. The hook cannot reach
 the terminal's MCP tools, which is what `panel.publish_cmd` is for (§4.2).
 
 **The CLI unavailable** — no network for npx, a sandbox that blocks it, a non-zero exit with no
@@ -817,7 +822,9 @@ halfway is not shown as finished. When the stretch will outlast the ~30 min stal
 `stale_after_minutes` in the input to what it will really take; (d) wherever `## Close` updates
 `meta.json`; (e) **the moment a question is answered or a gate is cleared** — before you resume the
 work: drop `decision` from the input, move `now` on, render. A panel still asking what the user
-already answered is worse than one that never asked; (f) **each plan step that lands** — tick it in
+already answered is worse than one that never asked. Where the hook runs, an answer
+given through the question tool already did it; a question asked in prose, or a gate cleared
+another way, did not; (f) **each plan step that lands** — tick it in
 the phase artifact, move `now` on, render without `--forge`. Where the plugin's hook runs, the tick
 and the input change already rendered it; publish over the tools anyway when they are there.
 

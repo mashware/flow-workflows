@@ -162,5 +162,6 @@ and the `done` of the table above.
 ## 3. Close
 
 Nothing to write here beyond the routing above — the phase it hands to owns the artifacts, the
-panel and the closing order. When the route ended the run itself (`ask` → `wait`, `blocked` → `block`,
-`done` → `done`), publish the panel with that `attention` (flow-core §4) and print the §3 header.
+panel and the closing order. When the route ended the run itself, publish the panel (flow-core §4) —
+`ask` → the question as `decision`, which raises `wait`; `blocked` → `attention: block`; `done` →
+`attention: done` — and print the §3 header.

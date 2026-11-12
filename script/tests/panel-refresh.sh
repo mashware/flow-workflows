@@ -99,4 +99,43 @@ mkdir -p "$SP/.claude/work/T-2"; printf '{"ticket":"T-2","branch":"feature","tit
 rm -f "$BASE/calls"; FLOW_PANEL_CLI="$BASE/fakecli" fire "$SP"; sleep 0.3
 [ -f "$BASE/calls" ] && ok "a path with a space is not split" || bad "path with a space never refreshed"
 
+# an answered question clears the decision it answered — with no file changed, and through
+# publish_cmd too; a question nobody answered, or an input with no decision, is left alone
+Q="$BASE/q"; mkdir -p "$Q"; git -C "$Q" init -q -b fix; git -C "$Q" -c user.email=t@t -c user.name=t commit -q --allow-empty -m b
+QW="$Q/.claude/work/T-3"; mkdir -p "$QW"
+printf '{"ticket":"T-3","type":"bug","title":"q","branch":"fix","phase":"fix"}\n' > "$QW/meta.json"
+printf '## panel\n- publish_cmd: cat > "%s/published.json"\n' "$BASE" > "$Q/FLOW.md"
+printf '{"now":"MR 2","next":"review","decision":"confirm the summary","attention":"wait","blocks":[{"text":"sibling"}]}\n' > "$QW/panel-input.json"
+node "$CLI" panel --repo "$Q" >/dev/null 2>&1; rm -f "$BASE/published.json"
+ask() { printf '{"cwd":"%s","hook_event_name":"PostToolUse","tool_name":"%s","tool_input":{"questions":[]},"tool_response":%s}' "$Q" "$1" "$2" | sh "$HOOK"; rc=$?; }
+cleared() { for _ in $(seq 1 50); do grep -q '"decision"' "$QW/panel.json" || return 0; sleep 0.1; done; return 1; }
+
+rm -f "$BASE/calls"
+
+FLOW_PANEL_CLI="$BASE/fakecli" ask AskUserQuestion '{"questions":[],"answers":{},"annotations":{},"afkTimeoutMs":60000}'; sleep 0.3
+[ "$rc" = 0 ] && [ ! -f "$BASE/calls" ] && grep -q '"decision"' "$QW/panel-input.json" && ok "a question nobody answered leaves the decision" || bad "an unanswered question touched the panel"
+
+ask AskUserQuestion '{"questions":[{"question":"Q?"}],"answers":{"Q?":"Yes"}}'
+cleared && ok "an answered question clears the decision with no file changed" || bad "answered question left the decision on the panel"
+grep -q '"attention": "wait"' "$QW/panel.json" && bad "answered question left attention wait" || ok "and the panel no longer waits on the user"
+grep -Eq '"now": ?"MR 2"' "$QW/panel-input.json" && grep -q 'sibling' "$QW/panel-input.json" && ok "Now and blockers stay in the input" || bad "the input lost other fields: $(cat "$QW/panel-input.json")"
+for _ in $(seq 1 30); do [ -f "$BASE/published.json" ] && break; sleep 0.1; done
+[ -f "$BASE/published.json" ] && ! grep -q '"decision"' "$BASE/published.json" && ! grep -q '"attention":"wait"' "$BASE/published.json" && ok "publish_cmd gets the cleared panel" || bad "publish_cmd did not get the cleared panel"
+
+rm -f "$BASE/calls"; sleep 1
+printf '{"now":"MR 3"}\n' > "$QW/panel-input.json"; node "$CLI" panel --repo "$Q" >/dev/null 2>&1
+FLOW_PANEL_CLI="$BASE/fakecli" ask AskUserQuestion '{"answers":{"Q?":"Yes"}}'; sleep 0.3
+[ ! -f "$BASE/calls" ] && ok "an answer with no decision on the panel launches nothing" || bad "rendered for an input with no decision"
+
+printf '{"now":"plan","decision":"pick a colour","attention":"wait"}\n' > "$QW/panel-input.json"; node "$CLI" panel --repo "$Q" >/dev/null 2>&1
+ask request_user_input '"{\"answers\":{\"color\":{\"answers\":[\"Blue\"]}}}"'
+cleared && ok "Codex: an answered request_user_input clears the decision" || bad "Codex answer left the decision"
+
+printf '{"now":"plan","decision":"pick a colour"}\n' > "$QW/panel-input.json"; node "$CLI" panel --repo "$Q" >/dev/null 2>&1; rm -f "$BASE/calls"
+start=$(date +%s%N); FLOW_PANEL_CLI="$BASE/fakecli" ask Edit '{"filePath":"x"}'; ms=$(( ($(date +%s%N) - start) / 1000000 )); sleep 0.3
+[ ! -f "$BASE/calls" ] && grep -q '"decision"' "$QW/panel-input.json" && ok "any other tool leaves the decision (${ms} ms)" || bad "another tool cleared or rendered"
+rm -f "$BASE/calls"
+FLOW_PANEL_CLI="$BASE/fakecli" ask Write '{"content":"\"tool_name\":\"AskUserQuestion\" \"answers\":{\"Q?\":\"Yes\"}"}'; sleep 0.3
+[ ! -f "$BASE/calls" ] && ok "a file that only mentions the question tool is not an answer" || bad "text naming AskUserQuestion was taken for an answer"
+
 [ "$fails" = 0 ] && echo "panel-refresh: all ok" || { echo "panel-refresh: $fails failure(s)"; exit 1; }

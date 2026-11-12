@@ -17,6 +17,17 @@ event=$(cat 2>/dev/null || printf '')
 cwd=$(printf '%s' "$event" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*:[[:space:]]*"\(.*\)"$/\1/')
 [ -n "${cwd:-}" ] && [ -d "$cwd" ] || cwd=$PWD
 
+# The user answered a question (Claude Code's AskUserQuestion, Codex's request_user_input): the
+# decision it asked leaves the panel now, not when the agent remembers to rewrite its input.
+# Answered means a non-empty `answers` object; one left empty (nobody answered in time) is not.
+# A rejected question is a failed tool use and never reaches PostToolUse.
+answered=""
+case $event in
+	*'"AskUserQuestion"'*|*'"request_user_input"'*)
+		printf '%s' "$event" | grep -Eq '"tool_name"[[:space:]]*:[[:space:]]*"(AskUserQuestion|request_user_input)"' \
+			&& printf '%s' "$event" | tr -d '\\' | grep -Eq '"answers"[[:space:]]*:[[:space:]]*\{[[:space:]]*"' && answered=1 ;;
+esac
+
 command -v git >/dev/null 2>&1 || exit 0
 root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
 branch=$(git -C "$cwd" rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
@@ -37,6 +48,9 @@ for r in "$root" "$main_root"; do
 		[ -f "$meta" ] || continue
 		grep -qE "$pattern" "$meta" 2>/dev/null || continue
 		work=${meta%/meta.json}
+		if [ -n "$answered" ] && grep -q '"decision"' "$work/panel-input.json" 2>/dev/null; then
+			needs="$work"; break 2
+		fi
 		# Newer than the panel and than this branch's last attempt → render. The stamp is
 		# touched before each launch, so a render that writes nothing (a broken input, npx
 		# unreachable) is not retried after every tool call: only once a file changes again.
@@ -67,8 +81,8 @@ if [ "${CLAUDECODE:-}" = 1 ]; then harness=claude; else harness=codex; fi
 # (the tests point it at the repo's bin/cli.mjs).
 cd "${HOME:-/}" 2>/dev/null || cd / || exit 0
 if [ -n "${FLOW_PANEL_CLI:-}" ]; then
-	nohup sh -c "$FLOW_PANEL_CLI panel --harness $harness --repo \"\$1\" --work \"\$2\"" _ "$root" "$needs" >/dev/null 2>&1 &
+	nohup sh -c "$FLOW_PANEL_CLI panel --harness $harness --repo \"\$1\" --work \"\$2\" ${answered:+--answered}" _ "$root" "$needs" >/dev/null 2>&1 &
 else
-	nohup npx -y "flow-workflows@$version" panel --harness "$harness" --repo "$root" --work "$needs" >/dev/null 2>&1 &
+	nohup npx -y "flow-workflows@$version" panel --harness "$harness" --repo "$root" --work "$needs" ${answered:+--answered} >/dev/null 2>&1 &
 fi
 exit 0

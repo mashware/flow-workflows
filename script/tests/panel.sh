@@ -434,4 +434,23 @@ run
 expect "a sibling closed unmerged blocks, the work stays open" 'k("sib-1").mark==="block" && !k("closed")'
 rm -f "$W/forge-state.json"
 
+# 17 — `wait` comes only from a decision: a written one without it claims nobody, and
+# --answered drops the decision and its wait from the input, keeping every other field
+rm -f FLOW.md
+meta '{"ticket":"T-1","type":"bug","title":"x","branch":"feature","phase":"fix"}'
+input '{"now":"suite","attention":"wait"}'
+run
+expect "a written wait without a decision claims nobody" '!d.attention && k("now")'
+input '{"now":"suite","attention":"block"}'
+run
+expect "a written block still blocks"                 'd.attention==="block"'
+input '{"phase":"fix","now":"suite","next":"review","decision":"confirm the body","attention":"wait","blocks":[{"text":"sibling waits"}],"labels":{"now":"Ahora"}}'
+run --answered
+expect "--answered: no Decision, no wait, the rest stays" '!k("decision") && d.attention!=="wait" && k("now").ref==="Ahora" && k("next") && k("block-1")'
+node -e 'const i=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); process.exit(!("decision" in i) && !("attention" in i) && i.now==="suite" && i.next==="review" && i.blocks.length===1 && i.labels.now==="Ahora" && i.phase==="fix" ? 0 : 1)' "$W/panel-input.json" \
+  && printf '  ok   --answered rewrites the input without decision and wait only\n' || { printf '  FAIL --answered input: %s\n' "$(cat "$W/panel-input.json")"; fails=$((fails+1)); }
+input '{"now":"suite","attention":"block"}'
+before=$(cat "$W/panel-input.json"); run --answered
+[ "$before" = "$(cat "$W/panel-input.json")" ] && printf '  ok   --answered with no decision leaves the input as it was\n' || { printf '  FAIL --answered touched an input with no decision\n'; fails=$((fails+1)); }
+
 [ "$fails" = 0 ] && echo "panel: all ok" || { echo "panel: $fails failure(s)"; exit 1; }
