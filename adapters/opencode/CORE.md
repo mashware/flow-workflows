@@ -16,7 +16,7 @@ Every `/flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.114.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.115.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -663,30 +663,76 @@ I need: <one line — the decision or action you are waiting on>
 - **If it is a question, it is `AskUserQuestion`** — in `unattended`, the orchestrator's `ask` (§2.1). Never end a message with a question in prose. If it does not deserve the menu, it is a decision you take and record.
 - **What the question is about travels with the question.** A brief, an MR/PR body, a plan, a finding: put it where the user answers it — in the question text and its options — and not only in the prose above. **Nothing runs between the two**: a tool call after that prose is what makes a terminal fold it away, and the last thing a chat UI collapses is exactly the thing they were asked to read. A gate answered without seeing what it was about is not a gate; "it is in `05-implementation.md`" is not showing it, because the answer then costs opening an editor and finding the file. Too long for the harness's question → print it as the **last** thing before asking, tool calls already done.
 
-## 4. Live panel — over the terminal's MCP, or `panel.json`
+## 4. Live panel — rendered by `flow-workflows panel`, carried by the terminal's MCP or a file
 
-Whenever the state a panel would show changes, publish the panel from `meta.json` plus what you know
-right now. **Any progress line you were about to type into the chat is a panel update instead**
-(§3).
+Whenever the state a panel would show changes, the panel is rendered again. **Any progress line you
+were about to type into the chat is a panel update instead** (§3).
 
-**Two transports, one document.** When the tools `panel_set` / `panel_patch` / `panel_get` are
-available, this console is a pane of agent-terminal: publish the panel through them (§4.2) and
-**stop writing `.claude/work/<work>/panel.json`** — while a pane is claimed, its file is not read at
-all. When they are not there, write the file (§4.3). No work folder (lightweight
-`respond`/`green`) → nothing to publish, either way. With `panel.artifact` set, each publication is
-also mirrored to a claude.ai page that gathers every work of every repo (§4.6) — in addition to the
-transport, never instead of it.
+**You do not write the panel; you write what only you know, and the CLI renders the rest.** The
+title, the MR/PR train and each one's state, the plan's steps, sibling repos' MRs/PRs, what is still
+open — all of it is already in `meta.json`, the plan's ticks and the forge, and a panel rebuilt from
+prose loses it: the step block was published in 8 of 64 build sessions that had a plan, merged
+MRs/PRs stayed `wait`, and panels from other harnesses lost their clock, their links and their
+language. So a publication is two moves:
 
-**Look for them before you conclude they are missing**, once per session, in pre-flight. A harness
-namespaces an MCP server's tools, so what you are looking for is a tool whose name *ends* in
-`panel_set` — `mcp__panel__panel_set` on Claude Code, another prefix elsewhere — and the name is
-whatever it is called there, not `panel_set`. It may also be **deferred**: listed by name with no
-schema, uncallable until you load it, and indistinguishable from absent unless you read that list.
-A deferred tool is a tool that is there; load the three schemas and publish. The file is the answer
-only after that search comes back empty — and this is the one paragraph that decides it, because
-prose describing a file is otherwise obeyed to the letter.
+1. **Write `.claude/work/<work>/panel-input.json`** — whole, every time, only what this moment knows:
 
-### 4.1 The document — the same whichever transport carries it
+   ```json
+   {"phase": "build", "now": "unit suite over #2", "next": "review #2",
+    "decision": "confirm the MR/PR body before I create it", "attention": "wait",
+    "blocks": [{"text": "sibling-repo still needs the endpoint contract", "link": "https://…"}],
+    "stale_after_minutes": 45,
+    "labels": {"now": "Ahora", "next": "Siguiente", "decision": "Decisión", "open": "Abierto",
+               "closed": "nada más aquí", "review": "ronda de review", "findings": "abiertos",
+               "followups": "seguimientos"}}
+   ```
+
+   Every field is optional. `phase` is the phase **running now**. `now` is what is running — never
+   the train restated (*"MR/PR open, waiting for review"* is what the train line already says).
+   `next` is the next phase or MR/PR — never housekeeping (*archive the work*, *remove the
+   worktree*). `decision` only while parked on the user; it sets `attention: wait` by itself.
+   `blocks` are what stops the work on somebody else — a sibling repo with `contract_handoff:
+   pending`, a red pipeline, an unmerged dependency — each with its `link` when it names an MR/PR.
+   `labels` carry the fixed words in **the language of the work's artifacts**; omitted, they are
+   English. Free text lives in this file, never on a command line.
+2. **Run `npx flow-workflows@<version> panel --harness <harness> --forge`** from the work's
+   checkout (`<version>` this plugin's own, from `~/.claude/flow/.claude-plugin/plugin.json`
+   — the rule `/flow-feat-review` §1 gives for every `flow-workflows` call). It writes
+   `.claude/work/<work>/panel.json`, writes `card.json` beside it when `panel.artifact` is set, pipes
+   the document to `panel.publish_cmd` when that is set, and prints the document. `--forge` asks
+   `gh`/`glab` for each open MR/PR and keeps the answers in `forge-state.json`, which the renders
+   without it reuse — leave it out at a plan step (§4.4 f), where nothing in the forge moved.
+   `meta.json` is never written by it.
+
+**Where the plugin's hooks run — Claude Code and Codex — the render also happens on its own**: a
+`PostToolUse` hook renders the panel again whenever `meta.json`, the plan, or `panel-input.json` is
+newer than `panel.json` and than that branch's last attempt — a render that wrote nothing is not
+retried until one of them changes again. Ticking a step in the plan *is* publishing it there. The hook cannot reach
+the terminal's MCP tools, which is what `panel.publish_cmd` is for (§4.2).
+
+**The CLI unavailable** — no network for npx, a sandbox that blocks it, a non-zero exit with no
+document — → write the §4.1 document yourself, once, by its rules, and say so at the next stop:
+`panel: written by hand — <why>`. Never retry variants of the call.
+
+**One panel is drawn by hand on purpose**: `/flow-work-watch` paints a monitoring cycle — verdict, latency, what it is waiting for — that no work file holds, so it writes its §5 document itself, by §4.1's rules, and the CLI is not run while it watches.
+
+**Two transports for the one document.** When the tools `panel_set` / `panel_get` are available,
+this console is a pane of a terminal that paints what reaches it over its MCP (§4.2). Whatever the
+transport, `panel.json` is written — by the CLI — because the session-start hook reads its `Now` and
+`phase` to say what the last session was doing. No work folder (lightweight `respond`/`green`) →
+nothing to publish, either way. With `panel.artifact` set, each publication is also mirrored to a
+claude.ai page that gathers every work of every repo (§4.6) — in addition to the transport, never
+instead of it.
+
+**Look for the tools before you conclude they are missing**, once per session, in pre-flight. A
+harness namespaces an MCP server's tools, so what you are looking for is a tool whose name *ends* in
+`panel_set` — `mcp__panel__panel_set` on Claude Code, another prefix elsewhere. It may also be
+**deferred**: listed by name with no schema, uncallable until you load it, and indistinguishable from
+absent unless you read that list. A deferred tool is a tool that is there; load the schemas and
+publish. A tool that answers that this console is not one of its panes → the file is the transport
+for the rest of the session.
+
+### 4.1 The document — what the CLI prints, and what you write when it cannot
 
 ```json
 {
@@ -694,105 +740,76 @@ prose describing a file is otherwise obeyed to the letter.
   "phase": "validate",
   "header": true,
   "lines": [
-    {"text": "Expose a thread's tracking state and events", "style": "title"},
+    {"key": "title", "text": "Expose a thread's tracking state and events", "style": "title"},
     "",
-    {"ref": "#1", "text": "batch read sources", "mark": "wait", "link": "https://gitlab.com/…/merge_requests/9977"},
-    {"ref": "#2", "text": "per-event and per-recipient counters", "mark": "current"},
-    {"ref": "1–2", "text": "counter columns + migration · repository query", "mark": "done", "indent": 4},
-    {"ref": "3", "text": "per-recipient aggregation in the use case", "mark": "current", "indent": 4},
-    {"ref": "4", "text": "expose both counters on the endpoint", "mark": "pending", "indent": 4},
-    {"ref": "#3–#6", "text": "channel map · use case · document detail · route", "mark": "pending"},
+    {"key": "mr-1", "ref": "#1", "text": "batch read sources", "mark": "wait", "link": "https://gitlab.com/…/merge_requests/9977"},
+    {"key": "mr-1-state", "text": "pipeline passed · 0/1 approvals · 2 open threads", "mark": "info", "indent": 4},
+    {"key": "mr-2", "ref": "#2", "text": "per-event and per-recipient counters", "mark": "current"},
+    {"key": "step-1", "ref": "1", "text": "counter columns + migration", "mark": "done", "indent": 4},
+    {"key": "step-2", "ref": "2", "text": "per-recipient aggregation in the use case", "mark": "current", "indent": 4},
+    {"key": "step-3", "ref": "3", "text": "expose both counters on the endpoint", "mark": "pending", "indent": 4},
+    {"key": "mr-3-6", "ref": "#3–#6", "text": "channel map · use case · document detail · route", "mark": "pending"},
     "",
-    {"ref": "Now", "text": "unit suite and the test agent over #2", "mark": "info"},
-    {"ref": "Next", "text": "ship #2", "mark": "info"},
-    {"ref": "Decision", "text": "confirm the MR/PR body before I create it", "mark": "wait"},
+    {"key": "sib-1", "ref": "mcp !71", "text": "pipeline running", "mark": "wait", "link": "https://gitlab.com/…/mcp/-/merge_requests/71"},
     "",
-    {"text": "sibling-repo still needs the endpoint contract", "mark": "block"}
+    {"key": "open", "ref": "Open", "text": "review round 2 · 1 open · 2 follow-ups", "mark": "info"},
+    "",
+    {"key": "now", "ref": "Now", "text": "unit suite and the test agent over #2", "mark": "info"},
+    {"key": "next", "ref": "Next", "text": "ship #2", "mark": "info"},
+    {"key": "decision", "ref": "Decision", "text": "confirm the MR/PR body before I create it", "mark": "wait"},
+    "",
+    {"key": "block-1", "text": "sibling-repo still needs the endpoint contract", "mark": "block"}
   ]
 }
 ```
 
-- **`mark` says what a line is**; the reader draws it. `done` · `current` (at most one per block) · `pending` · `wait` (waiting on someone else: an open MR/PR, a user decision) · `block` · `info`. Marked lines form an aligned column: symbol, `ref`, text, link pinned right. Do not set `style` on a marked line — except `mark: "info"` + `style: ok|warn|error` when the colour *is* the information (a monitoring verdict).
-- **`ref` need not be a number**: `#1`, `#3–#6`, `Now`, `Next`, `Decision`. Column width is per block; blocks are separated by blank lines — use them so the MR/PR train and the labels below do not drag each other wide.
-- **`link` is a field, never a URL inside `text`** — and **every line that names an MR/PR carries it**: the train entries, a blocker about somebody else's MR/PR, a `Now` or `Next` about the open one. The URL is in `meta.json.mrs[].url` or in whatever recorded that blocker; a bare `!10327` typed into `text` is a number the reader cannot make clickable, which is the whole point of the field. No URL recorded anywhere → the number in `text` and nothing else, and go and record it.
-- **Order:** (1) work title (`style: title`, no mark); (2) the MR/PR train, one entry per `meta.json.mrs[]` with `ref` `#n`, short title, real-state `mark`, `link` when there is a URL — not-started entries collapse into one `#a–#z` `pending` line; omit the block without `mrs`; (2b) **the plan steps of the MR/PR being built**, right under its train entry — only while `build` or `fix` is working through a written plan (`/flow-feat-build §2.0ter`, `/flow-bug-fix §2.0bis`); one line per step, `ref` its number (`1`, `2`…), `indent: 4`, `key` `step-<n>`, `mark` `done` · `current` · `pending` from the plan's ticks in the phase artifact — never ahead of them; past three finished steps they collapse into one `done` line (`1–4`, `key` `steps-done`), and past three pending ones the tail collapses the same way (`key` `steps-pending`), so the block stays at five lines or fewer; drop the block when the MR/PR's build ends. This is the step list the user watches: a harness's own task list, where there is one, is a bonus on top — the panel is what every harness can feed; (3) `Now` — what is running, the one fact `meta.json` cannot hold; (4) `Next`; (5) `Decision`, `mark: wait`, **only** when parked on the user — over the tools it travels with `attention: "wait"` (§4.2), and both are cleared together; (6) blockers, `mark: block` (a sibling repo with `contract_handoff: pending`, a red pipeline, an unmerged dependency).
-- **Rules:** `phase` is the phase you are **running now** (not `meta.json.phase`, which advances only at Close). `header: true` means ticket, type, phase and age are drawn by the reader — do not repeat them in `lines`. Keep it under ~14 lines. Every fact from `meta.json` and the artifacts — an invented MR/PR state is worse than a blank panel. Write in the language of the work's artifacts.
+- **`mark` says what a line is**; the reader draws it. `done` · `current` (at most one per block) · `pending` · `wait` (waiting on someone else: an open MR/PR, a user decision) · `block` · `info`. Do not set `style` on a marked line — except `mark: "info"` + `style: ok|warn|error` when the colour *is* the information (a monitoring verdict, the closing line).
+- **`link` is a field, never a URL inside `text`**, and every line that names an MR/PR carries it.
+- **Order:** the title (`meta.json.title` without the ticket id: `header: true` draws ticket, type, phase and age); the MR/PR train, one entry per `meta.json.mrs[]` (a single MR/PR from `mr_url`), not-started ones folded into one `#a–#z` line, each open one followed by its state from the forge; under the MR/PR being built — or the bug in `fix` — its plan's steps from the ticks, never ahead of them, at most five lines (past three done they fold, a long pending tail folds); sibling repos' MRs/PRs; one `Open` line for the latest review round's open findings and the open follow-ups; `Now`, `Next`, `Decision`; blockers. A finished work (`meta.json.phase` `done`) shows its train, one `info`/`ok` closing line and `attention: done`, and nothing else.
+- **Rules:** every fact from `meta.json`, the artifacts and the forge — an invented MR/PR state is worse than a blank panel. Keep it under ~14 lines.
 
-### 4.2 Over the terminal's MCP — `panel_set` once, `panel_patch` from then on
+### 4.2 Over the terminal's MCP — `panel_set` with what the CLI printed
 
-**The first publication of the session — `panel_set`.** `source: "flow"`. It claims the pane for as
-long as this session lives, and a second producer is refused by name. The document is the one §4.1
-specifies, plus two additions:
+**Every publication is one `panel_set`** — `source: "flow"`, `document` the JSON the CLI just
+printed, which already carries a `key` on every line and the top-level `attention`: `wait` when
+parked on the user, `block` when stuck on somebody else, `done` when the work closed, absent while
+simply working. The terminal never deduces it from the body, and a `wait` left behind flags that tab
+for ever — so the next render, which drops the `decision`, is what clears it. The first `panel_set`
+claims the pane for as long as this session lives; a second producer is refused by name.
 
-- **`attention`, at the top level**, beside `phase`: `wait` when parked on the user, `block` when
-  stuck on somebody else (red pipeline, sibling repo's contract), `done` when the cycle closed and
-  nobody has looked. Absent while simply working. The app never deduces it: a `mark: "wait"` inside
-  `lines` is body text and claims nothing. The tab's card shows the strongest claim among its panes,
-  so a `wait` you forget to clear flags that tab for ever — clear it with
-  `{"op": "set", "field": "attention", "value": null}`.
-- **A `key` on every line you may want to change later** — `title`, `mr-1`, `now`, `next`,
-  `decision`, `block-1`. It is never painted, and it must be unique: a key that names two lines
-  refuses every patch addressing it.
+- `panel_patch` is for the CLI-unavailable case only (§4): there, patch by `key` rather than
+  rebuild — ops `replace`, `before`, `after`, `delete`, `first`, `last`, `set` (`phase`,
+  `attention`, `header`, `stale_after_minutes`); the whole list applies or none of it does, and a
+  resend of a patch whose answer never arrived is refused rather than doubling a line.
+- **Refusals are information.** `this panel is held by "…"` → another producer owns it; do not fight
+  it, say so at the next stop.
+- **After a compaction, a restart or a resumed work**, call `panel_get` before publishing: it returns
+  what is on screen, which may have arrived from elsewhere.
+- **A hook cannot call these tools.** Where the reader is a terminal like this one, the person sets
+  `panel.publish_cmd`, in a git-ignored FLOW file, to whatever command that terminal offers for
+  publishing a document from a shell; the CLI pipes every render into it, the hook's included.
+- **Optional — buttons at a stop.** At a stop parked on the user, `actions` (up to 8) paint a button
+  whose command is written into this pane's program on one click — this very session's prompt. Add
+  them to the printed document before `panel_set`: `{"label": "Approve the design", "send":
+  "approve"}`. Plain text, no line breaks, never a credential.
 
-**Everything after that is `panel_patch`:**
+### 4.3 Without those tools — the file is the transport
 
-```json
-{"ops": [
-  {"op": "replace", "key": "now",
-   "line": {"key": "now", "ref": "Now", "text": "unit suite over #2", "mark": "info"}},
-  {"op": "set", "field": "phase", "value": "validate"},
-  {"op": "set", "field": "attention", "value": "wait"}]}
-```
-
-- Ops: `replace`, `before`, `after`, `delete` (by `key`), `first`, `last`, and `set` for `phase`,
-  `attention`, `header` or `stale_after_minutes`. They see each other, in the order written.
-- **Either the whole list applies or none of it does**, so a patch is safe to send without reading
-  first: the worst case is that nothing happened and you were told why.
-- **A patch whose answer never arrived may have been applied — send it again.** The resend is
-  refused rather than doubling the line.
-- At most 64 ops per call. `actions` are not patchable: change buttons with a whole `panel_set`.
-- Republish with `panel_set` only when the *shape* changes (a new MR/PR train, a different body).
-
-**Refusals are information, not noise.** `no line of this panel carries the key "…"` → your keys and
-the panel disagree: `panel_get` and republish. `publish with panel_set before patching` → this pane
-is still on its file. `this panel is held by "…"` → another producer owns it; do not fight it, say
-so at the next stop.
-
-**After a compaction, a restart or a resumed work**, call `panel_get` **before publishing**. It
-returns the document on screen — yours or one that arrived by file — and publishing it back leaves
-the panel exactly as it is. What comes back is the document as the app understood it: unknown fields
-are gone and defaults come back absent.
-
-**Optional — buttons at a stop.** At a stop parked on the user, `actions` (up to 8) paint a button
-whose command is shown literally and is written into this pane's program on one click — which here
-is this very session's prompt. So `{"label": "Approve the design", "send": "approve"}` answers you
-without the user typing. Plain text, no line breaks, never a credential: it is painted on screen and
-lands in the shell history.
-
-### 4.3 Without those tools — `.claude/work/<work>/panel.json`
-
-Overwrite the file **whole** (never patch) with the §4.1 document. `updated_at` from the real clock
-(`date -Iseconds`), never carried over — it is how the reader flags a stale snapshot. `attention`
-and `key` buy nothing here: the file panel is drawn from `mark` and `ref` alone.
+`panel.json` is what the CLI already wrote: nothing else to do. Written by hand (the CLI
+unavailable), overwrite the file **whole** with the §4.1 document and `updated_at` from the real
+clock (`date -Iseconds`), never carried over — it is how a reader flags a stale snapshot.
 
 ### 4.4 When to publish — whichever transport is in play
 
 (a) In pre-flight, as soon as `meta.json` is loaded; (b) immediately **before** every stop header;
 (c) **before** any long stretch (fan-out, full suite, CI poll) — never after, so a step that dies
 halfway is not shown as finished. When the stretch will outlast the ~30 min staleness warning, set
-`stale_after_minutes` to what it will really take; (d) wherever `## Close` updates `meta.json`. A
-held panel still goes stale: the app stamps each delivery's arrival.
-
-**(e) The moment a question is answered or a gate is cleared** — before you resume the work, not at
-the next stop. Drop the `Decision` line, clear `attention`, and move `Now` on: one patch, the first
-thing you do with the answer. A panel still asking what the user already answered is worse than one
-that never asked, because they answered it and the screen says it did not land; and an `attention`
-nobody clears keeps that tab claiming them for ever. The same applies to a blocker that lifted and
-to a `wait` line whose MR/PR merged.
-
-**(f) Each plan step that lands** (the (2b) block): one patch, the moment its tick goes into the
-phase artifact — that step to `done`, the next to `current`, `Now` moved on. Not batched at the end
-of the MR/PR: a list that jumps from nothing to finished told the user nothing while it mattered.
+`stale_after_minutes` in the input to what it will really take; (d) wherever `## Close` updates
+`meta.json`; (e) **the moment a question is answered or a gate is cleared** — before you resume the
+work: drop `decision` from the input, move `now` on, render. A panel still asking what the user
+already answered is worse than one that never asked; (f) **each plan step that lands** — tick it in
+the phase artifact, move `now` on, render without `--forge`. Where the plugin's hook runs, the tick
+and the input change already rendered it; publish over the tools anyway when they are there.
 
 ### 4.5 `meta.json.cost[]` — what a phase measured, when it could
 
@@ -833,26 +850,17 @@ section does not exist: no artifact tool is loaded or called.
   (f), a plan step, only when the card's last write is 10 minutes old or more: every write is a
   tool call, and outside auto mode a prompt, while a card left alone for 30 minutes reads as a dead
   session on the page.
-- **What**: what the terminal now shows, never a document rebuilt in your head. On the file
-  transport, the §4.1 document just written. Over the tools, what `panel_get` returns right after a
-  publication that applied — a refused patch changed nothing on screen and writes nothing here.
-  Then set, whichever transport:
-  - `updated_at` — the real clock (`date -Iseconds`); over the tools the app stamps arrival itself,
-    so the document carries none of its own.
-  - `attention` — as §4.2 defines it, on the file transport too: `wait` while a `Decision` is
-    parked on the user, `block` while stuck on somebody else, absent while simply working — and
-    `done` only once the work is over: `meta.json.phase` set to `done`, or `abandon` (whose terminal
-    panel clears `attention` and carries a `block` line; the card says `done`). An open MR/PR
-    waiting to merge is not over. The page reads the state from this field alone.
-  - `repo` (the repo id below), `work` (the work folder's name), `ticket`, `type`, `branch`, and
-    `harness` (`Claude Code`), from `meta.json` and git.
+- **What**: `card.json`, which the CLI writes beside `panel.json` whenever `panel.artifact` is set
+  — the rendered document plus `repo`, `work`, `ticket`, `type`, `branch` and `harness` — passed as
+  `file_path` to the `set`. Never a document rebuilt in your head. Its `attention` is the
+  document's: `done` once `meta.json.phase` is `done`, or once every MR/PR of the work and every MR/PR
+  recorded for its sibling repos has merged (the forge's word counts) with no Decision or blocker left in the
+  session's own input; an abandoned work claims nobody (its input carries only the `block` line
+  saying why); an open MR/PR waiting to merge is not over. The page reads
+  the state from that field alone. The CLI unavailable → the hand-written §4.1 document with those
+  six fields added.
 - **Where**: action `set` — the whole document, so a line dropped from the panel leaves the card —
-  `url` the key's value, collection `works`, doc id `<repo id>--<work folder>`. The repo id is the
-  path of `git remote get-url origin` — everything after the host, which ends at the first `/` after
-  `//` (`https://host/owner/repo.git`, `ssh://git@host:22/owner/repo.git`) or at the first `:`
-  (`git@host:owner/repo.git`) — with `.git` dropped and every `/` turned into `.`: `owner.repo`,
-  `group.subgroup.repo`. No remote → the main checkout's directory name (§0). Any character outside
-  `[A-Za-z0-9_.~:@+-]` becomes `-`.
+  `url` the key's value, collection `works`, doc id `<repo>--<work>`, both read from `card.json`.
 - **Version**: a write to a card that exists needs `if_version`, the version the last write
   returned. Keep it in the session — one writer per card, so it is right until the session loses
   it. None held → one `get` first: the card exists → pin to its version; it does not → write
@@ -865,14 +873,14 @@ section does not exist: no artifact tool is loaded or called.
   mirror off or the key empty → nothing to do. A folder moved back out of `_archive/` gets its card
   again at its next publication.
 - **A card whose MR/PR moved without its session.** A merge or a close done in the forge has no
-  session to write it, and the card keeps asking. `/flow-work-daily` and `/flow-work-clean` — the
-  commands that ask the forge about every recorded MR/PR — read `works` once (`list`) when the
-  mirror is on, and rewrite each card of this repo (`repo` as below) whose work the forge just
-  showed moved while the card still shows it open: that train line's `mark` to `done` (merged) or
-  `block` (closed unmerged), `Now` to that fact, the `Decision` and every `wait` line about that
-  MR/PR dropped, and `attention` to `done` when every MR/PR of the work is merged, cleared
-  otherwise. Same `set`, same version pinning as above; `meta.json` is not touched — the work's own
-  next phase, or `clean`, closes it.
+  session to write it, and the card keeps asking. `/flow-work-daily` and `/flow-work-clean` read
+  `works` once (`list`) when the mirror is on, and for each card of this repo whose train still
+  shows an MR/PR open, run `panel --harness <harness> --work <work> --forge` and `set` the
+  `card.json` it wrote — the forge's answer turns that line `done` or `block`, and the card closes
+  (`attention: done`, no Decision) once every MR/PR of the work, siblings included, has merged:
+  rendered for another branch, the input is that session's last word, not a live question. Such a
+  render writes only the card: that work's `panel.json` is its own session's pane. Same version pinning as above; `meta.json` is not
+  touched — the work's own next phase, or `clean`, closes it.
 - **Failure never stops a phase.** A second version refusal → no more retries for that
   publication. Any other failure — a wrong URL, auth, a permission prompt the user declined — turns
   the mirror off for the rest of the session. Either way the next stop carries one line,

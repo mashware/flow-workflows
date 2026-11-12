@@ -87,32 +87,16 @@ With what is new (there is already work on disk):
 
 ## 5. Rebuild the live panel
 
-After a break the panel is most likely stale, and a resumed session is exactly where flow-core §4 asks for `panel_get` **before** publishing: read what is on screen, then publish the whole document from the state just rebuilt (`meta.json`, git, the ticket) — `panel_set` where the terminal offers the panel tools, `.claude/work/<work>/panel.json` overwritten whole where it does not:
+After a break the panel is most likely stale, and a resumed session is exactly where flow-core §4 asks for `panel_get` **before** publishing: read what is on screen, then render it from the state just rebuilt — `panel-input.json` written whole, then the panel CLI with `--forge` (flow-core §4), whose document goes to `panel_set` where the terminal offers the panel tools:
 
 ```json
-{
-  "updated_at": "2026-08-06T16:45:00+02:00",
-  "phase": "build",
-  "header": true,
-  "lines": [
-    {"text": "<work title>", "style": "title"},
-    "",
-    {"ref": "#1", "text": "batch read sources", "mark": "wait", "link": "https://gitlab.com/…/merge_requests/9977"},
-    {"ref": "#2", "text": "per-event counters", "mark": "current"},
-    {"ref": "#3–#6", "text": "channel map · use case · detail · route", "mark": "pending"},
-    "",
-    {"ref": "Now", "text": "nothing running — just resumed", "mark": "info"},
-    {"ref": "Next", "text": "build", "mark": "info"},
-    {"ref": "Decision", "text": "run the next step, or leave it for another work", "mark": "wait"},
-    "",
-    {"text": "sibling-repo still needs the endpoint contract", "mark": "block"}
-  ]
-}
+{"phase": "build", "now": "nothing running — just resumed", "next": "build",
+ "decision": "run the next step, or leave it for another work",
+ "blocks": [{"text": "sibling-repo still needs the endpoint contract"}]}
 ```
 
 - `phase` = the phase you are resuming into (`meta.json.phase` does not yet say it).
-- `Now` in prose; `Next` names the command §4 suggested.
-- `Decision` marked `wait` is always set after a resume — nothing is running, the next move is the user's. It goes the moment they make it (flow-core §4.4e), not at the next stop.
-- `block` lines for the blockers §4 surfaced (`contract_handoff` `pending` in a sibling repo, a red pipeline, an unmerged dependency).
-- Train: one entry per `meta.json.mrs[]`, not-started collapsed into one `#a–#z` line; omit without `mrs`.
-- `updated_at` from `date -Iseconds` when the panel goes to the file; every fact from `meta.json` and the artifacts; language of the work's artifacts.
+- `now` in prose; `next` names the phase §4 suggested.
+- `decision` is always set after a resume — nothing is running, the next move is the user's. It goes the moment they make it (flow-core §4.4e), not at the next stop.
+- `blocks` for the blockers §4 surfaced (`contract_handoff` `pending` in a sibling repo, a red pipeline, an unmerged dependency); `labels` in the language of the work's artifacts.
+- The train, the steps and each MR/PR's real state come from the CLI: never typed here.

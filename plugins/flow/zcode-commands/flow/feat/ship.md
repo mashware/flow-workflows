@@ -428,7 +428,7 @@ In every scenario:
   ```
 
   Nothing back → the content is **not** on the base whatever the forge says (see §6.2.1). Do not mark the entry `merged`: leave it `in_progress` with a `note`, tell the user in one line, and recover it with a fresh MR/PR against `git.default_base` before the train moves on.
-- Refresh the panel from the updated `meta.json`. A shipped-but-open MR/PR is a `wait` line carrying its `link`; it becomes `done` only when confirmed merged. When this ship sets `phase = "done"`, say so in plain words (`mark: "info"` with `style: "ok"`: nothing left here) and drop the `Decision` line.
+- Render the panel from the updated `meta.json` (flow-core §4, with `--forge`): a shipped-but-open MR/PR draws as `wait` with its real state, `done` once merged; when this ship sets `phase = "done"` the CLI closes the panel itself (nothing left here, `attention: done`) — drop `decision` from the input.
 - Overwrite `00-summary.md` whole (≤15 lines, flow-core §5).
 
 ### 6.1.1 Tracker: move to done

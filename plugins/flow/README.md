@@ -75,10 +75,12 @@ has them; commands reference them by role, not by name. It never picks a model f
 `examples/symfony/`, which nothing loads and which exists so a fresh install has something concrete
 to copy.
 
-It does ship three hooks (`hooks/`), all generic: a guard that refuses a `git push` aimed at
+It does ship four hooks (`hooks/`), all generic: a guard that refuses a `git push` aimed at
 `master`/`main`; a session-start notice when the plugin has been updated since you last looked
 (what `/flow:news` then explains); and a second session-start hook that, when the branch you
-opened on has a work behind it, prints its phase and what the last session was doing. All three
+opened on has a work behind it, prints its phase and what the last session was doing; and, after each tool call, one that
+re-renders the live panel (`flow-workflows panel`) when the work's plan, record or panel input is
+newer than the panel. All four
 are silent when they have nothing to say — including in a repo that does not use flow.
 
 ## Other harnesses

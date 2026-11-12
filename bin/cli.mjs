@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync, spawn } from 'node:child_process'
 
@@ -299,12 +299,6 @@ function mainCheckout(repo) {
   return mainCheckouts.get(repo)
 }
 
-function rootHolding(repo, probe) {
-  if (existsSync(join(repo, probe))) return repo
-  const main = mainCheckout(repo)
-  return main !== repo && existsSync(join(main, probe)) ? main : repo
-}
-
 // Exactly this name, case included. A case-insensitive filesystem answers `existsSync` for
 // `FLOW.CI.md` with `FLOW.ci.md`, which neither the agent's listing nor a Linux CI would read.
 function hasFile(root, name) {
@@ -438,8 +432,22 @@ function flowConfig(repo, harness, rev = null) {
 // the two things that read it fail silently when it is missing: the pack drops its `## Work`
 // section, which it advertises and no reviewer knows to miss, and `--record` used to write the
 // figure nowhere and exit 0. Same resolution as the config: here first, the main checkout otherwise.
+// The work folders are the union of this checkout's and the main checkout's (flow-core §0): a
+// worktree may hold a `.claude/work` of its own (an `_archive/`, a stray folder) while the work
+// lives in the main checkout, and reading only the first root that exists missed it.
+function workRoots(repo) {
+  return [...new Set([join(repo, '.claude', 'work'), join(mainCheckout(repo), '.claude', 'work')])]
+}
+
 function workFolder(repo, branch) {
-  const root = join(rootHolding(repo, join('.claude', 'work')), '.claude', 'work')
+  for (const root of workRoots(repo)) {
+    const found = workIn(root, branch)
+    if (found) return found
+  }
+  return null
+}
+
+function workIn(root, branch) {
   if (!existsSync(root)) return null
   for (const entry of readdirSync(root, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name === '_archive') continue
@@ -1244,9 +1252,7 @@ function editMeta(work, fn) {
   let meta
   try { meta = JSON.parse(readFileSync(p, 'utf8')) } catch { return false }
   fn(meta)
-  const tmp = `${p}.tmp`
-  writeFileSync(tmp, `${JSON.stringify(meta, null, 2)}\n`)
-  renameSync(tmp, p)
+  writeAtomic(p, `${JSON.stringify(meta, null, 2)}\n`)
   return true
 }
 
@@ -1442,7 +1448,7 @@ function canonicalOrigin(raw) {
 // `seen` is shared across every repo of one call: a worktree and its main checkout, or the
 // same path named twice, lead to the same folders and must count them once.
 function worksOf(repo, seen) {
-  const roots = new Set([join(repo, '.claude', 'work'), join(mainCheckout(repo), '.claude', 'work')])
+  const roots = new Set(workRoots(repo))
   const works = []
   for (const root of roots) {
     for (const dir of [root, join(root, '_archive')]) {
@@ -1621,6 +1627,522 @@ function yieldOf(argv) {
   }
 }
 
+// --- panel -----------------------------------------------------------------------------
+// The live panel, rendered from what the work already records. The prose used to ask the agent
+// to rebuild it by hand at every stop, and the record of that is plain: since the plan-step
+// rule landed, 8 of 64 build sessions with a written plan ever published a step, and panels
+// written on other harnesses lost their clock, their links and their language. So everything
+// meta.json, the plan's ticks and the forge can say is said here; the agent writes only what
+// nobody else knows — what is running, what comes next, what it is asking — into
+// `panel-input.json`. meta.json is read, never written: its transitions belong to the phases.
+
+const PANEL_INPUT_KEYS = ['phase', 'now', 'next', 'decision', 'attention', 'blocks', 'stale_after_minutes', 'labels']
+const PANEL_ATTENTION = ['wait', 'block', 'done']
+const PANEL_LABELS = {
+  now: 'Now', next: 'Next', decision: 'Decision', open: 'Open', closed: 'nothing left here',
+  review: 'review round', findings: 'open', followups: 'follow-ups',
+}
+const HARNESS_NAMES = {
+  claude: 'Claude Code', codex: 'Codex', opencode: 'OpenCode', zcode: 'zcode', gemini: 'Gemini CLI', hermes: 'Hermes',
+}
+const MAX_STEP_LINES = 5
+
+function flagValue(argv, name) {
+  const at = argv.indexOf(name)
+  return at === -1 ? null : argv[at + 1] ?? null
+}
+
+// `git@host:owner/repo.git`, `https://host/owner/repo.git`, `ssh://git@host:22/owner/repo.git`
+// → `owner.repo`; the control room groups its cards by this id (flow-core §4.6).
+function repoId(repo) {
+  const url = git(['remote', 'get-url', 'origin'], repo).trim()
+  let path
+  if (!url) path = basename(mainCheckout(repo))
+  else if (url.includes('//')) path = url.replace(/^[a-z+]+:\/\/[^/]*\//i, '')
+  else path = url.replace(/^[^:]*:/, '')
+  return path.replace(/\.git$/, '').replace(/\//g, '.').replace(/[^A-Za-z0-9_.~:@+-]/g, '-')
+}
+
+// The id is dropped only as a whole token: `244 · Ship it` loses it, `2440 widgets` does not.
+function shortTitle(title, ticket) {
+  let t = String(title ?? '').trim()
+  if (ticket) {
+    const id = String(ticket).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    t = t.replace(new RegExp(`^\\[?#?${id}\\]?(?=[\\s·:\\-–—]|$)\\s*[·:\\-–—]?\\s*`, 'i'), '')
+  }
+  return t
+}
+
+// What a URL names: `!123` on GitLab, `#123` on GitHub, or nothing recognisable.
+function mrRef(url) {
+  const m = /\/(merge_requests|pull)\/(\d+)/.exec(String(url ?? ''))
+  return m ? `${m[1] === 'pull' ? '#' : '!'}${m[2]}` : null
+}
+
+// The statuses meta.json really carries, not only the five the plan's table names: works in the
+// wild hold `open`, `draft`, `dropped`, `merged_into_umbrella`, `closed_superseded…`, none at
+// all, or a bare string. A status nobody listed is drawn from whether it has an MR/PR, never
+// refused — a refused panel is the hand-written one this exists to replace.
+const SETTLED_STATUS = /^(merged|closed|superseded|skipped|dropped)/
+
+// What meta.json records wins over the forge: it is written only when a phase confirmed it,
+// while the forge's answer may be a cached one. A finished work's open MR/PR is a merged one.
+function trainMark(status, url, forge, done, abandoned) {
+  const s = String(status ?? '')
+  if (s.startsWith('merged')) return 'done'
+  if (s.startsWith('closed') || s.startsWith('dropped')) return 'block'
+  if (s.startsWith('superseded') || s.startsWith('skipped')) return null
+  if (forge?.state === 'merged') return 'done'
+  if (forge?.state === 'closed') return 'block'
+  if (url) return done ? 'done' : 'wait'
+  if (done) return 'done'
+  if (s === 'in_progress' && !abandoned) return 'current'
+  return 'pending'
+}
+
+// The single MR/PR of a work without `mrs[]`, under whichever key the phase wrote it.
+function singleUrl(meta) {
+  return ['mr_url', 'pr_url', 'url', 'mr'].map((k) => meta[k]).find((v) => typeof v === 'string' && /^https?:\/\//.test(v)) ?? null
+}
+
+// The plan's numbered steps, as 126 real plans write them: top-level lines of its section, with
+// a checkbox or without (an unticked step is often a bare `3. …`), in file order — a step added
+// later with a lower number stays where it was written. Under a `###` only lines carrying a
+// checkbox are steps: that is how review fixes are appended (`### Arreglos de la review`), and a
+// subsection's bare numbers are notes. The repair rounds the plugin writes (`### Red suite …
+// round <k>`) count bare lines too, and restart at 1, so they are referred to as `r<k>.<n>`. A
+// step struck through (`~~…~~`) was dropped and is not drawn. Keys stay unique whatever repeats.
+function planSteps(work, heading) {
+  let text
+  try { text = readFileSync(join(work, heading.file), 'utf8') } catch { return [] }
+  const lines = text.split('\n')
+  const start = lines.findIndex((l) => heading.re.test(l))
+  if (start === -1) return []
+  const steps = []
+  const keys = new Set()
+  let fence = false
+  let sub = null
+  for (const line of lines.slice(start + 1)) {
+    if (/^\s{0,3}(`{3,}|~{3,})/.test(line)) { fence = !fence; continue }
+    if (fence) continue
+    if (/^#{1,2}\s/.test(line)) break
+    const h = /^#{3,6}\s+(.*)$/.exec(line)
+    if (h) {
+      const r = /^Red suite\b.*?\bround\s+(\d+)/i.exec(h[1])
+      sub = r ? { round: Number(r[1]) } : { round: 0 }
+      continue
+    }
+    const m = /^(?:-\s+\[([ xX])\]\s*)?(\d+)\.\s+(?:\[([ xX])\]\s*)?(.*)$/.exec(line)
+    if (!m) continue
+    const boxed = m[1] !== undefined || m[3] !== undefined
+    if (sub && !sub.round && !boxed) continue
+    if (/^~~.*~~/.test(m[4].trim())) continue
+    const ref = sub?.round ? `r${sub.round}.${m[2]}` : m[2]
+    let key = `step-${ref.replace('.', '-')}`
+    for (let i = 2; keys.has(key); i++) key = `step-${ref.replace('.', '-')}-${i}`
+    keys.add(key)
+    const ticked = /x/i.test(m[1] ?? '') || /x/i.test(m[3] ?? '')
+    const label = m[4].split(/\s+—\s+/)[0].replace(/`/g, '').trim()
+    steps.push({ ref, key, ticked, text: label.length > 72 ? `${label.slice(0, 71)}…` : label })
+  }
+  return steps
+}
+
+// One line per step, never ahead of the ticks, five lines at most: past three finished steps
+// they fold into one, and a long pending tail folds the same way (flow-core §4.1).
+function stepLines(steps) {
+  if (!steps.length) return []
+  const done = steps.filter((s) => s.ticked)
+  const rest = steps.filter((s) => !s.ticked)
+  // A folded range names its lowest and highest step; steps written out of order would otherwise
+  // fold into a range that leaves one of them out.
+  const range = (ss) => {
+    if (ss.length === 1) return ss[0].ref
+    const nums = ss.map((x) => Number(x.ref))
+    return nums.every(Number.isFinite) ? `${Math.min(...nums)}–${Math.max(...nums)}` : `${ss[0].ref}–${ss[ss.length - 1].ref}`
+  }
+  const out = []
+  if (done.length > 3) out.push({ key: 'steps-done', ref: range(done), text: done.map((s) => s.text).join(' · '), mark: 'done', indent: 4 })
+  else done.forEach((s) => out.push({ key: s.key, ref: s.ref, text: s.text, mark: 'done', indent: 4 }))
+  const [current, ...pending] = rest
+  if (current) out.push({ key: current.key, ref: current.ref, text: current.text, mark: 'current', indent: 4 })
+  const room = MAX_STEP_LINES - out.length
+  if (pending.length > room && room > 0) {
+    pending.slice(0, room - 1).forEach((s) => out.push({ key: s.key, ref: s.ref, text: s.text, mark: 'pending', indent: 4 }))
+    const tail = pending.slice(room - 1)
+    out.push({ key: 'steps-pending', ref: range(tail), text: tail.map((s) => s.text).join(' · '), mark: 'pending', indent: 4 })
+  } else pending.forEach((s) => out.push({ key: s.key, ref: s.ref, text: s.text, mark: 'pending', indent: 4 }))
+  return out
+}
+
+function readPanelInput(work, warn) {
+  const p = join(work, 'panel-input.json')
+  if (!existsSync(p)) return { input: {} }
+  let input
+  try { input = JSON.parse(readFileSync(p, 'utf8')) } catch (e) { return { error: `\`${p}\` is not readable JSON (${e.message})` } }
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return { error: `\`${p}\` must hold one JSON object` }
+  for (const k of Object.keys(input)) if (!PANEL_INPUT_KEYS.includes(k)) { warn(`panel-input.json: \`${k}\` is not a field — ignored (fields: ${PANEL_INPUT_KEYS.join(', ')})`); delete input[k] }
+  if (input.attention != null && !PANEL_ATTENTION.includes(input.attention)) {
+    warn(`panel-input.json: attention \`${input.attention}\` ignored — one of ${PANEL_ATTENTION.join(' · ')}, or null`)
+    delete input.attention
+  }
+  if (input.blocks != null && !Array.isArray(input.blocks)) { warn('panel-input.json: `blocks` must be a list — ignored'); delete input.blocks }
+  if (input.labels != null) {
+    if (typeof input.labels !== 'object' || Array.isArray(input.labels)) { warn('panel-input.json: `labels` must be an object — ignored'); delete input.labels }
+    else for (const k of Object.keys(input.labels)) if (!(k in PANEL_LABELS)) { warn(`panel-input.json: label \`${k}\` is not one — ignored (labels: ${Object.keys(PANEL_LABELS).join(', ')})`); delete input.labels[k] }
+  }
+  return { input }
+}
+
+function renderPanel({ meta, work, input, forge = {}, foreign = false }) {
+  const labels = { ...PANEL_LABELS, ...(input.labels ?? {}) }
+  const done = meta.phase === 'done'
+  const abandoned = meta.phase === 'abandoned'
+  const lines = [{ key: 'title', text: shortTitle(meta.title, meta.ticket) || String(meta.ticket ?? ''), style: 'title' }]
+  const block = (ls) => { if (ls.length) lines.push('', ...ls) }
+
+  const train = []
+  const marks = []
+  const mrs = Array.isArray(meta.mrs) ? meta.mrs : []
+  // The MR/PR being built is the first one with a written plan that is neither shipped nor
+  // settled — never a status: build marks an entry `in_progress` only in a train, so a work
+  // planned as one MR/PR keeps it `pending` while its steps are ticked.
+  const plans = new Map()
+  const planOf = (n) => {
+    if (!plans.has(n)) plans.set(n, planSteps(work, { file: '05-implementation.md', re: new RegExp(`^##\\s+Plan\\s+MR(/PR)?\\s+#${n}\\b`) }))
+    return plans.get(n)
+  }
+  const building = done || abandoned ? null : mrs.map((m, i) => (m && typeof m === 'object' ? { m, n: m.n ?? i + 1 } : null))
+    .find((e) => e && !e.m.url && !SETTLED_STATUS.test(String(e.m.status ?? '')) && planOf(e.n).length)?.m
+  let pendingRun = []
+  const flush = () => {
+    if (!pendingRun.length) return
+    const first = pendingRun[0].n, last = pendingRun[pendingRun.length - 1].n
+    train.push({ key: pendingRun.length === 1 ? `mr-${first}` : `mr-${first}-${last}`, ref: pendingRun.length === 1 ? `#${first}` : `#${first}–#${last}`, text: pendingRun.map((m) => m.title).join(' · '), mark: 'pending' })
+    pendingRun = []
+  }
+  mrs.forEach((raw, i) => {
+    const m = raw && typeof raw === 'object' ? raw : { n: i + 1, title: String(raw ?? '') }
+    const n = m.n ?? i + 1
+    const f = m.url ? forge[m.url] : null
+    let mark = trainMark(m.status, m.url, f, done, abandoned)
+    if (!mark) return
+    if (m === building && mark === 'pending') mark = 'current'
+    marks.push(mark)
+    if (mark === 'pending') { pendingRun.push({ n, title: m.title }); return }
+    flush()
+    train.push({ key: `mr-${n}`, ref: `#${n}`, text: String(m.title ?? ''), mark, ...(m.url ? { link: m.url } : {}) })
+    if (mark === 'wait' && f?.summary) train.push({ key: `mr-${n}-state`, text: f.summary, mark: 'info', indent: 4 })
+    if (m === building) train.push(...stepLines(planOf(n)))
+  })
+  flush()
+  const url = !mrs.length ? singleUrl(meta) : null
+  if (url) {
+    const f = forge[url]
+    const mark = trainMark(null, url, f, done)
+    marks.push(mark)
+    train.push({ key: 'mr-1', ref: mrRef(url) ?? '#1', text: shortTitle(meta.title, meta.ticket), mark, link: url })
+    if (mark === 'wait' && f?.summary) train.push({ key: 'mr-1-state', text: f.summary, mark: 'info', indent: 4 })
+  }
+  // A bug's plan lives in 04-fix.md and is shown while fix runs: before `fix` first closes, and
+  // when a review's or a red suite's steps send the work back into it — `fix` is then already in
+  // phases_done, and the phase being run is the only thing that says so.
+  if (meta.type === 'bug' && !done && !abandoned) {
+    const fixClosed = Array.isArray(meta.phases_done) && meta.phases_done.includes('fix')
+    if (!fixClosed || input.phase === 'fix') train.push(...stepLines(planSteps(work, { file: '04-fix.md', re: /^##\s+Plan\b/ })))
+  }
+  block(train)
+
+  // Every MR/PR merged is the end of the work's waiting, whatever meta.json.phase still says: a
+  // merge done in the forge has no session to close the work, and the card it leaves behind
+  // must stop claiming the person (flow-core §4.6).
+  // A sibling repo's MRs/PRs keep the work open until each one merged — by the forge's word, or
+  // by its entry's own `done`/`merged`. An entry with no MR/PR is a reminder `ship` and `daily`
+  // carry, not something this panel waits on: no phase ever marks it done.
+  const sibs = []
+  let siblingOpen = false
+  for (const r of Array.isArray(meta.related_repos) ? meta.related_repos : []) {
+    const name = String(r?.repo ?? '').split(/[\s/]/).filter(Boolean).pop() ?? ''
+    const finished = /^(done|merged)$/.test(String(r?.status ?? ''))
+    for (const u of Array.isArray(r?.mrs) ? r.mrs : []) {
+      const f = forge[u]
+      const mark = f?.state === 'merged' || (finished && f?.state !== 'closed') ? 'done' : f?.state === 'closed' ? 'block' : 'wait'
+      if (mark !== 'done') siblingOpen = true
+      sibs.push({ key: `sib-${sibs.length + 1}`, ref: `${name} ${mrRef(u) ?? ''}`.trim(), text: f?.summary ?? String(r.scope ?? '').split(/[.;]/)[0], mark, link: u })
+    }
+  }
+  block(sibs)
+  const blocks = (Array.isArray(input.blocks) ? input.blocks : []).map((b, i) => {
+    const o = typeof b === 'string' ? { text: b } : (b ?? {})
+    return { key: `block-${i + 1}`, text: String(o.text ?? ''), mark: 'block', ...(o.link ? { link: String(o.link) } : {}) }
+  }).filter((b) => b.text)
+
+  // … but only when nothing else is still open: a sibling repo's MR/PR, a blocker, or a
+  // question the session is waiting on keeps the work claiming someone. Rendered for another
+  // session (`--work`: daily, clean), the input is whatever that session last wrote, and a
+  // question about an MR/PR that has since merged is not one anybody is waiting on.
+  const merged = !done && marks.length > 0 && marks.every((k) => k === 'done') && !siblingOpen
+    && (foreign || (!input.decision && !blocks.length))
+  const closed = done || merged
+  const over = closed || abandoned
+
+  if (!over) {
+    const rows = Array.isArray(meta.review_findings) ? meta.review_findings : []
+    const round = rows.reduce((n, r) => Math.max(n, Number(r?.round) || 0), 0)
+    const openRows = rows.filter((r) => Number(r?.round) === round && r?.outcome === 'open').length
+    const fups = (Array.isArray(meta.followups) ? meta.followups : []).filter((f) => ['proposed', 'accepted'].includes(f?.status)).length
+    const parts = []
+    if (openRows) parts.push(`${labels.review} ${round} · ${openRows} ${labels.findings}`)
+    if (fups) parts.push(`${fups} ${labels.followups}`)
+    if (parts.length) block([{ key: 'open', ref: labels.open, text: parts.join(' · '), mark: 'info' }])
+  }
+
+  const talk = []
+  if (!over && input.now) talk.push({ key: 'now', ref: labels.now, text: String(input.now), mark: 'info' })
+  if (!over && input.next) talk.push({ key: 'next', ref: labels.next, text: String(input.next), mark: 'info' })
+  if (!over && input.decision) talk.push({ key: 'decision', ref: labels.decision, text: String(input.decision), mark: 'wait' })
+  if (closed) talk.push({ key: 'closed', text: labels.closed, mark: 'info', style: 'ok' })
+  block(talk)
+
+  if (!closed) block(blocks)
+
+  const phase = done ? 'done' : (abandoned ? meta.phase : input.phase ?? meta.phase ?? null)
+  const attention = closed ? 'done'
+    : abandoned ? null
+      : input.decision ? 'wait'
+        : input.attention ?? (blocks.length ? 'block' : null)
+  return {
+    updated_at: new Date().toISOString(),
+    ...(phase ? { phase } : {}),
+    header: true,
+    ...(attention ? { attention } : {}),
+    ...(Number(input.stale_after_minutes) > 0 ? { stale_after_minutes: Number(input.stale_after_minutes) } : {}),
+    lines,
+  }
+}
+
+// `publish_cmd` runs a shell command with no one asking, after every tool call once the hook
+// is in play — so it is taken only from a FLOW file git does not track: the personal, ignored
+// one. A command committed to a repo would run on every machine that merely opened it, and
+// when git cannot say which it is, the command does not run.
+function publishCmd(repo, harness) {
+  let found = null
+  for (const l of flowLayers(repo, harness).layers) {
+    if (!l.found) continue
+    const cmd = parseFlow(l.text ?? readFileSync(join(l.root, l.name), 'utf8')).panel?.publish_cmd
+    if (cmd !== undefined) found = { cmd, layer: l }
+  }
+  if (!found?.cmd) return {}
+  let tracked
+  try {
+    tracked = execFileSync('git', ['ls-files', '--error-unmatch', '--', found.layer.name], { cwd: found.layer.root, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' })
+  } catch (e) {
+    // 1 is git's own "not tracked"; anything else (128: not a repo, unsafe directory) is no answer.
+    if (e.status === 1) return { cmd: found.cmd }
+    return { ignored: `panel.publish_cmd in ${found.layer.name} not run: git could not say whether that file is tracked (${String(e.stderr || e.message).trim().split('\n')[0]})` }
+  }
+  return tracked ? { ignored: `panel.publish_cmd in ${found.layer.name} ignored: that file is tracked by git, and a committed command would run on every machine that opens the repo — set it in a git-ignored FLOW file` } : { cmd: found.cmd }
+}
+
+// One panel line per text line: a reader that greps (the session-start hook looks for the
+// `now` line and takes its text) finds a line's fields together, and a diff shows a line moved.
+function panelText(doc) {
+  const { lines, ...top } = doc
+  const head = Object.entries(top).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`)
+  const body = lines.map((l, i) => `    ${JSON.stringify(l)}${i < lines.length - 1 ? ',' : ''}`)
+  return `{\n${head.join('\n')}\n  "lines": [\n${body.join('\n')}\n  ]\n}\n`
+}
+
+// A temp name of its own per writer: the hook can start a render while another is still
+// writing, and two renames of one shared temp file lose one of them.
+function writeAtomic(p, text) {
+  const tmp = `${p}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`
+  try {
+    writeFileSync(tmp, text)
+    renameSync(tmp, p)
+  } catch (e) {
+    try { rmSync(tmp, { force: true }) } catch {}
+    throw e
+  }
+}
+
+// `--work` takes a folder's path or its name. A path must be a work folder of this repo (live,
+// never `_archive/`): the hook names the exact folder it found, so the CLI cannot settle on a
+// namesake in the other checkout, nor on one that `abandon` or `clean` just archived.
+function findWork(repo, name) {
+  const roots = workRoots(repo)
+  if (name.includes('/')) {
+    let real
+    try { real = realpathSync(name) } catch { return null }
+    const inside = roots.some((r) => { try { return dirname(real) === realpathSync(r) } catch { return false } })
+    return inside && existsSync(join(real, 'meta.json')) ? real : null
+  }
+  // By name: a live folder only — an archived namesake's card was deleted with its folder.
+  for (const root of roots) if (existsSync(join(root, name, 'meta.json'))) return join(root, name)
+  return null
+}
+
+// What earlier `--forge` runs learnt, so a render without it — the hook's, a plan step's —
+// does not paint a merged MR/PR back to `wait`. A merge is final and kept; anything else (a
+// close can be reopened, a pipeline moves) is shown for an hour and then dropped rather than
+// passed off as current. Each entry carries its own time, so a run whose call failed keeps the
+// previous answer, and only URLs the work still records are kept.
+const FORGE_FRESH_MS = 60 * 60 * 1000
+
+function workUrls(meta) {
+  const mrs = Array.isArray(meta.mrs) ? meta.mrs : []
+  return new Set([
+    ...mrs.map((m) => m?.url).filter(Boolean),
+    ...(mrs.length ? [] : [singleUrl(meta)].filter(Boolean)),
+    ...(Array.isArray(meta.related_repos) ? meta.related_repos.flatMap((r) => (Array.isArray(r?.mrs) ? r.mrs : [])) : []),
+  ])
+}
+
+function cachedForge(work, meta, now = Date.now()) {
+  let states
+  try { states = JSON.parse(readFileSync(join(work, 'forge-state.json'), 'utf8')).states ?? {} } catch { return {} }
+  const keep = workUrls(meta)
+  const out = {}
+  for (const [url, s] of Object.entries(states)) {
+    if (!keep.has(url) || !s || typeof s !== 'object') continue
+    if (s.state === 'merged') out[url] = { state: 'merged', summary: null, at: s.at }
+    else if (now - Date.parse(s.at ?? 0) < FORGE_FRESH_MS) out[url] = s
+  }
+  return out
+}
+
+function panel(argv) {
+  const harness = flagValue(argv, '--harness')
+  if (harness && !OVERLAY_HARNESSES.includes(harness)) {
+    console.error(`flow panel: unknown --harness \`${harness}\` — one of ${OVERLAY_HARNESSES.join(', ')}`); process.exit(1)
+  }
+  // `--repo` lets the hook run this from outside the checkout, where nothing the repo commits
+  // (an `.npmrc`, a `node_modules`) can choose what `npx` executes.
+  const repo = git(['rev-parse', '--show-toplevel'], flagValue(argv, '--repo') ?? process.cwd()).trim()
+  if (!repo) { console.error('flow panel: not a git checkout'); process.exit(1) }
+  const named = flagValue(argv, '--work')
+  const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], repo).trim()
+  const work = named ? findWork(repo, named) : workFolder(repo, branch)
+  if (!work) { console.error(named ? `flow panel: no work folder named \`${named}\`` : `flow panel: no work on \`${branch}\``); process.exit(1) }
+  let meta
+  try { meta = JSON.parse(readFileSync(join(work, 'meta.json'), 'utf8')) } catch (e) {
+    console.error(`flow panel: \`${join(work, 'meta.json')}\` is missing or not JSON (${e.message})`); process.exit(1)
+  }
+  const warn = (m) => console.error(`flow panel: ${m}`)
+  const { input, error } = readPanelInput(work, warn)
+  if (error) { console.error(`flow panel: ${error} — nothing written`); process.exit(1) }
+  let forge = cachedForge(work, meta)
+  if (argv.includes('--forge')) {
+    const at = new Date().toISOString()
+    const fresh = Object.fromEntries(Object.entries(forgeStates(meta, warn)).map(([u, s]) => [u, { ...s, at }]))
+    forge = { ...forge, ...fresh }
+    writeAtomic(join(work, 'forge-state.json'), `${JSON.stringify({ states: forge }, null, 2)}\n`)
+  }
+  // Rendered for a work on another branch (daily, clean refreshing cards): not this pane's
+  // panel, and its input is another session's. `--work` alone does not say it — the hook names
+  // the folder of this branch's own work.
+  const branches = [meta.branch, ...(Array.isArray(meta.mrs) ? meta.mrs.map((m) => m?.branch) : [])]
+  const foreign = Boolean(named) && !branches.includes(branch)
+  const doc = renderPanel({ meta, work, input, forge, foreign })
+  // Another branch's panel.json is the live pane of the session that owns it: a render made for
+  // the control room (daily, clean) writes only the card, never the file that session shows.
+  if (!foreign) writeAtomic(join(work, 'panel.json'), panelText(doc))
+  const config = flowConfig(repo, harness).panel ?? {}
+  // A terminal that paints only what reaches it over its own channel never reads panel.json,
+  // and a hook cannot call an MCP tool. `publish_cmd` is that channel as a command: the
+  // document on its stdin, every time this branch's panel is rendered — the agent's
+  // publication and the hook's refresh alike. Another branch's work is never sent there.
+  if (!foreign) {
+    const publish = publishCmd(repo, harness)
+    if (publish.ignored) warn(publish.ignored)
+    if (publish.cmd) {
+      try {
+        execFileSync('sh', ['-c', publish.cmd], { input: JSON.stringify(doc), cwd: repo, stdio: ['pipe', 'ignore', 'pipe'], timeout: 10000 })
+      } catch (e) { warn(`panel.publish_cmd failed (${String(e.stderr || e.message).trim().split('\n')[0]}) — panel.json is written`) }
+    }
+  }
+  if (config.artifact) {
+    writeAtomic(join(work, 'card.json'), panelText({
+      ...doc, repo: repoId(repo), work: basename(work), ticket: meta.ticket ?? null, type: meta.type ?? null,
+      branch: meta.branch ?? null, ...(HARNESS_NAMES[harness] ? { harness: HARNESS_NAMES[harness] } : {}),
+    }))
+  }
+  console.log(JSON.stringify(doc))
+}
+
+function forgeRun(cmd, args) {
+  try {
+    return execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 })
+  } catch { return null }
+}
+
+const GH_RED = ['FAILURE', 'ERROR', 'CANCELLED', 'TIMED_OUT', 'ACTION_REQUIRED', 'STARTUP_FAILURE']
+const GH_RUNNING = ['PENDING', 'EXPECTED', 'QUEUED', 'IN_PROGRESS']
+
+function ghState(url) {
+  const d = firstJson(forgeRun('gh', ['pr', 'view', url, '--json', 'state,isDraft,statusCheckRollup,reviewDecision']) ?? '')
+  if (!d?.state) return null
+  const state = d.state === 'MERGED' ? 'merged' : d.state === 'CLOSED' ? 'closed' : 'open'
+  const checks = Array.isArray(d.statusCheckRollup) ? d.statusCheckRollup : []
+  const verdict = (c) => String(c.conclusion || c.state || '').toUpperCase()
+  const pipeline = !checks.length ? 'none'
+    : checks.some((c) => GH_RED.includes(verdict(c))) ? 'failed'
+      : checks.some((c) => (c.status && c.status !== 'COMPLETED') || GH_RUNNING.includes(verdict(c))) ? 'running'
+        : 'passed'
+  const review = { APPROVED: 'approved', CHANGES_REQUESTED: 'changes requested', REVIEW_REQUIRED: 'review required' }[d.reviewDecision]
+  return { state, parts: [d.isDraft && 'draft', `pipeline ${pipeline}`, review] }
+}
+
+function glabState(url) {
+  const m = /^(https?:\/\/[^/]+)\/(.+?)\/-\/merge_requests\/(\d+)/.exec(url)
+  if (!m) return null
+  const [, host, project, iid] = m
+  const d = firstJson(forgeRun('glab', ['mr', 'view', iid, '-R', `${host}/${project}`, '-F', 'json']) ?? '')
+  if (!d?.state) return null
+  const state = d.state === 'merged' ? 'merged' : d.state === 'closed' ? 'closed' : 'open'
+  if (state !== 'open') return { state, parts: [] }
+  const hostname = host.replace(/^https?:\/\//, '')
+  const api = (path) => {
+    const out = forgeRun('glab', ['api', '--hostname', hostname, `projects/${encodeURIComponent(project)}/merge_requests/${iid}/${path}`])
+    try { return out ? JSON.parse(out) : null } catch { return null }
+  }
+  const st = d.head_pipeline?.status
+  const pipeline = !st ? 'none' : st === 'success' ? 'passed' : ['failed', 'canceled'].includes(st) ? 'failed' : st === 'skipped' ? 'skipped' : 'running'
+  const ap = api('approvals')
+  const need = Number(ap?.approvals_required) || 0
+  const approvals = !ap ? null
+    : need ? `${need - (Number(ap.approvals_left) || 0)}/${need} approvals`
+      : (ap.approved_by?.length ? 'approved' : null)
+  const disc = api('discussions?per_page=100')
+  const open = Array.isArray(disc) ? disc.filter((x) => x?.notes?.[0]?.resolvable && !x.notes[0].resolved).length : 0
+  return { state, parts: [d.draft && 'draft', `pipeline ${pipeline}`, approvals, open ? `${open} open threads` : null] }
+}
+
+// What the forge says about each MR/PR the panel would draw as open: merged or closed in the
+// forge while meta.json still says otherwise, and for an open one what it waits on. Only
+// `ship` writes `merged` into meta.json, and a merge done in the forge has no session to tell
+// it — 34 of 75 recorded MRs/PRs were still `in_progress` when the audit read them. Asked by
+// URL, so a sibling repo's MR/PR answers like this repo's. A field the forge does not report
+// is left out, never guessed; a failed call drops that MR/PR's state and nothing else.
+function forgeStates(meta, warn) {
+  const urls = new Set()
+  const mrs = Array.isArray(meta.mrs) ? meta.mrs : []
+  for (const m of mrs) {
+    if (m && typeof m === 'object' && m.url && !SETTLED_STATUS.test(String(m.status ?? ''))) urls.add(m.url)
+  }
+  const single = mrs.length ? null : singleUrl(meta)
+  if (single) urls.add(single)
+  for (const r of Array.isArray(meta.related_repos) ? meta.related_repos : []) for (const u of Array.isArray(r?.mrs) ? r.mrs : []) urls.add(u)
+  const out = {}
+  for (const url of urls) {
+    if (!/^https?:\/\/[^\s-]/.test(String(url))) { warn(`--forge: \`${url}\` is not an http(s) URL — skipped`); continue }
+    const s = /\/pull\/\d+/.test(url) ? ghState(url) : /\/merge_requests\/\d+/.test(url) ? glabState(url) : null
+    if (!s) { warn(`--forge: no state for ${url} — drawn from meta.json`); continue }
+    out[url] = { state: s.state, summary: s.parts.filter(Boolean).join(' · ') || null }
+  }
+  return out
+}
+
 function usage() {
   console.log(`flow-workflows v${version()} — guided feat/bug workflows for coding agents
 
@@ -1632,6 +2154,7 @@ function usage() {
   npx flow-workflows review [--out <file>] [--record] [same options as bundle]
   npx flow-workflows cost
   npx flow-workflows record-review --file <rows.json>
+  npx flow-workflows panel  [--harness <name>] [--work <folder>] [--forge] [--repo <path>]
   npx flow-workflows yield  [<repo-path>…]
   npx flow-workflows escape <commit> [--file <path>]
 
@@ -1689,6 +2212,16 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   severities and outcomes come from closed lists; one value outside them and nothing is
   written, and the error names the values that are valid.
 
+"panel" renders this branch's work as its live panel — title, MR/PR train, the plan's steps
+  from its ticks, sibling repos' MRs/PRs, open review findings and follow-ups — from
+  meta.json and the plan, plus what the agent wrote in panel-input.json (now, next,
+  decision, blockers, labels). It writes panel.json (and card.json when panel.artifact is
+  set), pipes the document to panel.publish_cmd when set, and prints it — for another
+  branch's work (daily, clean) it writes card.json only. --forge asks gh/glab for each open MR/PR's real state.
+  --work names a work folder (another branch's is never sent to publish_cmd);
+  --repo runs it on a checkout other than the current directory. A --forge run keeps its
+  answers in forge-state.json for the renders that follow it. meta.json is never written.
+
 "escape" tells whether the commit a bug investigation blamed went through a flow review:
   it must sit inside exactly one work's reviewed range (merge history), or carry the number
   of exactly one reviewed MR/PR in its subject (squash). Then it is recorded in this branch's
@@ -1712,6 +2245,7 @@ else if (cmd === 'tier') tier(process.argv.slice(3))
 else if (cmd === 'cost') cost(process.argv.slice(3))
 else if (cmd === 'yield') yieldOf(process.argv.slice(3))
 else if (cmd === 'record-review') recordReview(process.argv.slice(3))
+else if (cmd === 'panel') panel(process.argv.slice(3))
 else if (cmd === 'escape') escapeOf(process.argv.slice(3))
 else if (cmd === 'review') review(process.argv.slice(3)).catch((e) => { console.error(`flow review: ${e.message}`); process.exit(1) })
 else if (cmd === 'check') check()

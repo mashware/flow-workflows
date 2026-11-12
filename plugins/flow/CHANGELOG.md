@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.115.0 — The live panel tells the plan, the progress and the close  ·  2026-11-11
+
+**In short**
+- **The panel shows the plan's steps as they are ticked**, in a feature's MR/PR and in a bug's fix. The rule to
+  publish them existed; in practice it was followed in 8 of 64 build sessions. Now the panel is built from the
+  ticks, and in Claude Code and Codex a hook rebuilds it whenever the plan, the work's record or the agent's
+  notes change — nobody has to remember.
+- **An MR/PR merged in the forge shows as done**, even when the work's record still says "in progress", and
+  each open one says what it waits on: draft, pipeline, approvals, open threads (GitLab; GitHub has no thread
+  count without another call).
+- **A finished work says there is nothing left**, instead of freezing on its last phase; an abandoned one keeps
+  only why it stopped.
+- **Panels look the same whoever writes them**: the real time, the title without the ticket, a link on every
+  line that names an MR/PR, sibling repos' MRs/PRs, the open review findings and follow-ups, and the fixed
+  words in the work's language.
+
+How: `npx flow-workflows panel` renders the panel from `meta.json`, the plan and (`--forge`) `gh`/`glab`; the
+agent writes only `panel-input.json` — what is running, what comes next, what it asks. A terminal that paints
+only what reaches it over its own channel gets the document through `panel.publish_cmd`, read only from a
+git-ignored FLOW file. The plugin no longer names any terminal as the panel's reader.
+
 ## v0.114.0 — Control-room cards follow the work  ·  2026-11-05
 
 **In short**
