@@ -17,6 +17,21 @@ event=$(cat 2>/dev/null || printf '')
 cwd=$(printf '%s' "$event" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*:[[:space:]]*"\(.*\)"$/\1/')
 [ -n "${cwd:-}" ] && [ -d "$cwd" ] || cwd=$PWD
 
+# The user answered a question (Claude Code's AskUserQuestion, Codex's request_user_input): the
+# decision it asked leaves the panel now, not when the agent remembers to rewrite its input.
+# Only the tool's own response is read, and only a real answer counts: Claude Code's `answers`
+# holding one question → answer pair (it comes back empty when nobody answered in time), or a
+# Codex answer list with an entry in it (its response is a JSON string, so its quotes are
+# escaped). A rejected question is a failed tool use and never reaches PostToolUse.
+answered=""
+case $event in
+	*'"AskUserQuestion"'*|*'"request_user_input"'*)
+		response=${event#*\"tool_response\"}
+		[ "$response" != "$event" ] && printf '%s' "$event" | grep -Eq '"tool_name"[[:space:]]*:[[:space:]]*"(AskUserQuestion|request_user_input)"' \
+			&& printf '%s' "$response" | grep -Eq '"answers"[[:space:]]*:[[:space:]]*\{[[:space:]]*"([^"\\]|\\.)*"[[:space:]]*:[[:space:]]*"|\\"answers\\"[[:space:]]*:[[:space:]]*\[[[:space:]]*\\"' \
+			&& answered=1 ;;
+esac
+
 command -v git >/dev/null 2>&1 || exit 0
 root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
 branch=$(git -C "$cwd" rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
@@ -37,6 +52,14 @@ for r in "$root" "$main_root"; do
 		[ -f "$meta" ] || continue
 		grep -qE "$pattern" "$meta" 2>/dev/null || continue
 		work=${meta%/meta.json}
+		# A decision on the panel (the labels may name one too, so they are left out of the look):
+		# copy the input aside as answered and render. The input itself is the agent's, untouched.
+		if [ -n "$answered" ] && [ -f "$work/panel-input.json" ] \
+			&& sed 's/"labels"[[:space:]]*:[[:space:]]*{[^}]*}//' "$work/panel-input.json" 2>/dev/null | grep -q '"decision"' \
+			&& cp "$work/panel-input.json" "$work/.panel-answered.tmp" 2>/dev/null \
+			&& mv -f "$work/.panel-answered.tmp" "$work/panel-answered.json" 2>/dev/null; then
+			needs="$work"; break 2
+		fi
 		# Newer than the panel and than this branch's last attempt → render. The stamp is
 		# touched before each launch, so a render that writes nothing (a broken input, npx
 		# unreachable) is not retried after every tool call: only once a file changes again.

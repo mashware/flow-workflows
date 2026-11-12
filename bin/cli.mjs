@@ -1780,12 +1780,24 @@ function stepLines(steps) {
 function readPanelInput(work, warn) {
   const p = join(work, 'panel-input.json')
   if (!existsSync(p)) return { input: {} }
-  let input
-  try { input = JSON.parse(readFileSync(p, 'utf8')) } catch (e) { return { error: `\`${p}\` is not readable JSON (${e.message})` } }
+  let raw, input
+  try { raw = readFileSync(p, 'utf8'); input = JSON.parse(raw) } catch (e) { return { error: `\`${p}\` is not readable JSON (${e.message})` } }
   if (!input || typeof input !== 'object' || Array.isArray(input)) return { error: `\`${p}\` must hold one JSON object` }
+  // The hook copies the input aside when the user answers a question. While the input is still
+  // that copy, its decision has been answered: neither it nor its `wait` claims anyone. The
+  // agent's file is never rewritten — the next one it writes is simply newer than the answer.
+  let answered = false
+  try { answered = readFileSync(join(work, 'panel-answered.json'), 'utf8') === raw } catch {}
+  if (answered) { delete input.decision; if (input.attention === 'wait') delete input.attention }
   for (const k of Object.keys(input)) if (!PANEL_INPUT_KEYS.includes(k)) { warn(`panel-input.json: \`${k}\` is not a field — ignored (fields: ${PANEL_INPUT_KEYS.join(', ')})`); delete input[k] }
   if (input.attention != null && !PANEL_ATTENTION.includes(input.attention)) {
     warn(`panel-input.json: attention \`${input.attention}\` ignored — one of ${PANEL_ATTENTION.join(' · ')}, or null`)
+    delete input.attention
+  }
+  // `wait` says the user is being asked, and `decision` is what asks: a written `wait` with no
+  // decision behind it is a question already answered that nobody took back.
+  if (input.attention === 'wait' && !input.decision) {
+    warn('panel-input.json: attention `wait` ignored — only a `decision` claims the user')
     delete input.attention
   }
   if (input.blocks != null && !Array.isArray(input.blocks)) { warn('panel-input.json: `blocks` must be a list — ignored'); delete input.blocks }

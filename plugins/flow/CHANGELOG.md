@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.116.1 — An answered question stops claiming you on the panel  ·  2026-11-12
+
+**In short**
+- **Answering the agent's question clears it from the live panel, the board and the control-room card at once.**
+  Before, the panel kept saying "waiting for you" until the agent remembered to rewrite its notes — in one real
+  session, 18 minutes after the answer, while the agent worked on.
+- **Only a real answer does it.** A question dismissed, rejected or left unanswered (the 60-second timeout)
+  leaves the panel as it was; the rest of what the panel said — what is running, what is next, the blockers —
+  stays.
+- **The panel claims you only while a decision is on it.** A `wait` written by hand with no decision behind it
+  no longer raises the flag.
+
+The plugin's hook, which already repainted the panel when the work's files changed, now also watches the
+question tool: when Claude Code's `AskUserQuestion` (or Codex's `request_user_input`) comes back with a real
+answer — read from the tool's response alone — and the panel input holds a `decision`, it copies the input aside
+as `panel-answered.json` and renders, through `panel.publish_cmd` too. While the input is still that copy,
+`flow-workflows panel` leaves its `decision` and `wait` out; the agent's own file is never rewritten, so the next
+one it writes asks again. Any other tool call costs what it did. The CLI no longer honours `attention: "wait"`
+without a `decision` (it says so on stderr), and flow-core stops suggesting the agent write `attention` at all:
+`block` and `done` are the only values it writes by hand.
+
 ## v0.116.0 — The board shows the roadmap, and each console hangs from its deliverable  ·  2026-11-12
 
 **In short**

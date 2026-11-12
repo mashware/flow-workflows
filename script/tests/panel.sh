@@ -434,4 +434,25 @@ run
 expect "a sibling closed unmerged blocks, the work stays open" 'k("sib-1").mark==="block" && !k("closed")'
 rm -f "$W/forge-state.json"
 
+# 17 — `wait` comes only from a decision: a written one without it claims nobody, and an input
+# the hook copied aside as answered loses its decision and wait — until the agent writes anew
+rm -f FLOW.md "$W/panel-answered.json"
+meta '{"ticket":"T-1","type":"bug","title":"x","branch":"feature","phase":"fix"}'
+input '{"now":"suite","attention":"wait"}'
+run
+expect "a written wait without a decision claims nobody" '!d.attention && k("now")'
+printf '%s' "$err" | grep -q 'only a `decision` claims' && printf '  ok   and it says so\n' || { printf '  FAIL a dropped wait was silent: %s\n' "$err"; fails=$((fails+1)); }
+input '{"now":"suite","attention":"block"}'
+run
+expect "a written block still blocks"                 'd.attention==="block"'
+input '{"phase":"fix","now":"suite","next":"review","decision":"confirm the body","attention":"wait","blocks":[{"text":"sibling waits"}],"labels":{"now":"Ahora"}}'
+cp "$W/panel-input.json" "$W/panel-answered.json"; before=$(cat "$W/panel-input.json")
+run
+expect "answered input: no Decision, no wait, the rest stays" '!k("decision") && d.attention!=="wait" && k("now").ref==="Ahora" && k("next") && k("block-1")'
+[ "$before" = "$(cat "$W/panel-input.json")" ] && printf '  ok   the agent'"'"'s input is never rewritten\n' || { printf '  FAIL the input was rewritten\n'; fails=$((fails+1)); }
+input '{"now":"next question","decision":"pick a size"}'
+run
+expect "a newer input asks again"                        'k("decision").text==="pick a size" && d.attention==="wait"'
+rm -f "$W/panel-answered.json"
+
 [ "$fails" = 0 ] && echo "panel: all ok" || { echo "panel: $fails failure(s)"; exit 1; }
