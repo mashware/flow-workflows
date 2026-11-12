@@ -353,7 +353,7 @@ rows with a state column — in a markdown file of your own shape (flow-core §1
 already delivered but the file does not say; `feat:start` links a work to one of its items, and
 `feat:ship` marks it in the MR/PR that delivers it.
 
-- `path:`             # the roadmap file, relative to the repo root. Empty = `ROADMAP.md`, then `docs/ROADMAP.md`, in any letter case, if it has checkbox lines or a table with a state column. `none` = no roadmap.
+- `path:`             # the roadmap file, relative to the repo root. Empty = `ROADMAP.md`, then `docs/ROADMAP.md`, in any letter case, if it has checkbox lines or a table with a state column. `none` = no roadmap. Written out (`docs/roadmap.md`), it also publishes the roadmap as the project's plan to a terminal that paints one — a tool ending in `plan_set` (flow-core §10.1); empty, no plan is published.
 - `mark:`             # `ship` (default) = mark in progress on the work's first MR/PR, done on its last | `never` = read-only, flow only reads it.
 - `columns:`          # only when a table's header is ambiguous: `state=<header>, ticket=<header>, depends=<header>`. Empty = read off the header.
 

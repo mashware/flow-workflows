@@ -24,7 +24,7 @@ runs a phase on its own and never advances `meta.json`.
 3. Those work folders — how many open works, in which worktree each is checked out (`git worktree list`), and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
 3b. `followups[]` across those works **and** their `_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
 4. Is the working tree dirty (`git status --porcelain`)?
-5. The roadmap, if the repo has one (flow-core §10): where the project stands — current phase, what is in progress, the next item whose dependencies are met, what is blocked, and any stale item.
+5. The roadmap, if the repo has one (flow-core §10): where the project stands — current phase, what is in progress, the next item whose dependencies are met, what is blocked, and any stale item. With the project plan on (flow-core §10.1), publish it now, from the file just read.
 
 ## 2. Route
 

@@ -18,7 +18,7 @@ description: Your work assistant — a Scrum-style daily standup across all your
 
 Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session.
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error` · `section`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 External sources (tracker, forge, `knowledge`) are all **best-effort**: a CLI missing/unauthenticated, an MCP failing, or a call over ~3s → continue without that source and note it in a single line; **never block**.
 
@@ -47,7 +47,7 @@ Every *mine* below — your MRs/PRs, your threads, your tickets — is the **aut
 - Repo pulse: `git log --oneline --since="<last-session boundary>"` (fallback `-10`) and `git status --short` for uncommitted changes.
 - Per work: `phase`, `phases_done`, MRs and their `status` (from `meta.json.mrs`), and what was **left pending**.
 - **Cross-repo parts**: `meta.json.related_repos` entries not `done` → a *sibling repo* still needs work. Surface only what is recorded — never scan or open the other repo.
-- **Roadmap** (flow-core §10): where the project stands, which open work delivers which item, what is next (the first pending item whose dependencies are met and no open work links), what is blocked and on what, and the stale items — not done in the file, delivered by the works, the tracker or the forge.
+- **Roadmap** (flow-core §10): where the project stands, which open work delivers which item, what is next (the first pending item whose dependencies are met and no open work links), what is blocked and on what, and the stale items — not done in the file, delivered by the works, the tracker or the forge. With the project plan on (flow-core §10.1), publish it from the file just read.
 - **Open follow-ups**: `followups[]` entries not `declined`/`logged`/`done`, from the live works **and** from `_archive/*/meta.json` (flow-core §7). The archive is read for this and nothing else — a finished work is exactly when its deferred items stop being visible.
 - **Measured cost**: `meta.json.cost[]` entries (flow-core §4) — sum the `usd` there, count the phases behind them, count apart the entries whose `source` is `not reported`. No entries → no figure at all: absence is not zero. The figures are the harness's client-side estimates, not a bill; `flow cost` prints them phase by phase.
 

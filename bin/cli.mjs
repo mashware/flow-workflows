@@ -1641,6 +1641,8 @@ const PANEL_ATTENTION = ['wait', 'block', 'done']
 const PANEL_LABELS = {
   now: 'Now', next: 'Next', decision: 'Decision', open: 'Open', closed: 'nothing left here',
   review: 'review round', findings: 'open', followups: 'follow-ups',
+  // `mrs` left empty is named from the forge the URLs point at: PRs on GitHub, MRs elsewhere.
+  mrs: '', merged: 'merged', plan: 'Plan',
 }
 const HARNESS_NAMES = {
   claude: 'Claude Code', codex: 'Codex', opencode: 'OpenCode', zcode: 'zcode', gemini: 'Gemini CLI', hermes: 'Hermes',
@@ -1833,7 +1835,6 @@ function renderPanel({ meta, work, input, forge = {}, foreign = false }) {
     flush()
     train.push({ key: `mr-${n}`, ref: `#${n}`, text: String(m.title ?? ''), mark, ...(m.url ? { link: m.url } : {}) })
     if (mark === 'wait' && f?.summary) train.push({ key: `mr-${n}-state`, text: f.summary, mark: 'info', indent: 4 })
-    if (m === building) train.push(...stepLines(planOf(n)))
   })
   flush()
   const url = !mrs.length ? singleUrl(meta) : null
@@ -1847,11 +1848,26 @@ function renderPanel({ meta, work, input, forge = {}, foreign = false }) {
   // A bug's plan lives in 04-fix.md and is shown while fix runs: before `fix` first closes, and
   // when a review's or a red suite's steps send the work back into it — `fix` is then already in
   // phases_done, and the phase being run is the only thing that says so.
+  let steps = null
+  if (building) {
+    const n = building.n ?? mrs.indexOf(building) + 1
+    steps = { ref: `#${n}`, list: planOf(n) }
+  }
   if (meta.type === 'bug' && !done && !abandoned) {
     const fixClosed = Array.isArray(meta.phases_done) && meta.phases_done.includes('fix')
-    if (!fixClosed || input.phase === 'fix') train.push(...stepLines(planSteps(work, { file: '04-fix.md', re: /^##\s+Plan\b/ })))
+    if (!fixClosed || input.phase === 'fix') steps = { ref: null, list: planSteps(work, { file: '04-fix.md', re: /^##\s+Plan\b/ }) }
   }
-  block(train)
+  // Each block opens with a header that names it and says how far along it is. The train is
+  // reference once its MRs/PRs merge, so it starts folded; the plan being built is the news.
+  if (train.length) {
+    const forgeWord = labels.mrs || (train.some((l) => /\/pull\/\d+/.test(l.link ?? '')) ? 'PRs' : 'MRs')
+    const merged = marks.filter((k) => k === 'done').length
+    block([{ key: 'mrs', text: forgeWord, style: 'section', summary: `${merged}/${marks.length} ${labels.merged}`, collapsed: true }, ...train])
+  }
+  if (steps?.list.length) {
+    const ticked = steps.list.filter((s) => s.ticked).length
+    block([{ key: 'plan', text: steps.ref ? `${labels.plan} ${steps.ref}` : labels.plan, style: 'section', summary: `${ticked}/${steps.list.length}` }, ...stepLines(steps.list)])
+  }
 
   // Every MR/PR merged is the end of the work's waiting, whatever meta.json.phase still says: a
   // merge done in the forge has no session to close the work, and the card it leaves behind
@@ -1911,10 +1927,18 @@ function renderPanel({ meta, work, input, forge = {}, foreign = false }) {
     : abandoned ? null
       : input.decision ? 'wait'
         : input.attention ?? (blocks.length ? 'block' : null)
+  // Where this console works in the project's plan (flow-core §10): written into meta.json only
+  // when the work's ticket is a deliverable's, and left out otherwise — the board then shows it
+  // off the plan, which is the truth.
+  const place = meta.roadmap && typeof meta.roadmap === 'object' ? meta.roadmap : {}
+  const milestone = typeof place.milestone === 'string' && place.milestone ? place.milestone : null
+  const deliverable = milestone && typeof place.deliverable === 'string' && place.deliverable ? place.deliverable : null
   return {
     updated_at: new Date().toISOString(),
     ...(phase ? { phase } : {}),
     header: true,
+    ...(milestone ? { milestone } : {}),
+    ...(deliverable ? { deliverable } : {}),
     ...(attention ? { attention } : {}),
     ...(Number(input.stale_after_minutes) > 0 ? { stale_after_minutes: Number(input.stale_after_minutes) } : {}),
     lines,

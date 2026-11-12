@@ -20,7 +20,7 @@ description: "Put a data-access query on trial — schema, indexes, execution pl
 
 Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, models, autonomy modes and hard gates, how a stop reads, the live panel, `00-summary.md`) — skip if you already read it in this session. **Models: the subagents it launches take `models.agents`; its parallel rounds take `models.workers`.**
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error` · `section`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 **A query is approved by its plan, not by prose.** Fact sheet → challenger attacks → each point settled with a **plan or a number**. **Cross-cutting** (feat or bug), **repeatable**, does **not** advance `meta.json.phase`; runs with or without a work folder.
 

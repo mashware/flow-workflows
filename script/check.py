@@ -465,7 +465,7 @@ def check_embedded_json(files):
 # line simply loses its symbol and its column and renders as plain text — which
 # makes a typo in an example something no parse check would ever surface.
 MARKS = ("done", "current", "pending", "wait", "block", "info")
-STYLES = ("normal", "dim", "title", "accent", "ok", "warn", "error")
+STYLES = ("normal", "dim", "title", "accent", "ok", "warn", "error", "section")
 
 def listed(words):
     return " · ".join(f"`{word}`" for word in words)
@@ -477,7 +477,7 @@ def listed(words):
 # they cannot disagree, which is the version of that guarantee with no check to maintain.
 #
 # The lists are not held here for tidiness: they belong to the terminal that reads the panel
-# (its panel contract — the six marks and seven styles), and flow only copies them. Copying them into twenty-four command
+# (its panel contract — the six marks and eight styles), and flow only copies them. Copying them into twenty-four command
 # files is the drift this repo paid a release to remove — unless one constant pins every
 # copy, which is what `check_panel_reminder` below does.
 #
