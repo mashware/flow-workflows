@@ -1,6 +1,6 @@
 <title>Flow Control Room</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="flow-room-page" content="1">
+<meta name="flow-room-page" content="2">
 <!--
   The page behind `panel.artifact` (flow-core §4.6). `/flow:init room` publishes it, or reuses the
   one you already have, and writes the key. Published by hand, it needs these capabilities:
@@ -90,6 +90,13 @@ h1 span { color: var(--accent); }
 .mk.wait { color: var(--wait); } .mk.block { color: var(--block); } .mk.info { color: var(--muted); }
 .s-dim .tx { color: var(--muted); } .s-ok .tx { color: var(--ok); } .s-warn .tx { color: var(--wait); }
 .s-error .tx { color: var(--block); } .s-accent .tx { color: var(--accent); }
+.sec { display: flex; align-items: baseline; gap: 8px; width: 100%; padding: 0; border: 0; background: none; color: var(--fg); font: inherit; font-size: 0.8rem; font-weight: 600; text-align: left; cursor: pointer; }
+.sec::after { content: ""; order: 2; flex: 1; border-bottom: 1px solid var(--line); transform: translateY(-3px); }
+.sec .tw { width: 16px; text-align: center; color: var(--muted); font-family: var(--font-data); }
+.sec .sm { order: 3; font-family: var(--font-data); font-weight: 400; font-size: 0.76rem; color: var(--muted); white-space: nowrap; }
+.sec:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.blk { display: grid; gap: 3px; }
+.blk[hidden] { display: none; }
 
 .empty { border: 1px dashed var(--line); border-radius: 8px; padding: 28px 20px; color: var(--muted); display: grid; gap: 8px; max-width: 62ch; }
 .empty strong { color: var(--fg); }
@@ -112,6 +119,8 @@ h1 span { color: var(--accent); }
 
 <script>
 (function () {
+  // A block the reader opened or folded stays so across re-renders: the click wins over `collapsed`.
+  const folds = new Map();
   const MARK = { done: "✓", current: "▸", pending: "·", wait: "◷", block: "✕", info: "–" };
   const ATT_LABEL = { wait: "waiting on you", block: "blocked", run: "working", done: "done" };
   const grid = document.getElementById("grid");
@@ -151,10 +160,28 @@ h1 span { color: var(--accent); }
     if (who) c.append(el("div", "who", who));
 
     const box = el("div", "lines");
+    // A block header (`style: "section"`) names the lines after it, up to the next gap, and
+    // `collapsed` makes them start folded; a click opens or folds them.
+    let into = box;
     (Array.isArray(d.lines) ? d.lines : []).forEach(l => {
-      if (l === "" || l == null) { box.append(el("div", "ln gap")); return; }
+      if (l === "" || l == null) { into = box; box.append(el("div", "ln gap")); return; }
       if (typeof l === "string") l = { text: l };
       if (l.style === "title") { box.append(el("div", "ln title", l.text || "")); return; }
+      if (l.style === "section") {
+        const head = el("button", "sec");
+        head.type = "button";
+        const blk = el("div", "blk");
+        const fold = open => { blk.hidden = !open; tw.textContent = open ? "▾" : "▸"; head.setAttribute("aria-expanded", String(open)); };
+        const tw = el("span", "tw");
+        head.append(tw, el("span", null, l.text || ""));
+        if (l.summary) head.append(el("span", "sm", String(l.summary).slice(0, 40)));
+        const id = (d._id || d.work || "") + ":" + (l.key || l.text || "");
+        head.addEventListener("click", () => { const open = blk.hidden; folds.set(id, open); fold(open); });
+        fold(folds.has(id) ? folds.get(id) : l.collapsed !== true);
+        box.append(head, blk);
+        into = blk;
+        return;
+      }
       const row = el("div", "ln" + (l.ref ? "" : " noref") + (l.style ? " s-" + l.style : ""));
       if (Number(l.indent) > 0) row.style.paddingLeft = Math.min(Number(l.indent), 12) + "ch";
       const mk = l.mark && MARK[l.mark] ? l.mark : null;
@@ -164,7 +191,7 @@ h1 span { color: var(--accent); }
       const href = l.link && safeLink(l.link);
       if (href) { const ln = el("a", null, shortLink(href)); ln.href = href; ln.target = "_blank"; ln.rel = "noopener"; tx.append(ln); }
       row.append(tx);
-      box.append(row);
+      into.append(row);
     });
     c.append(box);
     return c;

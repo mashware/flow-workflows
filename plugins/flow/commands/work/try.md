@@ -7,7 +7,7 @@ argument-hint: "<branch> | --back"
 
 Load the `flow:flow-core` skill first (shared rules: `FLOW.md` step 0, autonomy, how a stop reads, the live panel, `00-summary.md`) — skip if it is already in this session's context.
 
-**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
+**Panel words are closed** — `mark`: `done` · `current` · `pending` · `wait` · `block` · `info`; `style`: `normal` · `dim` · `title` · `accent` · `ok` · `warn` · `error` · `section`. Anything else is dropped by the reader in silence: the panel still paints, and nobody is told. **Publish it before every stop and every question, and again the moment an answer arrives** — the control-room card with it when the control room is on (flow-core §4.4, §4.6): a phase that asks four questions and publishes nothing leaves the screen on the first.
 
 Temporarily point the **main checkout** at another branch to test it against this checkout's live environment (running stack, DB, containers), then return — a generic `make wt-try`/`wt-back` pair. The git switch is built in; the project-specific re-sync (e.g. migrations) comes from `git.worktree_resync` in `FLOW.md`. Operates **in place**; never creates or touches worktrees.
 

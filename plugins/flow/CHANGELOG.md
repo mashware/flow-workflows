@@ -5,6 +5,34 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.116.0 — The board shows the roadmap, and each console hangs from its deliverable  ·  2026-11-12
+
+**In short**
+- **Every panel's MR/PR list starts folded**, with a header that says how many have merged (`MRs ── 2/4 merged`).
+  Merged MRs/PRs are reference; the plan being built, what is running now and the question waiting on you stay
+  open, each block under its own header.
+- **The roadmap reaches the terminal's board as the project's plan.** With `roadmap.path` written in the FLOW
+  config and a terminal that paints a board, `next`, `daily`, `start` and `ship` publish it — milestones, their
+  "done when", dependencies, every deliverable with its state and ticket, and the work that is not code.
+- **Each state is copied as the file says it**: done, in progress, pending — a word flow cannot place goes
+  without a mark, and a stale row is published stale. The board counts; flow does not judge.
+- **A console hangs from its deliverable** when the work's ticket is in that row's ticket cell. When it is not,
+  the panel says nothing, and the board shows the console off the plan — which is what it is.
+
+The terminal flow publishes to grew a project board: block headers that can start folded, one plan per
+repository shared by its worktrees, and a panel field that places each console on that plan. The longest block
+of every panel was the MR/PR train, open in full long after its MRs had merged; a repo that keeps its plan in
+a roadmap file — which flow already read to choose the next work — showed nothing on the board; and every
+console showed as off the plan.
+
+How: `flow-workflows panel` now opens the train with a folded `section` header and gives the plan's steps a
+block of their own; it copies `milestone` and `deliverable` from `meta.json.roadmap` into every render.
+flow-core §10.1 says how the roadmap becomes the plan document — ids from the headings' codes, `done_when`
+from the closing criterion, `depends_on` from the order table, item ids from the ticket or the one requirement
+code a row cites — and when it is published with `plan_set` (after a `plan_get` that finds it changed).
+`attention_since` is the terminal's: flow never writes it. The control-room page paints the headers and folds
+the same blocks (page version 2, republished on its own at the next card write).
+
 ## v0.115.0 — The live panel tells the plan, the progress and the close  ·  2026-11-11
 
 **In short**

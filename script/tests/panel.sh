@@ -59,6 +59,10 @@ expect "step text stops at the em dash"              'k("step-1").text==="column
 expect "pending MRs/PRs fold into one line"           'k("mr-3-4").ref==="#3–#4" && k("mr-3-4").mark==="pending"'
 expect "the clock is always there"                   'typeof d.updated_at==="string" && d.updated_at.length>=20'
 expect "no input → no Now/Next/Decision"              '!k("now") && !k("next") && !k("decision") && !d.attention'
+expect "the train opens with a folded header"        'k("mrs").style==="section" && k("mrs").collapsed===true && k("mrs").text==="MRs" && k("mrs").summary==="1/4 merged"'
+expect "the plan is a block of its own, left open"   'k("plan").style==="section" && !k("plan").collapsed && k("plan").text==="Plan #2" && k("plan").summary==="2/5"'
+expect "the plan block follows the train"            'd.lines.findIndex(l=>l.key==="plan") > d.lines.findIndex(l=>l.key==="mr-3-4") && d.lines[d.lines.findIndex(l=>l.key==="plan")-1]===""'
+expect "no plan place in meta → no milestone"        '!("milestone" in d) && !("deliverable" in d)'
 
 # 2 — more than three done fold, a long pending tail folds, five step lines at most
 cat > "$W/05-implementation.md" <<'MD'
@@ -84,6 +88,14 @@ printf '## Plan\n1. [x] reproduce\n2. [ ] fix\n' > "$W/04-fix.md"
 run
 expect "a bug in fix shows its plan"                  'k("step-1").mark==="done" && k("step-2").mark==="current"'
 expect "single MR/PR from mr_url, named by its number" 'k("mr-1").ref==="#12" && k("mr-1").mark==="wait"'
+expect "a GitHub train is PRs; a bug's plan has no number" 'k("mrs").text==="PRs" && k("mrs").summary==="0/1 merged" && k("plan").text==="Plan" && k("plan").summary==="1/2"'
+git remote set-url origin git@github.com:acme/shop.git
+meta '{"ticket":"T-1","type":"feat","title":"x","branch":"feature","phase":"plan","mrs":[{"n":1,"title":"a","status":"pending"}]}'
+run
+expect "a GitHub remote says PRs before any PR exists" 'k("mrs").text==="PRs" && k("mrs").summary==="0/1 merged"'
+git remote set-url origin git@gitlab.com:acme/shop.git
+meta '{"ticket":"T-1","type":"bug","title":"Broken thing","branch":"feature","phase":"fix",
+  "mr_url":"https://github.com/acme/shop/pull/12"}'
 
 # 4 — statuses nobody listed, and a bare string entry, are drawn, never refused
 meta '{"ticket":"T-1","type":"feat","title":"x","branch":"feature","phase":"ship",
@@ -95,6 +107,16 @@ run
 expect "merged_* is done, closed_* is block, skipped is gone" 'k("mr-1").mark==="done" && k("mr-2").mark==="block" && !k("mr-3")'
 expect "an unknown status with a URL waits"           'k("mr-4").mark==="wait"'
 expect "a string entry is a pending title"            'k("mr-5").text==="just a title" && k("mr-5").mark==="pending"'
+
+# 4b — where the console works in the project's plan, only as meta.json records it
+meta '{"ticket":"T-1","type":"feat","title":"x","branch":"feature","phase":"build",
+  "roadmap":{"path":"docs/roadmap.md","item":"x","under":"H3","milestone":"H3","deliverable":"T-1"}}'
+run
+expect "milestone and deliverable from meta.roadmap" 'd.milestone==="H3" && d.deliverable==="T-1" && !("attention_since" in d)'
+meta '{"ticket":"T-1","type":"feat","title":"x","branch":"feature","phase":"build",
+  "roadmap":{"path":"docs/roadmap.md","item":"x","under":"H3","deliverable":"T-1"}}'
+run
+expect "a deliverable without its milestone is dropped" '!("milestone" in d) && !("deliverable" in d) && !k("mrs")'
 
 # 5 — a finished work closes cleanly
 meta '{"ticket":"T-1","type":"feat","title":"x","branch":"feature","phase":"done",

@@ -17,7 +17,7 @@ Every `$flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.115.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.116.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -685,7 +685,7 @@ language. So a publication is two moves:
     "stale_after_minutes": 45,
     "labels": {"now": "Ahora", "next": "Siguiente", "decision": "Decisión", "open": "Abierto",
                "closed": "nada más aquí", "review": "ronda de review", "findings": "abiertos",
-               "followups": "seguimientos"}}
+               "followups": "seguimientos", "merged": "fusionadas"}}
    ```
 
    Every field is optional. `phase` is the phase **running now**. `now` is what is running — never
@@ -694,7 +694,8 @@ language. So a publication is two moves:
    worktree*). `decision` only while parked on the user; it sets `attention: wait` by itself.
    `blocks` are what stops the work on somebody else — a sibling repo with `contract_handoff:
    pending`, a red pipeline, an unmerged dependency — each with its `link` when it names an MR/PR.
-   `labels` carry the fixed words in **the language of the work's artifacts**; omitted, they are
+   `labels` carry the fixed words in **the language of the work's artifacts** — also `mrs` (the
+   train's header, `MRs`/`PRs` by default), `merged` and `plan` (the block headers); omitted, they are
    English. Free text lives in this file, never on a command line.
 2. **Run `npx flow-workflows@<version> panel --harness <harness> --forge`** from the work's
    checkout (`<version>` this plugin's own, from `~/.claude/flow/.claude-plugin/plugin.json`
@@ -740,16 +741,21 @@ for the rest of the session.
   "updated_at": "2026-08-06T16:45:00+02:00",
   "phase": "validate",
   "header": true,
+  "milestone": "H3",
+  "deliverable": "MT-1234",
   "lines": [
     {"key": "title", "text": "Expose a thread's tracking state and events", "style": "title"},
     "",
+    {"key": "mrs", "text": "MRs", "style": "section", "summary": "0/6 merged", "collapsed": true},
     {"key": "mr-1", "ref": "#1", "text": "batch read sources", "mark": "wait", "link": "https://gitlab.com/…/merge_requests/9977"},
     {"key": "mr-1-state", "text": "pipeline passed · 0/1 approvals · 2 open threads", "mark": "info", "indent": 4},
     {"key": "mr-2", "ref": "#2", "text": "per-event and per-recipient counters", "mark": "current"},
+    {"key": "mr-3-6", "ref": "#3–#6", "text": "channel map · use case · document detail · route", "mark": "pending"},
+    "",
+    {"key": "plan", "text": "Plan #2", "style": "section", "summary": "1/3"},
     {"key": "step-1", "ref": "1", "text": "counter columns + migration", "mark": "done", "indent": 4},
     {"key": "step-2", "ref": "2", "text": "per-recipient aggregation in the use case", "mark": "current", "indent": 4},
     {"key": "step-3", "ref": "3", "text": "expose both counters on the endpoint", "mark": "pending", "indent": 4},
-    {"key": "mr-3-6", "ref": "#3–#6", "text": "channel map · use case · document detail · route", "mark": "pending"},
     "",
     {"key": "sib-1", "ref": "mcp !71", "text": "pipeline running", "mark": "wait", "link": "https://gitlab.com/…/mcp/-/merge_requests/71"},
     "",
@@ -766,7 +772,9 @@ for the rest of the session.
 
 - **`mark` says what a line is**; the reader draws it. `done` · `current` (at most one per block) · `pending` · `wait` (waiting on someone else: an open MR/PR, a user decision) · `block` · `info`. Do not set `style` on a marked line — except `mark: "info"` + `style: ok|warn|error` when the colour *is* the information (a monitoring verdict, the closing line).
 - **`link` is a field, never a URL inside `text`**, and every line that names an MR/PR carries it.
-- **Order:** the title (`meta.json.title` without the ticket id: `header: true` draws ticket, type, phase and age); the MR/PR train, one entry per `meta.json.mrs[]` (a single MR/PR from `mr_url`), not-started ones folded into one `#a–#z` line, each open one followed by its state from the forge; under the MR/PR being built — or the bug in `fix` — its plan's steps from the ticks, never ahead of them, at most five lines (past three done they fold, a long pending tail folds); sibling repos' MRs/PRs; one `Open` line for the latest review round's open findings and the open follow-ups; `Now`, `Next`, `Decision`; blockers. A finished work (`meta.json.phase` `done`) shows its train, one `info`/`ok` closing line and `attention: done`, and nothing else.
+- **Block headers.** A line with `style: "section"` names the block it opens, `summary` (at most 40 characters) says how far along it is, and `collapsed: true` makes the block start folded — title and summary only, until the reader opens it. The train's header (`MRs`, or `PRs` on GitHub; `<merged>/<all> merged`) is always folded: merged MRs/PRs are reference. The plan's header (`Plan #<n>`, plain `Plan` for a bug; `<ticked>/<steps>`) and the `Now`/`Next`/`Decision` block stay open: they are the news.
+- **`milestone` / `deliverable`** say where this console works in the project's plan (§10): copied from `meta.json.roadmap`, and absent when the work is not a deliverable of it. Never set from anything else.
+- **Order:** the title (`meta.json.title` without the ticket id: `header: true` draws ticket, type, phase and age); the MR/PR train under its header, one entry per `meta.json.mrs[]` (a single MR/PR from `mr_url`), not-started ones folded into one `#a–#z` line, each open one followed by its state from the forge; then, in a block of its own, the plan's steps of the MR/PR being built — or of the bug in `fix` — from the ticks, never ahead of them, at most five lines (past three done they fold, a long pending tail folds); sibling repos' MRs/PRs; one `Open` line for the latest review round's open findings and the open follow-ups; `Now`, `Next`, `Decision`; blockers. A finished work (`meta.json.phase` `done`) shows its train, one `info`/`ok` closing line and `attention: done`, and nothing else.
 - **Rules:** every fact from `meta.json`, the artifacts and the forge — an invented MR/PR state is worse than a blank panel. Keep it under ~14 lines.
 
 ### 4.2 Over the terminal's MCP — `panel_set` with what the CLI printed
@@ -777,6 +785,8 @@ parked on the user, `block` when stuck on somebody else, `done` when the work cl
 simply working. The terminal never deduces it from the body, and a `wait` left behind flags that tab
 for ever — so the next render, which drops the `decision`, is what clears it. The first `panel_set`
 claims the pane for as long as this session lives; a second producer is refused by name.
+`attention_since` — when the current `attention` started — is the terminal's to keep: flow never
+writes it, and drops it from a document it read back with `panel_get` before publishing again.
 
 - `panel_patch` is for the CLI-unavailable case only (§4): there, patch by `key` rather than
   rebuild — ops `replace`, `before`, `after`, `delete`, `first`, `last`, `set` (`phase`,
@@ -1475,7 +1485,8 @@ only for items that are not done; the commands that report it stay read-only.
 
 **The link.** A work records the item it delivers in `meta.json.roadmap`:
 `{ "path": "<file>", "item": "<the item's text, without checkbox, annotation or note>", "under": "<heading › heading>" }`
-— or `null`. `$flow-feat-start` sets it: an item the ticket clearly names (its id in the item's text
+— or `null`. With the project plan on (§10.1) it may also carry `milestone` and `deliverable`, the
+ids of the plan that place this console on the board. `$flow-feat-start` sets it: an item the ticket clearly names (its id in the item's text
 or ticket cell, or its title matching the item's text) is taken in every mode; otherwise `manual`
 asks once, offering the next items and *none*, and `guided`/`auto`/`unattended` record `null` and
 say so in one line. A work is linked to one item, at any depth: linking a milestone means the work
@@ -1517,6 +1528,76 @@ before and after:
 
 Bugs do not link: a bug repairs something already delivered, and the roadmap tracks what is still to
 deliver. A bug that *is* a roadmap item is started as a feature.
+
+### 10.1 The project plan — the roadmap on the terminal's board
+
+A terminal that paints panels may also paint a board with one **plan** per repository, shared by
+its worktrees: its milestones, each milestone's deliverables and their state, and every console of
+the repo hung from the deliverable it works on. flow publishes the roadmap there — translated, never
+judged.
+
+**On only when both hold**, else this section does not exist and nothing is said:
+- `roadmap.path` **names a file** in the FLOW config. Empty (found by the default names) or `none` →
+  no plan: a board is something the repo asks for, not something flow deduces it wants.
+- A tool whose name ends in `plan_set` is there — namespaced and possibly **deferred**, as §4 says
+  of `panel_set`. There is no file transport for the plan: where the plan lives is the terminal's
+  business.
+
+**The translation** — one document, the whole file every time, read by §10's rules:
+
+```json
+{"title": "<the file's first heading>", "source": "<roadmap.path>",
+ "milestones": [{"id": "H3", "title": "TaxRates", "done_when": "<criterion as written>",
+                 "depends_on": ["H0"],
+                 "items": [{"id": "MT-16456", "text": "Jurisdiction catalog", "mark": "done", "ref": "MT-16456"},
+                           {"id": "TAX-06", "text": "Manual load with review", "mark": "pending"},
+                           {"text": "Backup sources", "mark": "pending"}]}],
+ "outside": [{"text": "Company certificate", "mark": "pending"}]}
+```
+
+- **A milestone** is each of §10's milestones, in file order. `id` is the code its heading or its
+  order-table row leads with (`H3` in `H3 · TaxRates`, `Phase 2` in `Phase 2: Billing`), and
+  `title` the rest; a heading with no code is its own `id` and `title`, whole. `done_when` is its
+  closing criterion as written, without its label; none → absent. `depends_on` is the `id` of every
+  milestone its order-table dependency cell names by §10's rule — a range written as one (`H2 to
+  H11`) names each milestone whose code has the same prefix and a number in that range, never a
+  milestone without a code that happens to sit between them in the file; an item, a person or
+  anything outside the file named there stays out.
+- **An item** is each deliverable — a table row or a checkbox — under that milestone, in file
+  order. `text` is the item's first sentence, its markdown removed, cut to 80 characters with `…`.
+  `ref` is the ticket cell as written (the checkbox annotation's ticket), absent when empty or a
+  dash. `id` is the ticket that cell names; no ticket → the one requirement code the row's whole
+  text cell (not only its first sentence) cites in parentheses (`(TAX-06)`), when it cites exactly
+  one; neither → no `id`. An `id` that two items of one milestone would share — a ticket or a code
+  alike — stays bare on the first and becomes `<id>-2`, `-3`… on the next, in file order.
+- **`mark` is the state word, copied** — the file's done word → `done`, in progress → `current`,
+  pending → `pending`; a word the file uses for blocked → `block`, for waiting on someone →
+  `wait`. The note after `:` is not read. A word flow cannot place → no `mark`: the board counts
+  only `done`, and an unmarked item is the truth about a state flow does not understand. **Never
+  corrected, never completed**: a stale item (§10) is published as the file says it — fixing the
+  file is `ship`'s job, in an MR/PR — and a milestone is never marked closed.
+- **`outside`** holds §10's side work — the sections the order table does not list, such as work
+  that is not code — as items of the same shape.
+
+**When — wherever the roadmap is read to choose or to move**, and nowhere else: `next` and `daily`
+after they compute where the project stands, `$flow-feat-start` after it links the work (§3.7), and
+`$flow-feat-ship` right after it commits a roadmap edit — the branch's file, as the MR/PR carries
+it. That is on purpose: the board shows the deliverable moving the moment its MR/PR says so, and a
+later `next` or `daily` run from a checkout that has not merged it yet publishes that checkout's
+file again — each publication is the file it was read from, never a merge of several. First `plan_get`: the same document → nothing to send. Otherwise one `plan_set` with the
+document and `repo` the checkout the file was read from.
+
+**Where this console works.** The same moment, from a work's checkout (`start`, `ship`): the rows
+whose ticket cell names `meta.json.ticket` decide it. One row → write its milestone's `id` and the
+row's `id` into `meta.json.roadmap` as `milestone` and `deliverable`; several → the one
+`meta.json.roadmap.item` names, else `milestone` alone when they share one, else neither. No row →
+neither, and remove them if an earlier publication wrote them: the panel then carries no place, and
+the board shows the console off the plan, which is what it is. The panel CLI copies the two fields
+from `meta.json` into every render (§4.1); nothing else sets them.
+
+**Failure never stops a phase.** A refusal, a malformed reply or a tool that errors → no retry; the
+next stop carries one line, `plan: <error>`, once per session. `plan_retire` is the person's: flow
+never retires a plan.
 
 ## 11. A red test outside the change — find the cause before it is excused
 
