@@ -5,6 +5,27 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.117.0 — The review count reads one name per reviewer, and GitLab squash merges count their escapes  ·  2026-11-17
+
+**In short**
+- **`flow yield` counts each reviewer once, whatever its agent was called.** Over four real repos the same role
+  showed up under three or four names (`comment-analyzer`, `pr-review-toolkit:comment-analyzer`, `comments`…),
+  so its rounds were split and almost no role ever reached the twenty needed to judge it. Now they add up: the
+  same 192 works judge three roles at XS+S where before they judged two, and `comments` sits at 19 rounds with
+  23 findings only it raised.
+- **A bug whose commit went through a GitLab MR merged with "squash + merge commit" is now charged to that
+  review.** GitLab writes `See merge request …!N` on the merge, not on the squash commit, so `flow escape` found
+  nothing — one real bug in a real repo came back "inside no reviewed range" although two reviews had read it.
+
+`yield` folds, on read, a plugin namespace (`<plugin>:<agent>` is the agent), an agent's own name into the role
+it filled (`pr-test-analyzer` → `tests`, `type-design-analyzer` → `types`, `red-team-web-security` → `red-team`…),
+a section number followed by a word (`§5.5 idiom`, `3.5 targeted`) into its pass, and every re-review round
+(`rereview`, `delta-reviewer`, `built-in-rereview`…) into `panel:re-review`, which is no reviewer. Every
+spelling it folds is still listed under "Spellings read as". When the suspected commit names no MR/PR itself,
+`escape` reads the innermost merge that brought it in through its second side and names a GitLab MR; a merge
+naming none — a local merge, a back-merge of the base — is passed over, so a base commit back-merged into a
+branch is never charged to that branch's MR.
+
 ## v0.116.1 — An answered question stops claiming you on the panel  ·  2026-11-12
 
 **In short**

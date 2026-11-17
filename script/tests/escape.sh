@@ -166,6 +166,36 @@ run "$seven"
 expect "two works now: the escape is removed"  0 'removed'
 [ "$(escape_field)" = null ] && printf '  ok   … and gone\n' || { printf '  FAIL still %s\n' "$(escape_field)"; fails=$((fails+1)); }
 
+# GitLab squash with a merge commit: the squash commit names nothing, the merge that carried it
+# names the MR. A local merge naming nothing on the way is passed over; a back-merge of main
+# carries main's commit into a branch, and the MR that merged the branch never charges it.
+git checkout -q main
+git checkout -q -b gsq
+gsq_c=$(commit "Squashed change")
+git checkout -q main
+git -c user.email=t@t -c user.name=t merge -q --no-ff gsq -m "Merge branch 'gsq' into 'main'" -m "See merge request group/repo!95"
+git checkout -q -b outer2
+git checkout -q -b inner2
+in2=$(commit "Inner squashed change")
+git checkout -q outer2
+git -c user.email=t@t -c user.name=t merge -q --no-ff inner2 -m "Merge inner2 locally"
+git checkout -q main
+on_main=$(commit "Direct on main")
+git checkout -q outer2
+git -c user.email=t@t -c user.name=t merge -q --no-ff main -m "Merge branch 'main' into outer2"
+git checkout -q main
+git -c user.email=t@t -c user.name=t merge -q --no-ff outer2 -m "Merge branch 'outer2' into 'main'" -m "See merge request group/repo!96"
+w _archive/glsq '{"ticket":"94","size":"S","mrs":[{"n":1,"url":"https://gitlab.com/group/repo/-/merge_requests/95","reviewed_sha":"9999"}]}'
+w _archive/glout '{"ticket":"95","size":"M","mrs":[{"n":1,"url":"https://gitlab.com/group/repo/-/merge_requests/96","reviewed_sha":"9998"}]}'
+git checkout -q bug-1
+git -c user.email=t@t -c user.name=t merge -q --no-ff main -m "Merge main into bug-1"
+run "$gsq_c"
+expect "the merge carrying a squash names its MR"  0 'went through the review of glsq (the commit names its MR/PR'
+run "$in2"
+expect "a local merge on the way is passed over"   0 'went through the review of glout'
+run "$on_main"
+expect "a back-merged main commit is no MR's"      0 'No escape recorded'
+
 run deadbeef
 expect "not a commit is refused"               1 'is not a commit'
 git checkout -q main

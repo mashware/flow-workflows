@@ -1132,14 +1132,31 @@ function escapeOf(argv) {
   // The MR/PR a squash commit came from, and nothing else: GitHub appends `(#N)` to the end of
   // the subject, GitLab writes `See merge request <path>!N` in the body. A `(#7)` quoted
   // mid-subject — a revert, a cherry-pick — names another MR/PR and charges nobody.
+  const isAncestor = (a, b) => {
+    try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: repo, stdio: 'ignore' }); return true } catch { return false }
+  }
   const subject = git(['log', '-1', '--format=%s', commit], repo).trim()
-  const body = git(['log', '-1', '--format=%b', commit], repo)
   // A GitLab reference carries its project path, and an MR of another project with the same
   // number is not this one: the unit's url has to name that path too.
+  const gitlabRefs = (sha) => [...git(['log', '-1', '--format=%b', sha], repo).matchAll(/See merge request (\S*)!(\d+)/g)]
+    .map((m) => ({ n: m[2], path: m[1] || null }))
   const refs = [
     ...(subject.match(/\(#(\d+)\)\s*$/) ? [{ n: subject.match(/\(#(\d+)\)\s*$/)[1], path: null }] : []),
-    ...[...body.matchAll(/See merge request (\S*)!(\d+)/g)].map((m) => ({ n: m[2], path: m[1] || null })),
+    ...gitlabRefs(commit),
   ]
+  // GitLab squashing with a merge commit writes the reference on the merge, not on the squash
+  // commit it carries. The innermost merge that brought the commit in — it reaches it through
+  // its second side and not its first — and names an MR is the MR whose diff held it; a merge
+  // naming none (a local merge, a back-merge) is passed over for the next one out.
+  if (!refs.length) {
+    const merges = git(['rev-list', '--ancestry-path', '--merges', '--parents', '--topo-order', '--reverse', `${commit}..HEAD`], repo)
+      .trim().split('\n').filter(Boolean).map((l) => l.split(' '))
+    for (const [merge, first] of merges) {
+      if (isAncestor(commit, first)) continue
+      const named = gitlabRefs(merge)
+      if (named.length) { refs.push(...named); break }
+    }
+  }
   // `(#N)` is a GitHub pull request; on GitLab `#N` is an issue, and only `!N` is an MR.
   const namedBy = (url) => {
     const u = String(url ?? '')
@@ -1147,9 +1164,6 @@ function escapeOf(argv) {
     const mr = u.match(/\/merge_requests\/(\d+)/)?.[1]
     return refs.some((r) => (r.path === null && r.n === pull)
       || (r.path !== null && r.n === mr && u.includes(`/${r.path}/-/merge_requests/${mr}`)))
-  }
-  const isAncestor = (a, b) => {
-    try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: repo, stdio: 'ignore' }); return true } catch { return false }
   }
   const resolves = (ref) => Boolean(ref) && Boolean(git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], repo).trim())
 
@@ -1421,25 +1435,39 @@ const LEGACY_SEVERITY = {
   nit: 'nit',
 }
 
+// The role an agent's own name stands for. Left unfolded, one role split across the names of
+// the agents that filled it never reaches twenty rounds under any of them.
+const ROLE_OF_AGENT = {
+  testing: 'tests', 'pr-test-analyzer': 'tests',
+  redteam: 'red-team', 'red-team-security': 'red-team', 'red-team-web-security': 'red-team',
+  'code-simplifier': 'simplify',
+  'comment-analyzer': 'comments',
+  'type-design-analyzer': 'types',
+}
+// Not a reviewer: a later round re-reading the fixes of an earlier one.
+const RE_REVIEW = /^(.*-)?(re-?review|delta|delta-review|round\d+)$/
+
 // A panel role is whatever the repo named it; only the spelling noise is folded: a prefix
 // saying which path ran it, case and spaces, and the suffixes an agent's file name adds.
 function panelRole(raw) {
   let r = raw.toLowerCase().trim().replace(/\s+/g, '-')
   r = r.replace(/-(reviewer|hunter|verifier|audit)$/, '').replace(/-round\d+$/, '')
-  if (r === 'testing') r = 'tests'
-  if (r === 'redteam') r = 'red-team'
   if (/^silent(-failures?)?$/.test(r)) r = 'silent-failure'
-  if (r === 'code-simplifier') r = 'simplify'
-  return `panel:${r}`
+  if (RE_REVIEW.test(r)) r = 're-review'
+  return `panel:${ROLE_OF_AGENT[r] ?? r}`
 }
 
 function canonicalOrigin(raw) {
   const o = String(raw ?? '').trim()
   if (!o) return 'unknown'
   if (o.startsWith('reinforcement:')) return o.toLowerCase()
-  const bare = o.replace(/^(§panel:|cli-panel:|cli:|panel:)/, '')
+  // `<plugin>:<agent>` is the agent, whichever plugin shipped it.
+  const bare = o.replace(/^(§panel:|cli-panel:|cli:|panel:)/, '').split(':').pop()
   if (BUILT_IN.has(bare)) return 'built-in'
   if (SECTION_ORIGINS[bare]) return SECTION_ORIGINS[bare]
+  // A pass written as its section with a word after it: `§5.5 idiom`, `3.5 targeted`.
+  const section = bare.match(/^§?(\d+(?:\.\d+)?)[\s-]/)?.[1]
+  if (section && SECTION_ORIGINS[`§${section}`]) return SECTION_ORIGINS[`§${section}`]
   return panelRole(bare)
 }
 
