@@ -561,6 +561,18 @@ ticket spans several MRs/PRs, and two candidates are a guess. The escape is coun
 per pass — every pass missed it.
 *Now:* `flow escape`; `flow yield`; bug:investigate §4, §8; work/README `meta.json`; script/tests/escape.sh.
 
+**One role under one name, and the MR a squash commit came from read off its merge.** v0.117.0:
+run over four repos, 192 works, `yield` still could not judge a single panel role but one per
+size — one role was split across the names of the agents that filled it (`comment-analyzer`,
+`pr-review-toolkit:comment-analyzer`, `comments`), so none reached twenty rounds. A plugin
+namespace, an agent's own name and a section number with a word after it now fold into the role,
+and re-review rounds into one origin that is no reviewer. And not one escape had been counted:
+GitLab, squashing with a merge commit, writes `See merge request` on the merge and nothing on the
+squash commit it carries, so a real bug whose commit two reviews had read came back "inside no
+reviewed range". `escape` now reads the innermost merge that brought the commit in through its
+second side and names an MR; one naming none — a local merge, a back-merge — is passed over.
+*Now:* `flow yield`; `flow escape`; script/tests/yield.sh; script/tests/escape.sh.
+
 **A change to `review` can now be checked against an outcome.** v0.67.0: every preflight in this
 repository checks shape — the adapters match their sources byte for byte, a cited path exists, a
 hook is executable — and nothing could say whether a change to the command found more defects,

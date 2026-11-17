@@ -5,7 +5,8 @@
 # two repos in one call · legacy rows (one per source) and new rows (`sources[]`, `outcome`)
 # · old spellings mapped and listed · a composite `a+b` origin · a count-only row · a
 # legacy severity that is really an outcome · agents and effective size from `cost[]` · the
-# retire verdict after twenty rounds and the too-few one under it · no works at all.
+# retire verdict after twenty rounds and the too-few one under it · no works at all · a plugin
+# namespace, an agent's own name, `§N word` and re-review rounds folded into one origin each.
 set -u
 unset FLOW_CONTEXT
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -105,6 +106,24 @@ work "$BASE/c/.claude/work/split" '{"size":"M",
 (cd "$BASE/c" && node "$CLI" yield) > "$BASE/out.txt" 2>&1
 in_section "an MR/PR's rows take its own size"   'XS+S' '| panel:a | 1 | 1 | 1 | 1 | 1 |'
 in_section "and the other MR/PR's take its own"  'L' '| panel:b | 1 | 1 | 1 | 1 | 1 |'
+
+# One role under the names of the agents that filled it: a plugin namespace, an agent's own
+# name, a section number with a word after it, and re-review rounds that are no reviewer.
+work "$BASE/c/.claude/work/names" '{"size":"L","review_findings":[
+  {"round":1,"origin":"pr-review-toolkit:comment-analyzer","severity":"minor","file":"n1","discarded_by_skeptic":false},
+  {"round":2,"origin":"comments","severity":"minor","file":"n2","discarded_by_skeptic":false},
+  {"round":3,"origin":"flow-review:tests","severity":"minor","file":"n3","discarded_by_skeptic":false},
+  {"round":3,"origin":"pr-test-analyzer","severity":"minor","file":"n4","discarded_by_skeptic":false},
+  {"round":4,"origin":"§5.5 idiom","severity":"minor","file":"n5","discarded_by_skeptic":false},
+  {"round":4,"origin":"3.5 targeted","severity":"minor","file":"n6","discarded_by_skeptic":false},
+  {"round":5,"origin":"built-in-rereview","severity":"minor","file":"n7","discarded_by_skeptic":false},
+  {"round":5,"origin":"delta-reviewer","severity":"minor","file":"n8","discarded_by_skeptic":false}]}'
+(cd "$BASE/c" && node "$CLI" yield) > "$BASE/out.txt" 2>&1
+in_section "a plugin namespace and the agent's name fold" 'L' '| panel:comments | 2 | 2 | 2 | 2 |'
+in_section "an agent filling the tests role is tests"    'L' '| panel:tests | 1 | 2 | 2 | 2 |'
+in_section "a section number with a word is its pass"    'L' '| idiom | 1 | 1 | 1 | 1 |'
+in_section "… whichever section"                         'L' '| sweep | 1 | 1 | 1 | 1 |'
+in_section "re-review rounds are one origin"             'L' '| panel:re-review | 1 | 2 | 2 | 2 |'
 
 repo "$BASE/empty"
 (cd "$BASE/empty" && node "$CLI" yield) > "$BASE/out.txt" 2>&1
