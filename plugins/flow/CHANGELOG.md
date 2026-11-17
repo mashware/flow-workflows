@@ -16,6 +16,7 @@ The canonical, richest notes live in the [GitHub Releases](https://github.com/ma
 - **A bug whose commit went through a GitLab MR merged with "squash + merge commit" is now charged to that
   review.** GitLab writes `See merge request …!N` on the merge, not on the squash commit, so `flow escape` found
   nothing — one real bug in a real repo came back "inside no reviewed range" although two reviews had read it.
+  A bug already investigated keeps no escape until `escape` is run again from its branch.
 
 `yield` folds, on read, a plugin namespace (`<plugin>:<agent>` is the agent), an agent's own name into the role
 it filled (`pr-test-analyzer` → `tests`, `type-design-analyzer` → `types`, `red-team-web-security` → `red-team`…),

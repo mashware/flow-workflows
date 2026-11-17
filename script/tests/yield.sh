@@ -5,7 +5,8 @@
 # two repos in one call · legacy rows (one per source) and new rows (`sources[]`, `outcome`)
 # · old spellings mapped and listed · a composite `a+b` origin · a count-only row · a
 # legacy severity that is really an outcome · agents and effective size from `cost[]` · the
-# retire verdict after twenty rounds and the too-few one under it · no works at all.
+# retire verdict after twenty rounds and the too-few one under it · no works at all · a plugin
+# namespace, an agent's own name, `§N word` and re-review rounds folded into one origin each.
 set -u
 unset FLOW_CONTEXT
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

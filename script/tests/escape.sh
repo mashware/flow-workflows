@@ -5,7 +5,8 @@
 # older than that range is not, though it is an ancestor of the reviewed sha · a squash commit
 # whose subject carries one reviewed MR/PR's number is charged to that work · a number that two
 # works carry is charged to neither · a commit no review read · the bug's own work is never a
-# candidate · no work on the branch · not a commit · `yield` counts the escape per size.
+# candidate · no work on the branch · not a commit · `yield` counts the escape per size · a
+# GitLab squash whose MR only its carrying merge names, past a local merge, never a back-merge.
 set -u
 unset FLOW_CONTEXT
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

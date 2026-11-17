@@ -1105,7 +1105,8 @@ async function review(argv) {
 // --- escape ----------------------------------------------------------------------------
 // A bug whose cause is a commit a flow review read is the one number that says what trimming
 // the review would cost. It is charged only on evidence: the commit inside exactly one
-// reviewed range, or carrying the number of exactly one reviewed MR/PR. "An ancestor of what
+// reviewed range, or naming exactly one reviewed MR/PR — itself, or through the merge that
+// carried it in. "An ancestor of what
 // was reviewed" is not evidence — the whole history of the base is an ancestor of every
 // reviewed sha — and a ticket number is not either, since one ticket spans several MRs/PRs.
 
@@ -1130,8 +1131,9 @@ function escapeOf(argv) {
 
   const cfg = flowConfig(repo, null, null)
   // The MR/PR a squash commit came from, and nothing else: GitHub appends `(#N)` to the end of
-  // the subject, GitLab writes `See merge request <path>!N` in the body. A `(#7)` quoted
-  // mid-subject — a revert, a cherry-pick — names another MR/PR and charges nobody.
+  // the subject, GitLab writes `See merge request <path>!N` in the body — of the squash commit
+  // when it fast-forwards, of the merge carrying it when it keeps a merge commit. A `(#7)`
+  // quoted mid-subject — a revert, a cherry-pick — names another MR/PR and charges nobody.
   const isAncestor = (a, b) => {
     try { execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: repo, stdio: 'ignore' }); return true } catch { return false }
   }
@@ -1148,12 +1150,18 @@ function escapeOf(argv) {
   // commit it carries. The innermost merge that brought the commit in — it reaches it through
   // its second side and not its first — and names an MR is the MR whose diff held it; a merge
   // naming none (a local merge, a back-merge) is passed over for the next one out.
+  // Two processes whatever the history: a merge-commit repo, whose merges name nothing, walks
+  // every merge after the commit.
   if (!refs.length) {
-    const merges = git(['rev-list', '--ancestry-path', '--merges', '--parents', '--topo-order', '--reverse', `${commit}..HEAD`], repo)
-      .trim().split('\n').filter(Boolean).map((l) => l.split(' '))
-    for (const [merge, first] of merges) {
-      if (isAncestor(commit, first)) continue
-      const named = gitlabRefs(merge)
+    const after = new Set(git(['rev-list', '--ancestry-path', `${commit}..HEAD`], repo).trim().split('\n').filter(Boolean))
+    const holds = (c) => c === commit || after.has(c)
+    const merges = git(['log', '--ancestry-path', '--merges', '--topo-order', '--reverse', '--format=%H %P%x00%b%x1e', `${commit}..HEAD`], repo)
+      .split('\x1e').map((e) => e.trim()).filter(Boolean)
+    for (const entry of merges) {
+      const [head, body = ''] = entry.split('\x00')
+      const [, first] = head.split(' ')
+      if (holds(first)) continue
+      const named = [...body.matchAll(/See merge request (\S*)!(\d+)/g)].map((m) => ({ n: m[2], path: m[1] || null }))
       if (named.length) { refs.push(...named); break }
     }
   }
@@ -1440,15 +1448,16 @@ const LEGACY_SEVERITY = {
 const ROLE_OF_AGENT = {
   testing: 'tests', 'pr-test-analyzer': 'tests',
   redteam: 'red-team', 'red-team-security': 'red-team', 'red-team-web-security': 'red-team',
-  'code-simplifier': 'simplify',
+  'code-simplifier': 'simplify', simplification: 'simplify',
   'comment-analyzer': 'comments',
   'type-design-analyzer': 'types',
 }
 // Not a reviewer: a later round re-reading the fixes of an earlier one.
 const RE_REVIEW = /^(.*-)?(re-?review|delta|delta-review|round\d+)$/
 
-// A panel role is whatever the repo named it; only the spelling noise is folded: a prefix
-// saying which path ran it, case and spaces, and the suffixes an agent's file name adds.
+// A panel role is whatever the repo named it, with the spelling noise folded — a prefix
+// saying which path ran it, case and spaces, the suffixes an agent's file name adds — and an
+// agent's own name read as the role it filled.
 function panelRole(raw) {
   let r = raw.toLowerCase().trim().replace(/\s+/g, '-')
   r = r.replace(/-(reviewer|hunter|verifier|audit)$/, '').replace(/-round\d+$/, '')
@@ -2289,8 +2298,9 @@ Claude Code, Codex CLI and zcode have their own marketplaces:
   answers in forge-state.json for the renders that follow it. meta.json is never written.
 
 "escape" tells whether the commit a bug investigation blamed went through a flow review:
-  it must sit inside exactly one work's reviewed range (merge history), or carry the number
-  of exactly one reviewed MR/PR in its subject (squash). Then it is recorded in this branch's
+  it must sit inside exactly one work's reviewed range (merge history), or name exactly one
+  reviewed MR/PR (squash) — in its own message, or in the GitLab merge that carried it in.
+  Then it is recorded in this branch's
   work and "yield" counts it; anything less is said and recorded nowhere.
 
 "yield" reads every work of the repos named (default: this one) — live and archived,
