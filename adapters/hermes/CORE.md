@@ -101,6 +101,18 @@ a command relies on is simply absent in that session, and nothing else will repo
   `meta.json` in those folders (`_archive/` excluded) whose `branch` or any `mrs[].branch` equals
   `git branch --show-current`, or whose `worktree` equals `git rev-parse --show-toplevel`. The
   SessionStart hook matches the same way.
+- **The ticket has one form, and `meta.json.ticket` holds it.** A person types an issue however it
+  comes to hand — `54`, `#54`, `owner/repo#54`, the issue's URL — and every `{TICKET}` downstream
+  (a branch, a handoff branch, `Closes #<N>`, a tracker command, the unattended run's lookup by
+  `number`) needs the same value. On `gh` and `glab` the canonical ticket is **the bare issue
+  number of this repository** (the one `origin` names): `#54`, `owner/repo#54` and
+  `…/issues/54` (GitHub) or `…/-/issues/54` (GitLab) all become `54`. Another repository's issue,
+  a pull or merge request (`/pull/54`, `!54`) is not this work's ticket: refuse it in one line,
+  never strip it. Any other tracker keeps the id as typed (`MT-123`, `ENG-42`), spaces trimmed.
+  Either way it must match `[A-Za-z0-9][A-Za-z0-9._-]*` — the rule `ticket_deps` already applies
+  before a value meets a shell. `start` stores this form; `/flow-work-handoff`'s resolve block and
+  `/flow-work-run`'s lookup canonicalise again whatever `meta.json` holds, so a work stored before
+  this rule is still found and still handed off to the right branch.
 - **A fenced block in a FLOW file is an example, and an example is not configuration.** These
   files are prose with keys in them, and the rule that decides what a key *is* — a `- key:` line
   under a `## section` — knows nothing about triple backticks. So a block written to be pasted

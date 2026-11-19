@@ -35,7 +35,9 @@ ticket for the people who review it.
 - Locate the active `meta.json` by current branch; not found → ask the user for the ticket.
 - `git.handoff_branch` empty → refuse, naming the key and an example
   (`git.handoff_branch: study/{TICKET}`): where the study goes is the receiver's convention, never
-  flow's guess. `{TICKET}` = `meta.json.ticket`.
+  flow's guess. `{TICKET}` is the canonical ticket (flow-core §0, the ticket) that §3's resolve
+  block prints from `meta.json.ticket` — never `meta.json.ticket` as stored: a work started from
+  `#54` or from the issue's URL still goes to `study/54`.
 - `origin` not configured → refuse; there is nowhere to push.
 
 ## 2. Is the study finished?
@@ -66,11 +68,38 @@ work included) and the working tree are never read into it nor written to, and a
 **Each block below is one shell call, run as it stands** — a harness need not keep variables from
 one call to the next, so every block sets its own. Replace each `@…@` with its literal value first:
 `@WORK@` the work folder relative to the repository root (`.claude/work/<work-dir>`, no trailing
-slash), `@BRANCH@` the resolved `git.handoff_branch`, `@TICKET@` `meta.json.ticket`, `@COMMIT@` the
-sha the build block printed. A value holding a `'` cannot go inside those quotes: refuse it and
-say which.
+slash), `@BRANCH@` and `@TICKET@` the `branch=` and `ticket=` lines the resolve block printed,
+`@COMMIT@` the sha the build block printed. A value holding a `'` cannot go inside those quotes:
+refuse it and say which.
 
-First, the branch must not exist on `origin` — a second push would need a force, and this command
+First, where the study goes. `@STORED@` is `meta.json.ticket` as stored, `@TOOL@` the effective
+`tracker.tool`, `@PATTERN@` `git.handoff_branch` as written, `{TICKET}` and all:
+
+```bash handoff-resolve
+STORED='@STORED@'; TOOL='@TOOL@'; PATTERN='@PATTERN@'
+t=$(printf '%s' "$STORED" | tr -d '[:space:]')
+case "$TOOL" in gh|glab)
+  repo=$(git config --get remote.origin.url | sed -E 's|^[a-z+]+://([^@/]+@)?[^/]+/||; s|^[^@/]+@[^:]+:||; s|\.git$||; s|/$||')
+  case "$t" in
+    *://*) path=$(printf '%s' "$t" | sed -E 's|^[a-z]+://[^/]+/||; s|[?#].*$||; s|/$||')
+           case "${path%/*}" in "$repo/issues"|"$repo/-/issues") t=${path##*/} ;; *) t= ;; esac ;;
+    */*'#'*) if [ "${t%'#'*}" = "$repo" ]; then t=${t##*'#'}; else t=; fi ;;
+    '#'*) t=${t#'#'} ;;
+  esac
+  case "$t" in ''|*[!0-9]*) echo "not an issue of $repo: $STORED"; exit 1 ;; esac ;;
+esac
+case "$t" in [A-Za-z0-9]*) ;; *) echo "not a ticket id: $STORED"; exit 1 ;; esac
+case "$t" in *[!A-Za-z0-9._-]*) echo "not a ticket id: $STORED"; exit 1 ;; esac
+branch=$(printf '%s' "$PATTERN" | sed "s|{TICKET}|$t|g")
+git check-ref-format --branch "$branch" >/dev/null 2>&1 || { echo "not a branch name: $branch"; exit 1; }
+echo "ticket=$t"; echo "branch=$branch"
+```
+
+A refusal stops the command, quoting its line: another repository's issue, a pull or merge
+request, anything that is not a ticket id. The way on is to set `meta.json.ticket` to this
+repository's issue and hand off again.
+
+Then the branch must not exist on `origin` — a second push would need a force, and this command
 never forces:
 
 ```bash handoff-check
@@ -186,6 +215,7 @@ the ticket read it there, never in the work folder; the receiver does not parse 
 
 ## 6. Close
 
-Report following flow-core §3: the branch and the commit, the file count, whether the ticket
+Report following flow-core §3: the exact remote branch (`origin/<branch>`, as the resolve block
+printed it) and the commit, the file count, whether the ticket
 summary was written. Refresh the panel: a `Now` line saying the study was handed off, no `Decision`
 line. `meta.json` gains nothing — the branch on `origin` is the record, and the §3 refusal reads it.

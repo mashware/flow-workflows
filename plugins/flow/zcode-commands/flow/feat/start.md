@@ -48,8 +48,8 @@ its reason file in a `mktemp -d` directory (flow-core §2.1).
 - Read the effective FLOW configuration per flow-core §0; no FLOW layer present → each
   step's default. This command **creates** `00-summary.md` (§6) instead of reading it (flow-core §5).
 - No recognizable project structure → warn and stop.
-- **Determine the mode** (`--study` already taken out): `$ARGUMENTS` non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less* (identifier = the §2.5 slug).
-- Once the identifier is known, check the work does not exist: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after the slug is decided in §2.5. Exists → do not overwrite; warn and suggest `/flow:work:resume`.
+- **Determine the mode** (`--study` already taken out): `$ARGUMENTS` non-empty → *ticket mode* (identifier = the canonical ticket of `$ARGUMENTS`, flow-core §0 — `#54` or the issue's URL is `54` on `gh`/`glab`; another repository's issue or a PR/MR → refuse in one line); empty → *ticket-less* (identifier = the §2.5 slug).
+- Once the identifier is known, check the work does not exist: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket`, put in the same canonical form, equals `<TICKET>` — a work stored as `#54` is the work for `54`; ticket-less → `.claude/work/<slug>/meta.json`, right after the slug is decided in §2.5. Exists → do not overwrite; warn and suggest `/flow:work:resume`.
 
 **Work directory naming.** Work lives in `.claude/work/<work-dir>/`. `meta.json.ticket` stays the **pure identifier** (real ticket id, or the slug in ticket-less local-only) — it feeds the tracker view, the issue link and `{TICKET}`. The directory adds a slug:
 - **ticket mode** → `<TICKET>-<slug>`; `<slug>` = short English kebab-case (≤5 words) from the ticket title, the **same** slug as the branch (§5).
@@ -234,7 +234,7 @@ Create the work directory where flow-core §0 puts a new one (the main checkout,
 ### `meta.json`
 ```json
 {
-  "ticket": "<identifier: $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
+  "ticket": "<identifier: the canonical ticket of $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
   "slug": "<the §1/§2.5.2 kebab-case slug; equals `ticket` in ticket-less local-only>",
   "type": "feat",
   "title": "<ticket title>",

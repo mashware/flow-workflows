@@ -669,7 +669,8 @@ def check_unattended_locate(files):
 # read those sections by name.
 HANDOFF = "plugins/flow/commands/work/handoff.md"
 HANDOFF_HOLDS = (
-    "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
+    "```bash handoff-resolve", "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
+    "`@STORED@` is `meta.json.ticket` as stored", "never `meta.json.ticket` as stored",
     'git ls-remote --exit-code origin "refs/heads/$BRANCH"',
     ":(exclude)$WORK/panel.json", "with `--force`", "**in every `autonomy.mode`**",
     "`meta.json.pending`", "`context` on XS", "`autonomy.mode: unattended` → refuse",
@@ -689,6 +690,14 @@ def check_handoff():
     for held in HANDOFF_HOLDS:
         if held not in text:
             fail(HANDOFF, f"no longer carries {held!r}")
+    # A ticket typed `#54` or pasted as a URL must reach meta.json, the duplicate check and the
+    # unattended lookup as `54`, or the same issue becomes two works and a study nobody finds.
+    for f, held in (("plugins/flow/commands/feat/start.md", "the canonical ticket of `$ARGUMENTS`"),
+                    ("plugins/flow/commands/bug/start.md", "the canonical ticket of `$ARGUMENTS`"),
+                    ("plugins/flow/commands/work/run.md", "put in canonical form (flow-core §0, the ticket)"),
+                    ("plugins/flow/skills/flow-core/SKILL.md", "**The ticket has one form, and `meta.json.ticket` holds it.**")):
+        if held not in read(f):
+            fail(f, f"no longer carries {held!r}")
 
 
 # A work started with `--study` is built elsewhere, and every place a study phase names

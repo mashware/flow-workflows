@@ -48,8 +48,8 @@ Read `~/.claude/flow/CORE.codex.md` first (shared rules: `FLOW.md` step 0, model
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Verify you are in the correct repo.
-- **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
-- Once the identifier is known, check whether the work already exists: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `$flow-work-resume`.
+- **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = the canonical ticket of `$ARGUMENTS`, flow-core §0 — `#54` or the issue's URL is `54` on `gh`/`glab`; another repository's issue or a PR/MR → refuse in one line); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
+- Once the identifier is known, check whether the work already exists: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket`, put in the same canonical form, equals `<TICKET>` — a work stored as `#54` is the work for `54`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `$flow-work-resume`.
 - This command **creates** `00-summary.md` (§4); there is nothing to read yet.
 
 **Work directory naming.** The work lives in `.claude/work/<work-dir>/`. `meta.json.ticket` stays the **pure identifier** (the real ticket id, or the slug in ticket-less local-only) — it feeds the tracker view, the issue link and `{TICKET}` in the branch. The directory name adds a slug:
@@ -163,7 +163,7 @@ Create the work directory where flow-core §0 puts a new one (the main checkout,
 `<work-dir>/meta.json`:
 ```json
 {
-  "ticket": "<identifier: $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
+  "ticket": "<identifier: the canonical ticket of $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
   "slug": "<the §0/§1.5.2 kebab-case slug; equals `ticket` in ticket-less local-only>",
   "type": "bug",
   "title": "<symptom from tracker, or synthesized in §1.5>",
