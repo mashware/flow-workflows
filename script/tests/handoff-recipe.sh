@@ -68,7 +68,7 @@ for sh in bash zsh; do
   same "$sh: a bare number" "$(resolved $sh 54)" "study/54"
   same "$sh: a number typed with #" "$(resolved $sh '#54')" "study/54"
   same "$sh: leading zeros on a reference" "$(resolved $sh '#054')" "study/54"
-  same "$sh: a bare number is kept as typed" "$(resolved $sh 054)" "study/054"
+  same "$sh: leading zeros on a bare number" "$(resolved $sh 054)" "study/54"
   same "$sh: this repository's issue URL" "$(resolved $sh https://github.com/acme/app/issues/54)" "study/54"
   same "$sh: an issue URL with a comment anchor" "$(resolved $sh 'https://github.com/acme/app/issues/54#issuecomment-1')" "study/54"
   same "$sh: the URL in another case" "$(resolved $sh https://github.com/Acme/App/issues/54)" "study/54"
@@ -84,6 +84,7 @@ for sh in bash zsh; do
   same "$sh: another repository's owner/repo#N is refused" "$(resolved $sh 'other/app#54')" "refused"
   same "$sh: a pull request is refused" "$(resolved $sh https://github.com/acme/app/pull/54)" "refused"
   same "$sh: a merge request is refused" "$(resolved $sh '!54')" "refused"
+  same "$sh: an issue URL with segments after the number is refused" "$(resolved $sh https://github.com/acme/app/issues/5/4)" "refused"
   same "$sh: a placeholder other than {TICKET} is refused" "$(resolved $sh 54 'study/{PREFIX}{TICKET}')" "refused"
   origin_url="$(git config --get remote.origin.url)"
   for pair in "git@github.com:acme/app.git|https://github.com/acme/app/issues/54" \
@@ -91,11 +92,13 @@ for sh in bash zsh; do
               "https://github.com/acme/app.git/|https://github.com/acme/app/issues/54" \
               "ssh://git@github.com:22/acme/app.git|https://github.com/acme/app/issues/54" \
               "git@github.com:1234/app.git|https://github.com/1234/app/issues/54" \
-              "git@github-work:acme/app.git|https://github.com/acme/app/issues/54" \
+              "git@github-work:acme/app.git|acme/app#54" \
               "https://gitlab.example.com:8443/group/app.git|https://gitlab.example.com:8443/group/app/-/issues/54"; do
     git config remote.origin.url "${pair%%|*}"
     same "$sh: origin ${pair%%|*}" "$(resolved $sh "${pair#*|}")" "study/54"
   done
+  git config remote.origin.url git@github-work:acme/app.git
+  same "$sh: behind an SSH alias, no URL is read as this repository's" "$(resolved $sh https://gitlab.com/acme/app/-/issues/54)" "refused"
   git config remote.origin.url "$origin_url"
 done
 out="$(block handoff-resolve | sed -e 's|@STORED@|#54|g' -e 's|@PATTERN@|study/{TICKET}|g' | bash 2>&1)"

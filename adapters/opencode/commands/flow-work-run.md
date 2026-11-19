@@ -25,7 +25,7 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, au
 The command an orchestrator puts in its launch line, for every run of every ticket. It does no work
 of its own: it asks the orchestrator why this run exists and hands the run to the phase that
 answers it. `$ARGUMENTS` is the ticket, optional — the orchestrator's `ticket` order is the source
-of truth, and an argument that disagrees with it is ignored and named in the log.
+of truth, and an argument whose canonical form (flow-core §0, the ticket) disagrees with it is ignored and named in the log.
 
 ## 1. Pre-flight
 

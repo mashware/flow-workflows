@@ -90,11 +90,12 @@ case "$lc" in
   '#'*) n=${lc#'#'} ;;
   *://*|*/issues/*|*/work_items/*)
        u=$(printf '%s' "$lc" | sed -E 's|^[a-z+]+://||; s|^[^@/]*@||; s|^([^/]+):[0-9]+/|\1/|; s|^www\.||; s|[?#].*$||; s|/+$||')
-       key=$here; ukey=$u
-       case "${here%%/*}" in *.*) ;; *) key=${here#*/}; ukey=${u#*/} ;; esac
-       case "$ukey" in "$key/issues/"*|"$key/-/issues/"*|"$key/-/work_items/"*) n=${u##*/} ;; esac ;;
+       case "${here%%/*}" in *.*)
+         case "${u#"$here"/}" in issues/*/*|-/issues/*/*|-/work_items/*/*) ;;
+           issues/*|-/issues/*|-/work_items/*) n=${u##*/} ;; esac ;; esac ;;
   */*'#'*) [ "${lc%'#'*}" = "${here#*/}" ] && n=${lc##*'#'} ;;
 esac
+[ -n "$n" ] || case "$lc" in *[!0-9]*) ;; *) n=$lc ;; esac
 case "$n" in ''|*[!0-9]*) ;; *) n=$(printf '%s' "$n" | sed 's/^0*//'); t=${n:-0} ;; esac
 case "$t" in [A-Za-z0-9]*) ;; *) echo "not a ticket id: $STORED"; exit 1 ;; esac
 case "$t" in *[!A-Za-z0-9._-]*) echo "not a ticket id: $STORED"; exit 1 ;; esac
@@ -105,8 +106,9 @@ echo "ticket=$t"; echo "branch=$branch"
 ```
 
 It turns a reference to this repository's issue into its number and keeps anything else as typed
-(flow-core §0, the ticket). `origin`'s host is compared too, unless it is an SSH alias with no dot
-in it (`github-work`, `gh`), where only the path can be. A refusal stops the command, quoting its
+(flow-core §0, the ticket). `origin`'s host is compared too; when it is an SSH alias with no dot in
+it (`github-work`, `gh`), no URL can be matched against it and only `#N` and `owner/repo#N` are
+read as this repository's. A refusal stops the command, quoting its
 line: a pull or merge request, another repository's issue, an id with a space or a shell character
 inside, a placeholder other than `{TICKET}`. The way on, for a mistyped id, is to correct
 `meta.json.ticket` and hand off again; a study whose ticket really is **another repository's

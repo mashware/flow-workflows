@@ -46,7 +46,7 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, mo
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Verify you are in the correct repo.
-- **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = the canonical ticket of `$ARGUMENTS`, flow-core §0 — `#54`, `owner/repo#54` or this repository's issue URL is `54`; anything else as typed); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
+- **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = the canonical ticket of `$ARGUMENTS`, flow-core §0 — `#54`, `owner/repo#54` or this repository's issue URL is `54`; anything else as typed — and one that cannot name a branch or a folder (`[A-Za-z0-9][A-Za-z0-9._-]*`: another repository's reference, a PR/MR, a space inside) → refuse in one line, before any branch or folder exists); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
 - Once the identifier is known, check whether the work already exists: in both work-folder locations (flow-core §0); ticket mode → every `meta.json` in those folders (`_archive/` excluded) whose `ticket`, put in the same canonical form, equals `<TICKET>` — never narrowed by folder name first: a work stored as `#54` lives in `#54-<slug>/` and is the work for `54`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `/flow-work-resume`.
 - This command **creates** `00-summary.md` (§4); there is nothing to read yet.
 
@@ -60,7 +60,7 @@ Derive the slug **once** — after the symptom is known (§1), or in §1.5.2 —
 
 In parallel:
 
-1. **Tracker** *(ticket mode only)*: read it with `tracker.view_cmd` from FLOW.md (`{TICKET}` = `$ARGUMENTS`). **Read it whole, comment thread included — §1.1.** If `tool:none` or the key is missing, ask the user for symptom, severity and environment. **Ticket-less mode: skip — §1.5 is the source of symptom/severity/environment.**
+1. **Tracker** *(ticket mode only)*: read it with `tracker.view_cmd` from FLOW.md (`{TICKET}` = the canonical identifier of §0, never `$ARGUMENTS` as typed). **Read it whole, comment thread included — §1.1.** If `tool:none` or the key is missing, ask the user for symptom, severity and environment. **Ticket-less mode: skip — §1.5 is the source of symptom/severity/environment.**
 2. **Knowledge search** (if `knowledge.search` is set): `knowledge.search` with keywords from the symptom — detect previous postmortems in the same area.
 3. **Observability**, if the incident is recent and you have clues (service, trace, log): the MCP tools of `observability.platform` from FLOW.md. Do not force it.
 4. **Git**: check clean branch and commit base.
