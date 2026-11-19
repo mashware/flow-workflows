@@ -6,7 +6,7 @@
 # panel. Then that a newer plan, meta.json or panel-input.json does trigger one render, from a
 # worktree too, and that a broken CLI or a non-repo never makes it fail.
 set -u
-unset FLOW_CONTEXT
+unset FLOW_CONTEXT CLAUDECODE
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="$HERE/../../plugins/flow/hooks/panel-refresh.sh"
 CLI="$HERE/../../bin/cli.mjs"
@@ -151,5 +151,53 @@ ask AskUserQuestion "$NOQ" '{"answers":{"Q?":"Yes"}}'; cleared
 sleep 1; printf '{"now":"MR 2","decision":"pick the next one"}\n' > "$QW/panel-input.json"
 fire "$Q"; for _ in $(seq 1 50); do grep -q 'pick the next one' "$QW/panel.json" && break; sleep 0.1; done
 grep -q 'pick the next one' "$QW/panel.json" && grep -q '"attention": "wait"' "$QW/panel.json" && ok "a decision written after the answer asks again" || bad "the next decision was swallowed by the old answer"
+
+# the answer's reminder reaches the agent: under Claude Code an answered question whose work
+# still shows a decision prints one hookSpecificOutput object naming that work; a branch that
+# names no work gets a line naming none; everything else prints nothing
+said() { printf '{"cwd":"%s","hook_event_name":"PostToolUse","tool_name":"%s","tool_input":%s,"tool_response":%s}' "$1" "$2" "$3" "$4" | env $5 FLOW_PANEL_CLI="$BASE/fakecli" sh "$HOOK" 2>/dev/null; }
+is_reminder() { printf '%s' "$1" | python3 -c 'import json,sys; o=json.loads(sys.stdin.read()); h=o["hookSpecificOutput"]; assert h["hookEventName"]=="PostToolUse"; print(h["additionalContext"])' 2>/dev/null; }
+ANS='{"answers":{"Q?":"Yes"}}'
+reset "$DEC"
+out=$(said "$Q" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1); ctx=$(is_reminder "$out")
+case "$ctx" in *"panel files of T-3 no longer claim the user"*'without "decision"'*) ok "Claude Code: an answer prints the reminder naming the work" ;; *) bad "no named reminder: $out" ;; esac
+reset "$DEC"
+out=$(said "$Q" AskUserQuestion "$NOQ" "$ANS" "-u CLAUDECODE")
+[ -z "$out" ] && ok "outside Claude Code the answer prints nothing" || bad "printed outside Claude Code: $out"
+reset "$DEC"
+out=$(said "$Q" AskUserQuestion "$NOQ" '{"answers":{},"afkTimeoutMs":60000}' CLAUDECODE=1)
+[ -z "$out" ] && ok "an unanswered question prints nothing" || bad "unanswered printed: $out"
+reset '{"now":"MR 3","labels":{"decision":"Decisión"}}'
+out=$(said "$Q" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1)
+[ -z "$out" ] && ok "an answer with no decision on the panel prints nothing" || bad "printed with no decision: $out"
+reset "$DEC"
+out=$(said "$Q" Edit '{"filePath":"x"}' '{}' CLAUDECODE=1)
+[ -z "$out" ] && ok "any other tool prints nothing" || bad "another tool printed: $out"
+out=$(said "$BASE" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1)
+[ -z "$out" ] && ok "outside a repo the answer prints nothing" || bad "non-repo printed: $out"
+
+git -C "$Q" checkout -q -b main-session 2>/dev/null
+reset "$DEC"
+out=$(said "$Q" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1); ctx=$(is_reminder "$out")
+case "$ctx" in *"branch names no work"*) case "$ctx" in *T-3*) bad "the generic reminder named a work" ;; *) ok "a branch that names no work gets a reminder naming none" ;; esac ;; *) bad "no generic reminder: $out" ;; esac
+[ ! -f "$QW/panel-answered.json" ] && ok "and no work's panel is touched" || bad "another session's work was cleared"
+reset '{"now":"MR 3"}'
+out=$(said "$Q" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1)
+[ -z "$out" ] && ok "no decision anywhere → nothing printed" || bad "printed with no decision anywhere: $out"
+reset "$DEC"; cp "$QW/panel-input.json" "$QW/panel-answered.json"
+out=$(said "$Q" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1)
+[ -z "$out" ] && ok "an input already answered claims nobody → nothing printed" || bad "a stale answered input still reminded: $out"
+rm -f "$QW/panel-answered.json"
+git -C "$Q" worktree add -q "$BASE/qwt" -b loose fix 2>/dev/null
+reset "$DEC"
+out=$(said "$BASE/qwt" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1); ctx=$(is_reminder "$out")
+case "$ctx" in *"branch names no work"*) ok "a worktree session with no work finds the main checkout's decision" ;; *) bad "worktree session got no reminder: $out" ;; esac
+git -C "$Q" checkout -q fix
+if [ "$(id -u)" != 0 ]; then
+	reset "$DEC"; chmod a-w "$QW"
+	out=$(said "$Q" AskUserQuestion "$NOQ" "$ANS" CLAUDECODE=1); sleep 0.3; chmod u+w "$QW"
+	[ ! -f "$QW/panel-answered.json" ] && [ ! -f "$BASE/calls" ] && [ ! -f "$QW/.panel-answered.tmp" ] || bad "the copy did not fail, so this case tested nothing"
+	case "$(is_reminder "$out")" in *"could not be cleared"*) ok "a work folder that cannot take the copy gets the could-not-clear reminder, and no render" ;; *) bad "wrong or no reminder when the copy failed: $out" ;; esac
+fi
 
 [ "$fails" = 0 ] && echo "panel-refresh: all ok" || { echo "panel-refresh: $fails failure(s)"; exit 1; }

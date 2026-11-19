@@ -9,7 +9,10 @@
 # Runs after every tool call of every session in every repo the plugin is installed in, so
 # the common path must cost nothing: no work for this branch, or nothing newer than the
 # panel → exit at once, without starting node. The render itself is detached, so a slow
-# npx never holds a tool call. It never blocks, never prints, and every failure exits 0.
+# npx never holds a tool call. It never blocks and every failure exits 0. It prints only
+# after an answered question, and only under Claude Code: a terminal that holds the panel
+# over MCP ignores every file this hook renders, so the one party that can drop the claim is
+# the agent, and the hook's output is what reaches it before its next call.
 set -u
 
 event=$(cat 2>/dev/null || printf '')
@@ -46,19 +49,25 @@ main_root=${common%/.git}
 stamp=".panel-refresh-$(printf '%s' "$branch" | cksum | cut -d' ' -f1)"
 pattern="\"branch\"[[:space:]]*:[[:space:]]*\"$(printf '%s' "$branch" | sed 's/[][\.*^$+?(){}|/]/\\&/g')\""
 needs=""
+named=""
+matched=""
 for r in "$root" "$main_root"; do
 	[ -n "$r" ] && [ -d "$r/.claude/work" ] || continue
 	for meta in "$r"/.claude/work/*/meta.json; do
 		[ -f "$meta" ] || continue
 		grep -qE "$pattern" "$meta" 2>/dev/null || continue
 		work=${meta%/meta.json}
+		matched=1
 		# A decision on the panel (the labels may name one too, so they are left out of the look):
 		# copy the input aside as answered and render. The input itself is the agent's, untouched.
+		# The reminder below goes out even when the copy cannot be written.
 		if [ -n "$answered" ] && [ -f "$work/panel-input.json" ] \
-			&& sed 's/"labels"[[:space:]]*:[[:space:]]*{[^}]*}//' "$work/panel-input.json" 2>/dev/null | grep -q '"decision"' \
-			&& cp "$work/panel-input.json" "$work/.panel-answered.tmp" 2>/dev/null \
-			&& mv -f "$work/.panel-answered.tmp" "$work/panel-answered.json" 2>/dev/null; then
-			needs="$work"; break 2
+			&& sed 's/"labels"[[:space:]]*:[[:space:]]*{[^}]*}//' "$work/panel-input.json" 2>/dev/null | grep -q '"decision"'; then
+			named="$work"
+			cp "$work/panel-input.json" "$work/.panel-answered.tmp" 2>/dev/null \
+				&& mv -f "$work/.panel-answered.tmp" "$work/panel-answered.json" 2>/dev/null \
+				&& needs="$work" || rm -f "$work/.panel-answered.tmp" 2>/dev/null
+			break 2
 		fi
 		# Newer than the panel and than this branch's last attempt → render. The stamp is
 		# touched before each launch, so a render that writes nothing (a broken input, npx
@@ -74,6 +83,40 @@ for r in "$root" "$main_root"; do
 		[ -n "$needs" ] && break 2
 	done
 done
+
+# The answer's reminder. A branch that names a work → that work, by its folder. A branch that
+# names none (a session in the main checkout driving a sibling worktree) → a line that names
+# no work: every session there reports the same cwd and branch, so the hook cannot tell whose
+# work is whose, and naming another session's work would invite clearing that session's claim.
+if [ -n "$answered" ] && [ "${CLAUDECODE:-}" = 1 ]; then
+	reminder=""
+	# The text is already JSON: its \" stays escaped, and the folder name is escaped to match.
+	if [ -n "$named" ]; then
+		folder=$(printf '%s' "${named##*/}" | tr -d '\000-\037' | sed 's/[\\"]/\\&/g')
+		if [ -z "$needs" ]; then
+			reminder="flow: the question was answered, but the panel files of $folder could not be cleared. Before anything else: rewrite panel-input.json without \\\"decision\\\", render, and republish where the panel goes (panel_set over the terminal's MCP; ArtifactData set of card.json when panel.artifact is on)."
+		else
+			reminder="flow: the question was answered and the panel files of $folder no longer claim the user, but a panel published over the terminal's MCP, and the control-room card, still carry the decision. If either is in use, before anything else: rewrite panel-input.json without \\\"decision\\\", render, and republish there (panel_set; ArtifactData set of card.json)."
+		fi
+	elif [ -z "$matched" ]; then
+		for r in "$root" "$main_root"; do
+			[ -n "$r" ] && [ -d "$r/.claude/work" ] || continue
+			for input in "$r"/.claude/work/*/panel-input.json; do
+				[ -f "$input" ] || continue
+				# An input already copied aside as answered claims nobody (the CLI's own rule).
+				cmp -s "$input" "${input%/*}/panel-answered.json" && continue
+				if sed 's/"labels"[[:space:]]*:[[:space:]]*{[^}]*}//' "$input" 2>/dev/null | grep -q '"decision"'; then
+					reminder="flow: a question was answered, and this session's branch names no work, so no panel file was cleared. If your work's panel carries that decision, before anything else: rewrite its panel-input.json without \\\"decision\\\", render, and republish (panel_set over the terminal's MCP; ArtifactData set of card.json when panel.artifact is on)."
+					break 2
+				fi
+			done
+		done
+	fi
+	if [ -n "$reminder" ]; then
+		printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$reminder"
+	fi
+fi
+
 [ -n "$needs" ] || exit 0
 touch "$needs/$stamp" 2>/dev/null || exit 0
 
