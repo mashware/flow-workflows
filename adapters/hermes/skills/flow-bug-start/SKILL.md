@@ -48,8 +48,8 @@ Read `~/.claude/flow/CORE.hermes.md` first (shared rules: `FLOW.md` step 0, mode
 **In `unattended`, before this phase's first step, read flow-core §2.1 whole — from its heading to the next section, unless it is already in your context whole; having read parts of it does not count** — the orchestrator command, the question stop and the way its answer comes back are all in it, and a phase that reads only part of it skips them.
 
 - Verify you are in the correct repo.
-- **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = `$ARGUMENTS`); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
-- Once the identifier is known, check whether the work already exists: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket` equals `<TICKET>`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `/flow-work-resume`.
+- **Determine the mode** from `$ARGUMENTS` (`--study` already taken out): non-empty → *ticket mode* (identifier = the canonical ticket of `$ARGUMENTS`, flow-core §0 — `#54`, `owner/repo#54` or this repository's issue URL is `54`; anything else as typed — and one that cannot name a branch or a folder (`[A-Za-z0-9][A-Za-z0-9._-]*`: another repository's reference, a PR/MR, a space inside) → refuse in one line, before any branch or folder exists); empty → *ticket-less mode* (identifier = the slug resolved in §1.5).
+- Once the identifier is known, check whether the work already exists: in both work-folder locations (flow-core §0); ticket mode → every `meta.json` in those folders (`_archive/` excluded) whose `ticket`, put in the same canonical form, equals `<TICKET>` — never narrowed by folder name first: a work stored as `#54` lives in `#54-<slug>/` and is the work for `54`; ticket-less → `.claude/work/<slug>/meta.json`, right after §1.5.2 decides the slug. If one exists, suggest `/flow-work-resume`.
 - This command **creates** `00-summary.md` (§4); there is nothing to read yet.
 
 **Work directory naming.** The work lives in `.claude/work/<work-dir>/`. `meta.json.ticket` stays the **pure identifier** (the real ticket id, or the slug in ticket-less local-only) — it feeds the tracker view, the issue link and `{TICKET}` in the branch. The directory name adds a slug:
@@ -62,7 +62,7 @@ Derive the slug **once** — after the symptom is known (§1), or in §1.5.2 —
 
 In parallel:
 
-1. **Tracker** *(ticket mode only)*: read it with `tracker.view_cmd` from FLOW.md (`{TICKET}` = `$ARGUMENTS`). **Read it whole, comment thread included — §1.1.** If `tool:none` or the key is missing, ask the user for symptom, severity and environment. **Ticket-less mode: skip — §1.5 is the source of symptom/severity/environment.**
+1. **Tracker** *(ticket mode only)*: read it with `tracker.view_cmd` from FLOW.md (`{TICKET}` = the canonical identifier of §0, never `$ARGUMENTS` as typed). **Read it whole, comment thread included — §1.1.** If `tool:none` or the key is missing, ask the user for symptom, severity and environment. **Ticket-less mode: skip — §1.5 is the source of symptom/severity/environment.**
 2. **Knowledge search** (if `knowledge.search` is set): `knowledge.search` with keywords from the symptom — detect previous postmortems in the same area.
 3. **Observability**, if the incident is recent and you have clues (service, trace, log): the MCP tools of `observability.platform` from FLOW.md. Do not force it.
 4. **Git**: check clean branch and commit base.
@@ -108,7 +108,7 @@ Show the draft to the user and let them confirm or adjust **before writing anyth
 Creating a tracker issue is an **outward-facing action → always ask, in every autonomy mode** (never automatic):
 
 - If `tracker.tool` is not `none`, ask with `AskUserQuestion` whether to create the real issue from this draft.
-  - **Yes** → the tool's native command, best-effort (`gh issue create`, `glab issue create`, the `acli`/`linear` create command; if unclear, ask the user to create it and paste the id). If §1.5.1 found **repos affected**, include them in the body under a short "Repos affected" heading. Capture the id. **From here the run is in ticket mode**: identifier = that id, work dir `.claude/work/<id>/`, branch named from the real id. If creation fails, warn and fall back to local-only with the slug.
+  - **Yes** → the tool's native command, best-effort (`gh issue create`, `glab issue create`, the `acli`/`linear` create command; if unclear, ask the user to create it and paste the id). If §1.5.1 found **repos affected**, include them in the body under a short "Repos affected" heading. Capture the id in canonical form (flow-core §0 — the number of the URL `gh`/`glab` print). **From here the run is in ticket mode**: identifier = that id, work dir `.claude/work/<id>/`, branch named from the real id. If creation fails, warn and fall back to local-only with the slug.
   - **No** → local-only: identifier stays the slug, no issue created.
 - If `tracker.tool` is `none` or empty, skip the offer and proceed local-only with the slug.
 
@@ -163,7 +163,7 @@ Create the work directory where flow-core §0 puts a new one (the main checkout,
 `<work-dir>/meta.json`:
 ```json
 {
-  "ticket": "<identifier: $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
+  "ticket": "<identifier: the canonical ticket of $ARGUMENTS in ticket mode; the slug or created issue id in ticket-less mode>",
   "slug": "<the §0/§1.5.2 kebab-case slug; equals `ticket` in ticket-less local-only>",
   "type": "bug",
   "title": "<symptom from tracker, or synthesized in §1.5>",

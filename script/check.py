@@ -664,12 +664,14 @@ def check_unattended_locate(files):
 
 
 # /flow:work:handoff is read by a person's agent and its result by another machine's. What must not
-# be reworded away: the three recipe blocks script/tests/handoff-recipe.sh executes, every reason
+# be reworded away: the four recipe blocks script/tests/handoff-recipe.sh executes, every reason
 # the study is refused, and the ticket block's literal markers and headings — the receiver's people
 # read those sections by name.
 HANDOFF = "plugins/flow/commands/work/handoff.md"
 HANDOFF_HOLDS = (
-    "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
+    "```bash handoff-resolve", "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
+    "`@STORED@` is `meta.json.ticket` as stored", "never `meta.json.ticket` as stored",
+    "never `branch=study/54`",
     'git ls-remote --exit-code origin "refs/heads/$BRANCH"',
     ":(exclude)$WORK/panel.json", "with `--force`", "**in every `autonomy.mode`**",
     "`meta.json.pending`", "`context` on XS", "`autonomy.mode: unattended` → refuse",
@@ -689,6 +691,17 @@ def check_handoff():
     for held in HANDOFF_HOLDS:
         if held not in text:
             fail(HANDOFF, f"no longer carries {held!r}")
+    # A ticket typed `#54` or pasted as a URL must reach meta.json, the duplicate check and the
+    # unattended lookup as `54`, or the same issue becomes two works and a study nobody finds.
+    for f, held in (("plugins/flow/commands/feat/start.md", "the canonical ticket of `$ARGUMENTS`"),
+                    ("plugins/flow/commands/bug/start.md", "the canonical ticket of `$ARGUMENTS`"),
+                    ("plugins/flow/commands/feat/start.md", "put in the same canonical form, equals `<TICKET>` — never narrowed by folder name first"),
+                    ("plugins/flow/commands/bug/start.md", "put in the same canonical form, equals `<TICKET>` — never narrowed by folder name first"),
+                    ("plugins/flow/commands/work/watch.md", "in canonical form (flow-core §0)"),
+                    ("plugins/flow/commands/work/run.md", "put in canonical form (flow-core §0, the ticket)"),
+                    ("plugins/flow/skills/flow-core/SKILL.md", "**The ticket has one form, and `meta.json.ticket` holds it.**")):
+        if held not in read(f):
+            fail(f, f"no longer carries {held!r}")
 
 
 # A work started with `--study` is built elsewhere, and every place a study phase names

@@ -25,7 +25,7 @@ Read `~/.claude/flow/CORE.opencode.md` first (shared rules: `FLOW.md` step 0, au
 The command an orchestrator puts in its launch line, for every run of every ticket. It does no work
 of its own: it asks the orchestrator why this run exists and hands the run to the phase that
 answers it. `$ARGUMENTS` is the ticket, optional — the orchestrator's `ticket` order is the source
-of truth, and an argument that disagrees with it is ignored and named in the log.
+of truth, and an argument whose canonical form (flow-core §0, the ticket) disagrees with it is ignored and named in the log.
 
 ## 1. Pre-flight
 
@@ -39,7 +39,8 @@ of truth, and an argument that disagrees with it is ignored and named in the log
 - Run `<cmd> ticket --json` and keep `number`, `title`, `base` and `kind` (`kind` absent or `null` → `feat`: the tracker could not tell, so flow decides). `kind` is re-read on every run; only a run that starts the work uses it — once the work exists, its folder says feat or bug.
   It fails or prints no `number` → `blocked` (flow-core §2.1).
 - Find the work: the `meta.json` in the work folders (flow-core §0 — here and in the main
-  checkout) whose `ticket` equals `number` (archive excluded). None is not an error — it is the "none" of the table below.
+  checkout) whose `ticket`, put in canonical form (flow-core §0, the ticket), equals `number`
+  (archive excluded) — a work stored as `#54` is the work for `54`. None is not an error — it is the "none" of the table below.
 
 ## 2. Route
 
