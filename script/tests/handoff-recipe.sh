@@ -27,14 +27,10 @@ done
 # a harness keeps no variables between calls, and a block that leaned on one would fail here.
 # The values below hold no `|`, `&` or `'` — the sed delimiter and the block's own quoting. A `#`
 # they may hold: a ticket typed `#54` is exactly what the resolve block has to survive.
-run() {  # <tag> <work> <branch> <ticket> <commit> <tool> <pattern> → stdout+stderr, exit code in $?
+run() {  # <tag> <work> <branch> <ticket> <commit> → stdout+stderr, exit code in $?
   block "$1" | sed -e "s|@WORK@|${2:-}|g" -e "s|@BRANCH@|${3:-}|g" -e "s|@TICKET@|${4:-}|g" \
-                  -e "s|@STORED@|${4:-}|g" -e "s|@COMMIT@|${5:-}|g" -e "s|@TOOL@|${6:-}|g" -e "s|@PATTERN@|${7:-}|g" \
+                  -e "s|@COMMIT@|${5:-}|g" \
     | bash 2>&1
-}
-resolved() {  # <ticket> <tool> → the branch line the resolve block prints, or its refusal
-  local out; out="$(run handoff-resolve "" "" "$1" "" "$2" 'study/{TICKET}')"
-  case "$out" in *branch=*) printf '%s\n' "$out" | sed -n 's/^branch=//p' ;; *) echo "refused: $out" ;; esac
 }
 
 git init -q --bare "$BASE/origin.git"
@@ -60,21 +56,43 @@ printf 'two\n' >> app.txt                      # an unstaged change
 printf 'staged\n' > staged.txt && git add staged.txt   # a staged one
 expected="$(printf '%s\n' "$W/03-design.md" "$W/approaches/minimum.md" "$W/meta.json")"
 
-# Where the study goes: one canonical ticket, whatever form the work stored it in.
-same "a bare number" "$(resolved 54 gh)" "study/54"
-same "a number typed with #" "$(resolved '#54' gh)" "study/54"
-same "this repository's issue URL" "$(resolved https://github.com/acme/app/issues/54 gh)" "study/54"
-same "this repository's owner/repo#N" "$(resolved 'acme/app#54' gh)" "study/54"
-same "surrounding spaces" "$(resolved ' #54 ' gh)" "study/54"
-same "a GitLab issue URL" "$(resolved https://github.com/acme/app/-/issues/54 glab)" "study/54"
-same "a Jira key is kept as typed" "$(resolved MT-123 acli)" "study/MT-123"
-case "$(resolved https://github.com/other/app/issues/54 gh)" in refused:*) ok "another repository's issue is refused";; *) bad "another repository's issue is refused";; esac
-case "$(resolved 'other/app#54' gh)" in refused:*) ok "another repository's owner/repo#N is refused";; *) bad "another repository's owner/repo#N is refused";; esac
-case "$(resolved https://github.com/acme/app/pull/54 gh)" in refused:*) ok "a pull request is refused";; *) bad "a pull request is refused";; esac
-case "$(resolved '!54' glab)" in refused:*) ok "a merge request is refused";; *) bad "a merge request is refused";; esac
-case "$(resolved '#54' acli)" in refused:*) ok "a # on a tracker without issue numbers is refused";; *) bad "a # on a tracker without issue numbers is refused";; esac
-out="$(run handoff-resolve "" "" '#54' "" gh 'study/{TICKET}')"
+# Where the study goes: one canonical ticket, whatever form the work stored it in. The block runs
+# under every shell a harness may hand it — zsh ties `path` to `$PATH`, and a block that used such a
+# name would lose `sed` and `git` there.
+for sh in bash zsh; do
+  command -v "$sh" >/dev/null || { echo "  skip $sh (not installed)"; continue; }
+  resolved() {  # <ticket> → the branch the resolve block prints, or `refused`
+    local out; out="$(block handoff-resolve | sed -e "s|@STORED@|$1|g" -e "s|@PATTERN@|study/{TICKET}|g" | "$sh" 2>&1)"
+    case "$out" in *branch=*) printf '%s\n' "$out" | sed -n 's/^branch=//p' ;; *) echo refused ;; esac
+  }
+  same "$sh: a bare number" "$(resolved 54)" "study/54"
+  same "$sh: a number typed with #" "$(resolved '#54')" "study/54"
+  same "$sh: leading zeros" "$(resolved '#054')" "study/54"
+  same "$sh: this repository's issue URL" "$(resolved https://github.com/acme/app/issues/54)" "study/54"
+  same "$sh: an issue URL with a comment anchor" "$(resolved 'https://github.com/acme/app/issues/54#issuecomment-1')" "study/54"
+  same "$sh: the URL in another case" "$(resolved https://github.com/Acme/App/issues/54)" "study/54"
+  same "$sh: the URL without a scheme" "$(resolved github.com/acme/app/issues/54)" "study/54"
+  same "$sh: this repository's owner/repo#N" "$(resolved 'acme/app#54')" "study/54"
+  same "$sh: GitLab issue and work-item URLs" "$(resolved https://github.com/acme/app/-/issues/54) $(resolved https://github.com/acme/app/-/work_items/54)" "study/54 study/54"
+  same "$sh: surrounding spaces" "$(resolved ' #54 ')" "study/54"
+  same "$sh: a Jira key is kept as typed" "$(resolved MT-123)" "study/MT-123"
+  same "$sh: a ticket-less slug is kept as typed" "$(resolved add-dark-mode)" "study/add-dark-mode"
+  same "$sh: a space inside is refused, not squeezed" "$(resolved 'MT 123')" "refused"
+  same "$sh: another forge's issue is refused" "$(resolved https://gitlab.com/acme/app/-/issues/54)" "refused"
+  same "$sh: another repository's issue is refused" "$(resolved https://github.com/other/app/issues/54)" "refused"
+  same "$sh: another repository's owner/repo#N is refused" "$(resolved 'other/app#54')" "refused"
+  same "$sh: a pull request is refused" "$(resolved https://github.com/acme/app/pull/54)" "refused"
+  same "$sh: a merge request is refused" "$(resolved '!54')" "refused"
+done
+origin_url="$(git config --get remote.origin.url)"
+for url in git@github.com:acme/app.git github.com:acme/app https://github.com/acme/app.git/ ssh://git@github.com:22/acme/app.git; do
+  git config remote.origin.url "$url"
+  same "origin written as $url" "$(resolved https://github.com/acme/app/issues/54)" "study/54"
+done
+git config remote.origin.url "$origin_url"
+out="$(block handoff-resolve | sed -e 's|@STORED@|#54|g' -e 's|@PATTERN@|study/{TICKET}|g' | bash 2>&1)"
 same "it also prints the canonical ticket" "$(printf '%s\n' "$out" | sed -n 's/^ticket=//p')" "54"
+same "a branch= prefix left on the value is refused, not pushed" "$(run handoff-check "" branch=study/54)" "not a resolved branch: branch=study/54"
 
 state() { git rev-parse HEAD; git branch --show-current; git diff; git diff --cached; git status --porcelain; }
 before="$(state)"
@@ -115,7 +133,7 @@ same "and the branch is still there" \
 # End to end: a study stored as `#54` reaches origin as study/54, and nothing named study/#54 exists.
 W54=.claude/work/54-typed-with-hash
 mkdir -p "$W54" && printf '{"ticket":"#54"}\n' > "$W54/meta.json"
-out="$(run handoff-resolve "" "" '#54' "" gh 'study/{TICKET}')"
+out="$(block handoff-resolve | sed -e 's|@STORED@|#54|g' -e 's|@PATTERN@|study/{TICKET}|g' | bash 2>&1)"
 b54="$(printf '%s\n' "$out" | sed -n 's/^branch=//p')"; t54="$(printf '%s\n' "$out" | sed -n 's/^ticket=//p')"
 same "the destination is absent before the push" "$(run handoff-check "" "$b54")" "rc=2"
 c54="$(run handoff-build "$W54" "" "$t54" | sed -n 's/^commit=//p')"

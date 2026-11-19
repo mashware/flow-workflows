@@ -55,8 +55,8 @@ its reason file in a `mktemp -d` directory (flow-core §2.1).
 - Read the effective FLOW configuration per flow-core §0; no FLOW layer present → each
   step's default. This command **creates** `00-summary.md` (§6) instead of reading it (flow-core §5).
 - No recognizable project structure → warn and stop.
-- **Determine the mode** (`--study` already taken out): `$ARGUMENTS` non-empty → *ticket mode* (identifier = the canonical ticket of `$ARGUMENTS`, flow-core §0 — `#54` or the issue's URL is `54` on `gh`/`glab`; another repository's issue or a PR/MR → refuse in one line); empty → *ticket-less* (identifier = the §2.5 slug).
-- Once the identifier is known, check the work does not exist: in both work-folder locations (flow-core §0); ticket mode → glob `.claude/work/<TICKET>/` and `.claude/work/<TICKET>-*/` for a `meta.json` whose `ticket`, put in the same canonical form, equals `<TICKET>` — a work stored as `#54` is the work for `54`; ticket-less → `.claude/work/<slug>/meta.json`, right after the slug is decided in §2.5. Exists → do not overwrite; warn and suggest `/flow-work-resume`.
+- **Determine the mode** (`--study` already taken out): `$ARGUMENTS` non-empty → *ticket mode* (identifier = the canonical ticket of `$ARGUMENTS`, flow-core §0 — `#54`, `owner/repo#54` or this repository's issue URL is `54`; anything else as typed); empty → *ticket-less* (identifier = the §2.5 slug).
+- Once the identifier is known, check the work does not exist: in both work-folder locations (flow-core §0); ticket mode → every `meta.json` in those folders (`_archive/` excluded) whose `ticket`, put in the same canonical form, equals `<TICKET>` — never narrowed by folder name first: a work stored as `#54` lives in `#54-<slug>/` and is the work for `54`; ticket-less → `.claude/work/<slug>/meta.json`, right after the slug is decided in §2.5. Exists → do not overwrite; warn and suggest `/flow-work-resume`.
 
 **Work directory naming.** Work lives in `.claude/work/<work-dir>/`. `meta.json.ticket` stays the **pure identifier** (real ticket id, or the slug in ticket-less local-only) — it feeds the tracker view, the issue link and `{TICKET}`. The directory adds a slug:
 - **ticket mode** → `<TICKET>-<slug>`; `<slug>` = short English kebab-case (≤5 words) from the ticket title, the **same** slug as the branch (§5).
@@ -118,7 +118,7 @@ An **outward-facing action → always ask, in every autonomy mode** (like the MR
     - `glab` → `glab issue create --title "<title>" --description "<summary + criteria + repos affected>"`
     - `acli` (Jira) / `linear` → the tool's create command; if unclear, ask the user to create it and paste the id.
 
-    Capture the returned id. **From here the run is in ticket mode**: identifier = that id, work dir = `.claude/work/<id>/`, branch naming uses the real id (so §5.5 applies). Creation fails → warn, fall back to local-only with the slug.
+    Capture the returned id in canonical form (flow-core §0 — the number of the URL `gh`/`glab` print). **From here the run is in ticket mode**: identifier = that id, work dir = `.claude/work/<id>/`, branch naming uses the real id (so §5.5 applies). Creation fails → warn, fall back to local-only with the slug.
   - **No** → local-only: identifier stays the slug, no issue created (by hand or a later `start`).
 - `tracker.tool` `none`/empty → skip the offer; local-only with the slug.
 

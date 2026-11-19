@@ -43,7 +43,7 @@ If `knowledge.search` is set, call `knowledge.search` with the ticket name befor
 
 ## 1. Pre-flight and T0
 
-- Resolve the ticket from `$ARGUMENTS`. A work in `.claude/work/` (glob `<TICKET>/` and `<TICKET>-*/`, or match `meta.json.ticket`) → read its `meta.json` **as a hint, not as truth**.
+- Resolve the ticket from `$ARGUMENTS`, in canonical form (flow-core §0). A work in `.claude/work/` (a `meta.json` whose `ticket`, canonical too, equals it) → read its `meta.json` **as a hint, not as truth**.
 - **Confirm WHAT is being deployed — never assume it from `meta.json`** (several MR/PRs per ticket; stale artifacts). Cross-reference the **actual deploy event** (e.g. `get_change_stories`) and recent merges; any ambiguity → `AskUserQuestion` which MR/PR or commit is deploying. The surface (§2) is scoped to **that** change.
 - **When to start.** When the code **is live in production**, not at merge. Launched right after the merge → **wait for the deploy yourself**:
   - Check whether the new version is live (`observability.deploy_detect`; empty → `get_change_stories` or other deploy indicators).

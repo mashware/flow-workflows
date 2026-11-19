@@ -68,26 +68,28 @@ work included) and the working tree are never read into it nor written to, and a
 **Each block below is one shell call, run as it stands** — a harness need not keep variables from
 one call to the next, so every block sets its own. Replace each `@…@` with its literal value first:
 `@WORK@` the work folder relative to the repository root (`.claude/work/<work-dir>`, no trailing
-slash), `@BRANCH@` and `@TICKET@` the `branch=` and `ticket=` lines the resolve block printed,
-`@COMMIT@` the sha the build block printed. A value holding a `'` cannot go inside those quotes:
+slash), `@BRANCH@` and `@TICKET@` the values after `branch=` and `ticket=` in what the resolve
+block printed — `study/54`, never `branch=study/54` —, `@COMMIT@` the sha the build block printed. A value holding a `'` cannot go inside those quotes:
 refuse it and say which.
 
-First, where the study goes. `@STORED@` is `meta.json.ticket` as stored, `@TOOL@` the effective
-`tracker.tool`, `@PATTERN@` `git.handoff_branch` as written, `{TICKET}` and all:
+First, where the study goes. `@STORED@` is `meta.json.ticket` as stored, `@PATTERN@`
+`git.handoff_branch` as written, `{TICKET}` and all:
 
 ```bash handoff-resolve
-STORED='@STORED@'; TOOL='@TOOL@'; PATTERN='@PATTERN@'
-t=$(printf '%s' "$STORED" | tr -d '[:space:]')
-case "$TOOL" in gh|glab)
-  repo=$(git config --get remote.origin.url | sed -E 's|^[a-z+]+://([^@/]+@)?[^/]+/||; s|^[^@/]+@[^:]+:||; s|\.git$||; s|/$||')
-  case "$t" in
-    *://*) path=$(printf '%s' "$t" | sed -E 's|^[a-z]+://[^/]+/||; s|[?#].*$||; s|/$||')
-           case "${path%/*}" in "$repo/issues"|"$repo/-/issues") t=${path##*/} ;; *) t= ;; esac ;;
-    */*'#'*) if [ "${t%'#'*}" = "$repo" ]; then t=${t##*'#'}; else t=; fi ;;
-    '#'*) t=${t#'#'} ;;
-  esac
-  case "$t" in ''|*[!0-9]*) echo "not an issue of $repo: $STORED"; exit 1 ;; esac ;;
+STORED='@STORED@'; PATTERN='@PATTERN@'
+t=$(printf '%s' "$STORED" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+lc=$(printf '%s' "$t" | tr 'A-Z' 'a-z')
+here=$(git config --get remote.origin.url | tr 'A-Z' 'a-z' | sed -E 's|/+$||; s|\.git$||; s|^[a-z+]+://||; s|^[^@/]*@||; s|:[0-9]+/|/|; s|:|/|; s|^www\.||')
+n=
+case "$lc" in
+  '#'*) n=${lc#'#'} ;;
+  *://*|*/issues/*|*/work_items/*)
+       u=$(printf '%s' "$lc" | sed -E 's|^[a-z+]+://||; s|^[^@/]*@||; s|^www\.||; s|[?#].*$||; s|/+$||')
+       case "$u" in "$here/issues/"*|"$here/-/issues/"*|"$here/-/work_items/"*) n=${u##*/} ;; esac ;;
+  */*'#'*) [ "${lc%'#'*}" = "${here#*/}" ] && n=${lc##*'#'} ;;
+  *) n=$lc ;;
 esac
+case "$n" in ''|*[!0-9]*) ;; *) n=$(printf '%s' "$n" | sed 's/^0*//'); t=${n:-0} ;; esac
 case "$t" in [A-Za-z0-9]*) ;; *) echo "not a ticket id: $STORED"; exit 1 ;; esac
 case "$t" in *[!A-Za-z0-9._-]*) echo "not a ticket id: $STORED"; exit 1 ;; esac
 branch=$(printf '%s' "$PATTERN" | sed "s|{TICKET}|$t|g")
@@ -95,15 +97,18 @@ git check-ref-format --branch "$branch" >/dev/null 2>&1 || { echo "not a branch 
 echo "ticket=$t"; echo "branch=$branch"
 ```
 
-A refusal stops the command, quoting its line: another repository's issue, a pull or merge
-request, anything that is not a ticket id. The way on is to set `meta.json.ticket` to this
-repository's issue and hand off again.
+It turns a reference to this repository's issue into its number and keeps anything else as typed
+(flow-core §0, the ticket). A refusal stops the command, quoting its line: a pull or merge request,
+another repository's issue, an id with a space or a shell character inside. The way on is to set
+`meta.json.ticket` to this repository's issue, or to the id the receiver expects, and hand off
+again.
 
 Then the branch must not exist on `origin` — a second push would need a force, and this command
 never forces:
 
 ```bash handoff-check
 BRANCH='@BRANCH@'
+case "$BRANCH" in ''|branch=*) echo "not a resolved branch: $BRANCH"; exit 1 ;; esac
 git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null; echo "rc=$?"
 ```
 
@@ -149,6 +154,7 @@ before writing the first line of it.
 
 ```bash handoff-push
 BRANCH='@BRANCH@'; COMMIT='@COMMIT@'
+case "$BRANCH" in ''|branch=*) echo "not a resolved branch: $BRANCH"; exit 1 ;; esac
 case "$COMMIT" in ''|*[!0-9a-f]*) echo "not a commit sha: $COMMIT"; exit 1 ;; esac
 git cat-file -e "$COMMIT^{commit}" || exit 1
 git push origin "$COMMIT:refs/heads/$BRANCH"

@@ -111,15 +111,19 @@ a command relies on is simply absent in that session, and nothing else will repo
 - **The ticket has one form, and `meta.json.ticket` holds it.** A person types an issue however it
   comes to hand — `54`, `#54`, `owner/repo#54`, the issue's URL — and every `{TICKET}` downstream
   (a branch, a handoff branch, `Closes #<N>`, a tracker command, the unattended run's lookup by
-  `number`) needs the same value. On `gh` and `glab` the canonical ticket is **the bare issue
-  number of this repository** (the one `origin` names): `#54`, `owner/repo#54` and
-  `…/issues/54` (GitHub) or `…/-/issues/54` (GitLab) all become `54`. Another repository's issue,
-  a pull or merge request (`/pull/54`, `!54`) is not this work's ticket: refuse it in one line,
-  never strip it. Any other tracker keeps the id as typed (`MT-123`, `ENG-42`), spaces trimmed.
-  Either way it must match `[A-Za-z0-9][A-Za-z0-9._-]*` — the rule `ticket_deps` already applies
-  before a value meets a shell. `start` stores this form; `$flow:work-handoff`'s resolve block and
-  `$flow:work-run`'s lookup canonicalise again whatever `meta.json` holds, so a work stored before
-  this rule is still found and still handed off to the right branch.
+  `number`) needs one value. **A reference to an issue of this repository** — the one `origin`
+  names, host and path compared without case — **is its bare number**, leading zeros dropped:
+  `#54`, `owner/repo#54`, `…/issues/54`, `…/-/issues/54` and `…/-/work_items/54` all become `54`,
+  whatever `tracker.tool` says. **Anything else is kept as typed**, only its ends trimmed: a slug,
+  a Jira or Linear key (`MT-123`), a free-form id, another repository's reference. Where a value
+  meets a shell or names a branch it must match `[A-Za-z0-9][A-Za-z0-9._-]*` — the rule
+  `ticket_deps` already applies — so a pull or merge request (`/pull/54`, `!54`), another
+  repository's reference or an id with a space inside is refused there, never stripped into
+  something else. `start` stores this form (an issue it creates included: the number of the URL
+  the tracker prints); every lookup by a ticket — `start`'s duplicate check, `$flow:work-run`, a
+  ticket typed to `resume` or `watch` — compares canonical forms on both sides, and
+  `$flow:work-handoff`'s resolve block canonicalises whatever `meta.json` holds, so a work stored
+  as `#54` is still found and still handed off to `…/54`.
 - **A fenced block in a FLOW file is an example, and an example is not configuration.** These
   files are prose with keys in them, and the rule that decides what a key *is* — a `- key:` line
   under a `## section` — knows nothing about triple backticks. So a block written to be pasted

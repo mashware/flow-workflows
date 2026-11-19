@@ -671,6 +671,7 @@ HANDOFF = "plugins/flow/commands/work/handoff.md"
 HANDOFF_HOLDS = (
     "```bash handoff-resolve", "```bash handoff-check", "```bash handoff-build", "```bash handoff-push",
     "`@STORED@` is `meta.json.ticket` as stored", "never `meta.json.ticket` as stored",
+    "never `branch=study/54`",
     'git ls-remote --exit-code origin "refs/heads/$BRANCH"',
     ":(exclude)$WORK/panel.json", "with `--force`", "**in every `autonomy.mode`**",
     "`meta.json.pending`", "`context` on XS", "`autonomy.mode: unattended` → refuse",
