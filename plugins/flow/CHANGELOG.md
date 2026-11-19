@@ -5,6 +5,24 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.117.1 — A study handed off from `#54` lands on `study/54`, where its builder looks  ·  2026-11-19
+
+**In short**
+- **A study started from a GitHub or GitLab issue typed `#54`, or pasted as its URL, is handed off to
+  `study/54`.** Until now the ticket was stored as typed, so `/flow:work:handoff` pushed it to `study/#54`,
+  the server looking for `study/54` never found it, and the study was done and approved a second time.
+- **One ticket, one work.** `#54`, `owner/repo#54` and this repository's issue URL all mean `54` when a work
+  starts, when it is looked up (`run`, `resume`, `watch`, `abandon`, a roadmap row) and when it is handed
+  off — so a work stored as `#54` is still found, and typing the ticket two ways no longer opens two works.
+
+Only a reference to an issue of the repository `origin` names becomes its number (host and path compared
+without case, leading zeros dropped); a slug, a Jira or Linear key or any other id is kept as typed. What
+cannot name a branch — a pull or merge request, another repository's issue, an id with a space inside — is
+refused by `start` before a branch exists and by the handoff before a push, never stripped into something
+else. Issues kept in a repository other than `origin` (a fork with its issues upstream) are not handled: such
+a study is refused at handoff, as it was effectively before. A study already pushed as `study/#54` is not
+renamed — handing it off again pushes a second copy to `study/54`; delete the old branch.
+
 ## v0.117.0 — The review count reads one name per reviewer, and GitLab squash merges count their escapes  ·  2026-11-17
 
 **In short**
