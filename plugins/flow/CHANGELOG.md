@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.118.0 — After you answer, the agent is told to stop claiming you in Ivy  ·  2026-11-19
+
+**In short**
+- **The "waiting on you" tab in Ivy now clears right after you answer.** v0.116.1 cleared the answered decision from
+  the panel's files, but Ivy paints what the agent publishes over its MCP and reads no file while it does, so only
+  the agent can drop the claim — and it often forgot. Now the plugin's hook, right after a question is answered
+  under Claude Code, tells the agent to republish without the decision before doing anything else.
+- **It also works when the session sits in the main checkout and the work lives in a sibling worktree.** The reminder
+  then names no work and touches no file: several sessions share that checkout, and the hook cannot tell whose work is
+  whose.
+- **flow's rules name Ivy's tools as they are** (`mcp__ivy__panel_set`), and `/flow:doctor` says the panel channel
+  works only when `panel_get` answers.
+- **What flow does with the rest of Ivy's MCP is written down**: the roadmap goes to the plan as before; the panel is
+  never retired (its `done` is the signal you read when you come back) and no auxiliary consoles are opened (flow
+  delegates to subagents, and a console stops answering once you type in it).
+
 ## v0.117.0 — The review count reads one name per reviewer, and GitLab squash merges count their escapes  ·  2026-11-17
 
 **In short**

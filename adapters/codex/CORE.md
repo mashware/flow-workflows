@@ -17,7 +17,7 @@ Every `$flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.117.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.118.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -733,8 +733,13 @@ user answers the harness's question tool (`AskUserQuestion`, Codex's `request_us
 input holds a `decision`, the hook copies the input aside as answered (`panel-answered.json`) and
 renders: while the input is still that copy, its `decision` and `wait` claim nobody. Your input is
 never rewritten — the next one you write is newer than the answer and asks again. A question left
-unanswered, rejected or timed out changes nothing. The hook cannot reach
-the terminal's MCP tools, which is what `panel.publish_cmd` is for (§4.2).
+unanswered, rejected or timed out changes nothing. That render reaches `panel.json` and
+`panel.publish_cmd` only — a terminal holding the pane over its MCP reads neither (§4.2) — so under
+Claude Code the hook also prints, after the answer, a reminder addressed to you: where the panel
+goes over the terminal's MCP or to the control-room card, republish now, without the `decision`. That republish is yours (§4.4 e). On a branch that names no work — a session
+in the main checkout driving a sibling worktree — the reminder names no work and nothing is copied:
+every session there reports the same checkout and branch, and the hook cannot tell whose work is
+whose.
 
 **The CLI unavailable** — no network for npx, a sandbox that blocks it, a non-zero exit with no
 document — → write the §4.1 document yourself, once, by its rules, and say so at the next stop:
@@ -752,11 +757,11 @@ instead of it.
 
 **Look for the tools before you conclude they are missing**, once per session, in pre-flight. A
 harness namespaces an MCP server's tools, so what you are looking for is a tool whose name *ends* in
-`panel_set` — `mcp__panel__panel_set` on Claude Code, another prefix elsewhere. It may also be
+`panel_set` — `mcp__ivy__panel_set` on Claude Code inside an Ivy pane, another prefix elsewhere. It may also be
 **deferred**: listed by name with no schema, uncallable until you load it, and indistinguishable from
 absent unless you read that list. A deferred tool is a tool that is there; load the schemas and
-publish. A tool that answers that this console is not one of its panes → the file is the transport
-for the rest of the session.
+publish. A `panel_get` that answers is the proof that the channel works; a tool that answers that
+this console is not one of its panes → the file is the transport for the rest of the session.
 
 ### 4.1 The document — what the CLI prints, and what you write when it cannot
 
@@ -823,6 +828,17 @@ writes it, and drops it from a document it read back with `panel_get` before pub
 - **A hook cannot call these tools.** Where the reader is a terminal like this one, the person sets
   `panel.publish_cmd`, in a git-ignored FLOW file, to whatever command that terminal offers for
   publishing a document from a shell; the CLI pipes every render into it, the hook's included.
+  A terminal may still refuse that shell publication while the agent holds the pane: then the
+  agent is the only party that can clear a claim, and the hook's reminder after an answer (§4) is
+  what tells it to.
+- **The rest of the terminal's MCP — what flow does with it.** `plan_set` / `plan_get` publish the
+  roadmap as the project's plan (§10.1); `plan_retire` is the person's. `panel_retire` is never
+  called: it removes the document and its `done` — the closing signal the person reads when they
+  come back — and also closes the auxiliary consoles of the connection, and the terminal admits it
+  only from the connection that holds the pane, as the end of that session, not of a work.
+  `split_open` / `split_read` / `split_close` are never called: flow delegates to subagents, whose
+  results come back as files it can read, never to consoles beside the pane, whose handle stops
+  answering the moment the person types into them.
 - **Optional — buttons at a stop.** At a stop parked on the user, `actions` (up to 8) paint a button
   whose command is written into this pane's program on one click — this very session's prompt. Add
   them to the printed document before `panel_set`: `{"label": "Approve the design", "send":
@@ -843,8 +859,11 @@ halfway is not shown as finished. When the stretch will outlast the ~30 min stal
 `meta.json`; (e) **the moment a question is answered or a gate is cleared** — before you resume the
 work: drop `decision` from the input, move `now` on, render. A panel still asking what the user
 already answered is worse than one that never asked. Where the hook runs, an answer
-given through the question tool already did it; a question asked in prose, or a gate cleared
-another way, did not; (f) **each plan step that lands** — tick it in
+given through the question tool already rendered the files of the work your branch names (on a
+branch that names none, nothing — §4) — but over the terminal's MCP the claim goes only when you
+republish, so that republish is **the first call after the answer**, before any
+work (the hook's output says so under Claude Code). A question asked in prose, or a gate cleared
+another way, rendered nothing; (f) **each plan step that lands** — tick it in
 the phase artifact, move `now` on, render without `--forge`. Where the plugin's hook runs, the tick
 and the input change already rendered it; publish over the tools anyway when they are there.
 
