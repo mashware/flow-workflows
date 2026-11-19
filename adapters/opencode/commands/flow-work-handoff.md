@@ -30,7 +30,7 @@ ticket for the people who review it.
 
 - Effective FLOW configuration per flow-core §0. `autonomy.mode: unattended` → refuse in one line:
   an unattended run never pushes (flow-core §2.1); handing off is a person's step.
-- Locate the active `meta.json` by current branch; not found → ask the user for the ticket.
+- Locate the active `meta.json` by current branch; not found → ask the user for the ticket, and find the `meta.json` whose `ticket`, canonical too, equals it (flow-core §0, the ticket).
 - `git.handoff_branch` empty → refuse, naming the key and an example
   (`git.handoff_branch: study/{TICKET}`): where the study goes is the receiver's convention, never
   flow's guess. `{TICKET}` is the canonical ticket (flow-core §0, the ticket) that §3's resolve
@@ -67,7 +67,7 @@ work included) and the working tree are never read into it nor written to, and a
 one call to the next, so every block sets its own. Replace each `@…@` with its literal value first:
 `@WORK@` the work folder relative to the repository root (`.claude/work/<work-dir>`, no trailing
 slash), `@BRANCH@` and `@TICKET@` the values after `branch=` and `ticket=` in what the resolve
-block printed — `study/54`, never `branch=study/54` —, `@COMMIT@` the sha the build block printed. A value holding a `'` cannot go inside those quotes:
+block printed — `study/54`, never `branch=study/54` —, `@COMMIT@` the sha the build block printed. A value holding a `'` — `@STORED@` and `@PATTERN@` below included — cannot go inside those quotes:
 refuse it and say which.
 
 First, where the study goes. `@STORED@` is `meta.json.ticket` as stored, `@PATTERN@`
@@ -77,29 +77,40 @@ First, where the study goes. `@STORED@` is `meta.json.ticket` as stored, `@PATTE
 STORED='@STORED@'; PATTERN='@PATTERN@'
 t=$(printf '%s' "$STORED" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
 lc=$(printf '%s' "$t" | tr 'A-Z' 'a-z')
-here=$(git config --get remote.origin.url | tr 'A-Z' 'a-z' | sed -E 's|/+$||; s|\.git$||; s|^[a-z+]+://||; s|^[^@/]*@||; s|:[0-9]+/|/|; s|:|/|; s|^www\.||')
+o=$(git config --get remote.origin.url | tr 'A-Z' 'a-z')
+case "$o" in
+  *://*) here=$(printf '%s' "$o" | sed -E 's|^[a-z+]+://||; s|^[^@/]*@||; s|^([^/]+):[0-9]+/|\1/|') ;;
+  *) here=$(printf '%s' "$o" | sed -E 's|^[^@/]*@||; s|:|/|') ;;
+esac
+here=$(printf '%s' "$here" | sed -E 's|/+$||; s|\.git$||; s|^www\.||')
 n=
 case "$lc" in
   '#'*) n=${lc#'#'} ;;
   *://*|*/issues/*|*/work_items/*)
-       u=$(printf '%s' "$lc" | sed -E 's|^[a-z+]+://||; s|^[^@/]*@||; s|^www\.||; s|[?#].*$||; s|/+$||')
-       case "$u" in "$here/issues/"*|"$here/-/issues/"*|"$here/-/work_items/"*) n=${u##*/} ;; esac ;;
+       u=$(printf '%s' "$lc" | sed -E 's|^[a-z+]+://||; s|^[^@/]*@||; s|^([^/]+):[0-9]+/|\1/|; s|^www\.||; s|[?#].*$||; s|/+$||')
+       key=$here; ukey=$u
+       case "${here%%/*}" in *.*) ;; *) key=${here#*/}; ukey=${u#*/} ;; esac
+       case "$ukey" in "$key/issues/"*|"$key/-/issues/"*|"$key/-/work_items/"*) n=${u##*/} ;; esac ;;
   */*'#'*) [ "${lc%'#'*}" = "${here#*/}" ] && n=${lc##*'#'} ;;
-  *) n=$lc ;;
 esac
 case "$n" in ''|*[!0-9]*) ;; *) n=$(printf '%s' "$n" | sed 's/^0*//'); t=${n:-0} ;; esac
 case "$t" in [A-Za-z0-9]*) ;; *) echo "not a ticket id: $STORED"; exit 1 ;; esac
 case "$t" in *[!A-Za-z0-9._-]*) echo "not a ticket id: $STORED"; exit 1 ;; esac
 branch=$(printf '%s' "$PATTERN" | sed "s|{TICKET}|$t|g")
+case "$branch" in *'{'*|*'}'*) echo "git.handoff_branch has a placeholder other than {TICKET}: $PATTERN"; exit 1 ;; esac
 git check-ref-format --branch "$branch" >/dev/null 2>&1 || { echo "not a branch name: $branch"; exit 1; }
 echo "ticket=$t"; echo "branch=$branch"
 ```
 
 It turns a reference to this repository's issue into its number and keeps anything else as typed
-(flow-core §0, the ticket). A refusal stops the command, quoting its line: a pull or merge request,
-another repository's issue, an id with a space or a shell character inside. The way on is to set
-`meta.json.ticket` to this repository's issue, or to the id the receiver expects, and hand off
-again.
+(flow-core §0, the ticket). `origin`'s host is compared too, unless it is an SSH alias with no dot
+in it (`github-work`, `gh`), where only the path can be. A refusal stops the command, quoting its
+line: a pull or merge request, another repository's issue, an id with a space or a shell character
+inside, a placeholder other than `{TICKET}`. The way on, for a mistyped id, is to correct
+`meta.json.ticket` and hand off again; a study whose ticket really is **another repository's
+issue** (a sibling repo's work, a fork whose issues live upstream) has no branch this command can
+name — say so, and leave where it goes to the person: never rewrite it as an issue of this
+repository, whose `Closes` would then close the wrong one.
 
 Then the branch must not exist on `origin` — a second push would need a force, and this command
 never forces:
@@ -116,6 +127,7 @@ continue. Anything else → stop and say why (no network, no access). Then build
 
 ```bash handoff-build
 WORK='@WORK@'; TICKET='@TICKET@'
+case "$TICKET" in ''|ticket=*) echo "not a resolved ticket: $TICKET"; exit 1 ;; esac
 cd "$(git rev-parse --show-toplevel)" || exit 1
 [ -d "$WORK" ] || { echo "no such folder: $WORK"; exit 1; }
 tmp=$(mktemp -d) || exit 1

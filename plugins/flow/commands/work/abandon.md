@@ -12,7 +12,7 @@ Clean closure for works that will not reach the base branch: a feature discarded
 
 ## 1. Pre-flight
 
-- Locate the active `meta.json` by current branch; not found → ask the user for the ticket.
+- Locate the active `meta.json` by current branch; not found → ask the user for the ticket, and find the `meta.json` whose `ticket`, canonical too, equals it (flow-core §0, the ticket).
 - `phase` already `done` → do not abandon: notify and stop (finished works are archived, not abandoned).
 - Read `meta.json` and `00-summary.md`; open the existing artifacts in full only where the summary does not say what was done (missing summary → read the artifacts).
 

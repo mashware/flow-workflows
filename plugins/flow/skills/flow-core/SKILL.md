@@ -98,7 +98,7 @@ a command relies on is simply absent in that session, and nothing else will repo
   (a branch, a handoff branch, `Closes #<N>`, a tracker command, the unattended run's lookup by
   `number`) needs one value. **A reference to an issue of this repository** — the one `origin`
   names, host and path compared without case — **is its bare number**, leading zeros dropped:
-  `#54`, `owner/repo#54`, `…/issues/54`, `…/-/issues/54` and `…/-/work_items/54` all become `54`,
+  `#054`, `owner/repo#54`, `…/issues/54`, `…/-/issues/54` and `…/-/work_items/54` all become `54`,
   whatever `tracker.tool` says. **Anything else is kept as typed**, only its ends trimmed: a slug,
   a Jira or Linear key (`MT-123`), a free-form id, another repository's reference. Where a value
   meets a shell or names a branch it must match `[A-Za-z0-9][A-Za-z0-9._-]*` — the rule

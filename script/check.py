@@ -664,7 +664,7 @@ def check_unattended_locate(files):
 
 
 # /flow:work:handoff is read by a person's agent and its result by another machine's. What must not
-# be reworded away: the three recipe blocks script/tests/handoff-recipe.sh executes, every reason
+# be reworded away: the four recipe blocks script/tests/handoff-recipe.sh executes, every reason
 # the study is refused, and the ticket block's literal markers and headings — the receiver's people
 # read those sections by name.
 HANDOFF = "plugins/flow/commands/work/handoff.md"
@@ -695,6 +695,9 @@ def check_handoff():
     # unattended lookup as `54`, or the same issue becomes two works and a study nobody finds.
     for f, held in (("plugins/flow/commands/feat/start.md", "the canonical ticket of `$ARGUMENTS`"),
                     ("plugins/flow/commands/bug/start.md", "the canonical ticket of `$ARGUMENTS`"),
+                    ("plugins/flow/commands/feat/start.md", "put in the same canonical form, equals `<TICKET>` — never narrowed by folder name first"),
+                    ("plugins/flow/commands/bug/start.md", "put in the same canonical form, equals `<TICKET>` — never narrowed by folder name first"),
+                    ("plugins/flow/commands/work/watch.md", "in canonical form (flow-core §0)"),
                     ("plugins/flow/commands/work/run.md", "put in canonical form (flow-core §0, the ticket)"),
                     ("plugins/flow/skills/flow-core/SKILL.md", "**The ticket has one form, and `meta.json.ticket` holds it.**")):
         if held not in read(f):
