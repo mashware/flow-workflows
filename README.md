@@ -336,7 +336,7 @@ flow-workflows/
 │   ├── commands/      feat/ bug/ work/ + next, init, doctor, news
 │   ├── codex-skills/ · zcode-commands/   # generated mirrors for the two other plugin hosts
 │   ├── skills/flow-core/             # shared rules, loaded once per session
-│   ├── hooks/         push guard · update notice · where-you-left-off notice
+│   ├── hooks/         push guard · update notice · where-you-left-off notice · session title
 │   └── examples/       FLOW.template.md · symfony/ (a worked example, never loaded)
 ├── docs/              CONCEPTS · PHILOSOPHY · DESIGN · CONFIGURATION · WORKFLOWS
 ├── script/check.py                   # release preflight
@@ -355,6 +355,7 @@ python3 script/adapter-smoke.py      # also runs install.sh against a throwaway 
 bash script/tests/push-guard.sh      # the push guard's cases
 bash script/tests/notify-update.sh   # the update-notice hook's cases
 bash script/tests/session-start.sh   # the where-you-left-off hook's cases
+bash script/tests/session-title.sh   # the session-title hook's cases
 bash script/tests/review-unwrap.sh   # the answer shapes `flow review` has to unwrap
 bash script/tests/bench-compare.sh   # the reader that compares two runs of the review bench
 ```

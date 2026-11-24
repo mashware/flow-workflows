@@ -5,6 +5,21 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.119.0 — Ivy names the console after the task, not the opening phrase  ·  2026-11-24
+
+**In short**
+- **The console is named after the task.** In Claude Code, the session title becomes `<ticket> <title>` of the work on
+  your branch (`#258 …`, `MT-1234 …`), so a terminal that follows the session title — Ivy does — shows it. Before, it kept
+  the phrase Claude Code generated from the start of the conversation, while flow already knew the task.
+- **It follows you between tasks.** The name is set on each prompt from the work of the current branch, so switching
+  task renames the console. It appears on the prompt after a work starts, since the hook runs when you send a message.
+- **A name you chose stays.** A session you named with `/rename` is never overwritten, and neither is a console you
+  renamed in Ivy; the hook only replaces an empty title or one it set itself.
+- **Ivy needs no change** for Claude Code. Codex, OpenCode and zcode publish their own titles and are unchanged.
+
+New hook `hooks/session-title.sh` (a `UserPromptSubmit` hook), with its test `script/tests/session-title.sh`; `doctor`
+now checks its executable bit.
+
 ## v0.118.1 — The roadmap actually reaches Ivy's board, and a console sits in its milestone from the start  ·  2026-11-24
 
 **In short**
