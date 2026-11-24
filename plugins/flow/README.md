@@ -49,7 +49,7 @@ still works, just with more questions and auto-discovery.
 - `skills/flow-core/SKILL.md` — the rules every command shares (configuration overlay resolution,
   models, autonomy and hard gates, how a stop reads, `panel.json`, `00-summary.md`), loaded once per
   session.
-- `hooks/` — the push guard, the update notice, and the work notice that says where you left off.
+- `hooks/` — the push guard, the update notice, the work notice that says where you left off, and the hook that names the session after the work.
 - `examples/FLOW.template.md` — every key with its default; `/flow:init` writes only the keys you set.
 - `examples/symfony/` — one worked stack: a filled-in `FLOW.md` and the four review agents a Symfony + Doctrine repo wants. An example, never loaded; copy and edit.
 
@@ -75,12 +75,12 @@ has them; commands reference them by role, not by name. It never picks a model f
 `examples/symfony/`, which nothing loads and which exists so a fresh install has something concrete
 to copy.
 
-It does ship four hooks (`hooks/`), all generic: a guard that refuses a `git push` aimed at
+It does ship five hooks (`hooks/`), all generic: a guard that refuses a `git push` aimed at
 `master`/`main`; a session-start notice when the plugin has been updated since you last looked
 (what `/flow:news` then explains); and a second session-start hook that, when the branch you
 opened on has a work behind it, prints its phase and what the last session was doing; and, after each tool call, one that
 re-renders the live panel (`flow-workflows panel`) when the work's plan, record or panel input is
-newer than the panel. All four
+newer than the panel; and, on each prompt, one that sets the session title to the work's `<ticket> <title>` (so a terminal that follows it, such as Ivy, names the console after the task) unless you named the session yourself. All five
 are silent when they have nothing to say — including in a repo that does not use flow.
 
 ## Other harnesses

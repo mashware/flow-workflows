@@ -239,7 +239,7 @@ refuse) · **degraded** (it runs, quietly worse than the config promises), plus 
 ### 2.4 Hooks
 
 - The plugin's hooks are installed, **executable**, and the version this plugin expects: the push
-  guard (`hooks/block-push-to-master.sh`) and the session-start update notice. Check the `+x` bit,
+  guard (`hooks/block-push-to-master.sh`), the session-start update notice and the session-title hook (`hooks/session-title.sh`). Check the `+x` bit,
   not just the path — a hook without it fails open and silently.
 - `hooks.json` parses; a syntax error there disables the hooks without a word.
 
