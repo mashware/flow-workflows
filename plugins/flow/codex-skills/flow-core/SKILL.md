@@ -24,7 +24,7 @@ Every `$flow:*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.118.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.118.1`.** Compare it once, at the start of the session, against
 `version` in `../../.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -767,7 +767,8 @@ harness namespaces an MCP server's tools, so what you are looking for is a tool 
 `panel_set` — `mcp__ivy__panel_set` on Claude Code inside an Ivy pane, another prefix elsewhere. It may also be
 **deferred**: listed by name with no schema, uncallable until you load it, and indistinguishable from
 absent unless you read that list. A deferred tool is a tool that is there; load the schemas and
-publish. A `panel_get` that answers is the proof that the channel works; a tool that answers that
+publish. With the project plan on (§10.1), the same lookup loads the tools ending in `plan_get` and
+`plan_set`: a session that loads only the panel tools is one that never publishes the plan. A `panel_get` that answers is the proof that the channel works; a tool that answers that
 this console is not one of its panes → the file is the transport for the rest of the session.
 
 ### 4.1 The document — what the CLI prints, and what you write when it cannot
@@ -1636,20 +1637,45 @@ after they compute where the project stands, `$flow:feat-start` after it links t
 `$flow:feat-ship` right after it commits a roadmap edit — the branch's file, as the MR/PR carries
 it. That is on purpose: the board shows the deliverable moving the moment its MR/PR says so, and a
 later `next` or `daily` run from a checkout that has not merged it yet publishes that checkout's
-file again — each publication is the file it was read from, never a merge of several. First `plan_get`: the same document → nothing to send. Otherwise one `plan_set` with the
-document and `repo` the checkout the file was read from.
+file again — each publication is the file it was read from, never a merge of several.
+
+**Publishing is its own step, done in this order — never a clause folded into the roadmap
+summary.** Read as an afterthought, it was skipped: consoles of a repo with `roadmap.path` set
+published their panel dozens of times inside the terminal and never once called `plan_get` — one
+loaded the plan tools and still never called them — so the board said *no roadmap* for a project
+whose file flow read at every start.
+
+1. **Load the tools.** In the same lookup as the panel tools (§4): the tools whose names end in
+   `plan_get` and `plan_set`, loading their schemas when they are deferred. Absent, or a tool
+   answering that this console is not one of its panes → the plan is off for this session, and
+   nothing is said.
+2. **Translate** the file just read into the document above.
+3. **`plan_get`.** The same document → nothing to send. Otherwise one `plan_set` with the document
+   and `repo` the checkout the file was read from.
+4. **Place this console** — only from a work's checkout (`start`, `ship`), by the rule below, and
+   before the first panel that follows, so that panel already carries the place.
+5. **Say it.** The stop of the command that published carries one line: `plan: published` ·
+   `plan: unchanged` · `plan: <error>`. A plan that is on and has no line at the stop is a step that
+   was skipped.
 
 **Where this console works.** The same moment, from a work's checkout (`start`, `ship`): the rows
 whose ticket cell names `meta.json.ticket`, both in canonical form (§0, the ticket), decide it. One row → write its milestone's `id` and the
 row's `id` into `meta.json.roadmap` as `milestone` and `deliverable`; several → the one
-`meta.json.roadmap.item` names, else `milestone` alone when they share one, else neither. No row →
-neither, and remove them if an earlier publication wrote them: the panel then carries no place, and
-the board shows the console off the plan, which is what it is. The panel CLI copies the two fields
-from `meta.json` into every render (§4.1); nothing else sets them.
+`meta.json.roadmap.item` names, else `milestone` alone when they share one, else neither. **No row
+→ the row the work is linked to** (`meta.json.roadmap.item` under `under`, §10), when the file still
+has it: its milestone's `id` as `milestone`, and the row's `id` as `deliverable` only when the
+translation gave it one. A row is usually ticket-less exactly when its work starts — the ticket is
+created for it — so this is the common case, not the edge: the console sits inside its milestone
+from the first panel, and on its deliverable once `ship` fills the ticket cell and places it again.
+Never an `id` invented from the work's ticket: each publication replaces the whole plan, and an id
+that one checkout writes and another does not would come and go. Neither found → neither, and
+remove them if an earlier publication wrote them: the panel then carries no place, and the board
+shows the console off the plan, which is what it is. The panel CLI copies the two fields from
+`meta.json` into every render (§4.1); nothing else sets them.
 
 **Failure never stops a phase.** A refusal, a malformed reply or a tool that errors → no retry; the
-next stop carries one line, `plan: <error>`, once per session. `plan_retire` is the person's: flow
-never retires a plan.
+stop's line is `plan: <error>`, once per session. `plan_retire` is the person's: flow never retires
+a plan.
 
 ## 11. A red test outside the change — find the cause before it is excused
 

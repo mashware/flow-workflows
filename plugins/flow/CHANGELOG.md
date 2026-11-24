@@ -5,6 +5,22 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.118.1 — The roadmap actually reaches Ivy's board, and a console sits in its milestone from the start  ·  2026-11-24
+
+**In short**
+- **The plan is now sent.** v0.116.0 told `next`, `daily`, `start` and `ship` to publish the roadmap to the terminal's
+  board, but as a clause at the end of the roadmap step — and it was skipped. In one repo with `roadmap.path` set,
+  three works published their panel inside Ivy 13, 25 and 33 times and never called `plan_get`; one even loaded the
+  plan tools and never used them. The board said *no roadmap*.
+- **Publishing is its own step in each of the four commands**, in a fixed order (load `plan_get`/`plan_set` with the
+  panel tools, translate, `plan_get`, `plan_set` when it changed, place the console), and every stop of a command
+  that published says `plan: published`, `plan: unchanged` or `plan: <error>`. A plan that is on with no such line at
+  the stop is a skipped step anyone can see.
+- **A console whose row had no ticket yet now sits inside its milestone.** Placement only looked for the work's
+  ticket in the ticket cells, and a row usually gets its ticket when its work starts — so the works that most needed
+  a place landed in *Off the plan*. Now the row the work is linked to places it: in its milestone at `start`, on its
+  deliverable once `ship` fills the ticket cell. No id is ever invented from the work's ticket.
+
 ## v0.118.0 — After you answer, the agent is told to stop claiming you in Ivy  ·  2026-11-19
 
 **In short**

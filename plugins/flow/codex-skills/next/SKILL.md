@@ -34,7 +34,8 @@ runs a phase on its own and never advances `meta.json`.
 3. Those work folders — how many open works, in which worktree each is checked out (`git worktree list`), and their `phase` (from `meta.json`; read `00-summary.md` when present, never the full artifacts).
 3b. `followups[]` across those works **and** their `_archive/*/meta.json`: any entry `accepted` with no `work` started (flow-core §7).
 4. Is the working tree dirty (`git status --porcelain`)?
-5. The roadmap, if the repo has one (flow-core §10): where the project stands — current phase, what is in progress, the next item whose dependencies are met, what is blocked, and any stale item. With the project plan on (flow-core §10.1), publish it now, from the file just read.
+5. The roadmap, if the repo has one (flow-core §10): where the project stands — current phase, what is in progress, the next item whose dependencies are met, what is blocked, and any stale item.
+6. **The project plan** — on only as flow-core §10.1 says (`roadmap.path` names a file and the terminal offers `plan_set`): publish it now, from the file step 5 read, by §10.1's steps — load `plan_get`/`plan_set`, translate, `plan_get`, `plan_set` when it changed. Its `plan:` line goes under the roadmap line of §2's answer. It is the one thing `next` sends anywhere, and it is not optional: the board shows no roadmap until some command sends it.
 
 ## 2. Route
 
