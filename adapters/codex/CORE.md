@@ -17,7 +17,7 @@ Every `$flow-*` command assumes these rules. They are stated once, here, so a co
 carries what is specific to its phase. Read this once per session; a command that says "load
 `flow-core`" means this file.
 
-**This file belongs to flow `0.119.0`.** Compare it once, at the start of the session, against
+**This file belongs to flow `0.120.0`.** Compare it once, at the start of the session, against
 `version` in `~/.claude/flow/.claude-plugin/plugin.json`. The two differing means the session
 is running a **mixture** — the commands from one copy of the plugin, these shared rules from another
 — which is exactly what happens when a branch or a release candidate is loaded over an installed
@@ -744,6 +744,8 @@ whose.
 **The CLI unavailable** — no network for npx, a sandbox that blocks it, a non-zero exit with no
 document — → write the §4.1 document yourself, once, by its rules, and say so at the next stop:
 `panel: written by hand — <why>`. Never retry variants of the call.
+
+**Before the work folder exists — the opening of `start` — the panel is drawn by hand too.** `panel-input.json` and the CLI need a folder, and `start` makes one many questions in. Where `panel_set` is available, the first step of `$flow-feat-start` and `$flow-bug-start` publishes a minimal document, `source: "flow"`: the title line (`style: title`) with the identifier it was given, or `New feature` / `New bug` with none, `phase: "start"`, and one `Now` line — `reading the ticket and the repo`. Nothing else: no train, no size, no branch, none of which is known. The first render once the folder exists replaces it whole. With no panel tool there is nothing to write yet: the file transport begins with the folder.
 
 **One panel is drawn by hand on purpose**: `$flow-work-watch` paints a monitoring cycle — verdict, latency, what it is waiting for — that no work file holds, so it writes its §5 document itself, by §4.1's rules, and the CLI is not run while it watches.
 
