@@ -111,6 +111,19 @@ git -C "$r" switch -q -c 300-other
 meta "$r" 300-other 300 other 300-other "Another task"
 want "a resumed session under a new id still follows its own title" "$(titleof "$(run "$r" sb "#258 Ivy console named after the task")")" "#300 Another task"
 
+# --- the prompt that starts a work names the console after its identifier ----------------------
+r=$(newrepo start 258-ivy-name)
+want "a start with an issue number: #N" "$(titleof "$(run "$r" st1 "" "/flow:feat:start 258")")" "#258"
+want "a bug start with a tracker key" "$(titleof "$(run "$r" st2 "" "/flow:bug:start MT-1234 --study")")" "MT-1234"
+want "a flag before the identifier is skipped" "$(titleof "$(run "$r" st3 "" "/flow:feat:start --study #54")")" "#54"
+want "a start with no identifier names nothing" "$(run "$r" st4 "" "/flow:feat:start")" ""
+want "a start with free text names nothing" "$(run "$r" st5 "" "/flow:feat:start add a dark mode")" ""
+want "a prompt that is not a start names nothing" "$(run "$r" st6 "" "fix 258 please")" ""
+want "a person's title is left alone at a start" "$(run "$r" st7 "My own name" "/flow:feat:start 258")" ""
+run "$r" st8 "" "/flow:feat:start 258" >/dev/null
+meta "$r" 258-ivy-name 258 ivy-name 258-ivy-name "Ivy console named after the task"
+want "the next prompt replaces the provisional name with the full one" "$(titleof "$(run "$r" st8 "#258")")" "#258 Ivy console named after the task"
+
 # --- never blocks a prompt -------------------------------------------------------------------
 r=$(newrepo nohome nh-1)
 meta "$r" nh-1 11 nh nh-1 "No home"

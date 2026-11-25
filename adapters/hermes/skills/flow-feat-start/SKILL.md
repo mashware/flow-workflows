@@ -52,6 +52,7 @@ its reason file in a `mktemp -d` directory (flow-core §2.1).
 
 ## 1. Pre-flight
 
+- **Open the panel before anything slow** — before reading the ticket or the repo: flow-core §4, *Before the work folder exists*. A console that shows nothing until `meta.json` is written looks like flow never started.
 - Read the effective FLOW configuration per flow-core §0; no FLOW layer present → each
   step's default. This command **creates** `00-summary.md` (§6) instead of reading it (flow-core §5).
 - No recognizable project structure → warn and stop.

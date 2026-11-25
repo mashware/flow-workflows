@@ -5,6 +5,18 @@ plugin and is what `/flow:news` reads to show you what changed since your previo
 
 The canonical, richest notes live in the [GitHub Releases](https://github.com/mashware/flow-workflows/releases).
 
+## v0.120.0 — The panel opens with `start`, and the console is named by the command that starts the work  ·  2026-11-25
+
+**In short**
+- **The panel shows up from the first moment.** `/flow:feat:start` and `/flow:bug:start` publish a minimal panel before
+  reading the ticket — the identifier and `Now: reading the ticket and the repo` — instead of leaving the console empty
+  until the work folder exists. The full panel replaces it as soon as it does. Needs the terminal's panel tools (Ivy);
+  without them nothing changes.
+- **The console is named by the start command itself.** In Claude Code, sending `/flow:feat:start 258` (or `bug:start`,
+  `MT-1234`) titles the session `#258` in that same turn; the next prompt completes it to `#258 <title>`. Before, the name
+  only appeared one prompt after the work existed. A start with free text and no identifier is still named on the
+  following prompt, and a name you chose is still never overwritten.
+
 ## v0.119.0 — Ivy names the console after the task, not the opening phrase  ·  2026-11-24
 
 **In short**

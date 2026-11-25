@@ -13,7 +13,9 @@
 # told from nothing.
 #
 # Runs on every prompt of every session in every repo the plugin is installed in: no work
-# for this branch → exit at once, silent. No jq (same reasons as session-start.sh); every
+# for this branch and a prompt that is not a start → exit at once, silent. The one prompt
+# that is a start (`/flow:feat:start 258`) names the console after its identifier, because
+# the work does not exist yet and the next prompt would be too late for the first screen. No jq (same reasons as session-start.sh); every
 # failure exits 0 and prints nothing.
 
 event=$(cat 2>/dev/null || printf '')
@@ -74,12 +76,42 @@ for r in "$root" "$main_root"; do
 	done
 	[ -n "$meta" ] && break
 done
-[ -n "$meta" ] || exit 0
-
-metatext=$(cat "$meta" 2>/dev/null || printf '')
-ticket=$(jraw ticket "$metatext" | junesc | tr -d '\000-\037')
-slug=$(jraw slug "$metatext" | junesc | tr -d '\000-\037')
-title=$(jraw title "$metatext" | junesc | tr -d '\000-\037')
+if [ -n "$meta" ]; then
+	metatext=$(cat "$meta" 2>/dev/null || printf '')
+	ticket=$(jraw ticket "$metatext" | junesc | tr -d '\000-\037')
+	slug=$(jraw slug "$metatext" | junesc | tr -d '\000-\037')
+	title=$(jraw title "$metatext" | junesc | tr -d '\000-\037')
+else
+	# No work on this branch yet. The prompt that starts one — `/flow:feat:start 258` — is the
+	# only moment the console could be named, and the work's title is not known until the
+	# command has read the ticket, so the identifier it was given stands in for it until the
+	# next prompt finds the work. A start with no identifier names nothing.
+	prompt=$(jraw prompt "$event" | junesc)
+	set -f
+	# shellcheck disable=SC2086
+	set -- $prompt
+	set +f
+	case ${1:-} in
+	/flow:feat:start | /flow:bug:start) ;;
+	*) exit 0 ;;
+	esac
+	shift
+	ticket=""
+	for word in "$@"; do
+		case $word in
+		-*) continue ;;
+		esac
+		ticket=$word
+		break
+	done
+	case $ticket in
+	'#'[0-9]* | [0-9]* | [A-Za-z][A-Za-z0-9]*-[0-9]*) ;;
+	*) exit 0 ;;
+	esac
+	ticket=$(printf '%s' "$ticket" | tr -d '\000-\037')
+	slug=""
+	title=""
+fi
 
 # A bare issue number reads as `#258`; a slug is not an identifier worth showing.
 case $ticket in
